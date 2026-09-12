@@ -109,3 +109,19 @@ def test_outcomes_never_show_a_lift_when_unmeasured(client):
         if o["status"] == "unmeasured":
             assert "lift" not in o
         assert o["data_label"] in ("REAL PILOT", "SYNTHETIC")
+
+
+def test_customers_demo_includes_a_real_holdout_customer(client):
+    out = client.get("/customers/demo", params={"play_id": "play_chips_ds07_v1"}, headers=_h("v-cust")).json()
+    ids = {c["customer_id"]: c for c in out}
+    assert "CUST-MEENA" in ids and ids["CUST-MEENA"]["home_node_id"] == "DS-07" and ids["CUST-MEENA"]["language"] == "kn"
+    assert "CUST-RAVI" in ids and ids["CUST-RAVI"]["home_node_id"] != "DS-07"
+    holdout = next((c for c in out if c["role"] == "holdout"), None)
+    assert holdout and holdout["customer_id"] not in ("CUST-MEENA", "CUST-RAVI")
+
+    # the picked customer really is holdout: approve, then their chat gets no offer while Meena's does
+    client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-cust"))
+    meena = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Any offers today?"}, headers={**_h("v-cust"), "Accept": "application/json"}).json()[0]
+    theirs = client.post("/chat", json={"session_id": f"{holdout['customer_id']}:web", "text": "Any offers today?"}, headers={**_h("v-cust"), "Accept": "application/json"}).json()[0]
+    assert "Best before" in meena["text"] or "ಬಳಕೆಗೆ" in meena["text"]
+    assert "Best before" not in theirs["text"] and "ಬಳಕೆಗೆ" not in theirs["text"]

@@ -442,3 +442,13 @@ export interface PolicyDoc {
   text: string;
   updated_at: string;
 }
+
+
+export interface DemoCustomer {
+  customer_id: string;
+  display_name: string;
+  home_node_id: string;
+  language: string;
+  role: "sample" | "holdout";
+  note: string;
+}

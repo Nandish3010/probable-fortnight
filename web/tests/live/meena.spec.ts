@@ -51,3 +51,31 @@ test.describe("Meena: chat", () => {
     await expectNoConsoleErrors(errors);
   });
 });
+
+test.describe("customer picker: differentiation", () => {
+  test("switching to the holdout customer shows no offer where Meena gets one", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    const vid = "live-picker";
+    await asVisitor(page, vid);
+    await page.request.post(`${API}/approve`, { headers: visitorHeaders(vid), data: { play_id: "play_chips_ds07_v1" } });
+
+    await page.goto("/chat");
+    const select = page.getByTestId("chat-customer-select");
+    await expect(select).toBeVisible();
+    const options = await select.locator("option").allTextContents();
+    expect(options.some((o) => o.includes("holdout"))).toBeTruthy();
+
+    // Meena (default): the offer arrives
+    await say(page, "Any offers today?");
+    const log = page.getByTestId("chat-log");
+    await expect(log.getByText(/ಬಳಕೆಗೆ ಉತ್ತಮ|Best before/)).toBeVisible({ timeout: 15_000 });
+
+    // switch to the holdout customer: a fresh conversation, no offer, ever
+    await select.selectOption({ label: await select.locator("option", { hasText: "holdout" }).textContent() as string });
+    await expect(log.getByText("Send a message to start.")).toBeVisible();
+    await say(page, "Any offers today?");
+    await expect(log.getByText(/No offers|ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ/)).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/ಬಳಕೆಗೆ ಉತ್ತಮ|Best before/)).toHaveCount(0);
+    await expectNoConsoleErrors(errors);
+  });
+});

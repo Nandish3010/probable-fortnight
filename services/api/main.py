@@ -326,6 +326,40 @@ def outcomes(store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
     return out
 
 
+@app.get("/customers/demo")
+def customers_demo(play_id: str = Query("play_chips_ds07_v1"), store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
+    """A curated picker for the web app: named personas with visibly different home stores and
+    languages, plus one real customer who lands in the holdout arm of `play_id` -- computed from
+    the play's own holdout seed and fraction, so it is correct whether or not the play has been
+    approved yet, and never made up. Lets a judge see the differentiation the system is built on:
+    a holdout customer's chat never mentions the offer other customers get."""
+    from agents.gate.assignment import assign_arm
+    from agents.planner.context import PlannerContext
+    from agents.planner.tools import audience_customer_ids
+
+    tenant = load_tenant()
+    customers = {c["customer_id"]: c for c in store.read("customers")}
+    out: list[dict[str, Any]] = []
+    for cid, note in (("CUST-MEENA", "treated on the chips play once approved"), ("CUST-RAVI", "different store and language; premium tea affinity")):
+        c = customers.get(cid)
+        if c:
+            out.append({"customer_id": cid, "display_name": c.get("display_name") or cid, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "role": "sample", "note": note})
+    play_rows = store.find("plays", play_id=play_id)
+    if play_rows:
+        play = _play_json(play_rows[-1])
+        pctx = PlannerContext.__new__(PlannerContext)
+        pctx.store, pctx.tenant, pctx.run_id = store, tenant, "customers-demo"
+        pctx.products = {p["sku"]: p for p in store.read("products")}
+        pctx.nodes = {n["node_id"]: n for n in store.read("nodes")}
+        ids = audience_customer_ids(pctx, play["target"]["sku"], play["target"]["node_ids"], play["audience"]["segment_ids"])
+        seed, fraction = play["holdout"]["seed"], float(play["holdout"]["fraction"])
+        holdout_id = next((cid for cid in ids if cid not in ("CUST-MEENA", "CUST-RAVI") and assign_arm(cid, seed, fraction) == "holdout"), None)
+        if holdout_id:
+            c = customers[holdout_id]
+            out.append({"customer_id": holdout_id, "display_name": c.get("display_name") or holdout_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "role": "holdout", "note": f"holdout arm on {play_id}: never receives this offer, even after it is approved"})
+    return out
+
+
 @app.post("/measure")
 def measure(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     if isinstance(store, OverlayStore):

@@ -1,38 +1,58 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isMockMode, sendChat } from "../lib/api";
+import { getDemoCustomers, isMockMode, sendChat } from "../lib/api";
 import { Badge } from "./Badge";
-import type { ChatEnvelope } from "../lib/types";
+import type { ChatEnvelope, DemoCustomer } from "../lib/types";
 
 interface DisplayMessage extends ChatEnvelope {
   key: string;
 }
 
 export function ChatPanel({
-  title = "Chat as Meena",
+  title = "Chat as",
   initialMessage = "Any offers today?",
   suggestedChip = "Do you have Cola Zero?",
   compact = false,
   customerId = "CUST-MEENA",
+  showCustomerPicker = true,
 }: {
   title?: string;
   customerId?: string;
   initialMessage?: string;
   suggestedChip?: string;
   compact?: boolean;
+  showCustomerPicker?: boolean;
 }) {
+  const [customers, setCustomers] = useState<DemoCustomer[]>([]);
+  const [activeId, setActiveId] = useState(customerId);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
-  // One session per demo customer; the per-visitor sandbox (X-Taal-Visitor) keeps judges apart.
-  const sessionId = useRef(`${customerId}:web`);
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showCustomerPicker) return;
+    getDemoCustomers().then(setCustomers).catch(() => setCustomers([]));
+  }, [showCustomerPicker]);
+
+  // One session per demo customer; the per-visitor sandbox (X-Taal-Visitor) keeps judges apart.
+  // Switching customer starts a fresh conversation, since it is a different person.
+  const sessionId = useRef(`${activeId}:web`);
+  function switchCustomer(id: string) {
+    setActiveId(id);
+    sessionId.current = `${id}:web`;
+    setMessages([]);
+    setLatency(null);
+  }
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages]);
+
+  const active = customers.find((c) => c.customer_id === activeId);
+  const displayName = active?.display_name ?? "Meena";
 
   async function send(text: string) {
     if (!text.trim() || sending) return;
@@ -65,12 +85,31 @@ export function ChatPanel({
   return (
     <div className={`chat-panel ${compact ? "chat-panel--compact" : ""}`}>
       <div className="chat-panel__header">
-        <h3>{title}</h3>
+        <h3>{title} {displayName}</h3>
         <div className="chat-panel__badges">
-          <Badge kind={isMockMode() ? "live" : "live"} title="Chat as Meena" />
+          <Badge kind={isMockMode() ? "live" : "live"} title={`Chat as ${displayName}`} />
           {latency !== null ? <span className="chip">{latency} ms</span> : null}
         </div>
       </div>
+      {showCustomerPicker && customers.length > 0 ? (
+        <div className="chat-panel__customer-picker">
+          <label>
+            Customer{" "}
+            <select
+              value={activeId}
+              onChange={(e) => switchCustomer(e.target.value)}
+              data-testid="chat-customer-select"
+            >
+              {customers.map((c) => (
+                <option key={c.customer_id} value={c.customer_id}>
+                  {c.display_name} ({c.home_node_id}, {c.language}{c.role === "holdout" ? " · holdout" : ""})
+                </option>
+              ))}
+            </select>
+          </label>
+          {active ? <p className="muted chat-panel__customer-note">{active.note}</p> : null}
+        </div>
+      ) : null}
       <div className="chat-panel__list" ref={listRef} data-testid="chat-log">
         {messages.length === 0 ? <p className="muted">Send a message to start.</p> : null}
         {messages.map((m) => (
@@ -103,7 +142,7 @@ export function ChatPanel({
             ) : null}
           </div>
         ))}
-        {sending ? <p className="muted">Meena is typing…</p> : null}
+        {sending ? <p className="muted">{displayName} is typing…</p> : null}
       </div>
       <div className="chat-panel__suggestions">
         <button type="button" onClick={() => send(suggestedChip)} disabled={sending}>
