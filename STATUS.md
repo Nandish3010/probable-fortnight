@@ -14,7 +14,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 | [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 6 of 9 | green: 38 passed, 0 failed, 0 skipped |
 | [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 9 | green: 10 passed, 0 failed, 0 skipped; via `make eval` |
 | [Approve and assignment](harness/checklists/approve_assignment.md) | B | §5.4, §5.6 | 5 of 7 | green: 12 passed, 0 failed, 0 skipped |
-| [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 9 of 12 | green: 22 passed, 0 failed, 0 skipped |
+| [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 9 of 12 | green: 26 passed, 0 failed, 0 skipped |
 | [Vision intake](harness/checklists/vision_intake.md) | B | §5.1 | 5 of 6 | green: 3 passed, 0 failed, 0 skipped |
 | [Voice (if kept)](harness/checklists/voice.md) | B | §5.1 | 0 of 4 | no tests yet (tests/agents/test_voice.py) |
 | [Measure](harness/checklists/measure.md) | D | §5.7, §5.8, §18.3 | 6 of 8 | green: 5 passed, 0 failed, 0 skipped |

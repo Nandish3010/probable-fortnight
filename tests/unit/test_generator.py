@@ -32,7 +32,7 @@ def test_row_counts_and_planted_situations(base_store: LocalStore):
     batches = {b["batch_id"]: b for b in base_store.read("inventory_batches")}
     chips = batches["B-CHIPS-DS07-01"]
     assert chips["node_id"] == "DS-07" and (date.fromisoformat(chips["online_sellby_date"]) - AS_OF).days == 6
-    assert (date.fromisoformat(chips["expiry_date"]) - AS_OF).days == 51
+    assert (date.fromisoformat(chips["expiry_date"]) - AS_OF).days == 33
     assert batches["B-TEA-DS04-01"]["node_id"] == "DS-04"
     assert batches["B-QUINOA-OUT02-01"]["node_id"] == "OUT-02"
     assert batches["B-COLAZERO-DS07-01"]["qty_on_hand"] == 0

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isMockMode, sendChat } from "../lib/api";
 import { Badge } from "./Badge";
-import { getVisitorId } from "../lib/visitor";
 import type { ChatEnvelope } from "../lib/types";
 
 interface DisplayMessage extends ChatEnvelope {
@@ -15,8 +14,10 @@ export function ChatPanel({
   initialMessage = "Any offers today?",
   suggestedChip = "Do you have Cola Zero?",
   compact = false,
+  customerId = "CUST-MEENA",
 }: {
   title?: string;
+  customerId?: string;
   initialMessage?: string;
   suggestedChip?: string;
   compact?: boolean;
@@ -25,7 +26,8 @@ export function ChatPanel({
   const [input, setInput] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
-  const sessionId = useRef(`meena-${getVisitorId()}:web`);
+  // One session per demo customer; the per-visitor sandbox (X-Taal-Visitor) keeps judges apart.
+  const sessionId = useRef(`${customerId}:web`);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function ChatPanel({
             {m.buttons ? (
               <div className="chat-msg__buttons">
                 {m.buttons.map((b) => (
-                  <button key={b.id} type="button" onClick={() => send(b.label)}>
+                  <button key={b.id} type="button" onClick={() => send(b.id)}>
                     {b.label}
                   </button>
                 ))}

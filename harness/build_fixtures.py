@@ -105,8 +105,13 @@ async def main_async(data_dir: Path) -> int:
             _write(FIX / "plays" / "valid" / f"{out['play']['play_id']}.json", out["play"])
     for name, p in mutations(plays["gap_chips_ds07"]):
         _write(FIX / "plays" / "invalid" / f"{name}.json", {"mutation": name, "play": p})
-    # 2. policy v2 run for the tea gap
-    v2 = await run_planner_async(data_dir, "gap_tea_ds04", policy_text=POLICY_V2.read_text(encoding="utf-8"), policy_version="v2")
+    # 2. policy v2 run for the tea gap, in an overlay so the base tenant keeps only the v1 plays
+    overlay = OverlayStore(data_dir, ROOT / ".local" / "fixture_overlay")
+    overlay.reset()
+    for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
+        overlay._materialise(t)
+    (overlay.root / "manifest.json").write_bytes((data_dir / "manifest.json").read_bytes())
+    v2 = await run_planner_async(overlay.root, "gap_tea_ds04", policy_text=POLICY_V2.read_text(encoding="utf-8"), policy_version="v2")
     _write(FIX / "plays" / "valid" / f"{v2['play']['play_id']}.json", v2["play"])
     # 3. golden runs
     gr = FIX / "golden_runs"
@@ -115,9 +120,7 @@ async def main_async(data_dir: Path) -> int:
         if gid in runs:
             (gr / f"{runs[gid]['run_id']}.jsonl").write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in runs[gid]["events"]), encoding="utf-8")
     (gr / f"{v2['run_id']}.jsonl").write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in v2["events"]), encoding="utf-8")
-    # 4. approve + Meena conversation + measure, in a throwaway overlay
-    overlay = OverlayStore(data_dir, ROOT / ".local" / "fixture_overlay")
-    overlay.reset()
+    # 4. approve + Meena conversation + measure, in the same throwaway overlay
     resp = approve(overlay, tenant, plays["gap_chips_ds07"]["play_id"], FIXED_NOW)
     resp["forecast"]["series"] = resp["forecast"]["series"]
     _write(gr / "approve_chips.json", resp)

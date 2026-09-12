@@ -1,9 +1,9 @@
 {
-  "play_id": "play_6055070380_v1",
-  "gap_id": "gap_6055070380",
+  "play_id": "play_d837ae0896_v1",
+  "gap_id": "gap_d837ae0896",
   "tenant_id": "kutumb-mart",
   "created_at": "2026-09-12T00:00:00Z",
-  "objective": "clear_expiry",
+  "objective": "clear_online_sellby",
   "target": {
     "sku": "SKU-FULL-CREAM-MILK-500ML",
     "node_ids": [
@@ -12,14 +12,14 @@
     "batch_ids": [
       "B-FULL-CREAM-MILK-500ML-DS-01-01"
     ],
-    "units": 165,
-    "deadline_date": "2026-09-18",
-    "deadline_type": "expiry"
+    "units": 210,
+    "deadline_date": "2026-09-16",
+    "deadline_type": "online_sellby"
   },
-  "mechanic": "transfer_plus_nudge",
+  "mechanic": "bundle",
   "mechanic_params": {
-    "transfer_to_node": "OUT-01",
-    "transfer_units": 165
+    "bundle_sku": "SKU-WHEAT-BREAD-400G",
+    "bundle_price": 183.0
   },
   "audience": {
     "segment_ids": [
@@ -37,7 +37,7 @@
   "channel": "web_chat",
   "window": {
     "start": "2026-09-12T00:00:00Z",
-    "end": "2026-09-18T23:59:59Z"
+    "end": "2026-09-16T23:59:59Z"
   },
   "copy": {
     "language_set": [
@@ -49,14 +49,14 @@
   },
   "holdout": {
     "fraction": 0.1,
-    "seed": "seed-play_6055070380_v1",
+    "seed": "seed-play_d837ae0896_v1",
     "min_treated_n": 20
   },
   "guardrails": [
     {
       "rule": "margin_floor",
       "passed": true,
-      "detail": "net margin 14.63% (net price 115.00, cost 98.17) vs dairy floor 8.00%"
+      "detail": "net margin 13.86% (net price 183.00, cost 157.63) vs dairy floor 8.00%"
     },
     {
       "rule": "frequency_cap",
@@ -76,12 +76,12 @@
     {
       "rule": "subscription_protect",
       "passed": true,
-      "detail": "transfer_plus_nudge is not a discount play"
+      "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
     },
     {
       "rule": "no_cannibalise_stockout",
       "passed": true,
-      "detail": "transfer_plus_nudge does not push SKU-FULL-CREAM-MILK-500ML; stockout rule not applicable"
+      "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-01"
     },
     {
       "rule": "holdout_required",
@@ -91,14 +91,14 @@
     {
       "rule": "cite_or_drop",
       "passed": true,
-      "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
     }
   ],
-  "rationale": "165 units of Full Cream Milk 500ML at Dark store 01 (North Bengaluru) are projected unsold before the expiry deadline on 2026-09-18; doing nothing writes off ₹16198 and a blanket 20% markdown costs ₹7727. This play uses a transfer of 165 units to OUT-01 with a nudge for 323 consented customers (Household occasionals, Premium Tea occasionals, Sweets regulars): expected 22 units, margin ₹1842, discount cost ₹0, waste avoided ₹2172 (CI 1 to 65 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "rationale": "210 units of Full Cream Milk 500ML at Dark store 01 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-16; doing nothing writes off ₹20616 and a blanket 20% markdown costs ₹14590. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹183 for 323 consented customers (Household occasionals, Premium Tea occasionals, Sweets regulars): expected 22 units, margin ₹561, discount cost ₹266, waste avoided ₹2172 (CI 1 to 65 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
   "citations": [
     {
       "type": "gap",
-      "ref": "gap_6055070380"
+      "ref": "gap_d837ae0896"
     },
     {
       "type": "estimator",
@@ -117,15 +117,25 @@
       "ref": "B-FULL-CREAM-MILK-500ML-DS-01-01"
     }
   ],
-  "alternatives": [],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 22.13,
+      "expected_margin_inr": -9.29,
+      "rejected_because": "margin_floor: net margin -0.43% (net price 97.75, cost 98.17) vs dairy floor 8.00%"
+    }
+  ],
   "policy_version": "v1",
-  "trace_ref": "events/run_6055070380_v1_72fc89b6",
+  "trace_ref": "events/run_d837ae0896_v1_a087739e",
   "status": "proposed",
   "expected_outcome": {
     "units": 22.13,
-    "margin_inr": 1842.06,
+    "margin_inr": 561.32,
     "waste_avoided_inr": 2172.06,
-    "discount_cost_inr": 0.0,
+    "discount_cost_inr": 265.51,
     "ci_low": 1.19,
     "ci_high": 64.55,
     "prior_n": 20.0,
@@ -133,13 +143,13 @@
     "estimator_version": "est-v1"
   },
   "counterfactuals": {
-    "do_nothing_inr": 16198.05,
-    "blanket_markdown_inr": 7727.14,
+    "do_nothing_inr": 20615.7,
+    "blanket_markdown_inr": 14590.04,
     "blanket_markdown_pct": 20.0
   },
   "cost": {
     "plan_cost_inr": 1.51,
     "conversation_budget_inr": 41.99,
-    "pct_of_rupees_at_stake": 0.269
+    "pct_of_rupees_at_stake": 0.211
   }
 }

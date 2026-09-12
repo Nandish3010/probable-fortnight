@@ -285,7 +285,26 @@ def capture(req: CaptureRequest, store: LocalStore = Depends(store_for)) -> dict
 @app.post("/capture/confirm")
 def capture_confirm(req: CaptureConfirmRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     rows = commit_rows(store, req.node_id, req.rows, req.photo_ref, _iso(_now()))
-    return {"ok": True, "written": len(rows), "batches": rows}
+    new_gaps = _redetect_gaps(store, req.node_id) if rows else []
+    return {"ok": True, "written": len(rows), "batches": rows, "gaps_refreshed": len(new_gaps)}
+
+
+def _redetect_gaps(store: LocalStore, node_id: str) -> list[dict[str, Any]]:
+    """On-demand Sense for one node after a photo intake (DECISIONS §2.2: nightly + on demand)."""
+    from jobs.sense.gaps import detect
+
+    runs = store.read("sense_runs")
+    if not runs:
+        return []
+    run_id = runs[-1]["run_id"]
+    forecasts = [r for r in store.read("forecasts") if r["node_id"] == node_id and not r.get("includes_plays")]
+    fresh = [g for g in detect(store, forecasts, _as_of(store), load_tenant(), run_id) if g["node_id"] == node_id]
+    kept = [g for g in store.read("gaps") if g["node_id"] != node_id]
+    # keep the planner's plays attached: any pre-existing gap id that survived stays as it was
+    old = {g["gap_id"]: g for g in store.read("gaps") if g["node_id"] == node_id}
+    merged = [old.get(g["gap_id"], g) for g in fresh]
+    store.write("gaps", kept + merged)
+    return merged
 
 
 @app.get("/outcomes")

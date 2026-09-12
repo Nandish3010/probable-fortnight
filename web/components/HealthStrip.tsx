@@ -68,7 +68,7 @@ export function TenantLine() {
   return (
     <p className="tenant-line">
       {skus} SKUs, {nodes} nodes, {customers.toLocaleString("en-IN")} customers
-      {minutesAgo !== undefined && ranAt ? ` — last Sense run ${minutesAgo} min ago at ${ranAt}` : null}
+      {minutesAgo !== undefined && ranAt ? ` — last Sense run as of ${ranAt} took ${minutesAgo} min` : null}
     </p>
   );
 }

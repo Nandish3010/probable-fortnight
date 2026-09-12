@@ -24,10 +24,12 @@ def test_non_food_is_sellable_until_expiry():
     assert online_sellby_date(date(2026, 10, 2), 60, STRICT, is_food=False) == date(2026, 10, 2)
 
 
-def test_tenant_rule_is_versioned_and_strict_by_default():
+def test_tenant_rule_is_versioned_and_permits_perishables():
     t = load_tenant()
-    assert t.sellby_rule.version == "v1-strict"
-    assert t.sellby_rule.combine == "max"
+    assert t.sellby_rule.version == "v1-either"
+    assert t.sellby_rule.combine == "min"
+    # a 7-day bread is still sellable online two days before expiry
+    assert online_sellby_date(date(2026, 9, 19), 7, t.sellby_rule) == date(2026, 9, 17)
 
 
 def test_unknown_combine_rejected():

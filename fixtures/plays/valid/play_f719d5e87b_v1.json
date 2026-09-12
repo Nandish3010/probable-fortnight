@@ -1,9 +1,9 @@
 {
-  "play_id": "play_5351a2b0c8_v1",
-  "gap_id": "gap_5351a2b0c8",
+  "play_id": "play_f719d5e87b_v1",
+  "gap_id": "gap_f719d5e87b",
   "tenant_id": "kutumb-mart",
   "created_at": "2026-09-12T00:00:00Z",
-  "objective": "clear_expiry",
+  "objective": "clear_online_sellby",
   "target": {
     "sku": "SKU-TONED-MILK-500ML",
     "node_ids": [
@@ -12,14 +12,14 @@
     "batch_ids": [
       "B-TONED-MILK-500ML-DS-07-01"
     ],
-    "units": 73,
-    "deadline_date": "2026-09-22",
-    "deadline_type": "expiry"
+    "units": 142,
+    "deadline_date": "2026-09-18",
+    "deadline_type": "online_sellby"
   },
-  "mechanic": "transfer_plus_nudge",
+  "mechanic": "bundle",
   "mechanic_params": {
-    "transfer_to_node": "OUT-03",
-    "transfer_units": 73
+    "bundle_sku": "SKU-WHEAT-BREAD-400G",
+    "bundle_price": 296.0
   },
   "audience": {
     "segment_ids": [
@@ -39,7 +39,7 @@
   "channel": "web_chat",
   "window": {
     "start": "2026-09-12T00:00:00Z",
-    "end": "2026-09-22T23:59:59Z"
+    "end": "2026-09-18T23:59:59Z"
   },
   "copy": {
     "language_set": [
@@ -51,14 +51,14 @@
   },
   "holdout": {
     "fraction": 0.1,
-    "seed": "seed-play_5351a2b0c8_v1",
+    "seed": "seed-play_f719d5e87b_v1",
     "min_treated_n": 20
   },
   "guardrails": [
     {
       "rule": "margin_floor",
       "passed": true,
-      "detail": "net margin 11.40% (net price 235.00, cost 208.21) vs dairy floor 8.00%"
+      "detail": "net margin 9.57% (net price 296.00, cost 267.67) vs dairy floor 8.00%"
     },
     {
       "rule": "frequency_cap",
@@ -78,12 +78,12 @@
     {
       "rule": "subscription_protect",
       "passed": true,
-      "detail": "transfer_plus_nudge is not a discount play"
+      "detail": "no active subscribers of SKU-TONED-MILK-500ML in audience"
     },
     {
       "rule": "no_cannibalise_stockout",
       "passed": true,
-      "detail": "transfer_plus_nudge does not push SKU-TONED-MILK-500ML; stockout rule not applicable"
+      "detail": "no stockout gap for SKU-TONED-MILK-500ML at DS-07"
     },
     {
       "rule": "holdout_required",
@@ -93,14 +93,14 @@
     {
       "rule": "cite_or_drop",
       "passed": true,
-      "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
     }
   ],
-  "rationale": "73 units of Toned Milk 500ML at Dark store 07 (South Bengaluru) are projected unsold before the expiry deadline on 2026-09-22; doing nothing writes off ₹15199 and a blanket 20% markdown costs ₹8734. This play uses a transfer of 73 units to OUT-03 with a nudge for 315 consented customers (Household occasionals, Sweets regulars, Premium Tea occasionals, Staples occasionals, Personal Care occasionals): expected 21 units, margin ₹4265, discount cost ₹0, waste avoided ₹4411 (CI 1 to 62 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "rationale": "142 units of Toned Milk 500ML at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-18; doing nothing writes off ₹29566 and a blanket 20% markdown costs ₹15530. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹296 for 315 consented customers (Household occasionals, Sweets regulars, Premium Tea occasionals, Staples occasionals, Personal Care occasionals): expected 21 units, margin ₹600, discount cost ₹402, waste avoided ₹4411 (CI 1 to 62 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
   "citations": [
     {
       "type": "gap",
-      "ref": "gap_5351a2b0c8"
+      "ref": "gap_f719d5e87b"
     },
     {
       "type": "estimator",
@@ -119,15 +119,25 @@
       "ref": "B-TONED-MILK-500ML-DS-07-01"
     }
   ],
-  "alternatives": [],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 21.18,
+      "expected_margin_inr": -179.21,
+      "rejected_because": "margin_floor: net margin -4.24% (net price 199.75, cost 208.21) vs dairy floor 8.00%"
+    }
+  ],
   "policy_version": "v1",
-  "trace_ref": "events/run_5351a2b0c8_v1_b926f80c",
+  "trace_ref": "events/run_f719d5e87b_v1_c1acfc72",
   "status": "proposed",
   "expected_outcome": {
     "units": 21.18,
-    "margin_inr": 4264.67,
+    "margin_inr": 600.14,
     "waste_avoided_inr": 4410.67,
-    "discount_cost_inr": 0.0,
+    "discount_cost_inr": 402.49,
     "ci_low": 1.14,
     "ci_high": 61.8,
     "prior_n": 20.0,
@@ -135,13 +145,13 @@
     "estimator_version": "est-v1"
   },
   "counterfactuals": {
-    "do_nothing_inr": 15199.33,
-    "blanket_markdown_inr": 8734.48,
+    "do_nothing_inr": 29565.82,
+    "blanket_markdown_inr": 15529.73,
     "blanket_markdown_pct": 20.0
   },
   "cost": {
     "plan_cost_inr": 1.51,
     "conversation_budget_inr": 40.95,
-    "pct_of_rupees_at_stake": 0.279
+    "pct_of_rupees_at_stake": 0.144
   }
 }

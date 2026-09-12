@@ -7,6 +7,7 @@ Vertex AI (GOOGLE_GENAI_USE_VERTEXAI=TRUE, project and location from the environ
 """
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -19,6 +20,9 @@ from agents.gate.config import TenantConfig, load_models, load_tenant
 
 from .stub_llm import StubPlannerLlm
 from .tools import TOOLS
+
+# The scripted stub models report no token usage; ADK logs that on every turn. Quiet it.
+logging.getLogger("google_adk.google.adk.telemetry._metrics").setLevel(logging.ERROR)
 
 PROMPT = Path(__file__).resolve().parent / "prompts" / "planner.md"
 MAX_ITERATIONS = 3

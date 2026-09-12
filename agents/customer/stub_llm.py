@@ -25,6 +25,9 @@ STRINGS = {
         "no": "No problem. Ask me anytime.",
         "refused": "That offer is not available for you: {reason}.",
         "unknown": "I can check stock and offers at your Kutumb Mart store. Which product?",
+        "browse": "On the shelf at your store today:",
+        "matches": "Here is what I found for \"{q}\" at your store:",
+        "nomatch": "Nothing matching \"{q}\" is in stock at your store right now.",
     },
     "kn": {
         "greet": "ನಮಸ್ಕಾರ {name}! ಇಂದು ನಿಮಗೆ ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ. ಯಾವುದೇ ಉತ್ಪನ್ನ ಕೇಳಿ, ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತೇನೆ.",
@@ -36,9 +39,15 @@ STRINGS = {
         "no": "ಪರವಾಗಿಲ್ಲ. ಯಾವಾಗ ಬೇಕಾದರೂ ಕೇಳಿ.",
         "refused": "ಆ ಆಫರ್ ನಿಮಗೆ ಲಭ್ಯವಿಲ್ಲ: {reason}.",
         "unknown": "ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್ ಸ್ಟೋರ್‌ನ ಸ್ಟಾಕ್ ಮತ್ತು ಆಫರ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಬಲ್ಲೆ. ಯಾವ ಉತ್ಪನ್ನ?",
+        "browse": "ಇಂದು ನಿಮ್ಮ ಸ್ಟೋರ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ:",
+        "matches": "\"{q}\" ಗಾಗಿ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು:",
+        "nomatch": "\"{q}\" ಗೆ ಹೊಂದುವ ಯಾವುದೂ ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಇಲ್ಲ.",
     },
 }
-LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ"}}
+LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store", "cats": "Categories"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"}}
+GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|evening)|any (offers?|deals?)( today)?\??|offers?|deals?)\W*$|\b(offers?|deals?)\b")
+BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
+SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
 
 
@@ -81,14 +90,35 @@ class StubCustomerLlm(BaseLlm):
                     responses.append((part.function_response.name, dict(part.function_response.response or {})))
         return customer_id, last_user, calls, responses
 
+    def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
+        products = res.get("products") or []
+        if products:
+            rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"{p['qty']} in stock · ₹{float(p.get('list_price') or 0):.0f}"[:72]} for p in products[:10]]
+            return self._say({"text": s["matches"].format(q=q), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in products[:3]]})
+        cats = res.get("categories") or []
+        if q:
+            return self._say({"text": s["nomatch"].format(q=q)})
+        rows = [{"id": f"cat:{c}", "title": c.replace("_", " ").title()[:24]} for c in cats[:10]]
+        return self._say({"text": s["browse"], "list": {"title": lab["cats"][:60], "rows": rows}})
+
     def _sku_in(self, text: str) -> str | None:
+        """Exact product mention: the full name without its pack size (e.g. 'cola zero', 'masala chips')."""
         low = text.lower()
         best = None
         for name, sku in self.catalog.items():
-            base = name.rsplit(" ", 1)[0] if re.search(r"\d", name.split()[-1]) else name
-            if base in low and (best is None or len(base) > len(best[0])):
+            base = name.rsplit(" ", 1)[0] if SIZE_RE.match(name.split()[-1]) else name
+            if re.search(rf"\b{re.escape(base)}\b", low) and (best is None or len(base) > len(best[0])):
                 best = (base, sku)
         return best[1] if best else None
+
+    def _query_word(self, text: str) -> str | None:
+        """A catalogue word mentioned in the text ('chips', 'bread', 'tea'), longest first."""
+        vocab: set[str] = set()
+        for name in self.catalog:
+            vocab.update(w for w in name.lower().split() if len(w) >= 3 and not SIZE_RE.match(w))
+        words = [w for w in re.findall(r"[a-z]+", text.lower())]
+        cands = [w for w in words if w in vocab or (w.endswith("s") and w[:-1] in vocab)]
+        return max(cands, key=len) if cands else None
 
     async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False) -> AsyncGenerator[LlmResponse, None]:
         yield self.decide(llm_request)
@@ -129,8 +159,20 @@ class StubCustomerLlm(BaseLlm):
             return self._say({"text": s["ordered"].format(order_id=po.get("order_id"), total=float(po.get("total_inr") or 0)), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
         if low in ("no", "not now", "no thanks"):
             return self._say({"text": s["no"]})
+        # category button or browse
+        if low.startswith("cat:") or BROWSE_RE.search(low):
+            q = low.split(":", 1)[1].strip() if low.startswith("cat:") else ""
+            if "list_products" not in by:
+                return self._call("list_products", {"query": q, "node_id": node})
+            return self._browse_reply(by["list_products"], q, s, lab, node)
         # product question
         sku = self._sku_in(text)
+        if not sku and not GREETING_RE.search(low):
+            q = self._query_word(text)
+            if q:
+                if "list_products" not in by:
+                    return self._call("list_products", {"query": q, "node_id": node})
+                return self._browse_reply(by["list_products"], q, s, lab, node)
         if sku:
             if "get_stock" not in by:
                 return self._call("get_stock", {"sku": sku, "node_id": node})
@@ -145,9 +187,9 @@ class StubCustomerLlm(BaseLlm):
             rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"{r['qty']} in stock · ₹{float(r.get('list_price') or 0):.0f}"[:72]} for r in subs[:10]]
             return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
         # offers / greeting
-        if offers and ("offer" in low or "deal" in low or "hi" in low or "hello" in low or not text):
+        if offers and (GREETING_RE.search(low) or not text):
             o = offers[0]
             return self._say({"text": o["text"], "buttons": [{"id": f"add:{o.get('sku')}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}, {"id": "stop", "label": lab["stop"]}], "citations": [{"type": "play", "ref": o["play_id"]}]})
-        if "offer" in low or "deal" in low or "hi" in low or "hello" in low or not text:
+        if GREETING_RE.search(low) or not text:
             return self._say({"text": s["greet"].format(name=name)})
         return self._say({"text": s["unknown"]})

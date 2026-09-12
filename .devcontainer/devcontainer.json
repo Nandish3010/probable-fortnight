@@ -1,0 +1,14 @@
+{
+  "name": "taal",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=$HOME/.local/bin:$PATH && make setup && (cd web && npx playwright install --with-deps chromium) && make generate",
+  "forwardPorts": [3000, 8080],
+  "portsAttributes": {
+    "3000": { "label": "taal-web", "onAutoForward": "openBrowser" },
+    "8080": { "label": "taal-api", "visibility": "public", "onAutoForward": "silent" }
+  },
+  "customizations": { "vscode": { "extensions": ["ms-python.python", "charliermarsh.ruff"] } }
+}

@@ -203,8 +203,9 @@ class Generator:
                 if rng.random() < 0.35:
                     inbound.append({"tenant_id": self.tid, "po_id": f"PO-{p['sku'][4:]}-{n['node_id']}", "sku": p["sku"], "node_id": n["node_id"], "qty": max(1, int(round(rate * rng.uniform(5, 12)))), "eta": _iso(AS_OF + timedelta(days=rng.randint(1, 7)))})
 
-        # Planted: chips lot at DS-07, expiry in 51 days -> online sell-by in 6 days under the strict rule.
-        add_batch("B-CHIPS-DS07-01", "SKU-MASALA-CHIPS-200G", "DS-07", 440, AS_OF + timedelta(days=51), AS_OF - timedelta(days=39))
+        # Planted: chips lot at DS-07. Shelf life 90 days -> cut-off 27 days under the "either" rule;
+        # expiry in 33 days puts the online sell-by 6 days out.
+        add_batch("B-CHIPS-DS07-01", "SKU-MASALA-CHIPS-200G", "DS-07", 440, AS_OF + timedelta(days=33), AS_OF - timedelta(days=57))
         # Planted: Cola Zero stockout at DS-07 and DS-02 (empty shelf, inbound after lead time).
         add_batch("B-COLAZERO-DS07-01", "SKU-COLA-ZERO-500ML", "DS-07", 0, AS_OF + timedelta(days=120), AS_OF - timedelta(days=30))
         add_batch("B-COLAZERO-DS02-01", "SKU-COLA-ZERO-500ML", "DS-02", 3, AS_OF + timedelta(days=120), AS_OF - timedelta(days=30))
@@ -216,9 +217,9 @@ class Generator:
             inbound.append({"tenant_id": self.tid, "po_id": f"PO-KAJU-{node_id}", "sku": "SKU-KAJU-KATLI-250G", "node_id": node_id, "qty": 80, "eta": _iso(AS_OF + timedelta(days=10))})
         # Planted: slow mover at OUT-02.
         add_batch("B-QUINOA-OUT02-01", "SKU-QUINOA-500G", "OUT-02", 60, AS_OF + timedelta(days=300), AS_OF - timedelta(days=65))
-        # Planted: premium tea lot at DS-04. Shelf life 365 days, so the strict rule's cut-off is
-        # 30% = 110 days; expiry in 134 days puts the online sell-by 24 days out.
-        add_batch("B-TEA-DS04-01", "SKU-DARJEELING-TEA-100G", "DS-04", 120, AS_OF + timedelta(days=134), AS_OF - timedelta(days=231))
+        # Planted: premium tea lot at DS-04. Shelf life 365 days -> cut-off 45 days; expiry in 69
+        # days puts the online sell-by 24 days out.
+        add_batch("B-TEA-DS04-01", "SKU-DARJEELING-TEA-100G", "DS-04", 120, AS_OF + timedelta(days=69), AS_OF - timedelta(days=296))
         return batches, inbound
 
     # ------------------------------------------------------------------ customers
