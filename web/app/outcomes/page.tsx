@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
-import { getOutcomes } from "../../lib/api";
+import { getOutcomes, postMeasure } from "../../lib/api";
 import { inr, pct, formatDateTime } from "../../lib/format";
-import type { Outcome } from "../../lib/types";
+import type { MeasureResponse, Outcome } from "../../lib/types";
 
 function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
   return (
@@ -20,10 +20,31 @@ function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
 
 export default function OutcomesPage() {
   const [outcomes, setOutcomes] = useState<Outcome[] | null>(null);
+  const [measuring, setMeasuring] = useState(false);
+  const [measureResult, setMeasureResult] = useState<MeasureResponse | null>(null);
+  const [measureError, setMeasureError] = useState<string | null>(null);
+
+  function refresh() {
+    return getOutcomes().then(setOutcomes);
+  }
 
   useEffect(() => {
-    getOutcomes().then(setOutcomes);
+    refresh();
   }, []);
+
+  async function runMeasure() {
+    setMeasuring(true);
+    setMeasureError(null);
+    try {
+      const result = await postMeasure();
+      setMeasureResult(result);
+      await refresh();
+    } catch {
+      setMeasureError("Measure failed. Approve a play first, then try again.");
+    } finally {
+      setMeasuring(false);
+    }
+  }
 
   return (
     <main className="page">
@@ -32,8 +53,27 @@ export default function OutcomesPage() {
         <Badge kind="live" detail="/outcomes" />
       </div>
       <p className="muted">Per play: treated vs holdout, lift with CI when measured, the CEO number.</p>
+      <div className="outcomes-measure">
+        <button type="button" onClick={runMeasure} disabled={measuring}>
+          {measuring ? "Measuring…" : "Run Measure"}
+        </button>
+        {measureResult ? (
+          <span className="muted">
+            {" "}
+            {measureResult.plays} play{measureResult.plays === 1 ? "" : "s"} joined against orders:{" "}
+            {measureResult.measured} measured, {measureResult.unmeasured} unmeasured (below min treated n) ·{" "}
+            {formatDateTime(measureResult.computed_at)}
+          </span>
+        ) : null}
+        {measureError ? <span className="error"> {measureError}</span> : null}
+      </div>
       {!outcomes ? (
         <p className="muted">Loading…</p>
+      ) : outcomes.length === 0 ? (
+        <p className="muted">
+          No plays measured yet. Approve a play on the Play Desk, then click Run Measure above --
+          this joins orders against treated/holdout assignments and is never run automatically.
+        </p>
       ) : (
         <div className="outcomes-table-wrap">
           <table className="outcomes-table">

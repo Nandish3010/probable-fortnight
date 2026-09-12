@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ApprovePanel } from "../../components/ApprovePanel";
 import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
+import { GAP_TYPE_LABEL } from "../../components/GapCard";
 import { GuardrailList } from "../../components/GuardrailList";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { TracePanel } from "../../components/TracePanel";
@@ -101,6 +102,16 @@ export default function PlayDeskPage() {
                   {selected.target.sku} · nodes {selected.target.node_ids.join(", ")} · {selected.target.units} units ·
                   deadline {formatDate(selected.target.deadline_date)} ({selected.target.deadline_type})
                 </p>
+                {gap ? <p className="muted">Gap type: {GAP_TYPE_LABEL[gap.type] ?? gap.type}</p> : null}
+                {gap?.evidence.requests_count ? (
+                  <p className="gap-card__demand">
+                    {gap.evidence.requests_count} real chat request{gap.evidence.requests_count === 1 ? "" : "s"}
+                    {gap.evidence.distinct_customers
+                      ? ` from ${gap.evidence.distinct_customers} customer${gap.evidence.distinct_customers === 1 ? "" : "s"}`
+                      : ""}{" "}
+                    asking for this at this store
+                  </p>
+                ) : null}
               </section>
 
               <section className="play-card__section">

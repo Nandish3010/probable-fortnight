@@ -189,7 +189,8 @@ export type GapType =
   | "expiry_writeoff"
   | "stockout_risk"
   | "rebalance"
-  | "slow_mover";
+  | "slow_mover"
+  | "unmet_demand";
 
 export interface GapEvidence {
   on_hand: number;
@@ -201,6 +202,9 @@ export interface GapEvidence {
   margin_per_unit?: number;
   expiry_date?: string;
   sku_name?: string;
+  // Real customer_requests rows behind this gap or corroborating it (stockout_risk, unmet_demand).
+  requests_count?: number;
+  distinct_customers?: number;
 }
 
 export interface Gap {
@@ -382,6 +386,13 @@ export interface ResetResponse {
   ok: boolean;
   namespace: string;
   restored_from?: string;
+}
+
+export interface MeasureResponse {
+  plays: number;
+  measured: number;
+  unmeasured: number;
+  computed_at: string;
 }
 
 export interface CaptureRequest {

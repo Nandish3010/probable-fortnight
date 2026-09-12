@@ -13,6 +13,7 @@ import type {
   ExecutionResponse,
   Gap,
   HealthResponse,
+  MeasureResponse,
   Outcome,
   Play,
   PolicyDoc,
@@ -206,6 +207,23 @@ export async function getOutcomes(): Promise<Outcome[]> {
     return mockOutcomes as unknown as Outcome[];
   }
   return request<Outcome[]>("/outcomes");
+}
+
+// Joins play_assignments to order_lines for every approved play and writes play_outcomes; the
+// only thing that ever populates /outcomes. Nothing calls this automatically -- a fresh visitor
+// sandbox has an approved play with zero outcomes until Measure runs at least once.
+export async function postMeasure(): Promise<MeasureResponse> {
+  if (isMockMode()) {
+    await delay(600);
+    const rows = mockOutcomes as unknown as Outcome[];
+    return {
+      plays: rows.length,
+      measured: rows.filter((r) => r.status === "measured").length,
+      unmeasured: rows.filter((r) => r.status !== "measured").length,
+      computed_at: new Date().toISOString(),
+    };
+  }
+  return request<MeasureResponse>("/measure", { method: "POST" });
 }
 
 // ---------- reset ----------

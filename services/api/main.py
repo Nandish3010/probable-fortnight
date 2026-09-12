@@ -300,11 +300,13 @@ def _redetect_gaps(store: LocalStore, node_id: str) -> list[dict[str, Any]]:
     forecasts = [r for r in store.read("forecasts") if r["node_id"] == node_id and not r.get("includes_plays")]
     fresh = [g for g in detect(store, forecasts, _as_of(store), load_tenant(), run_id) if g["node_id"] == node_id]
     kept = [g for g in store.read("gaps") if g["node_id"] != node_id]
-    # keep the planner's plays attached: any pre-existing gap id that survived stays as it was
-    old = {g["gap_id"]: g for g in store.read("gaps") if g["node_id"] == node_id}
-    merged = [old.get(g["gap_id"], g) for g in fresh]
-    store.write("gaps", kept + merged)
-    return merged
+    # gap_id is a deterministic hash of (type, sku, node, batch), so a play's gap_id linkage
+    # survives untouched here even though the gap's own numbers do get refreshed -- that refresh
+    # is the entire point of an on-demand redetect (a new pallet lands, or new customer_requests
+    # rows should enrich stockout_risk/unmet_demand evidence); serving the old, stale snapshot
+    # back out would make this endpoint a no-op for every gap that already existed.
+    store.write("gaps", kept + fresh)
+    return fresh
 
 
 @app.get("/outcomes")
