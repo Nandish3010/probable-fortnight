@@ -9,6 +9,17 @@ online sell-by, then expiry), so a lot's projected sell-through is what is left 
 lots are sold. A lot whose online sell-by has passed can only move through outlets or be
 written off; it yields an expiry_writeoff gap with evidence.sellby_passed=true, never an
 online_sellby_breach.
+
+A sixth type, unmet_demand, is not derived from the forecast at all: it is real customers asking
+the chat agent for a sku that turned out to have zero on-hand at their node (agents/customer/tools.py
+records this deterministically, never an LLM decision). When such requests land on a (sku, node)
+that also has a stockout_risk gap this run, they only enrich its evidence (requests_count,
+distinct_customers) as corroborating proof. When they land on a pair the forecast did not flag at
+all -- inbound cover looked sufficient on paper, but the shelf was empty when someone actually
+asked -- they raise a standalone unmet_demand gap: a demand signal the forecast alone would have
+missed. rupees_at_stake for unmet_demand uses the same lost-margin convention as stockout_risk
+(one request approximates one missed unit sale; a repeat ask from the same customer counts again,
+since the miss recurs each time), disclosed as an estimate.
 """
 from __future__ import annotations
 
@@ -45,6 +56,30 @@ def _sum_p50(series: dict[str, float], start: date, end: date) -> float:
     return sum(v for d, v in series.items() if start <= date.fromisoformat(d) <= end)
 
 
+def _demand_signals(store: LocalStore, tenant: TenantConfig, as_of: date) -> dict[tuple[str, str], dict[str, Any]]:
+    """(sku, node_id) -> {count, customers} from real out_of_stock chat requests in the lookback
+    window. Only out_of_stock is actionable here (it names a real sku with zero on-hand at a real
+    node); no_match requests (a product not sold at all) are demand for an assortment decision
+    outside what Sense or the Planner can act on, so they are left in customer_requests for a
+    merchandising review and never turned into a gap."""
+    lookback = as_of - timedelta(days=int(tenant.thresholds.get("unmet_demand_lookback_days", 30)))
+    out: dict[tuple[str, str], dict[str, Any]] = defaultdict(lambda: {"count": 0, "customers": set()})
+    for r in store.read("customer_requests"):
+        if r["request_type"] != "out_of_stock" or not r.get("sku"):
+            continue
+        if date.fromisoformat(r["ts"][:10]) < lookback:
+            continue
+        key = out[(r["sku"], r["node_id"])]
+        key["count"] += 1
+        key["customers"].add(r["customer_id"])
+    return dict(out)
+
+
+def _on_hand_now(batches: list[dict[str, Any]], sku: str, node_id: str, as_of: date) -> int:
+    today = as_of.isoformat()
+    return sum(int(b["qty_on_hand"]) for b in batches if b["sku"] == sku and b["node_id"] == node_id and (not b["expiry_date"] or b["expiry_date"] >= today))
+
+
 def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, tenant: TenantConfig, run_id: str) -> list[dict[str, Any]]:
     products = {p["sku"]: p for p in store.read("products")}
     nodes = {n["node_id"]: n for n in store.read("nodes")}
@@ -75,6 +110,8 @@ def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, 
     inbound_by: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for i in inbound:
         inbound_by[(i["sku"], i["node_id"])].append(i)
+    demand_signals = _demand_signals(store, tenant, as_of)
+    min_requests = int(tenant.thresholds.get("unmet_demand_min_requests", 2))
 
     writeoff_nodes: dict[str, list[tuple[str, int, str]]] = defaultdict(list)  # sku -> [(node, units, gap_id)]
     stockout_nodes: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
@@ -142,7 +179,8 @@ def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, 
                 "rupees_at_stake": round(units_short * margin_per_unit, 2),
                 "evidence": {"on_hand": on_hand, "projected_sellthrough": round(demand, 2), "forecast_run_id": run_id, "sellby_rule": tenant.sellby_rule.version,
                              "inbound": int(sum(i["qty"] for i in inbound_by.get((sku, node_id), []))), "unit_cost": float(p["unit_cost"]), "margin_per_unit": margin_per_unit,
-                             "lead_time_days": lead, "sku_name": p["name"], "category": p["category"], "node_type": node["type"]},
+                             "lead_time_days": lead, "sku_name": p["name"], "category": p["category"], "node_type": node["type"],
+                             **({"requests_count": demand_signals[(sku, node_id)]["count"], "distinct_customers": len(demand_signals[(sku, node_id)]["customers"])} if (sku, node_id) in demand_signals else {})},
                 "created_at": as_of.isoformat(),
             })
             stockout_nodes[sku].append((node_id, units_short, gid))
@@ -182,5 +220,35 @@ def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, 
                     "evidence": {**src["evidence"], "counterpart_node_id": node_b, "counterpart_units": units_b, "counterpart_gap_id": gid_b},
                     "created_at": as_of.isoformat(),
                 })
+    # --- unmet_demand: a real customer request the forecast/inventory logic above did not flag at
+    # all for this (sku, node) this run -- a genuine miss, not a duplicate of another gap type.
+    covered = {(g["sku"], g["node_id"]) for g in gaps}
+    for (sku, node_id), sig in sorted(demand_signals.items()):
+        if (sku, node_id) in covered:
+            continue
+        p = products.get(sku)
+        node = nodes.get(node_id)
+        if p is None or node is None:
+            continue
+        distinct = len(sig["customers"])
+        if distinct < min_requests:
+            continue
+        if _on_hand_now(batches, sku, node_id, as_of) > 0:
+            continue  # restocked since the last request; no longer a gap
+        margin_per_unit = round(float(p["list_price"]) - float(p["unit_cost"]), 2)
+        lead = int(node["lead_time_days"])
+        deadline = as_of + timedelta(days=lead)
+        gid = gap_id_for("unmet_demand", sku, node_id, None)
+        gaps.append({
+            "tenant_id": tid, "gap_id": gid, "run_id": run_id, "type": "unmet_demand", "sku": sku, "node_id": node_id, "batch_id": None,
+            "units_at_risk": sig["count"], "deadline_date": deadline.isoformat(), "deadline_type": "lead_time",
+            "rupees_at_stake": round(sig["count"] * margin_per_unit, 2),
+            "evidence": {"on_hand": 0, "projected_sellthrough": 0.0, "forecast_run_id": run_id, "sellby_rule": tenant.sellby_rule.version,
+                         "inbound": int(sum(i["qty"] for i in inbound_by.get((sku, node_id), []))), "unit_cost": float(p["unit_cost"]), "margin_per_unit": margin_per_unit,
+                         "requests_count": sig["count"], "distinct_customers": distinct,
+                         "sku_name": p["name"], "category": p["category"], "node_type": node["type"]},
+            "created_at": as_of.isoformat(),
+        })
+
     gaps.sort(key=lambda g: (-g["rupees_at_stake"], g["gap_id"]))
     return gaps

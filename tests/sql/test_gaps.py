@@ -17,7 +17,7 @@ def test_rupees_recomputed_independently(base_store: LocalStore):
     products = {p["sku"]: p for p in base_store.read("products")}
     for g in base_store.read("gaps"):
         p = products[g["sku"]]
-        expected = g["units_at_risk"] * (p["list_price"] - p["unit_cost"]) if g["type"] == "stockout_risk" else g["units_at_risk"] * p["unit_cost"]
+        expected = g["units_at_risk"] * (p["list_price"] - p["unit_cost"]) if g["type"] in ("stockout_risk", "unmet_demand") else g["units_at_risk"] * p["unit_cost"]
         assert abs(expected - g["rupees_at_stake"]) <= 1.0, g["gap_id"]
 
 

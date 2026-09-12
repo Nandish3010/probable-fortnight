@@ -30,6 +30,7 @@ STRINGS = {
         "matches": "Here is what I found for \"{q}\" at your store:",
         "nomatch": "Nothing matching \"{q}\" is in stock at your store right now.",
         "no_discount": "No extra discount on {q} right now. I will let you know if one comes up.",
+        "back_in_stock": "Last time you asked, {name} was out. It is back in stock now! Add it?",
     },
     "kn": {
         "greet": "ನಮಸ್ಕಾರ {name}! ಇಂದು ನಿಮಗೆ ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ. ಯಾವುದೇ ಉತ್ಪನ್ನ ಕೇಳಿ, ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತೇನೆ.",
@@ -46,6 +47,7 @@ STRINGS = {
         "matches": "\"{q}\" ಗಾಗಿ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು:",
         "nomatch": "\"{q}\" ಗೆ ಹೊಂದುವ ಯಾವುದೂ ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಇಲ್ಲ.",
         "no_discount": "{q} ಮೇಲೆ ಈಗ ಹೆಚ್ಚುವರಿ ರಿಯಾಯಿತಿ ಇಲ್ಲ. ಬಂದಾಗ ತಿಳಿಸುತ್ತೇನೆ.",
+        "back_in_stock": "ಹಿಂದೆ ಕೇಳಿದಾಗ {name} ಇರಲಿಲ್ಲ. ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಲಭ್ಯ! ಸೇರಿಸಲೇ?",
     },
 }
 LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store", "cats": "Categories"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"}}
@@ -53,6 +55,8 @@ GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|eve
 KANNADA_RE = re.compile(r"[\u0C80-\u0CFF]")
 BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
+AVAILABILITY_RE = re.compile(r"\b(do you have|is there|have you got|got any|any )\b")
+GENERIC_STOP = {"have", "there", "your", "store", "today", "please", "about", "does", "got", "any", "some"}
 LOW_STOCK_THRESHOLD = 5  # a coarse urgency signal to the customer; never the exact count
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
 
@@ -150,6 +154,14 @@ class StubCustomerLlm(BaseLlm):
         cands = [w for w in words if w in vocab or (w.endswith("s") and w[:-1] in vocab)]
         return max(cands, key=len) if cands else None
 
+    def _generic_query_word(self, text: str) -> str | None:
+        """A content word from an availability question about something NOT in our catalogue
+        vocabulary at all (e.g. 'Do you have biscuits?'). No vocab membership required, unlike
+        _query_word: this is what turns a genuine but out-of-catalogue ask into a recorded
+        no_match demand signal, instead of the generic fallback reply."""
+        words = [w for w in re.findall(r"[a-z]+", text.lower()) if len(w) >= 4 and w not in GENERIC_STOP]
+        return max(words, key=len) if words else None
+
     async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False) -> AsyncGenerator[LlmResponse, None]:
         yield self.decide(llm_request)
 
@@ -200,6 +212,8 @@ class StubCustomerLlm(BaseLlm):
         sku = self._sku_in(text)
         if not sku and not GREETING_RE.search(low):
             q = self._query_word(text)
+            if not q and AVAILABILITY_RE.search(low):
+                q = self._generic_query_word(text)
             if q:
                 if "list_products" not in by:
                     return self._call("list_products", {"query": q, "node_id": node})
@@ -227,6 +241,12 @@ class StubCustomerLlm(BaseLlm):
         if offers and (GREETING_RE.search(low) or not text):
             o = offers[0]
             return self._say({"text": o["text"], "buttons": [{"id": f"add:{o.get('sku')}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}, {"id": "stop", "label": lab["stop"]}], "citations": [{"type": "play", "ref": o["play_id"]}]})
+        # cross-session recall: no approved offer, but something she asked for before is now on the
+        # shelf -- this is the payoff of remembering across sessions, not just within one
+        if not offers and (GREETING_RE.search(low) or not text):
+            back = next((m for m in ctx.get("memory") or [] if m.get("sku") and m.get("now_in_stock")), None)
+            if back:
+                return self._say({"text": s["back_in_stock"].format(name=back["name"]), "buttons": [{"id": f"add:{back['sku']}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": back["sku"]}]})
         if GREETING_RE.search(low) or not text:
             return self._say({"text": s["greet"].format(name=name)})
         return self._say({"text": s["unknown"]})

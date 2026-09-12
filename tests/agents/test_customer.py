@@ -103,3 +103,53 @@ def test_exact_stock_quantity_never_reaches_the_customer(sandbox):
     for row in (env2.get("list") or {}).get("rows", []):
         # a price ("₹50") is fine; a stock count ("105 in stock", "127 left") is not
         assert not re.search(r"\d+\s*(in stock|left|available|units?)\b", row["desc"], re.I), row["desc"]
+
+
+def test_chat_records_out_of_stock_and_no_match_as_demand_signals(sandbox):
+    """get_stock and list_products record deterministically -- not an LLM decision -- whenever
+    they turn up nothing. find_substitutes' internal stock checks must never also count."""
+    import asyncio
+
+    from agents.customer.chat import run_chat_async
+
+    reset_sessions()
+    asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "Do you have Cola Zero?"))
+    asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "Do you have biscuits?"))
+    rows = sandbox.read("customer_requests")
+    oos = [r for r in rows if r["request_type"] == "out_of_stock"]
+    nomatch = [r for r in rows if r["request_type"] == "no_match"]
+    assert len(oos) == 1 and oos[0]["sku"] == "SKU-COLA-ZERO-500ML" and oos[0]["node_id"] == "DS-07"
+    assert len(nomatch) == 1 and nomatch[0]["query_text"] == "biscuits" and nomatch[0]["sku"] is None
+
+
+def test_cross_session_memory_and_proactive_recall(sandbox):
+    """A fresh ADK session (a new day) for the same customer still remembers what she asked for
+    last time, and greets her with it if it is now in stock -- the actual point of remembering
+    across sessions rather than only within one conversation."""
+    import asyncio
+
+    from agents.customer.chat import run_chat_async
+    from agents.customer.context import CustomerContext, reset_context, set_context
+    from agents.customer.tools import get_customer_context
+    from agents.gate.config import load_tenant
+
+    reset_sessions()
+    asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "Do you have Cola Zero?"))
+
+    ctx = CustomerContext.build(sandbox, "CUST-MEENA", "2026-09-12T09:05:00Z", load_tenant())
+    tok = set_context(ctx)
+    try:
+        memory = get_customer_context("CUST-MEENA")["memory"]
+    finally:
+        reset_context(tok)
+    entry = next(m for m in memory if m["sku"] == "SKU-COLA-ZERO-500ML")
+    assert entry["times_asked"] == 1 and entry["now_in_stock"] is False
+
+    batches = sandbox.read("inventory_batches")
+    batches.append({"tenant_id": "kutumb-mart", "batch_id": "B-COLAZERO-RESTOCK-TEST", "sku": "SKU-COLA-ZERO-500ML", "node_id": "DS-07", "qty_on_hand": 60, "expiry_date": "2027-01-01", "online_sellby_date": "2026-12-01", "received_at": "2026-09-13", "source": "system", "capture_ref": None, "sellby_rule_version": load_tenant().sellby_rule.version})
+    sandbox.write("inventory_batches", batches)
+
+    reset_sessions()  # a brand-new ADK session: same store, no shared conversation history
+    env = asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "hi"))[0]
+    assert "Cola Zero" in env["text"] and "back in stock" in env["text"].lower()
+    assert env["buttons"] and env["buttons"][0]["id"] == "add:SKU-COLA-ZERO-500ML"
