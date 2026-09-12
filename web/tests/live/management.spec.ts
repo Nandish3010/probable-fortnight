@@ -8,6 +8,7 @@ test.describe("Management: outcomes", () => {
     await asVisitor(page, vid);
     await page.goto("/outcomes");
     await expect(page.getByRole("heading", { name: "Outcomes" })).toBeVisible();
+    await expect(page.getByText(/No plays measured yet/)).toBeVisible();
     await shot(page, "mgmt-01-empty");
 
     const h = visitorHeaders(vid);
@@ -15,8 +16,11 @@ test.describe("Management: outcomes", () => {
     await page.request.post(`${API}/approve`, { headers: h, data: { play_id: "play_kaju_ds03_v1" } });
     await page.request.post(`${API}/chat`, { headers: { ...h, Accept: "application/json" }, data: { session_id: "CUST-MEENA:web", text: "Any offers?" } });
     await page.request.post(`${API}/chat`, { headers: { ...h, Accept: "application/json" }, data: { session_id: "CUST-MEENA:web", text: "add:SKU-MASALA-CHIPS-200G" } });
-    await page.request.post(`${API}/measure`, { headers: h });
-    await page.reload();
+
+    // Measure is a button now, not something that runs on its own: nothing populates this page
+    // until a visitor clicks it.
+    await page.getByRole("button", { name: "Run Measure" }).click();
+    await expect(page.getByText(/measured, .* unmeasured/)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("SKU-MASALA-CHIPS-200G").first()).toBeVisible();
     await expect(page.getByText("SYNTHETIC").first()).toBeVisible();
     await expect(page.getByText(/Looker \(n\/a\)/).first()).toBeVisible();

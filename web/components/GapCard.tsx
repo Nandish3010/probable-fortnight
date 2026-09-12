@@ -8,15 +8,27 @@ const DEADLINE_LABEL: Record<string, string> = {
   lead_time: "Lead time",
 };
 
+export const GAP_TYPE_LABEL: Record<string, string> = {
+  online_sellby_breach: "Online sell-by breach",
+  expiry_writeoff: "Expiry write-off",
+  stockout_risk: "Stockout risk",
+  rebalance: "Rebalance",
+  slow_mover: "Slow mover",
+  unmet_demand: "Unmet demand (from chat)",
+};
+
 export function GapCard({ gap }: { gap: Gap }) {
   const days = daysUntil(gap.deadline_date);
   const deadlineLabel = DEADLINE_LABEL[gap.deadline_type] ?? gap.deadline_type;
+  const { requests_count: requestsCount, distinct_customers: distinctCustomers } = gap.evidence;
   return (
     <div className="card gap-card">
       <div className="card__header">
         <div>
           <h3>{gap.evidence.sku_name ?? gap.sku}</h3>
-          <p className="muted">{gap.sku} · node {gap.node_id}</p>
+          <p className="muted">
+            {gap.sku} · node {gap.node_id} · {GAP_TYPE_LABEL[gap.type] ?? gap.type}
+          </p>
         </div>
         <Badge kind="replay" detail="Sense run" />
       </div>
@@ -39,6 +51,13 @@ export function GapCard({ gap }: { gap: Gap }) {
       </p>
       {gap.evidence.expiry_date ? (
         <p className="gap-card__expiry">Pack expiry: {formatDate(gap.evidence.expiry_date)}</p>
+      ) : null}
+      {requestsCount ? (
+        <p className="gap-card__demand">
+          {requestsCount} real chat request{requestsCount === 1 ? "" : "s"}
+          {distinctCustomers ? ` from ${distinctCustomers} customer${distinctCustomers === 1 ? "" : "s"}` : ""} asking
+          for this at this store
+        </p>
       ) : null}
     </div>
   );
