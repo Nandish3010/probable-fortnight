@@ -1,0 +1,154 @@
+{
+  "play_id": "play_tea_ds04_v2",
+  "gap_id": "gap_tea_ds04",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "clear_online_sellby",
+  "target": {
+    "sku": "SKU-DARJEELING-TEA-100G",
+    "node_ids": [
+      "DS-04"
+    ],
+    "batch_ids": [
+      "B-TEA-DS04-01"
+    ],
+    "units": 103,
+    "deadline_date": "2026-10-06",
+    "deadline_type": "online_sellby"
+  },
+  "mechanic": "bundle",
+  "mechanic_params": {
+    "bundle_sku": "SKU-SOAN-PAPDI-1KG",
+    "bundle_price": 874.0
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_2",
+      "seg_1"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 391,
+    "size_after_consent": 323
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-10-06T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_tea_ds04_v2",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 20.44% (net price 874.00, cost 695.34) vs premium_tea floor 12.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 323 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 391 -> 323"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-DARJEELING-TEA-100G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-DARJEELING-TEA-100G at DS-04"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "103 units of Darjeeling Tea 100G at Dark store 04 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-10-06; doing nothing writes off ₹35020 and a blanket 20% markdown costs ₹32015. This play uses a bundle with SKU-SOAN-PAPDI-1KG at ₹874 for 323 consented customers (Premium Tea occasionals, Sweets regulars): expected 23 units, margin ₹4048, discount cost ₹1269, waste avoided ₹7704 (CI 1 to 66 units; prior n 20, measured n 0). Policy v2: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_tea_ds04"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v2"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-TEA-DS04-01"
+    }
+  ],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 22.66,
+      "expected_margin_inr": 962.98,
+      "rejected_because": "margin_floor: net margin 11.11% (net price 382.50, cost 340.00) vs premium_tea floor 12.00%"
+    }
+  ],
+  "policy_version": "v2",
+  "trace_ref": "events/run_tea_ds04_v2_00b0396a",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 22.66,
+    "margin_inr": 4048.16,
+    "waste_avoided_inr": 7703.87,
+    "discount_cost_inr": 1268.87,
+    "ci_low": 1.22,
+    "ci_high": 66.1,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 35020.0,
+    "blanket_markdown_inr": 32015.18,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 41.99,
+    "pct_of_rupees_at_stake": 0.124
+  }
+}

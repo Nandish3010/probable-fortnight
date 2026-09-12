@@ -1,0 +1,143 @@
+{
+  "play_id": "play_b63e5240b0_v1",
+  "gap_id": "gap_b63e5240b0",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "clear_online_sellby",
+  "target": {
+    "sku": "SKU-BESAN-LADOO-1KG",
+    "node_ids": [
+      "DS-01"
+    ],
+    "batch_ids": [
+      "B-BESAN-LADOO-1KG-DS-01-01"
+    ],
+    "units": 15,
+    "deadline_date": "2026-09-13",
+    "deadline_type": "online_sellby"
+  },
+  "mechanic": "coupon",
+  "mechanic_params": {
+    "discount_pct": 15
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_1",
+      "seg_2"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 387,
+    "size_after_consent": 324
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-13T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_b63e5240b0_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 10.56% (net price 1015.75, cost 908.46) vs sweets floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 324 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 387 -> 324"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-BESAN-LADOO-1KG in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-BESAN-LADOO-1KG at DS-01"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "15 units of Besan Ladoo 1KG at Dark store 01 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-13; doing nothing writes off ₹13627 and a blanket 20% markdown costs ₹11695. This play uses a 15% coupon for 324 consented customers (Sweets regulars, Premium Tea occasionals): expected 22 units, margin ₹2369, discount cost ₹3958, waste avoided ₹13627 (CI 1 to 64 units; prior n 20, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_b63e5240b0"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-BESAN-LADOO-1KG-DS-01-01"
+    }
+  ],
+  "alternatives": [],
+  "policy_version": "v1",
+  "trace_ref": "events/run_b63e5240b0_v1_83e7b713",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 22.08,
+    "margin_inr": 2369.03,
+    "waste_avoided_inr": 13626.9,
+    "discount_cost_inr": 3957.95,
+    "ci_low": 1.19,
+    "ci_high": 64.42,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 13626.9,
+    "blanket_markdown_inr": 11695.34,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 42.12,
+    "pct_of_rupees_at_stake": 0.32
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "play_id": "play_6055070380_v1",
+  "gap_id": "gap_6055070380",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "clear_expiry",
+  "target": {
+    "sku": "SKU-FULL-CREAM-MILK-500ML",
+    "node_ids": [
+      "DS-01"
+    ],
+    "batch_ids": [
+      "B-FULL-CREAM-MILK-500ML-DS-01-01"
+    ],
+    "units": 165,
+    "deadline_date": "2026-09-18",
+    "deadline_type": "expiry"
+  },
+  "mechanic": "transfer_plus_nudge",
+  "mechanic_params": {
+    "transfer_to_node": "OUT-01",
+    "transfer_units": 165
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_1"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 375,
+    "size_after_consent": 323
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-18T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_6055070380_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 14.63% (net price 115.00, cost 98.17) vs dairy floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 323 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 375 -> 323"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "transfer_plus_nudge is not a discount play"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "transfer_plus_nudge does not push SKU-FULL-CREAM-MILK-500ML; stockout rule not applicable"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "165 units of Full Cream Milk 500ML at Dark store 01 (North Bengaluru) are projected unsold before the expiry deadline on 2026-09-18; doing nothing writes off ₹16198 and a blanket 20% markdown costs ₹7727. This play uses a transfer of 165 units to OUT-01 with a nudge for 323 consented customers (Household occasionals, Premium Tea occasionals, Sweets regulars): expected 22 units, margin ₹1842, discount cost ₹0, waste avoided ₹2172 (CI 1 to 65 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_6055070380"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-FULL-CREAM-MILK-500ML-DS-01-01"
+    }
+  ],
+  "alternatives": [],
+  "policy_version": "v1",
+  "trace_ref": "events/run_6055070380_v1_72fc89b6",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 22.13,
+    "margin_inr": 1842.06,
+    "waste_avoided_inr": 2172.06,
+    "discount_cost_inr": 0.0,
+    "ci_low": 1.19,
+    "ci_high": 64.55,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 16198.05,
+    "blanket_markdown_inr": 7727.14,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 41.99,
+    "pct_of_rupees_at_stake": 0.269
+  }
+}

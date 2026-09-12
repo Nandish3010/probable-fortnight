@@ -1,0 +1,38 @@
+{
+  "name": "13_no_coupon_stacking",
+  "customer_id": "CUST-MEENA",
+  "setup": {
+    "approve_play": "play_chips_ds07_v1"
+  },
+  "note": "second redemption: the offer is consumed, so the re-order is at list price with no play_id and no discount (coupons do not stack)",
+  "turns": [
+    {
+      "text": "Any offers?",
+      "expect": {
+        "contains_any": [
+          "ಬಳಕೆಗೆ ಉತ್ತಮ"
+        ]
+      }
+    },
+    {
+      "text": "add:SKU-MASALA-CHIPS-200G",
+      "expect": {
+        "contains_any": [
+          "ORD-"
+        ]
+      }
+    },
+    {
+      "text": "add:SKU-MASALA-CHIPS-200G",
+      "expect": {
+        "tool_called": [
+          "place_order"
+        ],
+        "latest_line_no_play": true,
+        "contains_any": [
+          "ORD-"
+        ]
+      }
+    }
+  ]
+}
