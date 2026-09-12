@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/gap.schema.json",
+  "title": "Gap",
+  "type": "object",
+  "required": [
+    "gap_id",
+    "type",
+    "sku",
+    "node_id",
+    "units_at_risk",
+    "deadline_date",
+    "deadline_type",
+    "rupees_at_stake",
+    "evidence"
+  ],
+  "properties": {
+    "gap_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "online_sellby_breach",
+        "expiry_writeoff",
+        "stockout_risk",
+        "rebalance",
+        "slow_mover"
+      ]
+    },
+    "sku": {
+      "type": "string"
+    },
+    "node_id": {
+      "type": "string"
+    },
+    "batch_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "units_at_risk": {
+      "type": "integer"
+    },
+    "deadline_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "deadline_type": {
+      "type": "string",
+      "enum": [
+        "online_sellby",
+        "expiry",
+        "lead_time"
+      ]
+    },
+    "rupees_at_stake": {
+      "type": "number"
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "on_hand",
+        "projected_sellthrough",
+        "forecast_run_id",
+        "sellby_rule"
+      ],
+      "properties": {
+        "on_hand": {
+          "type": "integer"
+        },
+        "projected_sellthrough": {
+          "type": "number"
+        },
+        "forecast_run_id": {
+          "type": "string"
+        },
+        "sellby_rule": {
+          "type": "string"
+        },
+        "inbound": {
+          "type": "integer"
+        },
+        "unit_cost": {
+          "type": "number"
+        },
+        "margin_per_unit": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

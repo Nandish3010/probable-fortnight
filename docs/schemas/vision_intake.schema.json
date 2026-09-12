@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/vision_intake.schema.json",
+  "title": "VisionIntakeResult",
+  "description": "Rows read from one pallet photo. Any row with a confidence below the tenant threshold must produce a confirmation question before it is written to inventory_batches.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["photo_ref", "node_id", "rows", "model_id"],
+  "properties": {
+    "photo_ref": { "type": "string" },
+    "node_id": { "type": "string" },
+    "model_id": { "type": "string" },
+    "pass": { "type": "string", "enum": ["single", "two_pass"] },
+    "rows": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sku_guess", "sku_confidence", "best_before_date", "date_confidence", "facings_count", "count_confidence"],
+      "properties": {
+        "sku_guess": { "type": "string" },
+        "sku_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "best_before_date": { "type": ["string", "null"], "format": "date" },
+        "date_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "facings_count": { "type": "integer", "minimum": 0 },
+        "count_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "crop_ref": { "type": "string" },
+        "needs_confirmation": { "type": "boolean" },
+        "confirmation_question": { "type": "string" }
+      }
+    } }
+  }
+}

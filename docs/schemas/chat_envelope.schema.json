@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/chat_envelope.schema.json",
+  "title": "ChatEnvelope",
+  "description": "One message on the customer chat wire, for web now and WhatsApp later. Interactive limits mirror WhatsApp: <=3 buttons, <=10 list rows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "role", "text"],
+  "properties": {
+    "session_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+:(web|whatsapp)$" },
+    "message_id": { "type": "string" },
+    "role": { "type": "string", "enum": ["customer", "agent", "system"] },
+    "text": { "type": "string", "maxLength": 4096 },
+    "language": { "type": "string", "pattern": "^[a-z]{2}$" },
+    "buttons": { "type": "array", "maxItems": 3, "items": {
+      "type": "object", "additionalProperties": false, "required": ["id", "label"],
+      "properties": { "id": { "type": "string" }, "label": { "type": "string", "maxLength": 20 } }
+    } },
+    "list": {
+      "type": "object", "additionalProperties": false, "required": ["title", "rows"],
+      "properties": {
+        "title": { "type": "string", "maxLength": 60 },
+        "rows": { "type": "array", "maxItems": 10, "items": {
+          "type": "object", "additionalProperties": false, "required": ["id", "title"],
+          "properties": { "id": { "type": "string" }, "title": { "type": "string", "maxLength": 24 }, "desc": { "type": "string", "maxLength": 72 } }
+        } }
+      }
+    },
+    "citations": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false, "required": ["type", "ref"],
+      "properties": { "type": { "type": "string", "enum": ["stock", "play", "forecast"] }, "ref": { "type": "string" } }
+    } },
+    "tool_calls": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false, "required": ["name"],
+      "properties": { "name": { "type": "string" }, "args": { "type": "object" }, "result_ref": { "type": "string" } }
+    } },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "string", "format": "date-time" }
+  }
+}

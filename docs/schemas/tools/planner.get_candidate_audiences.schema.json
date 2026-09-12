@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/planner.get_candidate_audiences.schema.json",
+  "title": "planner.get_candidate_audiences",
+  "description": "Contract for the planner agent tool `get_candidate_audiences`. Tools are deterministic Python or store reads; no LLM inside.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "input",
+    "output"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sku",
+        "node_ids",
+        "objective"
+      ],
+      "properties": {
+        "sku": {
+          "type": "string"
+        },
+        "node_ids": {
+          "type": "array"
+        },
+        "objective": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "segment_id",
+          "name",
+          "size_before_consent",
+          "size_after_consent",
+          "mean_affinity"
+        ],
+        "properties": {
+          "segment_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size_before_consent": {
+            "type": "integer"
+          },
+          "size_after_consent": {
+            "type": "integer"
+          },
+          "mean_affinity": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

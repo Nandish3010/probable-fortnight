@@ -1,0 +1,39 @@
+name: verify
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: uv python install 3.11
+      - run: uv sync --group dev
+      - run: cd web && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: make verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: status, path: STATUS.md }
+  spec-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --group dev
+      - name: Reviewer agent verdict (skips without GOOGLE_CLOUD_PROJECT)
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_CLOUD_LOCATION: asia-south1
+          TAAL_MODEL_BACKEND: vertex
+        run: uv run python -m harness.spec_review --base origin/${{ github.base_ref }} --out eval/spec_review.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: spec-review, path: eval/spec_review.md }
