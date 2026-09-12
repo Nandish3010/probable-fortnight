@@ -1,0 +1,27 @@
+{
+  "name": "29_general_discount_question_is_not_a_followup",
+  "customer_id": "CUST-MEENA",
+  "setup": {},
+  "note": "a standalone catalogue-wide question ('which product has the most discount today?') is answered honestly (no offer today) instead of misreporting the last thing shown as having no discount",
+  "turns": [
+    {
+      "text": "Do you have Cola Zero?",
+      "expect": {
+        "tool_called": [
+          "get_stock"
+        ]
+      }
+    },
+    {
+      "text": "Which product has the most discount today?",
+      "expect": {
+        "not_contains": [
+          "No extra discount on Cola Zero"
+        ],
+        "contains_any": [
+          "No offers for you today"
+        ]
+      }
+    }
+  ]
+}

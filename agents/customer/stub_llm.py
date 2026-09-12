@@ -57,6 +57,9 @@ BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(u
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
 AVAILABILITY_RE = re.compile(r"\b(do you have|is there|have you got|got any|any )\b")
 GENERIC_STOP = {"have", "there", "your", "store", "today", "please", "about", "does", "got", "any", "some"}
+BROWSE_STOP = GENERIC_STOP | {"what", "all", "you", "can", "products", "product", "items", "item", "menu",
+                              "catalogue", "catalog", "categories", "everything", "browse", "show", "list", "me"}
+GENERAL_DISCOUNT_RE = re.compile(r"\b(which|what)\s+\w*\s*(product|item)s?\b")
 LOW_STOCK_THRESHOLD = 5  # a coarse urgency signal to the customer; never the exact count
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
 
@@ -162,6 +165,14 @@ class StubCustomerLlm(BaseLlm):
         words = [w for w in re.findall(r"[a-z]+", text.lower()) if len(w) >= 4 and w not in GENERIC_STOP]
         return max(words, key=len) if words else None
 
+    def _browse_query_word(self, text: str) -> str | None:
+        """A category or product word inside a browse phrase ('What all dairy products do you
+        have?' -> 'dairy'), stripped of the browse scaffolding itself ('what', 'all', 'products',
+        'do you have', ...) so a category mention actually narrows the list instead of always
+        falling back to the full category menu."""
+        words = [w for w in re.findall(r"[a-z]+", text.lower()) if len(w) >= 3 and w not in BROWSE_STOP]
+        return max(words, key=len) if words else None
+
     async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False) -> AsyncGenerator[LlmResponse, None]:
         yield self.decide(llm_request)
 
@@ -204,7 +215,7 @@ class StubCustomerLlm(BaseLlm):
             return self._say({"text": s["no"]})
         # category button or browse
         if low.startswith("cat:") or BROWSE_RE.search(low):
-            q = low.split(":", 1)[1].strip() if low.startswith("cat:") else ""
+            q = low.split(":", 1)[1].strip() if low.startswith("cat:") else (self._browse_query_word(text) or "")
             if "list_products" not in by:
                 return self._call("list_products", {"query": q, "node_id": node})
             return self._browse_reply(by["list_products"], q, s, lab, node)
@@ -232,9 +243,13 @@ class StubCustomerLlm(BaseLlm):
                 return self._say({"text": s["none"].format(name=st.get("name", sku))})
             rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"₹{float(r.get('list_price') or 0):.0f}{' · few left' if r['qty'] <= LOW_STOCK_THRESHOLD else ''}"[:72]} for r in subs[:10]]
             return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
-        # a bare discount/offer question with something just shown and nothing pending: say so
-        # against what she was just looking at, instead of the generic "which product?" fallback
-        if not offers and last_context and "discount" in low:
+        # a bare discount/offer question ("any discounts?", "can I get a discount?") with
+        # nothing pending: say so against what she was just looking at. A question that asks
+        # across the whole catalogue ("which product has the most discount today?") does NOT
+        # narrow to last_context -- answering it with three arbitrary substitute products would
+        # misrepresent a general question as if it were about the last thing shown; it falls
+        # through to the offers/greeting reply instead, which is accurate either way.
+        if not offers and last_context and "discount" in low and not GENERAL_DISCOUNT_RE.search(low):
             shown = ", ".join(p.get("name", p.get("sku", "")) for p in last_context[:3])
             return self._say({"text": s["no_discount"].format(q=shown), "citations": [{"type": "stock", "ref": p["sku"]} for p in last_context[:3] if p.get("sku")]})
         # offers / greeting
