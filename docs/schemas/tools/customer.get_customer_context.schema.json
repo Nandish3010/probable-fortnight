@@ -79,6 +79,55 @@
         },
         "consent_marketing": {
           "type": "boolean"
+        },
+        "memory": {
+          "type": "array",
+          "description": "This customer's own unmet requests, across every past session, oldest first filtered out: what they asked for that was out of stock or unmatched, how many times, and whether it is in stock now.",
+          "items": {
+            "type": "object",
+            "required": [
+              "request_type",
+              "times_asked",
+              "last_asked_at"
+            ],
+            "properties": {
+              "sku": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "query_text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "request_type": {
+                "type": "string",
+                "enum": [
+                  "out_of_stock",
+                  "no_match"
+                ]
+              },
+              "times_asked": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "last_asked_at": {
+                "type": "string"
+              },
+              "now_in_stock": {
+                "type": "boolean"
+              }
+            }
+          }
         }
       }
     }

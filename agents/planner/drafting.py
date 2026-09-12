@@ -13,7 +13,7 @@ from typing import Any
 
 OBJECTIVE_BY_GAP = {
     "online_sellby_breach": "clear_online_sellby", "expiry_writeoff": "clear_expiry", "stockout_risk": "prevent_stockout",
-    "rebalance": "rebalance", "slow_mover": "revive_slow_mover",
+    "rebalance": "rebalance", "slow_mover": "revive_slow_mover", "unmet_demand": "prevent_stockout",
 }
 
 
@@ -58,7 +58,9 @@ def candidate_mechanics(gap: dict[str, Any], policy_text: str) -> list[dict[str,
             out = [coupon15, bundle(), transfer(), markdown10]
         else:
             out = [coupon15, coupon10, bundle(), transfer()]
-    elif gtype == "stockout_risk":
+    elif gtype in ("stockout_risk", "unmet_demand"):
+        # unmet_demand carries no forecast-derived inbound_eta of its own; a restock PO covers it
+        # the same way it would a stockout_risk gap, so the same candidate order applies.
         out = [{"mechanic": "preorder", "mechanic_params": {"preorder_eta_date": inbound_eta}} if inbound_eta else None, {"mechanic": "substitution", "mechanic_params": {}}]
     elif gtype == "rebalance":
         counterpart = (gap.get("evidence") or {}).get("counterpart_node_id")

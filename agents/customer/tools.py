@@ -38,6 +38,39 @@ def _consent_ok(ctx, customer_id: str) -> bool:
     return bool(rows) and not rows[-1].get("withdrawn_at")
 
 
+def _record_request(ctx, node_id: str, request_type: str, sku: str | None = None, query_text: str | None = None) -> None:
+    """Deterministic instrumentation, not an LLM decision: get_stock and list_products call this
+    themselves whenever they turn up nothing, so the demand signal is recorded regardless of what
+    the model does or does not decide to say. Read back by Sense (unmet_demand gaps) and by
+    _customer_memory (cross-session recall for this customer)."""
+    ctx.store.append("customer_requests", [{
+        "tenant_id": ctx.tenant.tenant_id, "customer_id": ctx.customer_id, "node_id": node_id,
+        "sku": sku, "query_text": query_text, "request_type": request_type,
+        "session_id": f"{ctx.customer_id}:{ctx.channel}", "ts": ctx.now_iso,
+    }])
+
+
+def _customer_memory(ctx, customer_id: str, limit: int = 5) -> list[dict[str, Any]]:
+    """This customer's own unmet requests across every past session (the store is keyed by
+    customer_id, not session_id, so this is real cross-session memory, not a per-conversation
+    cache). Grouped by (sku or query_text, request_type, node), most recent first. `now_in_stock`
+    is checked at the node the request was actually made at, not assumed to be the home node."""
+    rows = [r for r in ctx.store.read("customer_requests") if r["customer_id"] == customer_id]
+    grouped: dict[tuple[str, str, str | None], dict[str, Any]] = {}
+    for r in sorted(rows, key=lambda r: r["ts"]):
+        key = (r["request_type"], r["node_id"], r["sku"] or r["query_text"])
+        g = grouped.setdefault(key, {"request_type": r["request_type"], "node_id": r["node_id"], "sku": r["sku"], "query_text": r["query_text"], "times_asked": 0})
+        g["times_asked"] += 1
+        g["last_asked_at"] = r["ts"]
+    out = sorted(grouped.values(), key=lambda g: g["last_asked_at"], reverse=True)[:limit]
+    for g in out:
+        g["name"] = ctx.products.get(g["sku"], {}).get("name", g["sku"]) if g["sku"] else None
+        if g["sku"]:
+            g["now_in_stock"] = _stock_info(ctx, g["sku"], g["node_id"]).get("qty", 0) > 0
+        g.pop("node_id", None)
+    return out
+
+
 def get_customer_context(customer_id: str) -> dict:
     """Home node, language, pending offers (treated arm only), arms per play and marketing consent."""
     ctx = current()
@@ -58,12 +91,13 @@ def get_customer_context(customer_id: str) -> dict:
             if arms.get(o["play_id"]) != "treated" or assign_arm(customer_id, play["holdout"]["seed"], float(play["holdout"]["fraction"])) != "treated":
                 continue
             offers.append({"play_id": o["play_id"], "text": o["text"], "best_before_date": o.get("best_before_date"), "sku": o.get("sku"), "mechanic": o.get("mechanic"), "mechanic_params": o.get("mechanic_params", {})})
-    return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent}
+    return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent, "memory": _customer_memory(ctx, customer_id)}
 
 
-def get_stock(sku: str, node_id: str) -> dict:
-    """Units on hand at the node (unexpired lots), nearest online sell-by and expiry."""
-    ctx = current()
+def _stock_info(ctx, sku: str, node_id: str) -> dict:
+    """Pure lookup, no side effects. Shared by get_stock (which records the demand signal on top),
+    find_substitutes and _customer_memory, so checking on a customer's behalf internally never
+    itself counts as a customer asking."""
     qty, sellby, expiry, batch = 0, None, None, None
     today = ctx.as_of.isoformat()
     for b in ctx.store.read("inventory_batches"):
@@ -80,6 +114,17 @@ def get_stock(sku: str, node_id: str) -> dict:
     return {"sku": sku, "node_id": node_id, "qty": qty if online_ok else 0, "online_sellby_date": sellby, "expiry_date": expiry, "batch_id": batch, "name": ctx.products.get(sku, {}).get("name", sku), "list_price": ctx.products.get(sku, {}).get("list_price")}
 
 
+def get_stock(sku: str, node_id: str) -> dict:
+    """Units on hand at the node (unexpired lots), nearest online sell-by and expiry. A customer
+    asking directly and finding nothing is a demand signal: recorded deterministically, read back
+    by Sense (unmet_demand gaps) and by this customer's own memory next session."""
+    ctx = current()
+    info = _stock_info(ctx, sku, node_id)
+    if info["qty"] == 0:
+        _record_request(ctx, node_id, "out_of_stock", sku=sku)
+    return info
+
+
 def find_substitutes(sku: str, node_id: str) -> list[dict]:
     """Precomputed same-category candidates filtered by stock at the node right now; top 5."""
     ctx = current()
@@ -87,7 +132,7 @@ def find_substitutes(sku: str, node_id: str) -> list[dict]:
     cands = rows[-1]["candidates"] if rows else []
     out = []
     for c in cands:
-        st = get_stock(c, node_id)
+        st = _stock_info(ctx, c, node_id)
         if st["qty"] > 0:
             out.append({"sku": c, "name": st["name"], "qty": st["qty"], "list_price": st["list_price"]})
         if len(out) == 5:
@@ -205,6 +250,8 @@ def list_products(query: str, node_id: str) -> dict:
         if score:
             hits.append((score, -stock[p["sku"]], p["sku"], p))
     hits.sort(key=lambda h: (-h[0], h[1], h[2]))
+    if not hits:
+        _record_request(ctx, node_id, "no_match", query_text=query)
     return {"query": query, "node_id": node_id, "categories": categories, "products": [{"sku": h[3]["sku"], "name": h[3]["name"], "category": h[3]["category"], "qty": stock[h[3]["sku"]], "list_price": float(h[3]["list_price"])} for h in hits[:10]]}
 
 

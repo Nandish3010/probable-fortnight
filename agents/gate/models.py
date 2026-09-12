@@ -32,7 +32,7 @@ PlayStatus = Literal[
     "proposed", "approved", "modified", "rejected", "running", "measured", "unmeasured"
 ]
 GapType = Literal[
-    "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover"
+    "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand"
 ]
 
 MECHANICS: tuple[str, ...] = (
@@ -196,6 +196,8 @@ class GapEvidence(_Strict):
     inbound: int | None = None
     unit_cost: float | None = None
     margin_per_unit: float | None = None
+    requests_count: int | None = None
+    distinct_customers: int | None = None
 
 
 class Gap(_Strict):
