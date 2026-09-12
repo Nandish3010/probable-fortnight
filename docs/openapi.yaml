@@ -426,6 +426,48 @@ paths:
                   type: object
                 type: array
                 title: Response Outcomes Outcomes Get
+  /customers/demo:
+    get:
+      summary: Customers Demo
+      description: 'A curated picker for the web app: named personas with visibly
+        different home stores and
+
+        languages, plus one real customer who lands in the holdout arm of `play_id`
+        -- computed from
+
+        the play''s own holdout seed and fraction, so it is correct whether or not
+        the play has been
+
+        approved yet, and never made up. Lets a judge see the differentiation the
+        system is built on:
+
+        a holdout customer''s chat never mentions the offer other customers get.'
+      operationId: customers_demo_customers_demo_get
+      parameters:
+      - name: play_id
+        in: query
+        required: false
+        schema:
+          type: string
+          default: play_chips_ds07_v1
+          title: Play Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                title: Response Customers Demo Customers Demo Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /measure:
     post:
       summary: Measure

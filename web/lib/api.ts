@@ -3,6 +3,7 @@
 // static fixtures under web/mocks/*.json (bundled at build time).
 import type {
   ApproveRequest,
+  DemoCustomer,
   ApproveResponse,
   CaptureRequest,
   ChatEnvelope,
@@ -32,6 +33,7 @@ import mockRerun from "../mocks/rerun.json";
 import mockCapture from "../mocks/capture.json";
 import mockExecution from "../mocks/execution.json";
 import mockOutcomes from "../mocks/outcomes.json";
+import mockCustomersDemo from "../mocks/customers_demo.json";
 import mockChat from "../mocks/chat.json";
 
 export function isMockMode(): boolean {
@@ -189,6 +191,14 @@ export async function execution(req: ExecutionRequest): Promise<ExecutionRespons
 }
 
 // ---------- outcomes ----------
+
+export async function getDemoCustomers(playId = "play_chips_ds07_v1"): Promise<DemoCustomer[]> {
+  if (isMockMode()) {
+    await delay(150);
+    return mockCustomersDemo as unknown as DemoCustomer[];
+  }
+  return request<DemoCustomer[]>(`/customers/demo?play_id=${encodeURIComponent(playId)}`);
+}
 
 export async function getOutcomes(): Promise<Outcome[]> {
   if (isMockMode()) {
