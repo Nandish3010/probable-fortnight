@@ -1,9 +1,10 @@
 -- 05_gaps.sql
--- Gap detection mirroring jobs/sense/gaps.py exactly (DECISIONS §2.3). Five gap types:
--- online_sellby_breach, expiry_writeoff, stockout_risk, slow_mover, rebalance.
+-- Gap detection mirroring jobs/sense/gaps.py exactly (DECISIONS §2.3). Six gap types:
+-- online_sellby_breach, expiry_writeoff, stockout_risk, slow_mover, rebalance, unmet_demand.
 --
--- rupees_at_stake = units_at_risk * unit_cost for every write-off type; for stockout_risk it is
--- units_short * (list_price - unit_cost) -- the lost margin, not the cost of the units.
+-- rupees_at_stake = units_at_risk * unit_cost for every write-off type; for stockout_risk and
+-- unmet_demand it is units_short * (list_price - unit_cost) -- the lost margin, not the cost of
+-- the units.
 --
 -- FIFO allocation: for each (sku, node_id), lots are ordered online_sellby_date, then
 -- expiry_date, then batch_id (gaps.py's `lots_sorted` order) and the forecast is allocated to
@@ -16,6 +17,15 @@
 -- whose online sell-by has passed always becomes expiry_writeoff, never online_sellby_breach,
 -- exactly as gaps.py enforces.
 --
+-- unmet_demand is not derived from the forecast at all: it is real customers asking the chat
+-- agent for a sku that turned out to have zero on-hand at their node (taal.customer_requests,
+-- written deterministically by agents/customer/tools.py, never an LLM decision). Requests on a
+-- (sku, node) that also got a stockout_risk gap this run only enrich that gap's evidence
+-- (requests_count, distinct_customers); requests on a pair the forecast did not flag at all
+-- raise a standalone unmet_demand gap once distinct requesters reach unmet_demand_min_requests
+-- and the shelf is still empty as of today. no_match requests (nothing sold at all) never turn
+-- into a gap here -- they are an assortment question outside what Sense can act on.
+--
 -- Params: @tenant_id STRING, @as_of DATE, @run_id STRING.
 
 DECLARE horizon_end DATE DEFAULT DATE_ADD(@as_of, INTERVAL 27 DAY);
@@ -23,6 +33,20 @@ DECLARE horizon_end DATE DEFAULT DATE_ADD(@as_of, INTERVAL 27 DAY);
 -- tenant TOML file, so the Sense job (jobs/sense/__main__.py) must pass matching values here if
 -- the tenant config ever diverges from the demo default.
 DECLARE slow_mover_days INT64 DEFAULT 21;
+DECLARE unmet_demand_lookback_days INT64 DEFAULT 30;
+DECLARE unmet_demand_min_requests INT64 DEFAULT 2;
+
+CREATE TEMP TABLE demand_signals AS
+SELECT
+  sku, node_id,
+  COUNT(*) AS requests_count,
+  COUNT(DISTINCT customer_id) AS distinct_customers
+FROM `taal.customer_requests`
+WHERE tenant_id = @tenant_id
+  AND request_type = 'out_of_stock'
+  AND sku IS NOT NULL
+  AND DATE(ts) >= DATE_SUB(@as_of, INTERVAL unmet_demand_lookback_days DAY)
+GROUP BY sku, node_id;
 
 DELETE FROM `taal.gaps` WHERE tenant_id = @tenant_id AND run_id = @run_id;
 
@@ -147,7 +171,9 @@ SELECT
     unit_cost AS unit_cost,
     ROUND(list_price - unit_cost, 2) AS margin_per_unit,
     CAST(NULL AS STRING) AS counterpart_node_id,
-    CAST(NULL AS INT64) AS counterpart_units
+    CAST(NULL AS INT64) AS counterpart_units,
+    CAST(NULL AS INT64) AS requests_count,
+    CAST(NULL AS INT64) AS distinct_customers
   ) AS evidence,
   @as_of AS created_at
 FROM writeoff_gaps;
@@ -203,10 +229,13 @@ SELECT
     unit_cost AS unit_cost,
     ROUND(list_price - unit_cost, 2) AS margin_per_unit,
     CAST(NULL AS STRING) AS counterpart_node_id,
-    CAST(NULL AS INT64) AS counterpart_units
+    CAST(NULL AS INT64) AS counterpart_units,
+    ds.requests_count AS requests_count,
+    ds.distinct_customers AS distinct_customers
   ) AS evidence,
   @as_of AS created_at
-FROM stockout_gaps;
+FROM stockout_gaps sg
+LEFT JOIN demand_signals ds ON ds.sku = sg.sku AND ds.node_id = sg.node_id;
 
 -- ---------------------------------------------------------------------------------------------
 -- slow_mover: velocity below 25% of category median velocity for that node type, with more than
@@ -267,7 +296,9 @@ SELECT
     unit_cost AS unit_cost,
     ROUND(list_price - unit_cost, 2) AS margin_per_unit,
     CAST(NULL AS STRING) AS counterpart_node_id,
-    CAST(NULL AS INT64) AS counterpart_units
+    CAST(NULL AS INT64) AS counterpart_units,
+    CAST(NULL AS INT64) AS requests_count,
+    CAST(NULL AS INT64) AS distinct_customers
   ) AS evidence,
   @as_of AS created_at
 FROM slow_mover_gaps
@@ -313,10 +344,72 @@ SELECT
     s.evidence.unit_cost AS unit_cost,
     s.evidence.margin_per_unit AS margin_per_unit,
     sh.node_b AS counterpart_node_id,
-    sh.units_b AS counterpart_units
+    sh.units_b AS counterpart_units,
+    s.evidence.requests_count AS requests_count,
+    s.evidence.distinct_customers AS distinct_customers
   ) AS evidence,
   @as_of AS created_at
 FROM surplus_side s
 JOIN short_side sh ON sh.sku = s.sku AND sh.cluster_id = s.cluster_id AND sh.node_b != s.node_a
 JOIN `taal.products` p ON p.tenant_id = @tenant_id AND p.sku = s.sku
 WHERE LEAST(s.units_a, sh.units_b) >= 1;
+
+-- ---------------------------------------------------------------------------------------------
+-- unmet_demand: a real customer request the gap types above did not flag at all for this
+-- (sku, node) this run -- a genuine miss, not a duplicate of another gap type. Mirrors gaps.py's
+-- `covered` check (every gap already inserted this run_id, of any type) and `_on_hand_now`
+-- (current on-hand, not the point-in-time on_hand snapshot used for the other gap types).
+-- ---------------------------------------------------------------------------------------------
+CREATE TEMP TABLE covered_pairs AS
+SELECT DISTINCT sku, node_id FROM `taal.gaps` WHERE tenant_id = @tenant_id AND run_id = @run_id;
+
+CREATE TEMP TABLE on_hand_now AS
+SELECT sku, node_id, SUM(qty_on_hand) AS qty
+FROM `taal.inventory_batches`
+WHERE tenant_id = @tenant_id AND (expiry_date IS NULL OR expiry_date >= @as_of)
+GROUP BY sku, node_id;
+
+CREATE TEMP TABLE unmet_demand_gaps AS
+SELECT
+  ds.sku, ds.node_id, ds.requests_count, ds.distinct_customers,
+  p.unit_cost, p.list_price, p.name AS sku_name, p.category,
+  n.type AS node_type, n.lead_time_days,
+  DATE_ADD(@as_of, INTERVAL n.lead_time_days DAY) AS deadline,
+  IFNULL(oh.qty, 0) AS on_hand_now
+FROM demand_signals ds
+JOIN `taal.products` p ON p.tenant_id = @tenant_id AND p.sku = ds.sku
+JOIN `taal.nodes` n ON n.tenant_id = @tenant_id AND n.node_id = ds.node_id
+LEFT JOIN on_hand_now oh ON oh.sku = ds.sku AND oh.node_id = ds.node_id
+LEFT JOIN covered_pairs cp ON cp.sku = ds.sku AND cp.node_id = ds.node_id
+WHERE cp.sku IS NULL
+  AND ds.distinct_customers >= unmet_demand_min_requests
+  AND IFNULL(oh.qty, 0) <= 0;
+
+INSERT INTO `taal.gaps`
+  (tenant_id, gap_id, run_id, type, sku, node_id, batch_id, units_at_risk, deadline_date, deadline_type,
+   rupees_at_stake, evidence, created_at)
+SELECT
+  @tenant_id AS tenant_id,
+  CONCAT('gap_', SUBSTR(TO_HEX(SHA256(FORMAT('%s|%s|%s|', 'unmet_demand', sku, node_id))), 1, 10)) AS gap_id,
+  @run_id AS run_id,
+  'unmet_demand' AS type,
+  sku, node_id, CAST(NULL AS STRING) AS batch_id,
+  requests_count AS units_at_risk,
+  deadline AS deadline_date,
+  'lead_time' AS deadline_type,
+  ROUND(requests_count * (list_price - unit_cost), 2) AS rupees_at_stake,
+  STRUCT(
+    0 AS on_hand,
+    0.0 AS projected_sellthrough,
+    @run_id AS forecast_run_id,
+    (SELECT sellby_rule_version FROM `taal.inventory_batches` LIMIT 1) AS sellby_rule,
+    CAST(NULL AS INT64) AS inbound,
+    unit_cost AS unit_cost,
+    ROUND(list_price - unit_cost, 2) AS margin_per_unit,
+    CAST(NULL AS STRING) AS counterpart_node_id,
+    CAST(NULL AS INT64) AS counterpart_units,
+    requests_count AS requests_count,
+    distinct_customers AS distinct_customers
+  ) AS evidence,
+  @as_of AS created_at
+FROM unmet_demand_gaps;

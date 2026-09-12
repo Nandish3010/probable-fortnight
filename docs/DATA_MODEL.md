@@ -88,14 +88,17 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 
 ### `gaps` (14)
 - `tenant_id`, `gap_id`, `run_id`
-- `type` -- one of the five gap types, see below
-- `sku`, `node_id`, `batch_id` (null for stockout_risk)
+- `type` -- one of six gap types: `online_sellby_breach`, `expiry_writeoff`, `stockout_risk`,
+  `rebalance`, `slow_mover`, `unmet_demand`
+- `sku`, `node_id`, `batch_id` (null for stockout_risk and unmet_demand)
 - `units_at_risk` -- units driving the rupee figure
 - `deadline_date`, `deadline_type` (`online_sellby` / `expiry` / `lead_time`)
 - `rupees_at_stake` -- see the recomputation rule below
 - `evidence` -- fixed STRUCT: `on_hand`, `projected_sellthrough`, `forecast_run_id`,
   `sellby_rule` (the version string), `inbound`, `unit_cost`, `margin_per_unit`,
-  `counterpart_node_id`, `counterpart_units` (rebalance only)
+  `counterpart_node_id`, `counterpart_units` (rebalance only), `requests_count`,
+  `distinct_customers` (real chat requests corroborating a stockout_risk or unmet_demand gap;
+  see `customer_requests` below)
 - `created_at`
 
 ### `plays` (15)
@@ -151,6 +154,19 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 
 ### `substitutes` (27)
 - `tenant_id`, `sku`, `candidates` (up to 5 same-category skus), `computed_at`
+
+### `customer_requests` (28)
+- `tenant_id`, `customer_id`, `node_id`
+- `sku` (set for `out_of_stock`, a real product with zero on-hand; null for `no_match`)
+- `query_text` (the words behind a `no_match`; null for `out_of_stock`)
+- `request_type` -- `out_of_stock` | `no_match`
+- `session_id`, `ts`
+- Written deterministically by `agents/customer/tools.py` -- `get_stock` on a zero-quantity
+  lookup, `list_products` when nothing matches -- never an LLM decision. `get_customer_context`
+  reads it back grouped by customer for cross-session memory (a proactive "back in stock" nudge
+  on the next visit); Sense (`jobs/sense/gaps.py`, mirrored in `data/bigquery/sense/05_gaps.sql`)
+  reads it grouped by `(sku, node_id)` to enrich `stockout_risk` evidence and to raise a
+  standalone `unmet_demand` gap for a forecast blind spot real customers are already hitting.
 
 ## The sell-by rule
 
