@@ -33,6 +33,11 @@ test.describe("Meena: chat", () => {
     await expect(log.getByText(/Cola Lite|Cola Zero 1L|Cola Zero 250ML/).last()).toBeVisible();
     await shot(page, "meena-03-substitution");
 
+    // a shown substitute list must be clickable, not just typeable -- this is the only way a
+    // real customer adds something from a list rather than a button
+    await log.locator(".chat-msg__list-item").last().click();
+    await expect(log.getByText(/ORD-/).last()).toBeVisible();
+
     await say(page, "add:SKU-MASALA-CHIPS-200G");
     await expect(log.getByText(/ORD-/).last()).toBeVisible();
     await say(page, "add:SKU-MASALA-CHIPS-200G");

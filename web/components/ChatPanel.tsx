@@ -130,8 +130,10 @@ export function ChatPanel({
                 <ul>
                   {m.list.rows.map((row) => (
                     <li key={row.id}>
-                      <strong>{row.title}</strong>
-                      {row.desc ? <span> — {row.desc}</span> : null}
+                      <button type="button" className="chat-msg__list-item" onClick={() => send(row.id)} disabled={sending}>
+                        <strong>{row.title}</strong>
+                        {row.desc ? <span> — {row.desc}</span> : null}
+                      </button>
                     </li>
                   ))}
                 </ul>
