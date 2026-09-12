@@ -83,3 +83,23 @@ def test_conversation(path: Path, sandbox):
 
 def test_twenty_conversations_exist():
     assert len(CONVOS) >= 20
+
+
+def test_exact_stock_quantity_never_reaches_the_customer(sandbox):
+    """A customer sees availability and, below a coarse threshold, an urgency phrase -- never the
+    literal on-hand count. Masala Chips at DS-07 has 440 units on hand (well above the low-stock
+    threshold); regression guard for that or any other on-hand count leaking into chat text."""
+    import asyncio
+    import re
+
+    from agents.customer.chat import run_chat_async
+
+    reset_sessions()
+    env = asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "Do you have Masala Chips?"))[0]
+    assert "440" not in env["text"]
+    assert not re.search(r"\(\d+ ", env["text"]), "no '(N left)' style count in the reply"
+
+    env2 = asyncio.run(run_chat_async(sandbox, "CUST-MEENA:web", "Do you have Cola Zero?"))[0]
+    for row in (env2.get("list") or {}).get("rows", []):
+        # a price ("₹50") is fine; a stock count ("105 in stock", "127 left") is not
+        assert not re.search(r"\d+\s*(in stock|left|available|units?)\b", row["desc"], re.I), row["desc"]

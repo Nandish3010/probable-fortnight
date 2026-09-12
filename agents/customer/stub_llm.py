@@ -17,7 +17,7 @@ from google.genai import types
 STRINGS = {
     "en": {
         "greet": "Hello {name}! No offers for you today. Ask me for any product and I will check your store.",
-        "in_stock": "{name} is in stock at your store ({qty} left). Best before {bb}. Add it?",
+        "in_stock": "{name} is in stock at your store{low}. Best before {bb}. Add it?",
         "oos": "{name} is out at your store right now. Here is what is on the shelf instead:",
         "none": "{name} is out at your store and I could not find a substitute in stock.",
         "ordered": "Order {order_id} placed: {items}. Total ₹{total:.0f}. Thank you!",
@@ -25,6 +25,7 @@ STRINGS = {
         "no": "No problem. Ask me anytime.",
         "refused": "That offer is not available for you: {reason}.",
         "unknown": "I can check stock and offers at your Kutumb Mart store. Which product?",
+        "low_stock": " (only a few left)",
         "browse": "On the shelf at your store today:",
         "matches": "Here is what I found for \"{q}\" at your store:",
         "nomatch": "Nothing matching \"{q}\" is in stock at your store right now.",
@@ -32,7 +33,7 @@ STRINGS = {
     },
     "kn": {
         "greet": "ನಮಸ್ಕಾರ {name}! ಇಂದು ನಿಮಗೆ ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ. ಯಾವುದೇ ಉತ್ಪನ್ನ ಕೇಳಿ, ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತೇನೆ.",
-        "in_stock": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ ({qty} ಉಳಿದಿದೆ). ಬಳಕೆಗೆ ಉತ್ತಮ {bb}ರವರೆಗೆ. ಸೇರಿಸಲೇ?",
+        "in_stock": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ{low}. ಬಳಕೆಗೆ ಉತ್ತಮ {bb}ರವರೆಗೆ. ಸೇರಿಸಲೇ?",
         "oos": "{name} ಈಗ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ. ಬದಲಿಗೆ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಇರುವುದು:",
         "none": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ ಮತ್ತು ಬದಲಿ ಸಿಗಲಿಲ್ಲ.",
         "ordered": "ಆರ್ಡರ್ {order_id} ಆಗಿದೆ: {items}. ಒಟ್ಟು ₹{total:.0f}. ಧನ್ಯವಾದಗಳು!",
@@ -40,6 +41,7 @@ STRINGS = {
         "no": "ಪರವಾಗಿಲ್ಲ. ಯಾವಾಗ ಬೇಕಾದರೂ ಕೇಳಿ.",
         "refused": "ಆ ಆಫರ್ ನಿಮಗೆ ಲಭ್ಯವಿಲ್ಲ: {reason}.",
         "unknown": "ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್ ಸ್ಟೋರ್‌ನ ಸ್ಟಾಕ್ ಮತ್ತು ಆಫರ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಬಲ್ಲೆ. ಯಾವ ಉತ್ಪನ್ನ?",
+        "low_stock": " (few left)",
         "browse": "ಇಂದು ನಿಮ್ಮ ಸ್ಟೋರ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ:",
         "matches": "\"{q}\" ಗಾಗಿ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು:",
         "nomatch": "\"{q}\" ಗೆ ಹೊಂದುವ ಯಾವುದೂ ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಇಲ್ಲ.",
@@ -51,6 +53,7 @@ GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|eve
 KANNADA_RE = re.compile(r"[\u0C80-\u0CFF]")
 BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
+LOW_STOCK_THRESHOLD = 5  # a coarse urgency signal to the customer; never the exact count
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
 
 
@@ -120,7 +123,7 @@ class StubCustomerLlm(BaseLlm):
     def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
         products = res.get("products") or []
         if products:
-            rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"{p['qty']} in stock · ₹{float(p.get('list_price') or 0):.0f}"[:72]} for p in products[:10]]
+            rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"₹{float(p.get('list_price') or 0):.0f}{' · few left' if p['qty'] <= LOW_STOCK_THRESHOLD else ''}"[:72]} for p in products[:10]]
             return self._say({"text": s["matches"].format(q=q), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in products[:3]]})
         cats = res.get("categories") or []
         if q:
@@ -206,13 +209,14 @@ class StubCustomerLlm(BaseLlm):
                 return self._call("get_stock", {"sku": sku, "node_id": node})
             st = by["get_stock"]
             if st.get("qty", 0) > 0:
-                return self._say({"text": s["in_stock"].format(name=st.get("name", sku), qty=st["qty"], bb=_fmt_date(st.get("expiry_date"))), "buttons": [{"id": f"add:{sku}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": st.get("batch_id") or f"{sku}@{node}"}]})
+                low = s["low_stock"] if st["qty"] <= LOW_STOCK_THRESHOLD else ""
+                return self._say({"text": s["in_stock"].format(name=st.get("name", sku), low=low, bb=_fmt_date(st.get("expiry_date"))), "buttons": [{"id": f"add:{sku}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": st.get("batch_id") or f"{sku}@{node}"}]})
             if "find_substitutes" not in by:
                 return self._call("find_substitutes", {"sku": sku, "node_id": node})
             subs = by["find_substitutes"].get("result", by["find_substitutes"]) if isinstance(by["find_substitutes"], dict) else by["find_substitutes"]
             if not subs:
                 return self._say({"text": s["none"].format(name=st.get("name", sku))})
-            rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"{r['qty']} in stock · ₹{float(r.get('list_price') or 0):.0f}"[:72]} for r in subs[:10]]
+            rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"₹{float(r.get('list_price') or 0):.0f}{' · few left' if r['qty'] <= LOW_STOCK_THRESHOLD else ''}"[:72]} for r in subs[:10]]
             return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
         # a bare discount/offer question with something just shown and nothing pending: say so
         # against what she was just looking at, instead of the generic "which product?" fallback
