@@ -20,7 +20,7 @@ STRINGS = {
         "in_stock": "{name} is in stock at your store ({qty} left). Best before {bb}. Add it?",
         "oos": "{name} is out at your store right now. Here is what is on the shelf instead:",
         "none": "{name} is out at your store and I could not find a substitute in stock.",
-        "ordered": "Order {order_id} placed. Total ₹{total:.0f}. Thank you!",
+        "ordered": "Order {order_id} placed: {items}. Total ₹{total:.0f}. Thank you!",
         "stop": "Done. You will not receive offers on chat. Reply if you need anything else.",
         "no": "No problem. Ask me anytime.",
         "refused": "That offer is not available for you: {reason}.",
@@ -28,13 +28,14 @@ STRINGS = {
         "browse": "On the shelf at your store today:",
         "matches": "Here is what I found for \"{q}\" at your store:",
         "nomatch": "Nothing matching \"{q}\" is in stock at your store right now.",
+        "no_discount": "No extra discount on {q} right now. I will let you know if one comes up.",
     },
     "kn": {
         "greet": "ನಮಸ್ಕಾರ {name}! ಇಂದು ನಿಮಗೆ ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ. ಯಾವುದೇ ಉತ್ಪನ್ನ ಕೇಳಿ, ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತೇನೆ.",
         "in_stock": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ ({qty} ಉಳಿದಿದೆ). ಬಳಕೆಗೆ ಉತ್ತಮ {bb}ರವರೆಗೆ. ಸೇರಿಸಲೇ?",
         "oos": "{name} ಈಗ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ. ಬದಲಿಗೆ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಇರುವುದು:",
         "none": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ ಮತ್ತು ಬದಲಿ ಸಿಗಲಿಲ್ಲ.",
-        "ordered": "ಆರ್ಡರ್ {order_id} ಆಗಿದೆ. ಒಟ್ಟು ₹{total:.0f}. ಧನ್ಯವಾದಗಳು!",
+        "ordered": "ಆರ್ಡರ್ {order_id} ಆಗಿದೆ: {items}. ಒಟ್ಟು ₹{total:.0f}. ಧನ್ಯವಾದಗಳು!",
         "stop": "ಆಯಿತು. ಚಾಟ್‌ನಲ್ಲಿ ಆಫರ್‌ಗಳು ಬರುವುದಿಲ್ಲ.",
         "no": "ಪರವಾಗಿಲ್ಲ. ಯಾವಾಗ ಬೇಕಾದರೂ ಕೇಳಿ.",
         "refused": "ಆ ಆಫರ್ ನಿಮಗೆ ಲಭ್ಯವಿಲ್ಲ: {reason}.",
@@ -42,10 +43,12 @@ STRINGS = {
         "browse": "ಇಂದು ನಿಮ್ಮ ಸ್ಟೋರ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ:",
         "matches": "\"{q}\" ಗಾಗಿ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು:",
         "nomatch": "\"{q}\" ಗೆ ಹೊಂದುವ ಯಾವುದೂ ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಇಲ್ಲ.",
+        "no_discount": "{q} ಮೇಲೆ ಈಗ ಹೆಚ್ಚುವರಿ ರಿಯಾಯಿತಿ ಇಲ್ಲ. ಬಂದಾಗ ತಿಳಿಸುತ್ತೇನೆ.",
     },
 }
 LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store", "cats": "Categories"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"}}
-GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|evening)|any (offers?|deals?)( today)?\??|offers?|deals?)\W*$|\b(offers?|deals?)\b")
+GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|evening)|any (offers?|deals?|discounts?)( today)?\??|offers?|deals?|discounts?)\W*$|\b(offers?|deals?|discounts?)\b")
+KANNADA_RE = re.compile(r"[\u0C80-\u0CFF]")
 BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
@@ -73,9 +76,14 @@ class StubCustomerLlm(BaseLlm):
     def _say(self, payload: dict[str, Any]) -> LlmResponse:
         return LlmResponse(content=types.Content(role="model", parts=[types.Part(text=json.dumps(payload, ensure_ascii=False))]))
 
-    def _turn(self, req: LlmRequest) -> tuple[str, str, list[tuple[str, dict]], list[tuple[str, dict]]]:
-        """(customer_id, latest user text, calls since that text, responses since that text)."""
-        customer_id, last_user, calls, responses = "", "", [], []
+    def _turn(self, req: LlmRequest) -> tuple[str, str, list[tuple[str, dict]], list[tuple[str, dict]], list[dict]]:
+        """(customer_id, latest user text, calls since that text, responses since that text,
+        last_context). Decision logic below only ever acts on the latest turn's tool calls (this
+        stand-in has no real reasoning over history), but `last_context` carries the last product
+        list a browse/stock lookup surfaced across EARLIER turns too, so a bare follow-up like
+        "any discounts?" can still refer to what was just shown instead of falling to the unknown
+        reply. Real Gemini (vertex backend) sees the whole transcript and does not need this."""
+        customer_id, last_user, calls, responses, last_context = "", "", [], [], []
         for c in req.contents:
             for part in c.parts or []:
                 if part.text and c.role == "user":
@@ -87,8 +95,27 @@ class StubCustomerLlm(BaseLlm):
                 if part.function_call:
                     calls.append((part.function_call.name, dict(part.function_call.args or {})))
                 if part.function_response:
-                    responses.append((part.function_response.name, dict(part.function_response.response or {})))
-        return customer_id, last_user, calls, responses
+                    name, resp = part.function_response.name, dict(part.function_response.response or {})
+                    responses.append((name, resp))
+                    if name == "list_products" and resp.get("products"):
+                        last_context = resp["products"]
+                    elif name == "get_stock" and resp.get("qty", 0) > 0:
+                        last_context = [resp]
+                    elif name == "find_substitutes":
+                        subs = resp.get("result", resp) if isinstance(resp, dict) else resp
+                        if subs:
+                            last_context = subs
+        return customer_id, last_user, calls, responses, last_context
+
+    @staticmethod
+    def _detect_lang(text: str, fallback: str) -> str:
+        """Reply in the script the customer just typed in; fall back to their stored preference
+        only when the message carries no script of its own (STOP, an add: id, empty)."""
+        if KANNADA_RE.search(text):
+            return "kn"
+        if re.search(r"[A-Za-z]{2,}", text):
+            return "en"
+        return fallback
 
     def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
         products = res.get("products") or []
@@ -124,13 +151,13 @@ class StubCustomerLlm(BaseLlm):
         yield self.decide(llm_request)
 
     def decide(self, req: LlmRequest) -> LlmResponse:
-        customer_id, user, calls, responses = self._turn(req)
+        customer_id, user, calls, responses, last_context = self._turn(req)
         text = re.sub(r"customer_id=\S+\s*", "", user).strip()
         by = {n: r for n, r in responses}
         ctx = by.get("get_customer_context")
         if ctx is None:
             return self._call("get_customer_context", {"customer_id": customer_id})
-        lang = ctx.get("language") or "en"
+        lang = self._detect_lang(text, ctx.get("language") or "en")
         s, lab = STRINGS.get(lang, STRINGS["en"]), LABELS.get(lang, LABELS["en"])
         name = ctx.get("display_name") or customer_id
         node = ctx["home_node_id"]
@@ -156,7 +183,8 @@ class StubCustomerLlm(BaseLlm):
                     lines.append({"sku": offer["bundle_sku"], "qty": 1})
                 return self._call("place_order", {"customer_id": customer_id, "node_id": node, "lines": lines, "play_id": play_id})
             po = by["place_order"]
-            return self._say({"text": s["ordered"].format(order_id=po.get("order_id"), total=float(po.get("total_inr") or 0)), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
+            items = " + ".join(f"{ln['qty']}x {ln['name']}" for ln in po.get("lines") or []) or sku
+            return self._say({"text": s["ordered"].format(order_id=po.get("order_id"), items=items, total=float(po.get("total_inr") or 0)), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
         if low in ("no", "not now", "no thanks"):
             return self._say({"text": s["no"]})
         # category button or browse
@@ -186,6 +214,11 @@ class StubCustomerLlm(BaseLlm):
                 return self._say({"text": s["none"].format(name=st.get("name", sku))})
             rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"{r['qty']} in stock · ₹{float(r.get('list_price') or 0):.0f}"[:72]} for r in subs[:10]]
             return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
+        # a bare discount/offer question with something just shown and nothing pending: say so
+        # against what she was just looking at, instead of the generic "which product?" fallback
+        if not offers and last_context and "discount" in low:
+            shown = ", ".join(p.get("name", p.get("sku", "")) for p in last_context[:3])
+            return self._say({"text": s["no_discount"].format(q=shown), "citations": [{"type": "stock", "ref": p["sku"]} for p in last_context[:3] if p.get("sku")]})
         # offers / greeting
         if offers and (GREETING_RE.search(low) or not text):
             o = offers[0]
