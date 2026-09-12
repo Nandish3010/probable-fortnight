@@ -39,7 +39,10 @@ export function isMockMode(): boolean {
 }
 
 function apiBase(): string {
-  return process.env.NEXT_PUBLIC_TAAL_API_URL ?? "http://localhost:8080";
+  // Strip a trailing slash so `${apiBase()}${path}` (path always starts with "/") never
+  // produces a double slash, which 404s against FastAPI's exact route paths.
+  const base = process.env.NEXT_PUBLIC_TAAL_API_URL ?? "http://localhost:8080";
+  return base.replace(/\/+$/, "");
 }
 
 async function delay(ms: number): Promise<void> {
