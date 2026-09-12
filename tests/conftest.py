@@ -19,11 +19,15 @@ def data_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     if (d / "manifest.json").exists() and (d / "gaps.jsonl").exists():
         return d.resolve()
     out = tmp_path_factory.mktemp("tenant")
+    import asyncio
+
     from data.generator import generate
+    from harness.seed_plays import seed_plays
     from jobs.sense.run import run_sense
 
     generate(out)
     run_sense(out)
+    asyncio.run(seed_plays(str(out)))
     return out
 
 
