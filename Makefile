@@ -39,6 +39,9 @@ openapi:          ## regenerate docs/openapi.yaml from the FastAPI app
 sense:            ## nightly job locally
 	uv run python -m jobs.sense
 
+backtest:         ## rolling-origin forecast backtest on the sample slice -> eval_forecast
+	uv run python -m jobs.sense.backtest
+
 measure:          ## measure job locally
 	uv run python -m jobs.measure
 

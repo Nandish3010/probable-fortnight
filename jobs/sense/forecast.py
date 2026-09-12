@@ -11,6 +11,13 @@ Method (per sku x cluster, then rolled down to nodes by trailing 28-day share):
   p10 / p90      = p50 * empirical 10th / 90th percentile of actual/fitted over the last 28 days
 A play approved for a sku sets on_promo=true on its window dates in future_regressors; the
 re-forecast changes p50 inside the window and nowhere before it (tests/sql/test_forecast.py).
+
+Intermittent series: a (sku, cluster) with fewer than 50% of the last 28 days having any
+recorded sale has too little signal for day-of-week or promo structure to be estimable, so it
+falls back to a flat average-demand rule (p50 = mean observed daily units, no dow/promo
+shaping) with a widened p10/p90 band; `forecasts.method` is `average_demand_intermittent`
+instead of `seasonal_naive_xreg` so this is visible, never silently conflated with the normal
+model.
 """
 from __future__ import annotations
 
@@ -25,6 +32,7 @@ HORIZON = 28
 LEVEL_WINDOW = 28
 FESTIVAL_COEF = 1.35
 MODEL = "local_seasonal_xreg"
+INTERMITTENT_ZERO_DAY_THRESHOLD = 0.5  # DECISIONS §5.2: >=50% zero days over LEVEL_WINDOW -> average-demand rule
 
 
 def run_id_for(as_of: date, tag: str = "baseline") -> str:
@@ -48,11 +56,19 @@ class SeriesModel:
         self.as_of = as_of
         days = sorted(history)
         if not days:
-            self.level, self.dow, self.promo_coef, self.q10, self.q90 = 0.0, [1.0] * 7, 1.3, 0.6, 1.5
+            self.level, self.dow, self.promo_coef, self.q10, self.q90, self.is_intermittent = 0.0, [1.0] * 7, 1.3, 0.6, 1.5, False
             return
         start = as_of - timedelta(days=LEVEL_WINDOW)
         overall = [u for d, (u, _) in history.items()]
         mean_all = sum(overall) / len(overall) if overall else 0.0
+        observed_recent_days = sum(1 for d in days if d >= start)
+        self.is_intermittent = observed_recent_days < LEVEL_WINDOW * (1 - INTERMITTENT_ZERO_DAY_THRESHOLD)
+        if self.is_intermittent:
+            # Too sparse for day-of-week, promo or festival structure to be estimable from data;
+            # forecast a flat average of observed demand instead (labelled via `method` below).
+            self.dow, self.promo_coef, self.level = [1.0] * 7, 1.0, mean_all
+            self.q10, self.q90 = 0.3, 2.0  # a flat average is a rougher estimate: widen the band
+            return
         by_dow: dict[int, list[float]] = defaultdict(list)
         for d, (u, _) in history.items():
             by_dow[d.weekday()].append(u)
@@ -129,6 +145,7 @@ def forecast(store: LocalStore, as_of: date, run_id: str, skus: list[str] | None
         if want is not None and sku not in want:
             continue
         model = SeriesModel(series, as_of)
+        method = "average_demand_intermittent" if model.is_intermittent else "seasonal_naive_xreg"
         members = nodes_in_cluster[cluster]
         total_recent = sum(node_recent.get((sku, n), 0.0) for n in members)
         shares = {n: (node_recent.get((sku, n), 0.0) / total_recent if total_recent > 0 else 1.0 / len(members)) for n in members}
@@ -141,7 +158,7 @@ def forecast(store: LocalStore, as_of: date, run_id: str, skus: list[str] | None
                 out.append({
                     "tenant_id": tenant, "run_id": run_id, "sku": sku, "node_id": n, "cluster_id": cluster, "date": d.isoformat(),
                     "p10": round(p50 * model.q10, 3), "p50": round(p50, 3), "p90": round(p50 * model.q90, 3),
-                    "model": MODEL, "method": "seasonal_naive_xreg", "includes_plays": includes_plays, "as_of": as_of.isoformat(),
+                    "model": MODEL, "method": method, "includes_plays": includes_plays, "as_of": as_of.isoformat(),
                 })
     return out
 
