@@ -1,0 +1,47 @@
+# Demo tenant: Kutumb Mart, Bengaluru. Synthetic; disclosed in README.
+tenant_id = "kutumb-mart"
+currency = "INR"
+languages = ["en", "kn"]
+
+[sellby_rule]
+# FSSAI advisory to e-commerce FBOs (Dec 2024): "30 percent or 45 days before
+# expiry at the time of delivery". Wording is ambiguous; we implement the
+# stricter reading by default and let the tenant choose.
+version = "v1-strict"
+min_fraction_remaining = 0.30
+min_days_remaining = 45
+combine = "max"   # max(30% of shelf life, 45 days) before expiry
+
+[thresholds]
+min_rupees_at_stake_for_planner = 500
+default_holdout_fraction = 0.10
+min_holdout_fraction = 0.05
+min_treated_n = 20
+frequency_cap_per_7d = 2
+slow_mover_days = 21
+cost_ceiling_pct_of_rupees_at_stake = 2.0
+# Blanket-markdown counterfactual: units uplift per 1% of markdown, as a fraction of baseline
+# (20% off -> +80% units at 4.0). An estimate; the estimator labels it. Replace with measured elasticity.
+markdown_elasticity = 4.0
+min_affinity = 0.3
+transfer_cost_per_unit_inr = 2.0
+
+[margin_floor_pct]
+default = 8.0
+snacks = 8.0
+beverages = 6.0
+staples = 4.0
+premium_tea = 12.0
+
+[policy]
+version = "v1"
+text = """
+Kutumb Mart pricing and promotion policy.
+1. Never sell below the category margin floor.
+2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.
+3. Never discount premium tea below 12% margin; prefer transfers for premium tea.
+4. Any near-sell-by offer must state the best-before date to the customer.
+5. Customers with an active subscription for a product never receive discount offers on it.
+6. Do not push a product that is at risk of stockout at the same node.
+7. Every play must carry a holdout of at least 5% so we can measure it.
+"""

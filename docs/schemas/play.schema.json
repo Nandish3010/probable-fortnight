@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/play.schema.json",
+  "title": "Play",
+  "description": "A demand-shaping play: the first-class object linking a supply gap to a customer action, with estimator numbers, guardrails and a holdout. Source of truth for BigQuery DDL, Pydantic models and TypeScript types.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["play_id", "gap_id", "created_at", "objective", "target", "mechanic", "mechanic_params", "audience", "channel", "window", "copy", "expected_outcome", "counterfactuals", "holdout", "guardrails", "rationale", "citations", "alternatives", "policy_version", "trace_ref", "status"],
+  "properties": {
+    "play_id": { "type": "string", "pattern": "^play_[A-Za-z0-9_-]{4,}$" },
+    "gap_id": { "type": "string", "pattern": "^gap_[A-Za-z0-9_-]{4,}$" },
+    "tenant_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "objective": { "type": "string", "enum": ["clear_online_sellby", "clear_expiry", "prevent_stockout", "rebalance", "revive_slow_mover"] },
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sku", "node_ids", "batch_ids", "units", "deadline_date", "deadline_type"],
+      "properties": {
+        "sku": { "type": "string" },
+        "node_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "batch_ids": { "type": "array", "items": { "type": "string" } },
+        "units": { "type": "integer", "minimum": 1 },
+        "deadline_date": { "type": "string", "format": "date" },
+        "deadline_type": { "type": "string", "enum": ["online_sellby", "expiry", "lead_time"] }
+      }
+    },
+    "mechanic": { "type": "string", "enum": ["bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge", "coupon", "outlet_markdown", "transfer_plus_nudge"] },
+    "mechanic_params": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "discount_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "bundle_sku": { "type": "string" },
+        "bundle_price": { "type": "number", "minimum": 0 },
+        "transfer_to_node": { "type": "string" },
+        "transfer_units": { "type": "integer", "minimum": 0 },
+        "preorder_eta_date": { "type": "string", "format": "date" },
+        "markdown_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "audience": {
+      "type": "object", "additionalProperties": false,
+      "required": ["segment_ids", "filters", "purpose", "size_before_consent", "size_after_consent"],
+      "properties": {
+        "segment_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "filters": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "min_affinity": { "type": "number", "minimum": 0, "maximum": 1 },
+            "recency_days": { "type": "integer", "minimum": 1 },
+            "node_radius_km": { "type": "number", "minimum": 0 }
+          }
+        },
+        "purpose": { "type": "string", "const": "marketing" },
+        "size_before_consent": { "type": "integer", "minimum": 0 },
+        "size_after_consent": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "channel": { "type": "string", "enum": ["web_chat", "app_push", "outlet"] },
+    "window": {
+      "type": "object", "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": { "start": { "type": "string", "format": "date-time" }, "end": { "type": "string", "format": "date-time" } }
+    },
+    "copy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_set", "variants", "copy_status"],
+      "properties": {
+        "language_set": { "type": "array", "items": { "type": "string", "pattern": "^[a-z]{2}$" }, "minItems": 1 },
+        "variants": { "type": "array", "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["segment_id", "language", "text", "disclosure_included"],
+          "properties": {
+            "segment_id": { "type": "string" },
+            "language": { "type": "string", "pattern": "^[a-z]{2}$" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 600 },
+            "disclosure_included": { "type": "boolean" }
+          }
+        } },
+        "copy_status": { "type": "string", "enum": ["pending", "generated", "validated", "rejected"] }
+      }
+    },
+    "expected_outcome": {
+      "type": "object", "additionalProperties": false,
+      "required": ["units", "margin_inr", "waste_avoided_inr", "discount_cost_inr", "ci_low", "ci_high", "prior_n", "measured_n", "estimator_version"],
+      "properties": {
+        "units": { "type": "number", "minimum": 0 },
+        "margin_inr": { "type": "number" },
+        "waste_avoided_inr": { "type": "number", "minimum": 0 },
+        "discount_cost_inr": { "type": "number", "minimum": 0 },
+        "ci_low": { "type": "number", "minimum": 0 },
+        "ci_high": { "type": "number", "minimum": 0 },
+        "prior_n": { "type": "number", "minimum": 0 },
+        "measured_n": { "type": "integer", "minimum": 0 },
+        "estimator_version": { "type": "string" }
+      }
+    },
+    "counterfactuals": {
+      "type": "object", "additionalProperties": false,
+      "required": ["do_nothing_inr", "blanket_markdown_inr", "blanket_markdown_pct"],
+      "properties": {
+        "do_nothing_inr": { "type": "number", "minimum": 0 },
+        "blanket_markdown_inr": { "type": "number", "minimum": 0 },
+        "blanket_markdown_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "holdout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fraction", "seed", "min_treated_n"],
+      "properties": {
+        "fraction": { "type": "number", "minimum": 0.05, "maximum": 0.9 },
+        "seed": { "type": "string", "minLength": 4 },
+        "min_treated_n": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "guardrails": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["rule", "passed", "detail"],
+        "properties": {
+          "rule": { "type": "string", "enum": ["margin_floor", "frequency_cap", "consent_required", "sellby_disclosure", "subscription_protect", "no_cannibalise_stockout", "holdout_required", "cite_or_drop"] },
+          "passed": { "type": "boolean" },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["type", "ref"],
+        "properties": {
+          "type": { "type": "string", "enum": ["gap", "estimator", "outcome", "policy", "forecast", "stock"] },
+          "ref": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "alternatives": {
+      "type": "array", "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["mechanic", "mechanic_params", "expected_units", "expected_margin_inr", "rejected_because"],
+        "properties": {
+          "mechanic": { "type": "string" },
+          "mechanic_params": { "type": "object" },
+          "expected_units": { "type": "number", "minimum": 0 },
+          "expected_margin_inr": { "type": "number" },
+          "rejected_because": { "type": "string" }
+        }
+      }
+    },
+    "policy_version": { "type": "string" },
+    "trace_ref": { "type": "string", "description": "events/{run_id}" },
+    "status": { "type": "string", "enum": ["proposed", "approved", "modified", "rejected", "running", "measured", "unmeasured"] },
+    "approved_by": { "type": "string" },
+    "approved_at": { "type": "string", "format": "date-time" },
+    "edits": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["field", "from", "to", "at"],
+      "properties": { "field": { "type": "string" }, "from": {}, "to": {}, "at": { "type": "string", "format": "date-time" } }
+    } },
+    "cost": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "plan_cost_inr": { "type": "number", "minimum": 0 },
+        "conversation_budget_inr": { "type": "number", "minimum": 0 },
+        "pct_of_rupees_at_stake": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
