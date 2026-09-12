@@ -74,6 +74,10 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         raise KeyError(f"unknown gap {gap_id}")
     eligible, why = governor.planner_eligible(gap_rows[-1], tenant)
     started = time.time()
+    # a run id names one run: a repeat (same gap, same policy) replaces its trace instead of appending
+    trace = ctx.store.root / "events" / f"{run_id}.jsonl"
+    if trace.exists():
+        trace.unlink()
     ctx.store.append_event(run_id, {"seq": 0, "run_id": run_id, "invocation_id": "", "author": "cost_governor", "timestamp": started, "ts_offset_ms": 0, "text": why, "level": "info" if eligible else "warn"})
     if not eligible:
         return {"run_id": run_id, "play": None, "status": "skipped", "reason": why, "iterations": 0, "events": ctx.store.read_events(run_id)}

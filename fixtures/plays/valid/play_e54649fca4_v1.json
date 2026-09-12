@@ -1,0 +1,155 @@
+{
+  "play_id": "play_e54649fca4_v1",
+  "gap_id": "gap_e54649fca4",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "clear_online_sellby",
+  "target": {
+    "sku": "SKU-CURD-200G",
+    "node_ids": [
+      "DS-04"
+    ],
+    "batch_ids": [
+      "B-CURD-200G-DS-04-01"
+    ],
+    "units": 98,
+    "deadline_date": "2026-09-20",
+    "deadline_type": "online_sellby"
+  },
+  "mechanic": "bundle",
+  "mechanic_params": {
+    "bundle_sku": "SKU-WHEAT-BREAD-400G",
+    "bundle_price": 296.0
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_1"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 376,
+    "size_after_consent": 324
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-20T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_e54649fca4_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 13.75% (net price 296.00, cost 255.29) vs dairy floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 324 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 376 -> 324"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CURD-200G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-CURD-200G at DS-04"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "98 units of Curd 200G at Dark store 04 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-20; doing nothing writes off ₹19191 and a blanket 20% markdown costs ₹11063. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹296 for 324 consented customers (Household occasionals, Premium Tea occasionals, Sweets regulars): expected 24 units, margin ₹978, discount cost ₹456, waste avoided ₹4705 (CI 1 to 70 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_e54649fca4"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-CURD-200G-DS-04-01"
+    }
+  ],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 24.02,
+      "expected_margin_inr": 94.18,
+      "rejected_because": "margin_floor: net margin 1.96% (net price 199.75, cost 195.83) vs dairy floor 8.00%"
+    }
+  ],
+  "policy_version": "v1",
+  "trace_ref": "events/run_e54649fca4_v1_e4d7d0c5",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 24.02,
+    "margin_inr": 978.04,
+    "waste_avoided_inr": 4704.74,
+    "discount_cost_inr": 456.47,
+    "ci_low": 1.3,
+    "ci_high": 70.09,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 19191.34,
+    "blanket_markdown_inr": 11062.86,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 42.12,
+    "pct_of_rupees_at_stake": 0.227
+  }
+}

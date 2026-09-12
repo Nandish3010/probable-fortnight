@@ -75,7 +75,7 @@ export async function getHealth(): Promise<HealthResponse> {
 
 // ---------- gaps ----------
 
-export async function getGaps(params?: { node_id?: string }): Promise<Gap[]> {
+export async function getGaps(params?: { node_id?: string; limit?: number }): Promise<Gap[]> {
   if (isMockMode()) {
     await delay(150);
     const all = mockGaps as Gap[];
@@ -86,8 +86,10 @@ export async function getGaps(params?: { node_id?: string }): Promise<Gap[]> {
     }
     return [...all].sort((a, b) => b.rupees_at_stake - a.rupees_at_stake);
   }
-  const qs = params?.node_id ? `?node_id=${encodeURIComponent(params.node_id)}` : "";
-  return request<Gap[]>(`/gaps${qs}`);
+  const q = new URLSearchParams();
+  if (params?.node_id) q.set("node_id", params.node_id);
+  q.set("limit", String(params?.limit ?? 1000));
+  return request<Gap[]>(`/gaps?${q.toString()}`);
 }
 
 // ---------- plays ----------
@@ -211,6 +213,8 @@ function pickMockScenario(text: string): ChatEnvelope[] {
   if (t.includes("stop")) return chat.stop;
   if (t.startsWith("add:") || t.startsWith("add ") || t.startsWith("order")) return chat.order;
   if (t.includes("cola") || t.includes("zero")) return chat.cola_zero;
+  if (t.includes("what") || t.includes("menu") || t.includes("browse")) return chat.browse;
+  if (t.includes("chips")) return chat.chips;
   if (t.includes("offer") || t.includes("hi") || t.includes("hello")) return chat.greeting;
   return chat.default;
 }

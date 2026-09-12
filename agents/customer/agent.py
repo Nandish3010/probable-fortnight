@@ -1,6 +1,7 @@
 """Customer Agent: ADK `LlmAgent` with six tools (DECISIONS §5.5). Model from config/models.toml."""
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -12,6 +13,9 @@ from agents.gate.config import load_models
 
 from .stub_llm import StubCustomerLlm
 from .tools import TOOLS
+
+# The scripted stub models report no token usage; ADK logs that on every turn. Quiet it.
+logging.getLogger("google_adk.google.adk.telemetry._metrics").setLevel(logging.ERROR)
 
 PROMPT = Path(__file__).resolve().parent / "prompts" / "customer.md"
 LLMRegistry.register(StubCustomerLlm)

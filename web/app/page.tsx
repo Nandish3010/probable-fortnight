@@ -107,7 +107,7 @@ export default function LandingPage() {
           <div className="card">
             <div className="card__header">
               <h3>Outcomes</h3>
-              <Badge kind="real-pilot" detail="computed 3 Oct" />
+              <Badge kind="replay" detail="synthetic tenant · no pilot yet" />
             </div>
             <p className="muted">Treated vs holdout, the CEO number, unmeasured plays.</p>
           </div>
@@ -116,7 +116,7 @@ export default function LandingPage() {
 
       <footer className="footer">
         <div className="footer__links">
-          <a href="#">Video (2:40)</a>
+          <a href="#">Video (pending)</a>
           <a href="#">Deck</a>
           <a href="#">Repo</a>
         </div>

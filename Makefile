@@ -4,7 +4,7 @@ export TAAL_MODEL_BACKEND ?= stub
 export TAAL_DATA_DIR ?= .local/data
 export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 
-.PHONY: setup verify secrets lint schemas generate fixtures openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
+.PHONY: live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -29,6 +29,9 @@ generate:         ## seeded tenant -> Sense -> demo plays into $(TAAL_DATA_DIR);
 
 fixtures:         ## rebuild committed fixtures (golden plays, mutations, golden runs, evalsets) from the tenant
 	uv run python -m harness.build_fixtures
+
+mocks:            ## regenerate web/mocks/*.json from the API (after make generate)
+	uv run python -m harness.build_mocks
 
 openapi:          ## regenerate docs/openapi.yaml from the FastAPI app
 	uv run python -m harness.openapi
@@ -65,6 +68,9 @@ api:              ## run the local API against fixtures
 
 web:
 	cd web && npm run dev
+
+live-test:        ## persona walkthrough against a running `make api` + `make web` (screenshots in eval/runs/screens)
+	cd web && npx playwright test -c playwright.live.config.ts
 
 demo: generate    ## local demo = api + web against generated data
 	@echo "Run 'make api' and 'make web' in two terminals; open http://localhost:3000"

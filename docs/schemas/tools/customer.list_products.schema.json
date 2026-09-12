@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/customer.list_products.schema.json",
+  "title": "customer.list_products",
+  "description": "Browse in-stock products at the customer's node by name or category words; empty query returns the categories on the shelf.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": [
+        "query",
+        "node_id"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "query",
+        "node_id",
+        "categories",
+        "products"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "products": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "required": [
+              "sku",
+              "name",
+              "category",
+              "qty",
+              "list_price"
+            ],
+            "properties": {
+              "sku": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "list_price": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

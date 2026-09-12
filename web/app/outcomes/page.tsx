@@ -63,7 +63,7 @@ export default function OutcomesPage() {
                   <ArmCell label="Treated" arm={o.treated} />
                   <ArmCell label="Holdout" arm={o.holdout} />
                   <td>
-                    {o.status === "measured" && o.lift !== undefined ? (
+                    {o.status === "measured" && o.lift != null ? (
                       <span>
                         {pct(o.lift)}
                         {o.ci_low !== undefined && o.ci_high !== undefined ? (
@@ -74,9 +74,9 @@ export default function OutcomesPage() {
                       <span className="muted">unmeasured</span>
                     )}
                   </td>
-                  <td>{o.waste_avoided_inr !== undefined ? inr(o.waste_avoided_inr) : "–"}</td>
+                  <td>{o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}</td>
                   <td>
-                    {o.status === "measured" && o.margin_per_discount_rupee !== undefined ? (
+                    {o.status === "measured" && o.margin_per_discount_rupee != null ? (
                       <div>
                         <span className="ceo-number">{o.margin_per_discount_rupee.toFixed(2)}</span>
                         <div className="muted">net margin recovered per {"₹"}1 of discount vs holdout</div>

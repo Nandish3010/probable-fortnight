@@ -1,39 +1,38 @@
 {
-  "play_id": "play_295e93f1b0_v1",
-  "gap_id": "gap_295e93f1b0",
+  "play_id": "play_3c15326a05_v1",
+  "gap_id": "gap_3c15326a05",
   "tenant_id": "kutumb-mart",
   "created_at": "2026-09-12T00:00:00Z",
   "objective": "clear_online_sellby",
   "target": {
-    "sku": "SKU-BARFI-500G",
+    "sku": "SKU-CREAM-200G",
     "node_ids": [
-      "DS-07"
+      "DS-01"
     ],
     "batch_ids": [
-      "B-BARFI-500G-DS-07-01"
+      "B-CREAM-200G-DS-01-01"
     ],
-    "units": 31,
+    "units": 172,
     "deadline_date": "2026-09-16",
     "deadline_type": "online_sellby"
   },
-  "mechanic": "coupon",
+  "mechanic": "bundle",
   "mechanic_params": {
-    "discount_pct": 15
+    "bundle_sku": "SKU-WHEAT-BREAD-400G",
+    "bundle_price": 197.0
   },
   "audience": {
     "segment_ids": [
-      "seg_1",
+      "seg_5",
       "seg_2",
-      "seg_3",
-      "seg_4",
-      "seg_5"
+      "seg_1"
     ],
     "filters": {
       "min_affinity": 0.3
     },
     "purpose": "marketing",
-    "size_before_consent": 365,
-    "size_after_consent": 309
+    "size_before_consent": 378,
+    "size_after_consent": 326
   },
   "channel": "web_chat",
   "window": {
@@ -50,24 +49,24 @@
   },
   "holdout": {
     "fraction": 0.1,
-    "seed": "seed-play_295e93f1b0_v1",
+    "seed": "seed-play_3c15326a05_v1",
     "min_treated_n": 20
   },
   "guardrails": [
     {
       "rule": "margin_floor",
       "passed": true,
-      "detail": "net margin 13.24% (net price 956.25, cost 829.65) vs sweets floor 8.00%"
+      "detail": "net margin 17.79% (net price 197.00, cost 161.95) vs dairy floor 8.00%"
     },
     {
       "rule": "frequency_cap",
       "passed": true,
-      "detail": "all 309 customers under 2 plays in 7 days"
+      "detail": "all 326 customers under 2 plays in 7 days"
     },
     {
       "rule": "consent_required",
       "passed": true,
-      "detail": "audience filtered by consent: 365 -> 309"
+      "detail": "audience filtered by consent: 378 -> 326"
     },
     {
       "rule": "sellby_disclosure",
@@ -77,12 +76,12 @@
     {
       "rule": "subscription_protect",
       "passed": true,
-      "detail": "no active subscribers of SKU-BARFI-500G in audience"
+      "detail": "no active subscribers of SKU-CREAM-200G in audience"
     },
     {
       "rule": "no_cannibalise_stockout",
       "passed": true,
-      "detail": "no stockout gap for SKU-BARFI-500G at DS-07"
+      "detail": "no stockout gap for SKU-CREAM-200G at DS-01"
     },
     {
       "rule": "holdout_required",
@@ -95,11 +94,11 @@
       "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
     }
   ],
-  "rationale": "31 units of Barfi 500G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-16; doing nothing writes off ₹25719 and a blanket 20% markdown costs ₹17879. This play uses a 15% coupon for 309 consented customers (Sweets regulars, Premium Tea occasionals, Staples occasionals, Personal Care occasionals, Household occasionals): expected 22 units, margin ₹2772, discount cost ₹3694, waste avoided ₹18163 (CI 1 to 64 units; prior n 20, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\"",
+  "rationale": "172 units of Cream 200G at Dark store 01 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-16; doing nothing writes off ₹17628 and a blanket 20% markdown costs ₹12000. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹197 for 326 consented customers (Household occasionals, Premium Tea occasionals, Sweets regulars): expected 20 units, margin ₹705, discount cost ₹261, waste avoided ₹2062 (CI 1 to 59 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
   "citations": [
     {
       "type": "gap",
-      "ref": "gap_295e93f1b0"
+      "ref": "gap_3c15326a05"
     },
     {
       "type": "estimator",
@@ -115,32 +114,42 @@
     },
     {
       "type": "stock",
-      "ref": "B-BARFI-500G-DS-07-01"
+      "ref": "B-CREAM-200G-DS-01-01"
     }
   ],
-  "alternatives": [],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 20.11,
+      "expected_margin_inr": 161.11,
+      "rejected_because": "margin_floor: net margin 7.25% (net price 110.50, cost 102.49) vs dairy floor 8.00%"
+    }
+  ],
   "policy_version": "v1",
-  "trace_ref": "events/run_295e93f1b0_v1_5e8b61af",
+  "trace_ref": "events/run_3c15326a05_v1_7da01848",
   "status": "proposed",
   "expected_outcome": {
-    "units": 21.89,
-    "margin_inr": 2771.61,
-    "waste_avoided_inr": 18163.24,
-    "discount_cost_inr": 3694.38,
-    "ci_low": 1.18,
-    "ci_high": 63.87,
+    "units": 20.11,
+    "margin_inr": 705.0,
+    "waste_avoided_inr": 2061.5,
+    "discount_cost_inr": 261.48,
+    "ci_low": 1.08,
+    "ci_high": 58.68,
     "prior_n": 20.0,
     "measured_n": 0,
     "estimator_version": "est-v1"
   },
   "counterfactuals": {
-    "do_nothing_inr": 25719.15,
-    "blanket_markdown_inr": 17879.22,
+    "do_nothing_inr": 17628.28,
+    "blanket_markdown_inr": 11999.96,
     "blanket_markdown_pct": 20.0
   },
   "cost": {
     "plan_cost_inr": 1.51,
-    "conversation_budget_inr": 40.17,
-    "pct_of_rupees_at_stake": 0.162
+    "conversation_budget_inr": 42.38,
+    "pct_of_rupees_at_stake": 0.249
   }
 }

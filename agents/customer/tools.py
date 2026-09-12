@@ -7,6 +7,7 @@ Holdout customers never see an offer: `get_customer_context` returns no pending 
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from datetime import timedelta
 from typing import Any
@@ -175,4 +176,35 @@ def record_stop(customer_id: str, channel: str) -> dict:
     return {"ok": True}
 
 
-TOOLS = [get_customer_context, get_stock, find_substitutes, apply_offer, place_order, record_stop]
+STOPWORDS = {"have", "there", "what", "with", "your", "some", "want", "need", "tell", "give", "show", "does", "store", "today", "please", "about"}
+
+
+def _tokens(text: str) -> list[str]:
+    return [t for t in re.findall(r"[a-z]+", text.lower()) if len(t) >= 4 and t not in STOPWORDS]
+
+
+def list_products(query: str, node_id: str) -> dict:
+    """Browse: up to 10 in-stock products at the node whose name or category matches the query
+    words; with an empty query, the categories on the shelf. Never lists items with zero stock."""
+    ctx = current()
+    today = ctx.as_of.isoformat()
+    stock: dict[str, int] = defaultdict(int)
+    for b in ctx.store.read("inventory_batches"):
+        if b["node_id"] == node_id and int(b["qty_on_hand"]) > 0 and (not b["expiry_date"] or b["expiry_date"] >= today) and (not b.get("online_sellby_date") or b["online_sellby_date"] >= today):
+            stock[b["sku"]] += int(b["qty_on_hand"])
+    in_stock = [p for sku, p in ctx.products.items() if stock.get(sku, 0) > 0]
+    categories = sorted({p["category"] for p in in_stock})
+    words = _tokens(query)
+    if not words:
+        return {"query": query, "node_id": node_id, "categories": categories, "products": []}
+    hits = []
+    for p in in_stock:
+        hay = (p["name"] + " " + p["category"].replace("_", " ")).lower()
+        score = sum(1 for w in words if w in hay or (w.endswith("s") and w[:-1] in hay))
+        if score:
+            hits.append((score, -stock[p["sku"]], p["sku"], p))
+    hits.sort(key=lambda h: (-h[0], h[1], h[2]))
+    return {"query": query, "node_id": node_id, "categories": categories, "products": [{"sku": h[3]["sku"], "name": h[3]["name"], "category": h[3]["category"], "qty": stock[h[3]["sku"]], "list_price": float(h[3]["list_price"])} for h in hits[:10]]}
+
+
+TOOLS = [get_customer_context, get_stock, find_substitutes, apply_offer, place_order, record_stop, list_products]

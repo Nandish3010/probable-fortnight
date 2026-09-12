@@ -22,7 +22,8 @@ export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (pl
     setLoading(true);
     setError(null);
     try {
-      const res = await rerun({ gap_id: gapId, policy_text: text, policy_version: version });
+      // The API assigns the next policy version; re-sending the current one would overwrite the current play.
+      const res = await rerun({ gap_id: gapId, policy_text: text });
       setVersion(res.policy_version);
       onReplan(res.play);
     } catch {

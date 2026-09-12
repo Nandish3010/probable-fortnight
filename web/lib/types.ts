@@ -409,11 +409,11 @@ export interface Outcome {
   min_treated_n: number;
   treated: OutcomeArm;
   holdout: OutcomeArm;
-  lift?: number;
-  ci_low?: number;
-  ci_high?: number;
-  waste_avoided_inr?: number;
-  margin_per_discount_rupee?: number; // the CEO number
+  lift?: number | null;
+  ci_low?: number | null;
+  ci_high?: number | null;
+  waste_avoided_inr?: number | null;
+  margin_per_discount_rupee?: number | null; // the CEO number; null when no discount was given
   looker_url?: string;
   data_label: "REAL PILOT" | "SYNTHETIC";
 }
