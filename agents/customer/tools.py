@@ -151,12 +151,13 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
     async with Client(orders_server) as client:
         res = await client.call_tool("place_order", {"customer_id": customer_id, "node_id": node_id, "lines": priced, "play_id": play_id or None, "data_dir": str(ctx.store.root), "base_dir": base_dir, "ts": ctx.now_iso})
     data = res.structured_content or json.loads(res.content[0].text)
+    data["lines"] = [{"sku": ln["sku"], "name": ctx.products[ln["sku"]]["name"], "qty": ln["qty"], "price": ln["price"], "discount": ln["discount"]} for ln in priced]
     if play_id and offer.get("ok"):
         for o in ctx.store.read("offers"):
             if o["customer_id"] == customer_id and o["play_id"] == play_id and not o.get("redeemed_at"):
                 o["redeemed_at"] = ctx.now_iso
                 ctx.store.upsert("offers", "offer_id", o)
-    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"])}
+    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"]}
 
 
 def record_stop(customer_id: str, channel: str) -> dict:
