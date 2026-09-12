@@ -13,7 +13,7 @@ tests: ["tests/unit/test_assignment.py", "tests/api/test_api.py"]
 - [x] A holdout customer never appears in `offers/`
 - [x] `future_regressors` gains the play on approve
 - [x] Single-series re-forecast returns in < 15 s on the demo tenant
-- [ ] Response matches `docs/openapi.yaml` (`forecast_before/after`, `projected_writeoff_before/after`, `latency_ms`)
+- [x] Response matches `docs/openapi.yaml` — `/approve` now has a typed `response_model` (`ApproveResponseOut` in `services/api/main.py`) instead of an untyped dict, so `docs/openapi.yaml` documents the real field names (`forecast.latency_ms`, `forecast.writeoff_before_inr`/`writeoff_after_inr`, not the spec-prose names) and `tests/contract/test_openapi.py` fails on drift
 
 ## Reviewer-verified
-- [ ] UI state after approve matches §5.6 (chart moves, write-off counts down, holdout badge, run-id chip)
+- [x] UI state after approve matches §5.6 (chart moves, write-off counts down, holdout badge, run-id chip) — `web/tests/live/judge.spec.ts` asserts the chart renders, the write-off line's after-value is strictly less than its before-value (a genuine countdown, not just an arrow), the holdout badge text, and the `refc_<play_id>_...` run-id chip

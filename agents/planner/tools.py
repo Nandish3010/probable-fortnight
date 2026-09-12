@@ -17,6 +17,7 @@ from google.adk.tools.tool_context import ToolContext
 from agents.gate import guardrails as gr
 from agents.gate.config import ROOT
 from agents.gate.estimator import EstimatorContext, GapFacts, Product, estimate
+from agents.gate.invariants import check_play_money
 from agents.gate.models import Play
 
 from . import governor
@@ -260,6 +261,15 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
             errors.extend(f"guardrail {r['rule']}: {r['detail']}" for r in check["results"] if not r["passed"])
         else:
             play["guardrails"] = check["results"]
+            product = _product(ctx, play["target"]["sku"])
+            partner = ctx.products.get((play.get("mechanic_params") or {}).get("bundle_sku") or "", {})
+            mismatches = check_play_money(
+                play, product.unit_cost, product.list_price, int(gap["units_at_risk"]),
+                bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
+                transfer_cost_per_unit=float(ctx.tenant.thresholds.get("transfer_cost_per_unit_inr", 2.0)),
+            )
+            if mismatches:
+                errors.extend(f"runtime invariant: {m}" for m in mismatches)
     if errors:
         tool_context.state["guardrails_all_passed"] = False
         return {"play_id": None, "valid": False, "errors": errors}

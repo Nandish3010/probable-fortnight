@@ -26,10 +26,19 @@ test.describe("Arjun: Play Desk", () => {
     await expect(card.getByText(/margin floor|margin_floor/).first()).toBeVisible();
     await shot(page, "arjun-03-why");
 
-    // trace shows the revision
+    // trace is readable to a judge: invocation_id visible, one line per tool call, the revision visible
+    await expect(card.locator(".trace-panel__event").first()).toBeVisible();
+    await expect((await card.locator(".trace-panel__event").count())).toBeGreaterThan(3);
+    await expect(card.getByText(/^e-[0-9a-f-]+$/).first()).toBeVisible();
     await expect(card.getByText(/Guardrail failed: margin_floor/).first()).toBeVisible();
+
+    // replay reproduces the same panel state as the live run, event for event (snapshot diff)
+    const trace = card.locator(".trace-panel__list");
+    const beforeReplay = await trace.innerText();
     await card.getByRole("button", { name: /Replay at 4x/ }).click();
-    await expect(card.getByRole("button", { name: /Replay/ })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Replay at 4x" })).toBeVisible({ timeout: 15_000 });
+    const afterReplay = await trace.innerText();
+    expect(afterReplay).toBe(beforeReplay);
 
     // edit the rationale, then approve: the play records the edit
     const ta = card.locator("textarea").first();

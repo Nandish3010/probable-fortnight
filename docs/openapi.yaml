@@ -197,9 +197,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                type: object
-                title: Response Approve Play Approve Post
+                $ref: '#/components/schemas/ApproveResponseOut'
         '422':
           description: Validation Error
           content:
@@ -555,6 +553,78 @@ components:
       required:
       - play_id
       title: ApproveRequest
+    ApproveResponseOut:
+      properties:
+        play_id:
+          type: string
+          title: Play Id
+        status:
+          type: string
+          title: Status
+        assignment:
+          $ref: '#/components/schemas/AssignmentOut'
+        offers_written:
+          type: integer
+          title: Offers Written
+        regressor_rows_touched:
+          type: integer
+          title: Regressor Rows Touched
+        copy:
+          $ref: '#/components/schemas/CopyOut'
+        forecast:
+          $ref: '#/components/schemas/ForecastOut'
+        source:
+          type: string
+          title: Source
+        elapsed_ms:
+          type: integer
+          title: Elapsed Ms
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      type: object
+      required:
+      - play_id
+      - status
+      - assignment
+      - offers_written
+      - regressor_rows_touched
+      - copy
+      - forecast
+      - source
+      - elapsed_ms
+      title: ApproveResponseOut
+    AssignmentOut:
+      properties:
+        treated_n:
+          type: integer
+          title: Treated N
+        holdout_n:
+          type: integer
+          title: Holdout N
+        seed:
+          type: string
+          title: Seed
+        fraction:
+          type: number
+          title: Fraction
+        eligible_n:
+          type: integer
+          title: Eligible N
+        excluded_subscribers:
+          type: integer
+          title: Excluded Subscribers
+      type: object
+      required:
+      - treated_n
+      - holdout_n
+      - seed
+      - fraction
+      - eligible_n
+      - excluded_subscribers
+      title: AssignmentOut
     CaptureConfirmRequest:
       properties:
         node_id:
@@ -619,6 +689,21 @@ components:
       - session_id
       - text
       title: ChatRequest
+    CopyOut:
+      properties:
+        variants:
+          type: integer
+          title: Variants
+        rejected:
+          items:
+            type: string
+          type: array
+          title: Rejected
+      type: object
+      required:
+      - variants
+      - rejected
+      title: CopyOut
     ExecutionRequest:
       properties:
         play_id:
@@ -648,6 +733,65 @@ components:
       - node_id
       - steps_done
       title: ExecutionRequest
+    ForecastOut:
+      properties:
+        run_id:
+          type: string
+          title: Run Id
+        model:
+          type: string
+          title: Model
+        latency_ms:
+          type: integer
+          title: Latency Ms
+        series:
+          items:
+            $ref: '#/components/schemas/ForecastPointOut'
+          type: array
+          title: Series
+        writeoff_before_inr:
+          type: number
+          title: Writeoff Before Inr
+        writeoff_after_inr:
+          type: number
+          title: Writeoff After Inr
+        play_window:
+          $ref: '#/components/schemas/PlayWindowOut'
+      type: object
+      required:
+      - run_id
+      - model
+      - latency_ms
+      - series
+      - writeoff_before_inr
+      - writeoff_after_inr
+      - play_window
+      title: ForecastOut
+    ForecastPointOut:
+      properties:
+        date:
+          type: string
+          title: Date
+        baseline_p50:
+          type: number
+          title: Baseline P50
+        play_p50:
+          type: number
+          title: Play P50
+        p10:
+          type: number
+          title: P10
+        p90:
+          type: number
+          title: P90
+      type: object
+      required:
+      - date
+      - baseline_p50
+      - play_p50
+      - p10
+      - p90
+      title: ForecastPointOut
     HTTPValidationError:
       properties:
         detail:
@@ -666,6 +810,19 @@ components:
       required:
       - gap_id
       title: PlanRequest
+    PlayWindowOut:
+      properties:
+        start:
+          type: string
+          title: Start
+        end:
+          type: string
+          title: End
+      type: object
+      required:
+      - start
+      - end
+      title: PlayWindowOut
     PolicyUpdate:
       properties:
         text:

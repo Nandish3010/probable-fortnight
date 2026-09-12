@@ -19,7 +19,10 @@ test.describe("judge: landing", () => {
 
     await beat.getByRole("button", { name: "Approve" }).click();
     await expect(page.locator("svg.forecast-chart")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("writeoff-line")).toContainText("→");
+    const writeoffText = await page.getByTestId("writeoff-line").innerText();
+    expect(writeoffText).toContain("→");
+    const [writeoffBefore, writeoffAfter] = [...writeoffText.matchAll(/[\d,]+(?:\.\d+)?/g)].map((m) => Number(m[0].replace(/,/g, "")));
+    expect(writeoffAfter).toBeLessThan(writeoffBefore); // the write-off must genuinely count down, not just show two numbers
     await expect(page.getByText(/holdout/i).first()).toBeVisible();
     await expect(page.getByText(/refc_play_chips_ds07_v1/)).toBeVisible();
     await shot(page, "judge-03-approved-chart");
@@ -50,5 +53,36 @@ test.describe("judge: landing", () => {
     expect((await after.json()).status).toBe("proposed");
     await shot(page, "judge-05-after-reset");
     await expectNoConsoleErrors(errors);
+  });
+
+  test("first paint under 4s from a cold hit", async ({ page }) => {
+    await asVisitor(page, "live-judge-perf");
+    await page.goto("/");
+    const fcp = await page.evaluate(
+      () => new Promise<number>((resolve) => {
+        const existing = performance.getEntriesByType("paint").find((e) => e.name === "first-contentful-paint");
+        if (existing) return resolve(existing.startTime);
+        new PerformanceObserver((list) => {
+          const entry = list.getEntriesByName("first-contentful-paint")[0];
+          if (entry) resolve(entry.startTime);
+        }).observe({ type: "paint", buffered: true });
+      })
+    );
+    expect(fcp).toBeLessThan(4000);
+  });
+
+  test("health strip turns amber when a dependency check fails", async ({ page }) => {
+    await asVisitor(page, "live-judge-health");
+    await page.route("**/health", async (route) => {
+      const res = await route.fetch();
+      const body = await res.json();
+      body.checks.vertex.ok = false;
+      body.status = "degraded";
+      await route.fulfill({ response: res, json: body });
+    });
+    await page.goto("/");
+    await expect(page.locator(".health-strip__item--amber")).toBeVisible();
+    // every other check in the crafted payload stayed healthy, so the strip is not all-amber
+    await expect(page.locator(".health-strip__item--ok").first()).toBeVisible();
   });
 });
