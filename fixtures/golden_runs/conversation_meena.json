@@ -1,0 +1,238 @@
+[
+  {
+    "user": "Any offers today?",
+    "agent": {
+      "session_id": "CUST-MEENA:web",
+      "message_id": "CUST-MEENA:web-1789212845292",
+      "role": "agent",
+      "language": "kn",
+      "text": "Masala Chips 200G: ಇಂದು Coconut Water 1L ಜೊತೆ ₹61ಕ್ಕೆ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ 02 Nov 2026ರವರೆಗೆ.",
+      "buttons": [
+        {
+          "id": "add:SKU-MASALA-CHIPS-200G",
+          "label": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ"
+        },
+        {
+          "id": "no",
+          "label": "ಈಗ ಬೇಡ"
+        },
+        {
+          "id": "stop",
+          "label": "STOP"
+        }
+      ],
+      "citations": [
+        {
+          "type": "play",
+          "ref": "play_chips_ds07_v1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "name": "get_customer_context",
+          "args": {
+            "customer_id": "CUST-MEENA"
+          }
+        },
+        {
+          "name": "get_customer_context",
+          "result_ref": "CUST-MEENA:web#1"
+        }
+      ],
+      "latency_ms": 155,
+      "ts": "2026-09-12T09:05:00Z"
+    }
+  },
+  {
+    "user": "Do you have Cola Zero?",
+    "agent": {
+      "session_id": "CUST-MEENA:web",
+      "message_id": "CUST-MEENA:web-1789212845463",
+      "role": "agent",
+      "language": "kn",
+      "text": "Cola Zero 500ML ಈಗ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ. ಬದಲಿಗೆ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಇರುವುದು:",
+      "list": {
+        "title": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ",
+        "rows": [
+          {
+            "id": "add:SKU-COLA-ZERO-1L",
+            "title": "Cola Zero 1L",
+            "desc": "127 in stock · ₹50"
+          },
+          {
+            "id": "add:SKU-COLA-ZERO-250ML",
+            "title": "Cola Zero 250ML",
+            "desc": "105 in stock · ₹100"
+          },
+          {
+            "id": "add:SKU-COLA-LITE-500ML",
+            "title": "Cola Lite 500ML",
+            "desc": "80 in stock · ₹40"
+          },
+          {
+            "id": "add:SKU-COLA-CLASSIC-250ML",
+            "title": "Cola Classic 250ML",
+            "desc": "69 in stock · ₹25"
+          },
+          {
+            "id": "add:SKU-COLA-CLASSIC-500ML",
+            "title": "Cola Classic 500ML",
+            "desc": "124 in stock · ₹55"
+          }
+        ]
+      },
+      "citations": [
+        {
+          "type": "stock",
+          "ref": "SKU-COLA-ZERO-500ML@DS-07"
+        },
+        {
+          "type": "stock",
+          "ref": "SKU-COLA-ZERO-1L@DS-07"
+        },
+        {
+          "type": "stock",
+          "ref": "SKU-COLA-ZERO-250ML@DS-07"
+        },
+        {
+          "type": "stock",
+          "ref": "SKU-COLA-LITE-500ML@DS-07"
+        }
+      ],
+      "tool_calls": [
+        {
+          "name": "get_customer_context",
+          "args": {
+            "customer_id": "CUST-MEENA"
+          }
+        },
+        {
+          "name": "get_customer_context",
+          "result_ref": "CUST-MEENA:web#1"
+        },
+        {
+          "name": "get_stock",
+          "args": {
+            "sku": "SKU-COLA-ZERO-500ML",
+            "node_id": "DS-07"
+          }
+        },
+        {
+          "name": "get_stock",
+          "result_ref": "CUST-MEENA:web#3"
+        },
+        {
+          "name": "find_substitutes",
+          "args": {
+            "sku": "SKU-COLA-ZERO-500ML",
+            "node_id": "DS-07"
+          }
+        },
+        {
+          "name": "find_substitutes",
+          "result_ref": "CUST-MEENA:web#5"
+        }
+      ],
+      "latency_ms": 152,
+      "ts": "2026-09-12T09:05:00Z"
+    }
+  },
+  {
+    "user": "add:SKU-MASALA-CHIPS-200G",
+    "agent": {
+      "session_id": "CUST-MEENA:web",
+      "message_id": "CUST-MEENA:web-1789212846016",
+      "role": "agent",
+      "language": "kn",
+      "text": "ಆರ್ಡರ್ ORD-07E6C4B55F ಆಗಿದೆ. ಒಟ್ಟು ₹61. ಧನ್ಯವಾದಗಳು!",
+      "citations": [
+        {
+          "type": "play",
+          "ref": "play_chips_ds07_v1"
+        }
+      ],
+      "tool_calls": [
+        {
+          "name": "get_customer_context",
+          "args": {
+            "customer_id": "CUST-MEENA"
+          }
+        },
+        {
+          "name": "get_customer_context",
+          "result_ref": "CUST-MEENA:web#1"
+        },
+        {
+          "name": "apply_offer",
+          "args": {
+            "play_id": "play_chips_ds07_v1",
+            "customer_id": "CUST-MEENA"
+          }
+        },
+        {
+          "name": "apply_offer",
+          "result_ref": "CUST-MEENA:web#3"
+        },
+        {
+          "name": "place_order",
+          "args": {
+            "customer_id": "CUST-MEENA",
+            "node_id": "DS-07",
+            "lines": [
+              {
+                "sku": "SKU-MASALA-CHIPS-200G",
+                "qty": 1
+              },
+              {
+                "sku": "SKU-COCONUT-WATER-1L",
+                "qty": 1
+              }
+            ],
+            "play_id": "play_chips_ds07_v1"
+          }
+        },
+        {
+          "name": "place_order",
+          "result_ref": "CUST-MEENA:web#5"
+        }
+      ],
+      "latency_ms": 536,
+      "ts": "2026-09-12T09:05:00Z"
+    }
+  },
+  {
+    "user": "STOP",
+    "agent": {
+      "session_id": "CUST-MEENA:web",
+      "message_id": "CUST-MEENA:web-1789212846108",
+      "role": "agent",
+      "language": "kn",
+      "text": "ಆಯಿತು. ಚಾಟ್‌ನಲ್ಲಿ ಆಫರ್‌ಗಳು ಬರುವುದಿಲ್ಲ.",
+      "tool_calls": [
+        {
+          "name": "get_customer_context",
+          "args": {
+            "customer_id": "CUST-MEENA"
+          }
+        },
+        {
+          "name": "get_customer_context",
+          "result_ref": "CUST-MEENA:web#1"
+        },
+        {
+          "name": "record_stop",
+          "args": {
+            "customer_id": "CUST-MEENA",
+            "channel": "web_chat"
+          }
+        },
+        {
+          "name": "record_stop",
+          "result_ref": "CUST-MEENA:web#3"
+        }
+      ],
+      "latency_ms": 73,
+      "ts": "2026-09-12T09:05:00Z"
+    }
+  }
+]

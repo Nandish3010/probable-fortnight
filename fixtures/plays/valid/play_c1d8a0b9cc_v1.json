@@ -1,0 +1,143 @@
+{
+  "play_id": "play_c1d8a0b9cc_v1",
+  "gap_id": "gap_c1d8a0b9cc",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "clear_online_sellby",
+  "target": {
+    "sku": "SKU-PEDA-250G",
+    "node_ids": [
+      "DS-04"
+    ],
+    "batch_ids": [
+      "B-PEDA-250G-DS-04-01"
+    ],
+    "units": 18,
+    "deadline_date": "2026-09-12",
+    "deadline_type": "online_sellby"
+  },
+  "mechanic": "coupon",
+  "mechanic_params": {
+    "discount_pct": 15
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_1",
+      "seg_2"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 389,
+    "size_after_consent": 326
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-12T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_c1d8a0b9cc_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 20.60% (net price 1007.25, cost 799.77) vs sweets floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 326 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 389 -> 326"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-PEDA-250G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-PEDA-250G at DS-04"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "18 units of Peda 250G at Dark store 04 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-12; doing nothing writes off ₹14396 and a blanket 20% markdown costs ₹13538. This play uses a 15% coupon for 326 consented customers (Sweets regulars, Premium Tea occasionals): expected 24 units, margin ₹5015, discount cost ₹4297, waste avoided ₹14396 (CI 1 to 71 units; prior n 20, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_c1d8a0b9cc"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-PEDA-250G-DS-04-01"
+    }
+  ],
+  "alternatives": [],
+  "policy_version": "v1",
+  "trace_ref": "events/run_c1d8a0b9cc_v1_f9911800",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 24.17,
+    "margin_inr": 5015.39,
+    "waste_avoided_inr": 14395.86,
+    "discount_cost_inr": 4296.73,
+    "ci_low": 1.3,
+    "ci_high": 70.52,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 14395.86,
+    "blanket_markdown_inr": 13537.86,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 42.38,
+    "pct_of_rupees_at_stake": 0.305
+  }
+}

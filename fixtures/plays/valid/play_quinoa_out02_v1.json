@@ -1,0 +1,143 @@
+{
+  "play_id": "play_quinoa_out02_v1",
+  "gap_id": "gap_quinoa_out02",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T00:00:00Z",
+  "objective": "revive_slow_mover",
+  "target": {
+    "sku": "SKU-QUINOA-500G",
+    "node_ids": [
+      "OUT-02"
+    ],
+    "batch_ids": [
+      "B-QUINOA-OUT02-01"
+    ],
+    "units": 59,
+    "deadline_date": "2027-07-09",
+    "deadline_type": "expiry"
+  },
+  "mechanic": "outlet_markdown",
+  "mechanic_params": {
+    "markdown_pct": 10
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_3",
+      "seg_1"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 364,
+    "size_after_consent": 311
+  },
+  "channel": "outlet",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2027-07-09T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_quinoa_out02_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 12.04% (net price 216.00, cost 190.00) vs staples floor 4.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 0 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "outlet channel: no personal message, consent not required"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-QUINOA-500G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-QUINOA-500G at OUT-02"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "59 units of Quinoa 500G at Outlet 02 (North Bengaluru) are projected unsold before the expiry deadline on 2027-07-09; doing nothing writes off ₹11210 and a blanket 10% markdown costs ₹11153. This play uses a 10% in-store markdown for 311 consented customers (Staples occasionals, Sweets regulars): expected 22 units, margin ₹566, discount cost ₹522, waste avoided ₹4136 (CI 1 to 64 units; prior n 20, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_quinoa_out02"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-QUINOA-OUT02-01"
+    }
+  ],
+  "alternatives": [],
+  "policy_version": "v1",
+  "trace_ref": "events/run_quinoa_out02_v1_8c55c90a",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 21.77,
+    "margin_inr": 566.02,
+    "waste_avoided_inr": 4136.3,
+    "discount_cost_inr": 522.48,
+    "ci_low": 1.17,
+    "ci_high": 63.51,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 11210.0,
+    "blanket_markdown_inr": 11152.8,
+    "blanket_markdown_pct": 10.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 40.43,
+    "pct_of_rupees_at_stake": 0.374
+  }
+}
