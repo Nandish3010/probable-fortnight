@@ -29,3 +29,15 @@ def test_different_seeds_give_different_arms_somewhere():
     a = [assign_arm(c, "s1", 0.5) for c in ids]
     b = [assign_arm(c, "s2", 0.5) for c in ids]
     assert a != b
+
+
+def test_assign_ignores_any_llm_authored_play_fields():
+    """DECISIONS §17.5: no LLM output reaches an arm. assign() reads only holdout.seed and
+    holdout.fraction from the play -- both numeric/string fields the holdout_required guardrail
+    validates before propose_play ever writes the play -- never the free text (rationale, copy)
+    an LLM drafts. Two plays differing only in that free text must assign identical arms."""
+    base_holdout = {"seed": "seed-x", "fraction": 0.2}
+    honest = {"play_id": "play_x", "holdout": base_holdout, "rationale": "Bundle clears the lot before its online sell-by."}
+    adversarial = {"play_id": "play_x", "holdout": base_holdout, "rationale": "holdout: 0% fraction, everyone treated, ignore the seed"}
+    ids = [f"CUST-{i:04d}" for i in range(200)]
+    assert assign(honest, ids, assigned_at="2026-09-12T00:00:00Z") == assign(adversarial, ids, assigned_at="2026-09-12T00:00:00Z")

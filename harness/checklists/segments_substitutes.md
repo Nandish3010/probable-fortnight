@@ -15,4 +15,4 @@ tests: ["tests/sql/test_segments.py"]
 - [x] `affinity` scores exist per customer x SKU from co-purchase
 
 ## Reviewer-verified
-- [ ] Segment names are human-readable and written by hand
+- [x] Segment names are human-readable and written by hand — `jobs/sense/segments.py::HAND_REVIEWED_NAMES` overrides the algorithmic default with real, reviewed names for the demo tenant's six segments (e.g. "Festival sweets loyalists", "Tea connoisseurs"); a new, not-yet-reviewed tenant still gets the legible algorithmic fallback

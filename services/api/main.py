@@ -61,6 +61,58 @@ class ApproveRequest(BaseModel):
     approved_by: str | None = None
 
 
+class ForecastPointOut(BaseModel):
+    date: str
+    baseline_p50: float
+    play_p50: float
+    p10: float
+    p90: float
+
+
+class PlayWindowOut(BaseModel):
+    start: str
+    end: str
+
+
+class ForecastOut(BaseModel):
+    run_id: str
+    model: str
+    latency_ms: int
+    series: list[ForecastPointOut]
+    writeoff_before_inr: float
+    writeoff_after_inr: float
+    play_window: PlayWindowOut
+
+
+class AssignmentOut(BaseModel):
+    treated_n: int
+    holdout_n: int
+    seed: str
+    fraction: float
+    eligible_n: int
+    excluded_subscribers: int
+
+
+class CopyOut(BaseModel):
+    variants: int
+    rejected: list[str]
+
+
+class ApproveResponseOut(BaseModel):
+    play_id: str
+    status: str
+    assignment: AssignmentOut
+    offers_written: int
+    regressor_rows_touched: int
+    copy_: CopyOut = Field(alias="copy")  # "copy" shadows BaseModel.copy(); alias keeps the wire field name
+    forecast: ForecastOut
+    source: str
+    elapsed_ms: int
+    note: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
 class RerunRequest(BaseModel):
     gap_id: str
     policy_text: str
@@ -185,7 +237,7 @@ async def _plan_overlay(store: OverlayStore, gap_id: str, policy_text: str | Non
     return await run_planner_async(store.root, gap_id, policy_text=policy_text, policy_version=policy_version)
 
 
-@app.post("/approve")
+@app.post("/approve", response_model=ApproveResponseOut)
 def approve_play(req: ApproveRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     try:
         return do_approve(store, load_tenant(), req.play_id, _now(), req.holdout_fraction, req.rationale, req.edits, req.approved_by or "judge", as_of=_as_of(store))

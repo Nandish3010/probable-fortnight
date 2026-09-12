@@ -78,6 +78,19 @@ def kmeans(X: list[list[float]], k: int, seed: int) -> tuple[list[int], list[lis
     return labels, centroids
 
 
+# Reviewed by hand for the demo tenant (DECISIONS §5.2 step 5: "segment names are human-readable
+# and written by hand"). The algorithmic "{category} {band}" name above is what a brand-new
+# tenant with no review yet sees; once a human has looked at a segment, they retitle it here.
+HAND_REVIEWED_NAMES: dict[str, str] = {
+    "Sweets regulars": "Festival sweets loyalists",
+    "Premium Tea occasionals": "Tea connoisseurs",
+    "Staples occasionals": "Everyday staples shoppers",
+    "Personal Care occasionals": "Personal care regulars",
+    "Household occasionals": "Household essentials buyers",
+    "Beverages occasionals": "Casual beverage buyers",
+}
+
+
 def build_segments(store: LocalStore, as_of: date, seed: int = 6) -> list[dict[str, Any]]:
     ids, X, cats, tops = _features(store, as_of)
     Z, mean, sd = _standardise(X)
@@ -95,6 +108,7 @@ def build_segments(store: LocalStore, as_of: date, seed: int = 6) -> list[dict[s
         top = cats[max(range(len(cats)), key=lambda j: shares[j])] if any(shares) else "mixed"
         band = "regulars" if freq >= 2.0 else ("occasionals" if freq >= 0.8 else "lapsed" if rec > 45 else "newcomers")
         name = f"{top.replace('_', ' ').title()} {band}"
+        name = HAND_REVIEWED_NAMES.get(name, name)
         if name in used_names:
             name = f"{name} ({mon:.0f} INR)"
         used_names.add(name)
