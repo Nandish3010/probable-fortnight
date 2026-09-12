@@ -18,6 +18,11 @@ tests: ["tests/agents/test_customer.py", "tests/agents/test_mcp_orders.py"]
 - [ ] Agent Simulation guardrail pass rate >= 95% over ~200 personas (report under `eval/`)
 - [x] Every message validates against `docs/schemas/chat_envelope.schema.json`
 - [x] `place_order` goes through the in-process FastMCP mock and writes `orders.play_id`
+- [x] `get_customer_context` returns a cross-session `memory` of what a customer has recently
+  asked for, so a returning customer is proactively told when an item they wanted is back in
+  stock instead of starting cold every session
+- [x] Every out-of-stock lookup and every off-catalogue ask (including one that matches no
+  greeting/browse/sku intent at all) is recorded to `customer_requests` as a demand signal
 
 ## Reviewer-verified
 - [ ] Tone and language per persona

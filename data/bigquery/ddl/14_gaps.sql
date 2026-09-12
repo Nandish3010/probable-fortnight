@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `taal.gaps` (
   tenant_id STRING NOT NULL,
   gap_id STRING NOT NULL,
   run_id STRING,
-  type STRING NOT NULL,      -- online_sellby_breach | expiry_writeoff | stockout_risk | rebalance | slow_mover
+  type STRING NOT NULL,      -- online_sellby_breach | expiry_writeoff | stockout_risk | rebalance | slow_mover | unmet_demand
   sku STRING NOT NULL,
   node_id STRING NOT NULL,
   batch_id STRING,
@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS `taal.gaps` (
     unit_cost FLOAT64,
     margin_per_unit FLOAT64,
     counterpart_node_id STRING,
-    counterpart_units INT64
+    counterpart_units INT64,
+    requests_count INT64,      -- real out_of_stock chat requests corroborating this gap (stockout_risk, unmet_demand)
+    distinct_customers INT64
   >,
   created_at DATE
 )
