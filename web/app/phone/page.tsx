@@ -137,7 +137,17 @@ export default function PhoneViewPage() {
         </div>
 
         <p className="muted">Own photo (experimental)</p>
-        <input type="file" accept="image/*" onChange={onOwnFile} aria-label="Own photo (experimental)" />
+        <label className="camera-button">
+          <span className="camera-button__icon" aria-hidden="true">📷</span>
+          <span>Take or choose a photo</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onOwnFile}
+            aria-label="Own photo (experimental)"
+          />
+        </label>
         {ownFileName ? <p className="muted">Selected: {ownFileName}</p> : null}
 
         <button type="button" className="mic-button" disabled title="Voice: Live API session, documented stub" aria-label="Voice input (disabled)">
