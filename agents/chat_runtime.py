@@ -59,6 +59,23 @@ def vertex_env(models: dict[str, Any]) -> None:
         os.environ["GOOGLE_CLOUD_LOCATION"] = models["vertex"]["location"]
 
 
+def chat_generate_config(models: dict[str, Any], thinking_key: str, temperature: float) -> types.GenerateContentConfig:
+    """A reply here is a conversational turn, not a plan: it does not need a thinking budget.
+    `config/models.toml` defines `thinking.customer`/`thinking.stylist` (both "low") for exactly
+    this; without wiring it, chat inherits the model's default dynamic thinking on every turn."""
+    config = types.GenerateContentConfig(temperature=temperature)
+    level = models.get("thinking", {}).get(thinking_key, "low")
+    model_id = models["ids"]["flash"]
+    try:
+        if model_id.startswith("gemini-3"):
+            config.thinking_config = types.ThinkingConfig(thinking_level=level)  # type: ignore[attr-defined]
+        else:
+            config.thinking_config = types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(level, 0))
+    except Exception:  # older google-genai without ThinkingConfig: keep default
+        pass
+    return config
+
+
 def parse_envelope(text: str) -> dict[str, Any]:
     raw = text.strip()
     m = re.search(r"\{.*\}", raw, re.S)

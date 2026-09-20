@@ -270,11 +270,7 @@ def _draft_error(problems: list[str]) -> dict:
     return {"error": "play_draft is incomplete: " + "; ".join(problems), "required_shape": DRAFT_SHAPE}
 
 
-def estimate_outcome(play_draft: dict) -> dict:
-    """Deterministic estimator: expected outcome with CI and the do-nothing / blanket-markdown
-    counterfactuals. play_draft must carry gap_id, mechanic, target{sku,node_ids,...} and
-    audience{segment_ids,...}; an incomplete draft returns {"error", "required_shape"} instead."""
-    ctx = current()
+def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
     problems = _draft_problems(play_draft)
     if problems:
         return _draft_error(problems)
@@ -282,6 +278,15 @@ def estimate_outcome(play_draft: dict) -> dict:
         return estimate(play_draft, _estimator_context(ctx, play_draft))
     except KeyError as e:
         return {"error": f"estimate_outcome: unknown reference {e}", "required_shape": DRAFT_SHAPE}
+
+
+def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
+    """Deterministic estimator, batched: one call estimates every candidate draft at once (each
+    draft the same shape `estimate_outcome` used to take) instead of one round trip per candidate.
+    Returns one result per draft, same order; a draft with a problem gets {"error", "required_shape"}
+    in its slot rather than failing the whole batch."""
+    ctx = current()
+    return [_estimate_one(ctx, d) for d in play_drafts]
 
 
 def check_guardrails(play_draft: dict) -> dict:
@@ -352,5 +357,9 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
     return {"play_id": play["play_id"], "valid": True, "errors": []}
 
 
-TOOLS = [get_gap, get_candidate_audiences, get_past_plays, estimate_outcome, check_guardrails, propose_play]
-REQUIRED_ORDER = ["get_gap", "get_candidate_audiences", "estimate_outcome", "check_guardrails", "propose_play"]
+# get_gap, get_candidate_audiences and get_past_plays are registered so the model can still call
+# them if it wants a second look, but run.py fetches all three up front (deterministic reads, not
+# a decision) and hands the results to the model as context -- the round trip these calls used to
+# cost is gone from the common path.
+TOOLS = [get_gap, get_candidate_audiences, get_past_plays, estimate_outcomes, check_guardrails, propose_play]
+REQUIRED_ORDER = ["estimate_outcomes", "propose_play"]

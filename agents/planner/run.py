@@ -8,6 +8,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -18,11 +19,18 @@ from google.genai import types
 
 from agents.gate.config import load_tenant
 
-from . import governor
+from . import drafting, governor
+from . import tools as pt
 from .agent import build_planner
 from .context import PlannerContext, reset_context, set_context
+from .deterministic import deterministic_plan
 
 APP = "taal_planner"
+
+# A live Gemini planner call that exceeds this many seconds falls back to the deterministic draft
+# (deterministic.py) rather than let a demo-facing request run unbounded. Comfortably under the
+# entry's 10s response budget, leaving headroom for API/network overhead on top of this function.
+DEFAULT_DEADLINE_S = 8.0
 
 
 def make_run_id(gap_id: str, policy_version: str, salt: str = "") -> str:
@@ -64,7 +72,39 @@ def _shrink(obj: Any, depth: int = 0) -> Any:
     return obj
 
 
-async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "") -> dict[str, Any]:
+def _context_block(ctx: PlannerContext, gap_id: str) -> dict[str, Any]:
+    """The plain-read tool results (get_gap, get_candidate_audiences, get_past_plays) gathered up
+    front instead of one model round trip each. These are deterministic store reads, not a
+    decision the model needs to make; the tools stay registered below for the model to re-check
+    one if it wants to, but the common path never has to ask for them."""
+    gap = pt.get_gap(gap_id)
+    audiences = pt.get_candidate_audiences(gap["sku"], [gap["node_id"]], drafting.OBJECTIVE_BY_GAP[gap["type"]])
+    candidates = drafting.candidate_mechanics(gap, ctx.policy_text)
+    category = (gap.get("product") or {}).get("category", "")
+    past_plays: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for c in candidates:
+        for row in pt.get_past_plays(gap["sku"], category, c["mechanic"]):
+            if row["play_id"] not in seen:
+                seen.add(row["play_id"])
+                past_plays.append(row)
+    return {"gap": gap, "candidate_audiences": audiences, "past_plays": past_plays[:10]}
+
+
+def _initial_message(ctx: PlannerContext, gap_id: str) -> types.Content:
+    context = _context_block(ctx, gap_id)
+    context_json = json.dumps(context, ensure_ascii=False)
+    text = (
+        f"Plan gap_id={gap_id} policy_version={ctx.policy_version}\n"
+        "Reply DONE <play_id> when propose_play accepts.\n\n"
+        "## Context (already fetched -- do not call get_gap, get_candidate_audiences or "
+        "get_past_plays again unless you specifically need to re-check one of them)\n"
+        f"```json\n{context_json}\n```"
+    )
+    return types.Content(role="user", parts=[types.Part(text=text)])
+
+
+async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "", deadline_s: float | None = None) -> dict[str, Any]:
     tenant = load_tenant()
     probe = PlannerContext.build(data_dir, run_id="probe", policy_text=policy_text, policy_version=policy_version, tenant=tenant)
     run_id = make_run_id(gap_id, probe.policy_version, salt)
@@ -86,25 +126,50 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         agent = build_planner(tenant, ctx.policy_text, ctx.policy_version, run_id, ctx.as_of.isoformat(), backend)
         runner = InMemoryRunner(agent=agent, app_name=APP)
         session = await runner.session_service.create_session(app_name=APP, user_id="planner", session_id=run_id)
-        msg = types.Content(role="user", parts=[types.Part(text=f"Plan gap_id={gap_id} policy_version={ctx.policy_version}\nReply DONE <play_id> when propose_play accepts.")])
+        msg = _initial_message(ctx, gap_id)
         seq, iterations, t0 = 1, 0, None
         proposed = None
-        async for ev in runner.run_async(user_id="planner", session_id=session.id, new_message=msg):
-            if t0 is None:
-                t0 = ev.timestamp
-            rec = _event_record(ev, seq, t0, run_id)
-            ctx.store.append_event(run_id, rec)
-            seq += 1
-            for part in (ev.content.parts if ev.content and ev.content.parts else []):
-                if part.text and ev.author == "planner":
-                    iterations += 1
-                if part.function_response and part.function_response.name == "propose_play" and (part.function_response.response or {}).get("valid"):
-                    proposed = part.function_response.response["play_id"]
+        deadline = DEFAULT_DEADLINE_S if deadline_s is None else deadline_s
+        deadline = float(os.environ.get("TAAL_PLANNER_DEADLINE_S", deadline))
+        timed_out = False
+
+        async def _drain() -> None:
+            nonlocal seq, iterations, t0, proposed
+            async for ev in runner.run_async(user_id="planner", session_id=session.id, new_message=msg):
+                if t0 is None:
+                    t0 = ev.timestamp
+                rec = _event_record(ev, seq, t0, run_id)
+                ctx.store.append_event(run_id, rec)
+                seq += 1
+                for part in (ev.content.parts if ev.content and ev.content.parts else []):
+                    if part.text and ev.author == "planner":
+                        iterations += 1
+                    if part.function_response and part.function_response.name == "propose_play" and (part.function_response.response or {}).get("valid"):
+                        proposed = part.function_response.response["play_id"]
+
+        try:
+            await asyncio.wait_for(_drain(), timeout=deadline)
+        except TimeoutError:
+            timed_out = True
+
         play = None
         if proposed:
             row = ctx.store.find("plays", play_id=proposed)[-1]
             play = json.loads(row["play_json"])
-        return {"run_id": run_id, "play": play, "status": "proposed" if play else "no_play", "iterations": iterations, "events": ctx.store.read_events(run_id), "policy_version": ctx.policy_version, "elapsed_ms": int((time.time() - started) * 1000)}
+        planner_source = "model"
+        fallback_reason = None
+        if play is None:
+            fallback_reason = f"deadline exceeded after {deadline:.0f}s" if timed_out else f"no_play after {iterations} iteration(s)"
+            ctx.store.append_event(run_id, {"seq": seq, "run_id": run_id, "invocation_id": "", "author": "planner_fallback", "timestamp": time.time(), "ts_offset_ms": int((time.time() - started) * 1000), "text": f"{fallback_reason}; falling back to the deterministic draft", "level": "warn"})
+            seq += 1
+            play = deterministic_plan(ctx, gap_id)
+            if play is not None:
+                planner_source = "deterministic_fallback"
+        return {
+            "run_id": run_id, "play": play, "status": "proposed" if play else "no_play", "iterations": iterations,
+            "events": ctx.store.read_events(run_id), "policy_version": ctx.policy_version,
+            "elapsed_ms": int((time.time() - started) * 1000), "planner_source": planner_source, "fallback_reason": fallback_reason,
+        }
     finally:
         reset_context(token)
 

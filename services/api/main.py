@@ -296,6 +296,8 @@ async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(s
         out = await run_planner_async(store.root, req.gap_id) if not isinstance(store, OverlayStore) else await _plan_overlay(store, req.gap_id)
     except KeyError as e:
         raise HTTPException(404, str(e)) from e
+    # `planner_source` ("model" vs "deterministic_fallback", set by run_planner_async) must never
+    # be clobbered: a deterministic-fallback play is never presented as model output.
     return {k: v for k, v in out.items() if k != "events"} | {"source": "live"}
 
 
@@ -325,7 +327,7 @@ async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends
         out = await (_plan_overlay(store, req.gap_id, req.policy_text, version) if isinstance(store, OverlayStore) else run_planner_async(store.root, req.gap_id, policy_text=req.policy_text, policy_version=version))
     except KeyError as e:
         raise HTTPException(404, str(e)) from e
-    return {"run_id": out["run_id"], "play": out["play"], "policy_version": version, "status": out["status"], "iterations": out["iterations"], "source": "live"}
+    return {"run_id": out["run_id"], "play": out["play"], "policy_version": version, "status": out["status"], "iterations": out["iterations"], "source": "live", "planner_source": out.get("planner_source"), "fallback_reason": out.get("fallback_reason")}
 
 
 @app.get("/policy")
