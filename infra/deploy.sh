@@ -55,14 +55,19 @@ gcloud run deploy taal-agents \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT}" \
   --allow-unauthenticated
 
+AGENTS_URL="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format='value(status.url)')"
+echo "   taal-agents URL: ${AGENTS_URL}"
+
 echo "-- building and deploying taal-web (web) --"
+# NEXT_PUBLIC_TAAL_API_URL is inlined into the client bundle at build time, so taal-agents must
+# already be deployed before this image is built.
 gcloud builds submit "${ROOT_DIR}" \
   --project "${PROJECT}" \
   --config /dev/stdin \
-  --substitutions=_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-web" <<'EOF'
+  --substitutions=_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-web",_API_URL="${AGENTS_URL}" <<'EOF'
 steps:
   - name: gcr.io/cloud-builders/docker
-    args: ['build', '-f', 'infra/Dockerfile.web', '-t', '${_IMAGE}', '.']
+    args: ['build', '-f', 'infra/Dockerfile.web', '--build-arg', 'NEXT_PUBLIC_TAAL_API_URL=${_API_URL}', '-t', '${_IMAGE}', '.']
 images: ['${_IMAGE}']
 EOF
 
