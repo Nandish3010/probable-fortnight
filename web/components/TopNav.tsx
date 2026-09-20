@@ -7,6 +7,8 @@ const LINKS = [
   { href: "/desk", label: "Play Desk" },
   { href: "/phone", label: "Phone view" },
   { href: "/chat", label: "Chat" },
+  { href: "/stylist", label: "Stylist" },
+  { href: "/trends", label: "Trends" },
   { href: "/outcomes", label: "Outcomes" },
 ];
 

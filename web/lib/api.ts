@@ -20,6 +20,8 @@ import type {
   RerunRequest,
   RerunResponse,
   ResetResponse,
+  StyleTrend,
+  TrendsRecomputeResponse,
   VisionIntakeResult,
 } from "./types";
 import { getVisitorId } from "./visitor";
@@ -36,6 +38,8 @@ import mockExecution from "../mocks/execution.json";
 import mockOutcomes from "../mocks/outcomes.json";
 import mockCustomersDemo from "../mocks/customers_demo.json";
 import mockChat from "../mocks/chat.json";
+import mockStylistChat from "../mocks/stylist_chat.json";
+import mockTrends from "../mocks/trends.json";
 
 export function isMockMode(): boolean {
   return process.env.NEXT_PUBLIC_TAAL_MOCK === "1";
@@ -238,8 +242,21 @@ export async function resetDemoData(): Promise<ResetResponse> {
 
 // ---------- chat ----------
 
-function pickMockScenario(text: string): ChatEnvelope[] {
-  const t = text.toLowerCase();
+function pickMockScenario(req: ChatRequest): ChatEnvelope[] {
+  const t = req.text.toLowerCase();
+  if (req.specialist === "stylist") {
+    const chat = mockStylistChat as unknown as Record<string, ChatEnvelope[]>;
+    if (req.image_data_url && req.image_kind === "selfie") return chat.greeting; // no selfie mock scenario recorded yet
+    if (req.image_data_url) return chat.photo;
+    if (t.includes("stop")) return chat.stop;
+    if (t.startsWith("add:") || t.startsWith("add ") || t.startsWith("order")) return chat.default;
+    if (t.startsWith("item:")) return chat.item;
+    if (t.includes("wedding") || t.includes("festive") || t.includes("office")) return chat.occasion;
+    if (t.includes("navy")) return chat.search_navy;
+    if (t.includes("goes with") || t.includes("pair") || t.includes("mustard")) return chat.pair_kurta;
+    if (t.includes("hi") || t.includes("hello") || !t) return chat.greeting;
+    return chat.unknown;
+  }
   const chat = mockChat as unknown as Record<string, ChatEnvelope[]>;
   if (t.includes("stop")) return chat.stop;
   if (t.startsWith("add:") || t.startsWith("add ") || t.startsWith("order")) return chat.order;
@@ -257,7 +274,7 @@ export async function sendChat(
   onEnvelope: (envelope: ChatEnvelope, latencyMs: number) => void,
 ): Promise<void> {
   if (isMockMode()) {
-    const envelopes = pickMockScenario(req.text);
+    const envelopes = pickMockScenario(req);
     for (const envelope of envelopes) {
       const latency = envelope.latency_ms ?? 900;
       await delay(Math.min(latency, 1600));
@@ -310,4 +327,26 @@ export async function sendChat(
       }
     }
   }
+}
+
+// ---------- style trends ----------
+
+export async function getTrends(params?: { node_id?: string }): Promise<StyleTrend[]> {
+  if (isMockMode()) {
+    await delay(150);
+    const all = mockTrends as unknown as StyleTrend[];
+    if (params?.node_id) return all.filter((t) => t.node_id === params.node_id);
+    return all;
+  }
+  const q = params?.node_id ? `?node_id=${encodeURIComponent(params.node_id)}` : "";
+  return request<StyleTrend[]>(`/trends${q}`);
+}
+
+export async function postTrendsRecompute(): Promise<TrendsRecomputeResponse> {
+  if (isMockMode()) {
+    await delay(400);
+    const rows = mockTrends as unknown as StyleTrend[];
+    return { rows: rows.length, window_days: rows[0]?.window_days ?? 30, computed_at: new Date().toISOString() };
+  }
+  return request<TrendsRecomputeResponse>("/trends/recompute", { method: "POST" });
 }
