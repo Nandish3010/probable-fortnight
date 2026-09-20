@@ -59,7 +59,7 @@ class LocalStore:
             return [json.loads(line) for line in f if line.strip()]
 
 
-def load_catalogue(store: "LocalStore") -> dict[str, Any]:
+def load_catalogue(store: LocalStore) -> dict[str, Any]:
     """Grocery `products` merged with the apparel catalogue (`apparel_products`), keyed by sku,
     so any code path that looks a play/gap's sku up by `store.read("products")` works identically
     for a grocery play and an apparel one (DECISIONS §5.9's assortment_gap: one guardrail-gated

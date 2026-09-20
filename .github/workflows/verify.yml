@@ -37,3 +37,35 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: spec-review, path: eval/spec_review.md }
+
+  deploy:
+    # Only after verify is green, and only for a real push to main (never a PR) -- a red or
+    # merely-open-PR main is never deployed. Runs infra/deploy.sh for real: this runner has a
+    # working gcloud/bq (the local dev sandbox this project was otherwise built in does not,
+    # per infra/README.md), so it is the literal script, not the direct-REST-API workaround
+    # used for the first manual deploy.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: verify
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      GOOGLE_CLOUD_PROJECT: amru-509214
+      REGION: asia-south1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+        # infra/deploy.sh resolves the copy-generation model id via `python3 -c "import
+        # tomllib..."` -- pin a version new enough to have it (3.11+), since ubuntu-latest's
+        # default python3 is not guaranteed to be.
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Confirm the authenticated identity (must be taal-deploy)
+        run: gcloud auth list --format="value(account)"
+      - run: bash infra/deploy.sh
