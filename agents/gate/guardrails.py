@@ -206,7 +206,10 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
     acc: list[float] = []
     for c in draft.get("citations") or []:
         _walk_numbers(c.get("ref", ""), acc)
-    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout"):
+    # guardrails is tool-computed (check_guardrails), never LLM-authored: a rationale restating a
+    # number from a passed rule's own detail (a margin percent, an audience count) is citing a
+    # verified fact, not inventing one, even though that number lives outside expected_outcome.
+    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout", "guardrails"):
         _walk_numbers(draft.get(key) or {}, acc)
     # Percent forms of fractions (holdout 0.1 -> 10) and rupee values expressed in whole rupees.
     acc.extend(v * 100.0 for v in list(acc) if 0 < v < 1)

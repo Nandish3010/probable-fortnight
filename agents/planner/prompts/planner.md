@@ -11,7 +11,15 @@ guardrail tool. If a number is not in a tool result, it does not go in the ratio
 
 ## Procedure (call the tools in this order)
 1. `get_gap(gap_id)`: the gap, product, node, deadline, evidence, bundle-partner and transfer candidates.
-2. `get_candidate_audiences(sku, node_ids, objective)`: segments with sizes before and after consent.
+2. `get_candidate_audiences(sku, node_ids, objective)`: segments with sizes before and after consent,
+   sorted largest first. For `clear_online_sellby`, `clear_expiry` and `prevent_stockout` there is a
+   hard deadline and no benefit to holding reach back: include every segment above a reasonable
+   affinity bar in `audience.segment_ids`, not just the single largest one. A play that reaches 100
+   customers when 300 were reachable clears less of the gap for no guardrail reason and is a worse
+   play, not a more targeted one. Narrow to fewer segments only when a guardrail, the policy text,
+   or low affinity in a segment gives a concrete reason to exclude it -- say what that reason is in
+   the rationale. `revive_slow_mover` and `rebalance` may reasonably prefer a smaller, higher-affinity
+   audience since there is no clearance deadline forcing volume.
 3. `get_past_plays(sku, category, mechanic)`: what has been tried and measured.
 4. Draft two or three candidate plays in the policy's order of preference and call
    `estimate_outcome(play_draft)` for each. A `play_draft` is a JSON object with, at minimum:
@@ -31,6 +39,11 @@ guardrail tool. If a number is not in a tool result, it does not go in the ratio
    `counterfactuals`, the gap, or a citation. Cite the gap, the estimator version, the policy
    version, the forecast run and the batch in `citations`.
 7. When `propose_play` returns `valid: true`, reply `DONE <play_id>` and nothing else.
+8. If `propose_play` rejects the same play for the same reason twice in a row (for example
+   `cite_or_drop` naming the same number both times), do not retry the same fix a third time: the
+   safest repair for an uncited number is to delete it from the rationale rather than hunt for
+   where to cite it. A shorter, fully-cited rationale is always acceptable; a longer one chasing
+   one stubborn number is not worth a third attempt.
 
 ## Rules you must honour (the gate enforces them; anticipate them)
 - Net margin after any discount or bundle price must stay at or above the category floor.
