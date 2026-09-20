@@ -1,12 +1,14 @@
 """Vernacular copy for approved plays (DECISIONS §5.2 step 7). In production this is
-`AI.GENERATE_TABLE` over a Vertex-connected Flash-Lite model with the numbers passed as
-constants; locally it is templated. The validator is the same in both modes: the discount and
-the best-before date in the text must match the play, or the variant is rejected.
+`AI.GENERATE_TABLE` over a Vertex-connected remote model with the numbers passed as constants;
+locally, or on any BigQuery failure/timeout, it is templated. The validator is the same in both
+modes: the discount and the best-before date in the text must match the play, or the variant is
+rejected -- a model-generated variant is never trusted just because BigQuery also ran a check.
 """
 from __future__ import annotations
 
 import re
-from datetime import date
+import uuid
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 TEMPLATES = {
@@ -54,6 +56,84 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
             tpl = TEMPLATES.get(lang, TEMPLATES["en"]).get(play["mechanic"], TEMPLATES["en"]["usual_order_addon"])
             text = tpl.format(**ctx)
             variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": ctx["best_before"] in text and best_before is not None})
+    return variants
+
+
+def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, deadline_type: str, deadline_date: str, language: str) -> str:
+    """Same instructions as data/bigquery/sense/08_copy.sql's prompt_text CONCAT, ported to
+    Python because the minimal BigQuery path (see generate_copy_bigquery) builds its request
+    rows here rather than reading them back out of `taal.plays`/`taal.products`, which this
+    codebase never writes to."""
+    parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}."]
+    if discount_pct is not None:
+        parts.append(f"Discount: {discount_pct:g}% -- copy this number exactly, do not change it.")
+    if bundle_price is not None:
+        parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
+    if deadline_type == "online_sellby":
+        parts.append(f"State the best-before date {deadline_date} plainly.")
+    parts.append("Do not invent any other number or date. Keep it under 40 words.")
+    return " ".join(parts)
+
+
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 8.0) -> list[dict[str, Any]]:
+    """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
+    `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
+    are never populated by this codebase -- LocalStore is the system of record -- so this cannot
+    join against them the way data/bigquery/sense/08_copy.sql does; instead it builds the
+    variant_requests rows in Python from the play already in memory, loads them into a
+    short-lived temp table, and runs AI.GENERATE_TABLE over that. Raises on any failure or on
+    the timeout; the caller is expected to fall back to generate_copy() (templates) rather than
+    let this block or fail the approve request -- see services/api/approve.py.
+    """
+    from google.cloud import bigquery
+
+    # BigQuery splits a single backtick-quoted identifier on '.', so a model id with dots in it
+    # (gemini-2.5-flash) silently mis-parses `project.dataset.gemini-2.5-flash_remote` as more
+    # path segments than intended (a real failure found while wiring this up, not guessed: see
+    # infra/deploy.sh's matching fix). Sanitize the resource name; the literal id still goes
+    # into OPTIONS(endpoint=...) unsanitized, since that has to match Vertex's real model id.
+    model_resource = model_id.replace(".", "_") + "_remote"
+    params = play.get("mechanic_params") or {}
+    discount_pct = params.get("discount_pct") or params.get("markdown_pct")
+    bundle_price = params.get("bundle_price")
+    deadline_type = play["target"]["deadline_type"]
+    deadline_date = play["target"]["deadline_date"]
+    requests = [
+        {"segment_id": seg, "language": lang, "prompt_text": _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, deadline_type, deadline_date, lang)}
+        for seg in play["audience"]["segment_ids"]
+        for lang in languages
+    ]
+    if not requests:
+        return []
+
+    client = bigquery.Client(project=project, location=region)
+    table_id = f"{project}.{dataset}.tmp_copy_{uuid.uuid4().hex[:12]}"
+    table = bigquery.Table(table_id, schema=[bigquery.SchemaField("segment_id", "STRING"), bigquery.SchemaField("language", "STRING"), bigquery.SchemaField("prompt_text", "STRING")])
+    table.expires = datetime.now(UTC) + timedelta(hours=1)  # belt-and-braces if the delete below never runs
+    try:
+        client.create_table(table)
+        client.load_table_from_json(requests, table_id).result(timeout=timeout_s)
+        query = (
+            f"SELECT segment_id, language, copy_text FROM AI.GENERATE_TABLE("
+            f"MODEL `{project}`.`{dataset}`.`{model_resource}`, "
+            f"TABLE `{table_id}`, "
+            "STRUCT('prompt_text' AS prompt_column), "
+            "output_schema => 'copy_text STRING')"
+        )
+        by_key = {(r["segment_id"], r["language"]): r["copy_text"] for r in client.query(query).result(timeout=timeout_s)}
+    finally:
+        try:
+            client.delete_table(table_id, not_found_ok=True)
+        except Exception:
+            pass  # best-effort cleanup; the 1h expiry above is the real backstop
+
+    fmt_before = _fmt_date(best_before)
+    variants = []
+    for seg in play["audience"]["segment_ids"]:
+        for lang in languages:
+            text = by_key.get((seg, lang))
+            if text:
+                variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": fmt_before in text and best_before is not None})
     return variants
 
 

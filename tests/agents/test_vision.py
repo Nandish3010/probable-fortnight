@@ -31,9 +31,35 @@ def test_model_id_matches_config_in_vertex_mode_and_is_labelled_in_stub(base_sto
 
 def test_commit_writes_photo_batches_with_derived_sellby(sandbox):
     res = intake(sandbox, "DS-07", photo_ref="fixtures/photos/pallet_01.jpg")
-    written = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
-    assert len(written) == 2  # the low-confidence row was not confirmed
-    for b in written:
+    result = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert len(result["written"]) == 2  # the low-confidence row was not confirmed
+    assert result["skipped"] == [{"sku_guess": res["rows"][2]["sku_guess"], "reason": "not confirmed"}]
+    for b in result["written"]:
         assert b["source"] == "photo" and b["capture_ref"] == res["photo_ref"] and b["online_sellby_date"] <= b["expiry_date"]
     res["rows"][2]["confirmed"] = True
-    assert len(commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")) == 3
+    result2 = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert len(result2["written"]) == 3 and result2["skipped"] == []
+
+
+def test_uploaded_photo_with_no_date_is_skipped_with_a_reason_not_silently_dropped(sandbox):
+    """The stub returns null-date rows for an uploaded photo by design, to exercise the
+    confirmation flow -- exactly what happens in vertex mode whenever Gemini cannot read a
+    printed date. Confirming such a row must not report success while writing nothing."""
+    res = intake(sandbox, "DS-07", image_data_url="data:image/png;base64,x")
+    for row in res["rows"]:
+        row["confirmed"] = True
+    result = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert result["written"] == []
+    assert result["skipped"] and all(s["reason"] == "no best_before_date" for s in result["skipped"])
+
+
+def test_supplying_a_hand_entered_date_commits_the_row(sandbox):
+    """The operator's fix for an unreadable date: fill it in by hand, then it commits like any
+    other confirmed row."""
+    res = intake(sandbox, "DS-07", image_data_url="data:image/png;base64,x")
+    for row in res["rows"]:
+        row["confirmed"] = True
+        row["best_before_date"] = "2026-12-01"
+    result = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert len(result["written"]) == len(res["rows"]) and result["skipped"] == []
+    assert all(b["expiry_date"] == "2026-12-01" for b in result["written"])

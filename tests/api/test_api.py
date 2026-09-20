@@ -10,6 +10,13 @@ from fastapi.testclient import TestClient
 def client(data_dir, tmp_path, monkeypatch):
     monkeypatch.setenv("TAAL_DATA_DIR", str(data_dir))
     monkeypatch.setenv("TAAL_SANDBOX_DIR", str(tmp_path / "sandbox"))
+    # The seeded tenant is a snapshot frozen at manifest.json's as_of date (data/generator);
+    # play windows and the approve -> re-forecast beat are computed relative to "now", so pin the
+    # clock to the snapshot the same way make/Dockerfile do (TAAL_NOW), derived from the tenant
+    # actually under test rather than a second hardcoded date that would silently drift out of
+    # sync if the tenant is ever regenerated with a different AS_OF.
+    as_of = json.loads((data_dir / "manifest.json").read_text())["as_of"]
+    monkeypatch.setenv("TAAL_NOW", f"{as_of}T03:30:00Z")
     from agents.customer.chat import reset_sessions
     from services.api.main import app
 

@@ -4,7 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import { ApprovePanel } from "../../components/ApprovePanel";
 import { Badge } from "../../components/Badge";
 import { GapCard } from "../../components/GapCard";
-import { capture, captureConfirm, execution, getGaps, getPlays } from "../../lib/api";
+import { capture, captureConfirm, execution, getGaps, getPlays, type CaptureConfirmSkip } from "../../lib/api";
 import type { ApproveResponse, ExecutionStep, Gap, Mechanic, Play, VisionRow } from "../../lib/types";
 
 const NODES = ["DS-07", "DS-04", "DS-01"];
@@ -31,10 +31,15 @@ function stepsForMechanic(mechanic: Mechanic): ExecutionStep[] {
 export default function PhoneViewPage() {
   const [nodeId, setNodeId] = useState("DS-07");
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [capturedPhotoRef, setCapturedPhotoRef] = useState<string | null>(null);
   const [ownFileName, setOwnFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<VisionRow[] | null>(null);
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>({});
+  const [dateOverrides, setDateOverrides] = useState<Record<number, string>>({});
   const [capturing, setCapturing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmSkipped, setConfirmSkipped] = useState<CaptureConfirmSkip[]>([]);
+  const [confirmWritten, setConfirmWritten] = useState<number | null>(null);
   const [gap, setGap] = useState<Gap | null>(null);
   const [play, setPlay] = useState<Play | null>(null);
   const [approveResult, setApproveResult] = useState<ApproveResponse | null>(null);
@@ -49,6 +54,13 @@ export default function PhoneViewPage() {
       const res = await capture({ node_id: nodeId, photo_ref: photoRef, image_data_url: imageDataUrl });
       setRows(res.rows);
       setConfirmed({});
+      setDateOverrides({});
+      setConfirmSkipped([]);
+      setConfirmWritten(null);
+      // Track the photo_ref the API actually returned, not the UI's selectedPhoto state --
+      // an uploaded photo has no selectedPhoto (that only tracks the sample-photo buttons), so
+      // confirm must key off what capture() gave back or it can never be called for an upload.
+      setCapturedPhotoRef(res.photo_ref);
     } finally {
       setCapturing(false);
     }
@@ -73,9 +85,24 @@ export default function PhoneViewPage() {
   }
 
   async function loadGapForNode() {
-    if (rows && selectedPhoto) {
-      const confirmedRows = rows.map((r, i) => ({ ...r, confirmed: confirmed[i] === true }));
-      await captureConfirm({ node_id: nodeId, photo_ref: selectedPhoto, rows: confirmedRows });
+    if (rows && capturedPhotoRef) {
+      setConfirming(true);
+      try {
+        const confirmedRows = rows.map((r, i) => ({
+          ...r,
+          confirmed: confirmed[i] === true,
+          best_before_date: dateOverrides[i] || r.best_before_date,
+        }));
+        const result = await captureConfirm({ node_id: nodeId, photo_ref: capturedPhotoRef, rows: confirmedRows });
+        setConfirmWritten(result.written);
+        setConfirmSkipped(result.skipped);
+        if (!result.ok) {
+          // Nothing was written -- do not proceed to load gaps as if the confirm succeeded.
+          return;
+        }
+      } finally {
+        setConfirming(false);
+      }
     }
     const [gaps, plays] = await Promise.all([getGaps({ node_id: nodeId }), getPlays()]);
     // Gaps for the SKUs just read from the pallet come first, then the rest by rupees at stake.
@@ -105,7 +132,14 @@ export default function PhoneViewPage() {
     setExecutionSaved(true);
   }
 
-  const allConfirmable = rows?.every((r, i) => !r.needs_confirmation || confirmed[i] !== undefined) ?? false;
+  const allConfirmable =
+    rows?.every((r, i) => {
+      if (r.needs_confirmation && confirmed[i] === undefined) return false;
+      // A row confirmed "yes" but with no printed date can only commit once the operator
+      // fills one in by hand -- that is the whole point of the confirmation flow.
+      if (confirmed[i] === true && !r.best_before_date && !dateOverrides[i]) return false;
+      return true;
+    }) ?? false;
 
   return (
     <main className="page">
@@ -189,6 +223,17 @@ export default function PhoneViewPage() {
                           <button type="button" onClick={() => setConfirmed((c) => ({ ...c, [i]: false }))}>
                             {confirmed[i] === false ? "Confirmed: No" : "No"}
                           </button>
+                          {confirmed[i] === true && !row.best_before_date ? (
+                            <p>
+                              <label htmlFor={`date-${i}`}>Best-before date could not be read. Enter it: </label>
+                              <input
+                                id={`date-${i}`}
+                                type="date"
+                                value={dateOverrides[i] ?? ""}
+                                onChange={(e) => setDateOverrides((d) => ({ ...d, [i]: e.target.value }))}
+                              />
+                            </p>
+                          ) : null}
                         </td>
                       </tr>
                     ) : null}
@@ -196,9 +241,19 @@ export default function PhoneViewPage() {
                 ))}
               </tbody>
             </table>
-            <button type="button" onClick={loadGapForNode} disabled={!allConfirmable}>
-              Confirm rows
+            <button type="button" onClick={loadGapForNode} disabled={!allConfirmable || confirming}>
+              {confirming ? "Confirming…" : "Confirm rows"}
             </button>
+            {confirmWritten !== null ? (
+              <p className="muted">
+                Wrote {confirmWritten} batch{confirmWritten === 1 ? "" : "es"}.
+                {confirmSkipped.length
+                  ? ` Skipped ${confirmSkipped.length}: ${confirmSkipped
+                      .map((s) => `${s.sku_guess} (${s.reason})`)
+                      .join(", ")}.`
+                  : ""}
+              </p>
+            ) : null}
           </>
         ) : null}
       </section>

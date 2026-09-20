@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
+from collections import defaultdict
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -165,6 +167,49 @@ class PolicyUpdate(BaseModel):
 
 # ----------------------------------------------------------------------------- routes
 
+# A generous per-visitor cap on the model-calling endpoints only (POST /plan, /rerun, /chat --
+# each makes a real Gemini call, and taal-agents is deployed --allow-unauthenticated and stays
+# reachable from submission into December). Read endpoints (/health, /gaps, /plays, ...) are
+# never limited: they cost nothing and a judge may poll them. In-memory, per-process -- fine for
+# a single Cloud Run instance at min-instances=0; would need a shared store (Firestore/Redis) to
+# hold across multiple instances, not needed at this traffic level.
+_RATE_LIMITS: dict[str, list[float]] = defaultdict(list)
+_RATE_LIMIT_LOCK = threading.Lock()
+
+
+def _rate_limit(request: Request, bucket: str, max_calls: int, window_s: float) -> None:
+    key = f"{bucket}:{visitor_id(request) or request.client.host if request.client else 'unknown'}"
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        calls = _RATE_LIMITS[key]
+        calls[:] = [t for t in calls if now - t < window_s]
+        if len(calls) >= max_calls:
+            raise HTTPException(429, f"rate limit: at most {max_calls} {bucket} calls per {int(window_s)}s per visitor; wait and retry")
+        calls.append(now)
+
+
+def _check_vertex(backend: str, models: dict[str, Any]) -> dict[str, Any]:
+    """A real check, not an assertion: in vertex mode, resolve the configured model id and
+    confirm ambient credentials and a project are present via google.auth.default(). This never
+    calls generateContent -- a health endpoint that bills tokens and takes seconds is worse than
+    one that under-claims -- so it cannot prove Gemini actually answers, only that the pieces
+    needed to call it are in place."""
+    model_id = models["ids"].get("flash")
+    if backend == "stub":
+        return {"ok": True, "detail": f"stub backend; no live Vertex call (model id if live: {model_id})"}
+    if not model_id:
+        return {"ok": False, "detail": "no model id configured under config/models.toml [ids].flash"}
+    try:
+        import google.auth
+
+        _, project = google.auth.default()
+        if not project:
+            return {"ok": False, "detail": "google.auth.default() resolved no project"}
+        return {"ok": True, "detail": f"credentials + project resolved (project={project}, model={model_id}); generateContent not called by this check"}
+    except Exception as e:
+        return {"ok": False, "detail": f"vertex credentials not resolvable: {e}"}
+
+
 @app.get("/health")
 def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     models = load_models()
@@ -173,11 +218,20 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     runs = store.read("sense_runs")
     last = runs[-1] if runs else None
     backend = models["backend"]
+    vertex_check = _check_vertex(backend, models)
     checks = {
-        "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store (BigQuery in production)" if backend == "stub" else "bigquery"},
-        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store (Firestore in production)"},
-        "vertex": {"ok": True, "checked_at": t, "detail": f"backend={backend}; model ids from config/models.toml"},
-        "sessions": {"ok": True, "checked_at": t, "detail": "InMemorySessionService" if backend == "stub" else "VertexAiSessionService"},
+        # LocalStore is the system of record for every read/write this endpoint makes, in both
+        # backends -- gaps, plays, forecasts, sense_runs never touch BigQuery. The one real
+        # bigquery.Client call in the codebase is jobs/sense/copy.py::generate_copy_bigquery,
+        # fired from POST /approve (vertex backend only) to run AI.GENERATE_TABLE over the
+        # `taal.<flash id>_remote` model for offer copy; this endpoint does not call it itself
+        # (a health check that bills tokens and takes seconds is worse than one that under-claims).
+        "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store is the system of record here; the one real BigQuery call is AI.GENERATE_TABLE for copy generation on POST /approve (vertex backend), not checked by this endpoint"},
+        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store is the system of record here; Firestore is provisioned in production but this process never queries it"},
+        "vertex": {"ok": vertex_check["ok"], "checked_at": t, "detail": vertex_check["detail"]},
+        # Both agents/customer/chat.py and agents/planner/run.py construct InMemoryRunner
+        # unconditionally -- VertexAiSessionService is not wired up in either backend.
+        "sessions": {"ok": True, "checked_at": t, "detail": "InMemorySessionService (process-local; not persisted across restarts, in either backend)"},
     }
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
     return {
@@ -228,7 +282,10 @@ def play(play_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any]
 
 
 @app.post("/plan")
-async def plan(req: PlanRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    # A planner run is a real Gemini call taking ~90-110s; a generous cap (a demo runs at most a
+    # handful) still bounds an unauthenticated visitor's worst-case spend.
+    _rate_limit(request, "plan", max_calls=20, window_s=900)
     try:
         out = await run_planner_async(store.root, req.gap_id) if not isinstance(store, OverlayStore) else await _plan_overlay(store, req.gap_id)
     except KeyError as e:
@@ -254,7 +311,8 @@ def approve_play(req: ApproveRequest, store: LocalStore = Depends(store_for)) ->
 
 
 @app.post("/rerun")
-async def rerun(req: RerunRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    _rate_limit(request, "plan", max_calls=20, window_s=900)  # same planner call as /plan; shares its bucket
     version = req.policy_version or f"v{len(store.read('policy')) + 2}"
     store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
     try:
@@ -310,6 +368,9 @@ def events_stream(run_id: str, speed: float = Query(4.0, ge=0.1, le=100), store:
 
 @app.post("/chat")
 async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
+    # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
+    # messages); wide enough that no legitimate judge session is at risk of tripping it.
+    _rate_limit(request, "chat", max_calls=60, window_s=900)
     envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
     if "application/json" in (request.headers.get("accept") or ""):
         from fastapi.responses import JSONResponse
@@ -344,9 +405,13 @@ def capture(req: CaptureRequest, store: LocalStore = Depends(store_for)) -> dict
 
 @app.post("/capture/confirm")
 def capture_confirm(req: CaptureConfirmRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
-    rows = commit_rows(store, req.node_id, req.rows, req.photo_ref, _iso(_now()))
-    new_gaps = _redetect_gaps(store, req.node_id) if rows else []
-    return {"ok": True, "written": len(rows), "batches": rows, "gaps_refreshed": len(new_gaps)}
+    result = commit_rows(store, req.node_id, req.rows, req.photo_ref, _iso(_now()))
+    written = result["written"]
+    new_gaps = _redetect_gaps(store, req.node_id) if written else []
+    # ok=false when rows were submitted but every one was skipped (nothing to write is not a
+    # success); a request with no rows at all is a trivial, real no-op.
+    ok = bool(written) or not req.rows
+    return {"ok": ok, "written": len(written), "batches": written, "skipped": result["skipped"], "gaps_refreshed": len(new_gaps)}
 
 
 def _redetect_gaps(store: LocalStore, node_id: str) -> list[dict[str, Any]]:
