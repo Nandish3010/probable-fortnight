@@ -10,7 +10,7 @@ tests: ["tests/agents/test_planner.py", "make eval"]
 ## Deterministic (CI gate)
 - [x] `adk eval` on 50 gaps: schema validity >= 95% after revision
 - [x] Gate-pass-after-revision >= 90%
-- [x] Trajectory match on the required tool order (get_gap -> get_candidate_audiences -> estimate_outcome -> check_guardrails -> propose_play)
+- [x] Trajectory match on the required tool order (estimate_outcomes -> propose_play; get_gap/get_candidate_audiences/get_past_plays are fetched by the API and handed to the model as context, not called in the common path)
 - [x] The tea gap changes mechanic when the policy fixture changes
 - [x] LoopAgent terminates within 3 iterations on 50/50 gaps
 - [x] Model ID read from `config/models.toml` only; `thinking_level` from config

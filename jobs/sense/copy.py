@@ -75,7 +75,7 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
     return " ".join(parts)
 
 
-def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 8.0) -> list[dict[str, Any]]:
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 3.0) -> list[dict[str, Any]]:
     """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
     `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
     are never populated by this codebase -- LocalStore is the system of record -- so this cannot

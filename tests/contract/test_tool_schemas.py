@@ -32,7 +32,7 @@ def _schema(name: str, part: str) -> dict:
 
 def test_every_tool_has_a_contract():
     names = {p.name for p in TOOLS.glob("*.schema.json")}
-    for t in ("get_gap", "get_candidate_audiences", "estimate_outcome", "check_guardrails", "get_past_plays", "propose_play"):
+    for t in ("get_gap", "get_candidate_audiences", "estimate_outcomes", "check_guardrails", "get_past_plays", "propose_play"):
         assert f"planner.{t}.schema.json" in names
     for t in ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "place_order", "record_stop", "list_products"):
         assert f"customer.{t}.schema.json" in names
@@ -58,8 +58,9 @@ def test_planner_tool_outputs_validate(planner_ctx):
     from agents.planner import drafting
 
     draft = drafting.build_draft(gap, auds, {"mechanic": "coupon", "mechanic_params": {"discount_pct": 5}}, "v1", "contract-test", 0.1, 20, ["en", "kn"], "2026-09-12")
-    est = pt.estimate_outcome(draft)
-    jsonschema.validate(est, _schema("planner.estimate_outcome", "output"))
+    ests = pt.estimate_outcomes([draft])
+    jsonschema.validate(ests, _schema("planner.estimate_outcomes", "output"))
+    est = ests[0]
     full = drafting.finish_draft(draft, gap, est, auds, [], planner_ctx.policy_text)
     chk = pt.check_guardrails(full)
     jsonschema.validate(chk, _schema("planner.check_guardrails", "output"))

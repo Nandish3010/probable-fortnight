@@ -8,7 +8,7 @@ from google.adk.agents import LlmAgent
 from google.adk.models.registry import LLMRegistry
 from google.genai import types
 
-from agents.chat_runtime import vertex_env
+from agents.chat_runtime import chat_generate_config, vertex_env
 from agents.gate.config import load_models
 
 from .stub_llm import StubCustomerLlm
@@ -24,11 +24,13 @@ LLMRegistry.register(StubCustomerLlm)
 def build_customer_agent(catalog: dict[str, str], backend: str | None = None) -> LlmAgent:
     models = load_models()
     backend = backend or models["backend"]
+    config = types.GenerateContentConfig(temperature=0.3)
     if backend == "stub":
         model = StubCustomerLlm(catalog=catalog)
     elif backend == "vertex":
         vertex_env(models)
         model = models["ids"]["flash"]
+        config = chat_generate_config(models, "customer", temperature=0.3)
     else:
         raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")
     catalogue_lines = "\n".join(f"- {name}: {sku}" for name, sku in sorted(catalog.items())[:400])
@@ -39,5 +41,5 @@ def build_customer_agent(catalog: dict[str, str], backend: str | None = None) ->
         model=model,
         instruction=instruction,
         tools=list(TOOLS),
-        generate_content_config=types.GenerateContentConfig(temperature=0.3),
+        generate_content_config=config,
     )
