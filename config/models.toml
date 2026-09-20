@@ -13,15 +13,17 @@ location = "asia-south1"          # fallback: asia-southeast1 or us if a service
 [ids]
 # Verified 20 Sep 2026 by a real generateContent call against
 # https://asia-south1-aiplatform.googleapis.com/.../publishers/google/models/<id>:generateContent
-# in project amru-509214 -- not guessed. Only `flash` is read by any code path today
-# (agents/planner/agent.py, agents/customer/agent.py, agents/capture/vision.py); flash_lite,
-# live and fallback below are not yet wired to anything.
-flash = "gemini-2.5-flash"          # planner, vision, chat. Confirmed live in asia-south1.
+# in project amru-509214 -- not guessed. `flash` is read by agents/planner/agent.py,
+# agents/customer/agent.py, agents/capture/vision.py, AND (as of 21 Sep 2026) by the BigQuery
+# AI.GENERATE_TABLE remote model `taal.<flash id>_remote` used for copy generation
+# (jobs/sense/copy.py::generate_copy_bigquery, services/api/approve.py) -- flash_lite was the
+# originally intended model for that call, but it 404s in asia-south1 (see below) where the
+# BigQuery dataset lives, and moving the dataset to us-central1 just to keep flash-lite was
+# judged not worth it. `live` and `fallback` below remain unwired.
+flash = "gemini-2.5-flash"          # planner, vision, chat, copy generation. Confirmed live in asia-south1.
 # flash-lite and pro respond in us-central1 but 404 in asia-south1 -- Vertex model
 # availability is per-region and asia-south1 is narrower than us-central1 as of this check.
-# If flash_lite is wired up for copy generation, either accept us-central1 for that one call
-# path or requalify against asia-south1's current catalog first.
-flash_lite = "gemini-2.5-flash-lite"  # copy generation via BigQuery remote model. NOT verified in asia-south1 (404); works in us-central1.
+flash_lite = "gemini-2.5-flash-lite"  # NOT wired to any code path (superseded by `flash` for copy generation; see above). NOT verified in asia-south1 (404); works in us-central1.
 live = "gemini-2.0-flash-live-preview-04-09"  # voice session. NOT verified -- Live API uses a websocket endpoint this check does not exercise.
 fallback = "gemini-2.5-flash"       # same as flash for now; a real fallback needs a distinct, separately-verified model.
 

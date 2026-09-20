@@ -69,18 +69,47 @@ def _stub_rows(photo_ref: str | None, image_data_url: str | None, node_id: str) 
     ]}
 
 
+# Gemini's response_schema is not JSON Schema: one type per field (no ["string", "null"] unions),
+# nullability via `nullable`, and no `format`/`minimum`/`additionalProperties`. Reusing
+# docs/schemas/vision_intake.schema.json directly fails validation inside google-genai before any
+# model call is made; the output is still validated against the JSON Schema in `annotate`.
+_CONF = {"type": "NUMBER"}
+_GEMINI_ROWS_SCHEMA = {
+    "type": "OBJECT",
+    "required": ["rows"],
+    "properties": {"rows": {"type": "ARRAY", "items": {
+        "type": "OBJECT",
+        "required": ["sku_guess", "sku_confidence", "best_before_date", "date_confidence", "facings_count", "count_confidence"],
+        "properties": {
+            "sku_guess": {"type": "STRING"},
+            "sku_confidence": _CONF,
+            "best_before_date": {"type": "STRING", "nullable": True, "description": "YYYY-MM-DD, or null when unreadable"},
+            "date_confidence": _CONF,
+            "facings_count": {"type": "INTEGER"},
+            "count_confidence": _CONF,
+        },
+    }}},
+}
+
+
+def _is_remote_uri(ref: str | None) -> bool:
+    return bool(ref) and ref.startswith(("gs://", "https://", "http://"))
+
+
 def _vertex_rows(photo_ref: str | None, image_data_url: str | None, node_id: str, catalogue: list[str], model_id: str) -> dict[str, Any]:
     from google import genai
     from google.genai import types
 
     client = genai.Client(vertexai=True)
-    schema = {"type": "object", "properties": {"rows": SCHEMA["properties"]["rows"]}, "required": ["rows"]}
+    schema = _GEMINI_ROWS_SCHEMA
     if image_data_url:
         header, b64 = image_data_url.split(",", 1)
         mime = header.split(";")[0].split(":")[1]
         part = types.Part.from_bytes(data=base64.b64decode(b64), mime_type=mime)
-    else:
+    elif _is_remote_uri(photo_ref):
         part = types.Part.from_uri(file_uri=photo_ref, mime_type="image/jpeg")
+    else:
+        raise ValueError(f"vertex vision needs an uploaded image or a gs://, https:// photo_ref; got {photo_ref!r}")
     prompt = PROMPT + "\nCatalogue SKUs: " + ", ".join(catalogue[:400])
     resp = client.models.generate_content(model=model_id, contents=[part, prompt], config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.0))
     rows = json.loads(resp.text)["rows"]
@@ -99,36 +128,52 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     backend = backend or models["backend"]
     products = store.read("products")
     names = {p["sku"]: p["name"] for p in products}
-    if backend == "vertex":
+    recorded = photo_ref and not image_data_url and (FIXTURES / f"{photo_ref.rsplit('/', 1)[-1].rsplit('.', 1)[0]}.json").exists()
+    if backend == "vertex" and not recorded:
         result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models["ids"]["flash"])
         result["model_id"] = models["ids"]["flash"]
+    elif backend == "vertex":
+        # The three staged pallets have no image file in the repo, only their recorded Gemini reads
+        # (fixtures/photos/README.md); the phone view labels them REPLAY. Only a real upload is live.
+        result = _stub_rows(photo_ref, image_data_url, node_id)
+        result["model_id"] = "recorded"
     else:
         result = _stub_rows(photo_ref, image_data_url, node_id)
         result["model_id"] = "stub-vision"
     return annotate(result, names)
 
 
-def commit_rows(store: LocalStore, node_id: str, rows: list[dict[str, Any]], photo_ref: str, received_at: str) -> list[dict[str, Any]]:
-    """Confirmed rows -> inventory_batches (source=photo). Unconfirmed low-confidence rows are refused."""
+def commit_rows(store: LocalStore, node_id: str, rows: list[dict[str, Any]], photo_ref: str, received_at: str) -> dict[str, list[dict[str, Any]]]:
+    """Confirmed rows -> inventory_batches (source=photo). Returns {"written": [...], "skipped": [...]}
+    -- a row that needs but lacks confirmation, names an unknown SKU, or has no best_before_date
+    (the exact case the confirmation flow exists to let an operator fill in) is skipped with a
+    reason, never silently dropped: a caller must be able to tell 'nothing to write' from 'wrote
+    everything'."""
     tenant = load_tenant()
     products = {p["sku"]: p for p in store.read("products")}
-    out = []
+    written, skipped = [], []
     for i, r in enumerate(rows, start=1):
+        sku_guess = r.get("sku_guess")
         if r.get("needs_confirmation") and not r.get("confirmed"):
+            skipped.append({"sku_guess": sku_guess, "reason": "not confirmed"})
             continue
-        p = products.get(r["sku_guess"])
-        if not p or not r.get("best_before_date"):
+        p = products.get(sku_guess)
+        if not p:
+            skipped.append({"sku_guess": sku_guess, "reason": "unknown SKU"})
+            continue
+        if not r.get("best_before_date"):
+            skipped.append({"sku_guess": sku_guess, "reason": "no best_before_date"})
             continue
         expiry = date.fromisoformat(r["best_before_date"])
         batch_id = f"B-PHOTO-{hashlib.sha256(f'{photo_ref}|{node_id}|{i}'.encode()).hexdigest()[:6].upper()}"
-        out.append({
-            "tenant_id": tenant.tenant_id, "batch_id": batch_id, "sku": r["sku_guess"], "node_id": node_id, "qty_on_hand": int(r["facings_count"]),
+        written.append({
+            "tenant_id": tenant.tenant_id, "batch_id": batch_id, "sku": sku_guess, "node_id": node_id, "qty_on_hand": int(r["facings_count"]),
             "expiry_date": expiry.isoformat(), "online_sellby_date": online_sellby_date(expiry, int(p["shelf_life_days"]), tenant.sellby_rule, bool(p["is_food"])).isoformat(),
             "received_at": received_at[:10], "source": "photo", "capture_ref": photo_ref, "sellby_rule_version": tenant.sellby_rule.version,
         })
-    if out:
-        store.append("inventory_batches", out)
-    return out
+    if written:
+        store.append("inventory_batches", written)
+    return {"written": written, "skipped": skipped}
 
 
 def _env_backend() -> str:

@@ -7,8 +7,9 @@ sets `guardrails_all_passed` in session state and escalates to end the LoopAgent
 from __future__ import annotations
 
 import json
+import os
 from collections import defaultdict
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jsonschema
@@ -230,21 +231,86 @@ def get_past_plays(sku: str, category: str, mechanic: str) -> list[dict]:
     return out[:10]
 
 
+DRAFT_SHAPE = {
+    "gap_id": "gap id from get_gap",
+    "objective": "clear_online_sellby | clear_expiry | prevent_stockout | rebalance | revive_slow_mover",
+    "target": {"sku": "SKU", "node_ids": ["DS-07"], "batch_ids": ["B-..."], "units": 0, "deadline_date": "YYYY-MM-DD", "deadline_type": "online_sellby | expiry | lead_time"},
+    "mechanic": "bundle | usual_order_addon | substitution | preorder | subscription_nudge | coupon | outlet_markdown | transfer_plus_nudge",
+    "mechanic_params": {"discount_pct?": 0, "bundle_sku?": "SKU", "bundle_price?": 0, "transfer_to_node?": "OUT-01", "markdown_pct?": 0},
+    "audience": {"segment_ids": ["seg_1"], "purpose": "marketing", "size_before_consent": 0, "size_after_consent": 0},
+    "holdout": {"fraction": 0.1, "seed": "string", "min_treated_n": 20},
+}
+
+
+def _draft_problems(draft: Any) -> list[str]:
+    """What a live model most often leaves out of a play_draft. Returned to the model as a tool
+    error it can act on; raising here would abort the whole ADK loop instead."""
+    if not isinstance(draft, dict):
+        return ["play_draft must be a JSON object"]
+    problems = []
+    for key in ("gap_id", "mechanic"):
+        if not draft.get(key):
+            problems.append(f"{key} is required")
+    target = draft.get("target")
+    if not isinstance(target, dict):
+        problems.append("target is required (object with sku, node_ids, batch_ids, units, deadline_date, deadline_type)")
+    else:
+        for key in ("sku", "node_ids"):
+            if not target.get(key):
+                problems.append(f"target.{key} is required")
+    audience = draft.get("audience")
+    if not isinstance(audience, dict):
+        problems.append("audience is required (object with segment_ids, size_before_consent, size_after_consent)")
+    elif not audience.get("segment_ids"):
+        problems.append("audience.segment_ids is required")
+    return problems
+
+
+def _draft_error(problems: list[str]) -> dict:
+    return {"error": "play_draft is incomplete: " + "; ".join(problems), "required_shape": DRAFT_SHAPE}
+
+
 def estimate_outcome(play_draft: dict) -> dict:
-    """Deterministic estimator: expected outcome with CI and the do-nothing / blanket-markdown counterfactuals."""
+    """Deterministic estimator: expected outcome with CI and the do-nothing / blanket-markdown
+    counterfactuals. play_draft must carry gap_id, mechanic, target{sku,node_ids,...} and
+    audience{segment_ids,...}; an incomplete draft returns {"error", "required_shape"} instead."""
     ctx = current()
-    return estimate(play_draft, _estimator_context(ctx, play_draft))
+    problems = _draft_problems(play_draft)
+    if problems:
+        return _draft_error(problems)
+    try:
+        return estimate(play_draft, _estimator_context(ctx, play_draft))
+    except KeyError as e:
+        return {"error": f"estimate_outcome: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
 
 def check_guardrails(play_draft: dict) -> dict:
-    """Run the eight guardrails on a draft; returns every rule with pass/fail and detail, plus all_passed."""
+    """Run the eight guardrails on a draft; returns every rule with pass/fail and detail, plus
+    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}."""
     ctx = current()
-    return gr.check(play_draft, _guardrail_context(ctx, play_draft))
+    problems = _draft_problems(play_draft)
+    if problems:
+        return _draft_error(problems)
+    try:
+        return gr.check(play_draft, _guardrail_context(ctx, play_draft))
+    except KeyError as e:
+        return {"error": f"check_guardrails: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
 
 def propose_play(play: dict, tool_context: ToolContext) -> dict:
     """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
     ctx = current()
+    if isinstance(play, dict):
+        # Server-owned fields. A live model will otherwise invent them: the first Vertex run wrote
+        # created_at "2023-10-27" and copied the Sense run id into trace_ref.
+        pinned = os.environ.get("TAAL_NOW")
+        now = datetime.fromisoformat(pinned.replace("Z", "+00:00")).astimezone(UTC) if pinned else datetime.now(UTC)
+        play["created_at"] = now.isoformat(timespec="seconds").replace("+00:00", "Z")
+        play["status"] = "proposed"
+        play["policy_version"] = ctx.policy_version
+        play["trace_ref"] = f"events/{ctx.run_id}"
+        play.pop("approved_at", None)
+        play.pop("approved_by", None)
     errors = [f"{'/'.join(str(p) for p in e.path) or '$'}: {e.message}" for e in sorted(_VALIDATOR.iter_errors(play), key=lambda e: list(e.path))]
     if not errors:
         try:

@@ -45,7 +45,7 @@ bundle; approval assigns 287 treated and 26 holdout customers by hash, writes th
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash_lite` via BigQuery `AI.GENERATE_TABLE` | vernacular variants | discount values, best-before disclosure (validator) |
+| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with, reading a garment or selfie photo into attributes | colour theory (hue wheel), stock at the node, the demand-signal write, trend aggregation, colour family and skin-tone confirmation |
 | Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
@@ -68,6 +68,13 @@ stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at 
 from the same seeded generator on its own RNG stream; the style-trends panel aggregates synthetic
 chat asks, not a forecast, and is labelled SYNTHETIC; garment and selfie photo fixtures are
 generated colour swatches, never real photos.
+
+## Evaluation
+
+`eval/evaluation.md` is the dated evaluation table: every number names the command that produced
+it and links to the raw output committed under `eval/raw/`. It also lists, explicitly, the
+DECISIONS §12 metrics this project cannot yet produce (pilot results, Agent Simulation, vision
+accuracy on 30 photos, cost from a billing export) rather than a guessed number for any of them.
 
 ## Development
 

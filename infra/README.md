@@ -54,6 +54,13 @@ scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
 - `taal-sense`: Cloud Run Job created; nightly Scheduler trigger `taal-sense-nightly` at 01:30 IST
 - BigQuery dataset `taal` (all 28 `data/bigquery/ddl/*.sql` files applied), Firestore Native
   database, Artifact Registry repo `taal` -- all in `asia-south1`
+- **Tenant data ships inside the API image** (`Dockerfile.api` runs the generator, Sense and
+  `harness.seed_plays` at build time). Before that step existed the deployed container served an
+  empty tenant -- `/health` degraded with 0 SKUs / 0 nodes / 0 customers, `/gaps` and `/plays`
+  `[]`, `/sense/last` 404 -- because `.local/` is dockerignored and nothing generates data at
+  startup. Consequence to know: the per-visitor judge-mode sandboxes live on the container's
+  ephemeral filesystem, so a visitor's approvals reset when the instance is replaced (scale-to-zero,
+  redeploy). Fine for judging; not a system of record (that is BigQuery, per DECISIONS §3.3).
 
 **IAM: resolved.** `taal-deploy@amru-509214.iam.gserviceaccount.com` was granted `roles/owner` on
 20 Sep 2026 (after two earlier attempts at a narrower Vertex role picked the wrong entries --
@@ -93,6 +100,32 @@ by checking the live revision's `create_time` and image digest directly rather t
 deploy call's return value. If you ever build tooling around the Cloud Run API instead of the
 `gcloud` CLI, always resolve the image to its digest (`repositories.../tags/latest`'s `version`
 field in Artifact Registry) before calling `update_service`.
+
+**Three runtime bugs found by exercising every endpoint against the real Vertex backend (20 Sep),
+all invisible in stub mode, all fixed:**
+
+1. `/capture` 500 on every sample pallet: `agents/capture/vision.py` reused the JSON Schema
+   (`"type": ["string", "null"]`) as Gemini's `response_schema`, which google-genai rejects before
+   any model call, and handed `Part.from_uri` a relative local path. Now uses an explicit Gemini
+   schema (single types, `nullable`), sends only real uploads to the model, and replays the
+   recorded reads for the three staged pallets (they have no image file in the repo) with
+   `model_id: "recorded"` -- which is what the phone view's REPLAY badge already claimed.
+2. `/plan` and `/rerun` 500: `thinking_level` is a Gemini 3 parameter; `gemini-2.5-flash` answers
+   `400 INVALID_ARGUMENT`. `agents/planner/agent.py` now sends `thinking_level` only to
+   `gemini-3*` and a `thinking_budget` otherwise.
+3. Approve stopped moving the forecast on 18 Sep and nobody noticed: the seeded tenant is a
+   snapshot at `as_of = 2026-09-12`, the chips deadline is 18 Sep, and the API used the wall clock,
+   so the play window was empty once real time passed the planted deadline -- a flat chart in the
+   judged demo, and a `make verify` that would have gone red on its own. The API clock is now
+   pinned with `TAAL_NOW=2026-09-12T03:30:00Z` (Makefile export, Dockerfile ENV). Unset it for a
+   real tenant. If you ever regenerate the tenant with a different `AS_OF`, move `TAAL_NOW` too.
+
+4. The live Customer Agent told a shopper "Cola Zero 1L -- Qty: 127". The rule "never show the
+   customer an exact stock quantity" (commit `32fda53`) had been enforced only in the stub's
+   wording; the tools still handed the model the number, and a model repeats what it is given.
+   `get_stock`, `find_substitutes` and `list_products` now return an `availability` band
+   (`in_stock` / `few_left` / `out_of_stock`) and no `qty` at all (schemas updated, prompt v2
+   forbids stating a count). Deterministic first, prompt second -- the prompt alone is a wish.
 
 ## Deploy gotchas found by actually deploying (fixed here, worth knowing if you touch these files)
 

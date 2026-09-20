@@ -56,9 +56,15 @@ def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, r
     thinking = models.get("thinking", {}).get("planner_final", "medium")
     config = types.GenerateContentConfig(temperature=0.2)
     if (backend or models["backend"]) == "vertex":
+        model_id = models["ids"]["flash"]
         try:
-            config.thinking_config = types.ThinkingConfig(thinking_level=thinking)  # type: ignore[attr-defined]
-        except Exception:  # older google-genai without thinking_level: keep default
+            if model_id.startswith("gemini-3"):
+                config.thinking_config = types.ThinkingConfig(thinking_level=thinking)  # type: ignore[attr-defined]
+            else:
+                # Gemini 2.5 rejects thinking_level outright (400 INVALID_ARGUMENT); it takes a
+                # token budget instead. 0 disables thinking on 2.5 Flash.
+                config.thinking_config = types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(thinking, 1024))
+        except Exception:  # older google-genai without ThinkingConfig: keep default
             pass
     planner = LlmAgent(
         name="planner",

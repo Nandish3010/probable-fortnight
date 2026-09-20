@@ -1,15 +1,30 @@
 -- 08_copy.sql
--- Copy generation for approved plays only (DECISIONS §5.2 step 7). AI.GENERATE_TABLE over a
--- Vertex-connected remote model, output schema copy_text STRING, disclosure_included BOOL,
--- reason STRING. One variant per segment x language. Discount numbers and the best-before date
--- are passed as constants in the prompt with an explicit "copy exactly" instruction so the model
--- cannot invent a different number; the validator query below re-checks that anyway.
+-- The "fuller" copy-generation path from DECISIONS §5.2 step 7 (read approved plays and
+-- products back out of BigQuery). NOT YET WIRED UP: nothing in this codebase writes rows to
+-- `taal.plays` or `taal.products` -- LocalStore is the system of record -- so the two SELECTs
+-- below currently return nothing against a real dataset. The path that actually runs today is
+-- the minimal one in jobs/sense/copy.py::generate_copy_bigquery, called from
+-- services/api/approve.py at approve time: it builds variant_requests in Python from the play
+-- already in memory instead of reading it back from BigQuery, and skips straight to the
+-- AI.GENERATE_TABLE call below. This file is kept as the intended fuller version for whoever
+-- wires up the BigQuery/Firestore sync (see infra/README.md); do not treat it as executed.
 --
--- The model id is never written here: {{FLASH_LITE_MODEL}} is a template placeholder resolved
--- by the Sense job from config/models.toml (agents.gate.config.load_models()["ids"]["flash_lite"])
--- before this script is submitted to BigQuery, and the remote model itself
--- (`taal.flash_lite_remote`) is created once in infra/deploy.sh pointing at that same id via a
--- Vertex AI connection -- never a literal model string inside this file.
+-- AI.GENERATE_TABLE over a Vertex-connected remote model, output schema copy_text STRING,
+-- disclosure_included BOOL, reason STRING. One variant per segment x language. Discount numbers
+-- and the best-before date are passed as constants in the prompt with an explicit "copy exactly"
+-- instruction so the model cannot invent a different number; the validator query below
+-- re-checks that anyway, and the Python validator (jobs/sense/copy.py::validate_copy) is the
+-- actual gate regardless of which path produced the text.
+--
+-- The model id is never written here: {{COPY_MODEL}} is a template placeholder resolved from
+-- config/models.toml (agents.gate.config.load_models()["ids"]["flash"] -- not flash_lite, which
+-- 404s in asia-south1; see the comment in models.toml) before this script is submitted to
+-- BigQuery, and the remote model itself is created once in infra/deploy.sh pointing at that same
+-- id via a Vertex AI connection -- never a literal model string inside this file. The model id
+-- contains dots (gemini-2.5-flash), which BigQuery would otherwise mis-parse as extra path
+-- segments in a single backtick-quoted identifier (confirmed by actually hitting that error
+-- while wiring up the minimal path) -- {{COPY_MODEL}} here is already the dot-free resource name
+-- (id.replace(".", "_") + "_remote"), matching what infra/deploy.sh creates.
 --
 -- Params: @tenant_id STRING, @as_of DATE, @run_id STRING.
 
@@ -46,14 +61,14 @@ CROSS JOIN UNNEST(['en', 'kn']) AS lang
 LEFT JOIN (SELECT segment_id_json AS raw, TRIM(segment_id_json, '"') AS segment_id) seg
   ON TRUE;
 
--- AI.GENERATE_TABLE over the Flash-Lite remote model (see comment above on the placeholder).
+-- AI.GENERATE_TABLE over the remote model (see comment above on the placeholder).
 CREATE TEMP TABLE generated AS
 SELECT
   vr.play_id, vr.segment_id, vr.language, vr.deadline_type, vr.deadline_date,
   vr.discount_pct, vr.bundle_price,
   g.copy_text, g.disclosure_included, g.reason
 FROM AI.GENERATE_TABLE(
-  MODEL `taal.{{FLASH_LITE_MODEL}}_remote`,  -- resolved by the Sense job; see header comment
+  MODEL `taal`.`{{COPY_MODEL}}`,  -- resolved by the Sense job; see header comment
   TABLE variant_requests,
   STRUCT('prompt_text' AS prompt_column),
   output_schema => 'copy_text STRING, disclosure_included BOOL, reason STRING'
