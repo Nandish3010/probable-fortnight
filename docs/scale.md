@@ -1,23 +1,22 @@
 # Scale
 
 Structure from DECISIONS §0.1 row 1 (scalability) and §18 (cost-minimal multi-agent framework).
-Every number below is labelled measured or estimated; nothing here is a promise about a real
-deployment until the "measured at freeze" placeholders are filled in from the billing export.
+Every number below is labelled measured or not measured, and traces to a raw output committed
+under `eval/raw/`; see `eval/evaluation.md` for the full table and the commands that produced it.
 
-## Measured local throughput (placeholder table)
+## Measured throughput (21 Sep 2026)
 
 | Stage | Throughput | Status |
 |---|---|---|
-| Sense job, full nightly run (300 SKUs, 10 nodes, 6 outlets) | measured at freeze | not yet run at commit time |
-| Planner Agent, one gap, live | measured at freeze | |
-| Planner Agent fan-out, 50 gaps, Batch API | measured at freeze | |
-| Customer Agent, one turn | measured at freeze | |
-| Vision intake, one photo | measured at freeze | |
-| BigQuery bytes scanned, one Sense run | measured at freeze | |
+| Sense job, full nightly run (300 SKUs, 16 nodes/outlets) | 3.8s total (forecast 2.5s, gaps 0.15s, segments+substitutes 1.2s) | measured: `uv run python -m jobs.sense`, local compute against LocalStore -- not a BigQuery job (see below); `eval/raw/sense_throughput_2026-09-20.json` |
+| Planner Agent, one gap, live Vertex | 70.5s (rerun, proposed) to 110.9s (plan, no_play after 2 iterations) | measured: `harness.sweep_live` against a live `TAAL_MODEL_BACKEND=vertex` server, real Gemini calls; `eval/raw/sweep_vertex_2026-09-20.txt` |
+| Planner Agent fan-out, 50 gaps, Batch API | not measured | the Batch API fan-out in DECISIONS §18.3 is a documented design, not built -- nothing in this repo submits a Batch job |
+| Customer Agent, one turn, live Vertex | 4.5-6.9s across 3 live calls | measured: same sweep run |
+| Vision intake, one photo, live Vertex | 3.9s | measured: same sweep run (`POST /capture` with an uploaded image) |
+| BigQuery bytes scanned, one Sense run | not measured | Sense reads/writes LocalStore, not BigQuery, in this codebase (confirmed: no `bigquery.Client` construction anywhere under `agents/`, `services/`, `jobs/`, `data/`, `harness/`) -- there is no BigQuery job to have a bytes-scanned figure for |
 
-These rows are filled from Cloud Trace and the BigQuery job history once the demo tenant runs on
-real infrastructure; until then they stay "measured at freeze" rather than a guessed number, per
-DECISIONS §17.1 (the files are the contract, not prose promises).
+These are single-run numbers against the seeded demo tenant, not a load test; see
+`eval/evaluation.md` for caveats (a live planner run is 1-2 samples, not a distribution).
 
 ## Extrapolation to a 20,000-SKU retailer
 
