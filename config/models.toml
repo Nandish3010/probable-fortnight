@@ -11,10 +11,19 @@ project_env = "GOOGLE_CLOUD_PROJECT"
 location = "asia-south1"          # fallback: asia-southeast1 or us if a service is unavailable
 
 [ids]
-flash = "gemini-3.8-flash"          # planner, vision, chat. VERIFY ID + retirement date.
-flash_lite = "gemini-3.5-flash-lite"  # copy generation via BigQuery remote model. VERIFY.
-live = "gemini-3.1-flash-live-preview"  # voice session. VERIFY; preview IDs change.
-fallback = "gemini-3.7-flash"       # used if `flash` is unavailable at runtime. VERIFY.
+# Verified 20 Sep 2026 by a real generateContent call against
+# https://asia-south1-aiplatform.googleapis.com/.../publishers/google/models/<id>:generateContent
+# in project amru-509214 -- not guessed. Only `flash` is read by any code path today
+# (agents/planner/agent.py, agents/customer/agent.py, agents/capture/vision.py); flash_lite,
+# live and fallback below are not yet wired to anything.
+flash = "gemini-2.5-flash"          # planner, vision, chat. Confirmed live in asia-south1.
+# flash-lite and pro respond in us-central1 but 404 in asia-south1 -- Vertex model
+# availability is per-region and asia-south1 is narrower than us-central1 as of this check.
+# If flash_lite is wired up for copy generation, either accept us-central1 for that one call
+# path or requalify against asia-south1's current catalog first.
+flash_lite = "gemini-2.5-flash-lite"  # copy generation via BigQuery remote model. NOT verified in asia-south1 (404); works in us-central1.
+live = "gemini-2.0-flash-live-preview-04-09"  # voice session. NOT verified -- Live API uses a websocket endpoint this check does not exercise.
+fallback = "gemini-2.5-flash"       # same as flash for now; a real fallback needs a distinct, separately-verified model.
 
 [thinking]
 planner_route = "low"
