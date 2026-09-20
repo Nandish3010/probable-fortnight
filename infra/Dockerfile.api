@@ -13,6 +13,16 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
+# Seed the demo tenant into the image (mirrors `make generate`). .local/ is dockerignored and the
+# API never generates data at startup, so without this the container serves an empty tenant:
+# /health degraded with 0 SKUs, /gaps and /plays [], /sense/last 404. Stub backend here on
+# purpose -- the seeded plays are the golden fixtures; the vertex backend is a runtime setting.
+ENV TAAL_DATA_DIR=/app/.local/data \
+    TAAL_TENANT_CONFIG=config/tenant.demo.toml
+RUN TAAL_MODEL_BACKEND=stub uv run python -m data.generator --out /app/.local/data --seed 20260912 \
+ && TAAL_MODEL_BACKEND=stub uv run python -m jobs.sense \
+ && TAAL_MODEL_BACKEND=stub uv run python -m harness.seed_plays
+
 ENV PORT=8080
 EXPOSE 8080
 
