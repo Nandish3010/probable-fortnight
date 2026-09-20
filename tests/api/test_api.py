@@ -154,7 +154,12 @@ def test_chat_stylist_specialist_and_trends(client):
     assert rec.status_code == 200 and rec.json()["rows"] >= 1
 
     trends = client.get("/trends", params={"node_id": "DS-07"}, headers=_h("v-stylist")).json()
-    assert trends and trends[0]["node_id"] == "DS-07" and trends[0]["garment_type"] == "kurta"
+    # DS-07 also carries the planted assortment_gap demand (8 real asks for a black blazer,
+    # data/generator/apparel.py::seed_style_requests), which outranks this test's own smaller
+    # kurta signal when sorted by -asks -- assert the kurta row exists, not that it is first.
+    assert trends and all(t["node_id"] == "DS-07" for t in trends)
+    kurta = next((t for t in trends if t["garment_type"] == "kurta"), None)
+    assert kurta is not None
     assert trends[0]["data_label"] == "SYNTHETIC"
 
 
