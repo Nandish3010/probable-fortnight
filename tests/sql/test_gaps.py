@@ -6,7 +6,7 @@ import jsonschema
 
 from agents.gate.config import load_tenant
 from agents.gate.sellby import online_sellby_date
-from agents.gate.store import LocalStore
+from agents.gate.store import LocalStore, load_catalogue
 from jobs.sense.gaps import detect
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,21 +14,21 @@ GAP_SCHEMA = json.loads((ROOT / "docs" / "schemas" / "gap.schema.json").read_tex
 
 
 def test_rupees_recomputed_independently(base_store: LocalStore):
-    products = {p["sku"]: p for p in base_store.read("products")}
+    products = load_catalogue(base_store)
     for g in base_store.read("gaps"):
         p = products[g["sku"]]
-        expected = g["units_at_risk"] * (p["list_price"] - p["unit_cost"]) if g["type"] in ("stockout_risk", "unmet_demand") else g["units_at_risk"] * p["unit_cost"]
+        expected = g["units_at_risk"] * (p["list_price"] - p["unit_cost"]) if g["type"] in ("stockout_risk", "unmet_demand", "assortment_gap") else g["units_at_risk"] * p["unit_cost"]
         assert abs(expected - g["rupees_at_stake"]) <= 1.0, g["gap_id"]
 
 
 def test_all_five_types_with_correct_deadline_types(base_store: LocalStore):
     gaps = base_store.read("gaps")
     types = {g["type"] for g in gaps}
-    assert types == {"online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover"}
+    assert types == {"online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "assortment_gap"}
     for g in gaps:
         if g["type"] == "online_sellby_breach":
             assert g["deadline_type"] == "online_sellby"
-        if g["type"] == "stockout_risk":
+        if g["type"] in ("stockout_risk", "assortment_gap"):
             assert g["deadline_type"] == "lead_time"
         jsonschema.validate(g, GAP_SCHEMA, format_checker=jsonschema.FormatChecker())
 

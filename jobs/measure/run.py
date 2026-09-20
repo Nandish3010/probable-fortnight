@@ -25,7 +25,7 @@ from typing import Any
 
 from agents.gate.config import load_tenant
 from agents.gate.estimator import update_prior
-from agents.gate.store import LocalStore
+from agents.gate.store import LocalStore, load_catalogue
 
 # kg CO2e per kg of food wasted, an estimate for the "Most Impactful" line only; the source and its
 # caveats are in docs/DATA_MODEL.md. Replace with a tenant-specific factor when one exists.
@@ -111,7 +111,7 @@ def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[st
     store = LocalStore(data_dir)
     tenant = load_tenant()
     computed_at = computed_at or datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
-    products = {p["sku"]: p for p in store.read("products")}
+    products = load_catalogue(store)
     plays = [json.loads(r["play_json"]) if isinstance(r.get("play_json"), str) else (r.get("play_json") or r) for r in store.read("plays")]
     plays = [p for p in plays if p.get("status") in ("approved", "running", "measured", "unmeasured")]
     assignments: dict[str, list[dict]] = defaultdict(list)
@@ -120,9 +120,19 @@ def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[st
     lines = store.read("order_lines")
     outcomes: list[dict[str, Any]] = []
     priors = {(r["mechanic"], r["category"], r["segment_id"]): r for r in store.read("estimator_priors")}
+    skipped: list[str] = []
     for play in plays:
         product = products[play["target"]["sku"]]
-        rows = measure_play(play, assignments.get(play["play_id"], []), lines, product, computed_at)
+        try:
+            rows = measure_play(play, assignments.get(play["play_id"], []), lines, product, computed_at)
+        except MeasureError:
+            # A single play's degenerate assignment (e.g. a small audience whose holdout fraction
+            # happened to hash zero customers into the holdout arm -- more likely for a small,
+            # precisely-targeted play than a broad one) must not take down measurement for every
+            # other play in the tenant. Left unmeasured this run; a future re-assignment or a
+            # bigger audience next time fixes it.
+            skipped.append(play["play_id"])
+            continue
         outcomes.extend(rows)
         treated = rows[0]
         if treated["status"] == "measured":
@@ -146,7 +156,7 @@ def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[st
                 pj["status"] = status_by[r["play_id"]]
                 r["play_json"] = json.dumps(pj, ensure_ascii=False)
     store.write("plays", rows)
-    return {"plays": len(plays), "measured": sum(1 for s in status_by.values() if s == "measured"), "unmeasured": sum(1 for s in status_by.values() if s == "unmeasured"), "computed_at": computed_at}
+    return {"plays": len(plays), "measured": sum(1 for s in status_by.values() if s == "measured"), "unmeasured": sum(1 for s in status_by.values() if s == "unmeasured"), "skipped": skipped, "computed_at": computed_at}
 
 
 def main(argv: list[str] | None = None) -> int:

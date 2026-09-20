@@ -78,7 +78,7 @@ def _context_block(ctx: PlannerContext, gap_id: str) -> dict[str, Any]:
     decision the model needs to make; the tools stay registered below for the model to re-check
     one if it wants to, but the common path never has to ask for them."""
     gap = pt.get_gap(gap_id)
-    audiences = pt.get_candidate_audiences(gap["sku"], [gap["node_id"]], drafting.OBJECTIVE_BY_GAP[gap["type"]])
+    audiences = pt.get_candidate_audiences(gap["sku"], [gap["node_id"]], drafting.OBJECTIVE_BY_GAP[gap["type"]], gap_id=gap_id)
     candidates = drafting.candidate_mechanics(gap, ctx.policy_text)
     category = (gap.get("product") or {}).get("category", "")
     past_plays: list[dict[str, Any]] = []

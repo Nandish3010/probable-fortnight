@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.gate.config import TenantConfig, load_tenant
-from agents.gate.store import LocalStore
+from agents.gate.store import LocalStore, load_catalogue
 
 
 @dataclass
@@ -40,7 +40,7 @@ class PlannerContext:
             policy_text=policy_text if policy_text is not None else current["text"],
             policy_version=policy_version or current["policy_version"],
         )
-        ctx.products = {p["sku"]: p for p in store.read("products")}
+        ctx.products = load_catalogue(store)
         ctx.nodes = {n["node_id"]: n for n in store.read("nodes")}
         return ctx
 

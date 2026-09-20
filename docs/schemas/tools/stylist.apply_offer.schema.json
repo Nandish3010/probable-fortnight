@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/stylist.apply_offer.schema.json",
+  "title": "stylist.apply_offer",
+  "description": "Contract for the stylist agent tool `apply_offer`. Same rules as customer.apply_offer.schema.json -- play_assignments, consent and offers are shared tables, not stylist-scoped. Tools are deterministic Python or store reads; no LLM inside.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "input",
+    "output"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "play_id",
+        "customer_id"
+      ],
+      "properties": {
+        "play_id": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "ok",
+        "reason"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable: why redemption is refused, or 'eligible' when ok is true."
+        },
+        "mechanic": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "node_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

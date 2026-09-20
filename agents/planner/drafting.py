@@ -14,6 +14,7 @@ from typing import Any
 OBJECTIVE_BY_GAP = {
     "online_sellby_breach": "clear_online_sellby", "expiry_writeoff": "clear_expiry", "stockout_risk": "prevent_stockout",
     "rebalance": "rebalance", "slow_mover": "revive_slow_mover", "unmet_demand": "prevent_stockout",
+    "assortment_gap": "rebalance",
 }
 
 
@@ -65,6 +66,12 @@ def candidate_mechanics(gap: dict[str, Any], policy_text: str) -> list[dict[str,
     elif gtype == "rebalance":
         counterpart = (gap.get("evidence") or {}).get("counterpart_node_id")
         out = [{"mechanic": "transfer_plus_nudge", "mechanic_params": {"transfer_to_node": counterpart, "transfer_units": int(gap["units_at_risk"])}} if counterpart else transfer()]
+    elif gtype == "assortment_gap":
+        # The transfer moves stock TO the demanding node (gap["node_id"]) FROM evidence.supply_node_id
+        # -- the reverse of rebalance's own node_id=source convention, because here the play's
+        # audience (the customers who actually asked) is at the demanding node, not the source.
+        supply_node = (gap.get("evidence") or {}).get("supply_node_id")
+        out = [{"mechanic": "transfer_plus_nudge", "mechanic_params": {"transfer_to_node": gap["node_id"], "transfer_units": int(gap["units_at_risk"])}} if supply_node else None]
     else:  # slow_mover
         out = [markdown10, transfer()] if is_outlet else [addon, coupon10, transfer()]
     return [c for c in out if c]

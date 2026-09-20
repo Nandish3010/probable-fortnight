@@ -311,9 +311,13 @@ agent's `taal_customer`, even for the same `customer_id:web`): `get_style_contex
 home node, language, recent asks, confirmed style profile if any; `find_apparel(query, node_id)` →
 in-stock matches by garment/colour/occasion words; `describe_item(sku)` → catalogue attributes;
 `suggest_pairings(anchor, node_id, occasion?)` → up to 10 in-stock pairings for a named item or a
-free-text description; `set_style_profile` / `forget_style_profile` → the skin-tone profile below.
-Checkout is not wired in this build (an apparel line in `order_lines` would break the grocery
-Measure/segments join on `products`); asking to order gets a clear "not available yet" reply.
+free-text description; `set_style_profile` / `forget_style_profile` → the skin-tone profile below;
+`apply_offer` / `place_order` → checkout through the same MCP order mock the grocery Customer
+Agent uses (`agents/mcp_orders`), so an assortment_gap play (below) is actually redeemable, not
+just proposed. `jobs/measure/run.py`'s `products` lookup is `agents/gate/store.py::load_catalogue`
+(grocery `products` merged with `apparel_products`, apparel rows defaulting to
+`category="apparel"`), the one shared change that let checkout, approve and Measure all resolve
+an apparel sku without a second pipeline.
 
 **What Gemini decides vs what is deterministic.** Exactly the same split as §2.7: the model chooses
 how to talk about a look and which pairing to lead with; the hue wheel, every pairing score and
@@ -345,10 +349,23 @@ above `style_trends_min_asks` within `style_trends_lookback_days`; `GET /trends`
 `POST /trends/recompute` runs it on demand (the `POST /measure` pattern), shown on a SYNTHETIC-
 labelled web panel.
 
+**assortment_gap: the demand-driven counterpart to `rebalance` (built).** `jobs/sense/gaps.py`
+resolves real, unfulfilled `style_requests` for a (node, garment_type, colour_family) into a
+named gap when the catalogue has a matching sku that some OTHER node in the same cluster actually
+carries -- `rebalance`'s own surplus-at-A/need-at-B shape, sourced from a customer ask instead of
+the forecast. The Planner drafts a `transfer_plus_nudge` play for it with objective `rebalance`;
+`get_candidate_audiences` reaches the play's real askers directly via the gap's
+`evidence.requesting_customer_ids` (the grocery `affinity` table has no coverage for an apparel
+sku, so the audience tool's usual affinity fallback would otherwise be empty). A demand signal
+with no matching catalogue sku, or no in-cluster supply, stays an assortment/buying decision
+outside what a play can fix -- left in `style_requests`/`style_trends` for a merchandising
+review, exactly the principle already documented for a `customer_requests` `no_match` (§2.3) --
+never forced into a gap. This is the whole point of the second specialist made concrete: the same
+gap → guardrail-gated play → holdout → measured-outcome loop this project built for food waste,
+proven on a second, unrelated retail vertical without a second pipeline.
+
 **Phase 2, not built here:** feeding `style_trends` into `future_regressors` as a per-category
-covariate, once real ask volume exists to justify it; an `assortment_gap` gap type from
-`unfulfilled_asks` so the Planner could propose a stocking play; apparel checkout through
-`agents/mcp_orders` with its own order-lines table; a `specialist` column on `conversations`.
+covariate, once real ask volume exists to justify it; a `specialist` column on `conversations`.
 
 ---
 
