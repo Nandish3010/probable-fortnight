@@ -47,7 +47,7 @@ def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]
     record = {
         "run_id": run_id, "as_of": as_of.isoformat(), "tenant_id": tenant.tenant_id,
         "forecast_rows": len(rows), "series": len({(r["sku"], r["node_id"]) for r in rows}), "gaps": len(gaps),
-        "gaps_by_type": {t: sum(1 for g in gaps if g["type"] == t) for t in ("online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover")},
+        "gaps_by_type": {t: sum(1 for g in gaps if g["type"] == t) for t in ("online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand", "assortment_gap")},
         "planner_eligible": sum(1 for g in gaps if g["rupees_at_stake"] >= threshold), "planner_threshold_inr": threshold,
         "segments": len(segments), "substitute_rows": len(subs), "style_trends": len(trends),
         "timing_ms": {"forecast": int((t1 - t0) * 1000), "gaps": int((t2 - t1) * 1000), "segments_substitutes": int((t3 - t2) * 1000), "trends": int((t4 - t3) * 1000), "total": int((t4 - t0) * 1000)},

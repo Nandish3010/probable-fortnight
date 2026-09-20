@@ -36,7 +36,7 @@ def test_every_tool_has_a_contract():
         assert f"planner.{t}.schema.json" in names
     for t in ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "place_order", "record_stop", "list_products"):
         assert f"customer.{t}.schema.json" in names
-    for t in ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile"):
+    for t in ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile", "apply_offer", "place_order"):
         assert f"stylist.{t}.schema.json" in names
 
 
@@ -167,7 +167,34 @@ def test_stylist_tool_outputs_validate(sandbox):
 
 
 def test_stylist_tool_output_schemas_are_not_vacuous():
-    names = ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile")
+    names = ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile", "apply_offer", "place_order")
     for name in names:
         schema = _schema(f"stylist.{name}", "output")
         assert schema.get("properties"), f"stylist.{name} output schema has no properties"
+
+
+def test_stylist_apply_offer_and_place_order(sandbox):
+    """The apparel analogue of test_customer_tool_outputs_validate's apply_offer/place_order
+    check: proves an assortment_gap play's real, treated customer can actually redeem it and
+    place an order through the same MCP order mock the grocery Customer Agent uses -- without
+    this, jobs/measure/run.py would never see an apparel order_line to measure against."""
+    tenant = load_tenant()
+    play_id = "play_blazer_ds07_v1"
+    approve(sandbox, tenant, play_id, datetime(2026, 9, 12, 9, 0, tzinfo=UTC))
+    treated = next(a["customer_id"] for a in sandbox.read("play_assignments") if a["play_id"] == play_id and a["arm"] == "treated")
+    ctx = StylistContext.build(sandbox, treated, "2026-09-12T09:05:00Z", tenant)
+    tok = set_stylist_context(ctx)
+    try:
+        offer = st.apply_offer(play_id, treated)
+        jsonschema.validate(offer, _schema("stylist.apply_offer", "output"), format_checker=jsonschema.FormatChecker())
+        assert offer["ok"] and offer["sku"] == "APP-BLAZER-BLACK-U" and offer["mechanic"] == "transfer_plus_nudge"
+
+        order = asyncio.run(st.place_order(treated, "DS-07", [{"sku": "APP-BLAZER-BLACK-U", "qty": 1}], play_id))
+        jsonschema.validate(order, _schema("stylist.place_order", "output"), format_checker=jsonschema.FormatChecker())
+        assert order["lines"] and order["lines"][0]["sku"] == "APP-BLAZER-BLACK-U"
+        assert any(ln["customer_id"] == treated and ln.get("play_id") == play_id and ln["sku"] == "APP-BLAZER-BLACK-U" for ln in sandbox.read("order_lines"))
+
+        again = st.apply_offer(play_id, treated)
+        assert again["ok"] is False and "already redeemed" in again["reason"]
+    finally:
+        reset_stylist_context(tok)

@@ -19,7 +19,7 @@ V2 = (ROOT / "fixtures" / "policy_v2.txt").read_text()
 def _run(store, gap_id, **kw):
     import asyncio
 
-    for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
+    for t in ("gaps", "plays", "products", "apparel_products", "apparel_stock", "style_requests", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
         store._materialise(t)
     if not (store.root / "manifest.json").exists():
         (store.root / "manifest.json").write_bytes((store.base.root / "manifest.json").read_bytes())
@@ -35,7 +35,7 @@ def _is_subsequence(needle, hay):
     return all(any(x == n for x in it) for n in needle)
 
 
-@pytest.mark.parametrize("gap_id", ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_kaju_ds01", "gap_quinoa_out02"])
+@pytest.mark.parametrize("gap_id", ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_kaju_ds01", "gap_quinoa_out02", "gap_blazer_ds07"])
 def test_planted_gap_yields_a_valid_play_within_three_iterations(sandbox, gap_id):
     out = _run(sandbox, gap_id)
     assert out["status"] == "proposed" and out["iterations"] <= 3
@@ -53,6 +53,27 @@ def test_chips_revises_after_margin_floor_failure(sandbox):
     assert any(t.startswith("Guardrail failed: margin_floor") for t in texts)
     assert out["iterations"] == 2 and out["play"]["mechanic"] == "bundle"
     assert out["play"]["alternatives"] and out["play"]["alternatives"][0]["mechanic"] == "coupon"
+
+
+def test_assortment_gap_targets_the_real_askers_and_transfers_from_supply(sandbox):
+    """The apparel analogue of a rebalance play (DECISIONS §5.9): proves the same gap -> planner ->
+    guardrail -> holdout loop generalises to a demand signal sourced from stylist asks, not the
+    forecast, without a second pipeline."""
+    gap = sandbox.find("gaps", gap_id="gap_blazer_ds07")[-1]
+    out = _run(sandbox, "gap_blazer_ds07")
+    play = out["play"]
+    assert out["status"] == "proposed"
+    assert play["objective"] == "rebalance" and play["mechanic"] == "transfer_plus_nudge"
+    assert play["mechanic_params"]["transfer_to_node"] == "DS-07"
+    assert play["target"]["sku"] == "APP-BLAZER-BLACK-U"
+    # some of the real, unfulfilled askers are reachable, even though the grocery affinity table
+    # has no coverage at all for an apparel sku (get_candidate_audiences's requesting_customer_ids
+    # path) -- bounded above by the full asker list, since choose_segments drops any without
+    # marketing consent, and above zero, since not every asker in this seeded scenario lacks it
+    requesting = set(gap["evidence"]["requesting_customer_ids"])
+    assert requesting
+    assert 0 < play["audience"]["size_before_consent"] <= len(requesting)
+    assert 0 < play["audience"]["size_after_consent"] <= play["audience"]["size_before_consent"]
 
 
 def test_policy_change_changes_the_tea_mechanic(sandbox):

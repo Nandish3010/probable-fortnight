@@ -20,6 +20,13 @@ asked -- they raise a standalone unmet_demand gap: a demand signal the forecast 
 missed. rupees_at_stake for unmet_demand uses the same lost-margin convention as stockout_risk
 (one request approximates one missed unit sale; a repeat ask from the same customer counts again,
 since the miss recurs each time), disclosed as an estimate.
+
+A seventh type, assortment_gap (DECISIONS §5.9), is unmet_demand's apparel analogue: real,
+unfulfilled stylist asks (agents/stylist/tools.py::_record_style_ask) for a (garment_type,
+colour_family) resolved to a specific catalogue sku that some OTHER node in the same cluster
+actually carries -- the demand-driven counterpart to rebalance (surplus at A, need at B), proving
+the same gap -> guardrail-gated play -> holdout -> measured-outcome loop this file builds for
+grocery generalises to a second, unrelated retail vertical without a second pipeline.
 """
 from __future__ import annotations
 
@@ -41,6 +48,7 @@ PLANTED_IDS = {
     ("stockout_risk", "SKU-KAJU-KATLI-250G", "DS-03"): "gap_kaju_ds03",
     ("slow_mover", "SKU-QUINOA-500G", "OUT-02"): "gap_quinoa_out02",
     ("online_sellby_breach", "SKU-DARJEELING-TEA-100G", "DS-04"): "gap_tea_ds04",
+    ("assortment_gap", "APP-BLAZER-BLACK-U", "DS-07"): "gap_blazer_ds07",
 }
 
 
@@ -78,6 +86,33 @@ def _demand_signals(store: LocalStore, tenant: TenantConfig, as_of: date) -> dic
 def _on_hand_now(batches: list[dict[str, Any]], sku: str, node_id: str, as_of: date) -> int:
     today = as_of.isoformat()
     return sum(int(b["qty_on_hand"]) for b in batches if b["sku"] == sku and b["node_id"] == node_id and (not b["expiry_date"] or b["expiry_date"] >= today))
+
+
+def _style_demand_signals(store: LocalStore, tenant: TenantConfig, as_of: date) -> dict[tuple[str, str, str], dict[str, Any]]:
+    """(node_id, garment_type, colour_family) -> {count, customers} from real, unfulfilled
+    stylist asks (agents/stylist/tools.py::_record_style_ask) in the lookback window. Mirrors
+    _demand_signals' out_of_stock filter: only an ask the stylist genuinely could not answer --
+    no matching in-stock item at that node -- is actionable demand for an assortment decision; a
+    fulfilled ask is not a gap. Occasion is deliberately not part of the grouping key: a merchant
+    can restock a colour, not an occasion."""
+    lookback = as_of - timedelta(days=int(tenant.thresholds.get("style_trends_lookback_days", 30)))
+    out: dict[tuple[str, str, str], dict[str, Any]] = defaultdict(lambda: {"count": 0, "customers": set()})
+    for r in store.read("style_requests"):
+        if r.get("fulfilled") or not r.get("garment_type") or not r.get("colour_family"):
+            continue
+        if date.fromisoformat(r["ts"][:10]) < lookback:
+            continue
+        key = out[(r["node_id"], r["garment_type"], r["colour_family"])]
+        key["count"] += 1
+        key["customers"].add(r["customer_id"])
+    return dict(out)
+
+
+def _apparel_stock_by_sku_node(store: LocalStore) -> dict[tuple[str, str], int]:
+    out: dict[tuple[str, str], int] = defaultdict(int)
+    for r in store.read("apparel_stock"):
+        out[(r["sku"], r["node_id"])] += int(r["qty_on_hand"])
+    return out
 
 
 def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, tenant: TenantConfig, run_id: str) -> list[dict[str, Any]]:
@@ -247,6 +282,58 @@ def detect(store: LocalStore, forecast_rows: list[dict[str, Any]], as_of: date, 
                          "inbound": int(sum(i["qty"] for i in inbound_by.get((sku, node_id), []))), "unit_cost": float(p["unit_cost"]), "margin_per_unit": margin_per_unit,
                          "requests_count": sig["count"], "distinct_customers": distinct,
                          "sku_name": p["name"], "category": p["category"], "node_type": node["type"]},
+            "created_at": as_of.isoformat(),
+        })
+
+    # --- assortment_gap: real, unfulfilled stylist demand for a (garment_type, colour_family) at
+    # a node, resolved to a specific catalogue sku that some OTHER node in the same cluster
+    # actually carries -- the apparel analogue of rebalance (surplus at A, need at B), sourced from
+    # style_requests instead of the forecast. A demand signal with no in-catalogue sku, or no
+    # supply anywhere in-cluster, is a genuine assortment/buying decision outside what a play can
+    # fix (same principle _demand_signals documents for no_match customer_requests); it is left in
+    # style_requests/style_trends for a merchandising review, never turned into a gap.
+    apparel_products = {p["sku"]: p for p in store.read("apparel_products")}
+    apparel_stock = _apparel_stock_by_sku_node(store)
+    min_style_requests = int(tenant.thresholds.get("assortment_gap_min_requests", 2))
+    style_signals = _style_demand_signals(store, tenant, as_of)
+    for (node_id, garment_type, colour_family), sig in sorted(style_signals.items()):
+        node = nodes.get(node_id)
+        if node is None:
+            continue
+        distinct = len(sig["customers"])
+        if distinct < min_style_requests:
+            continue
+        candidates = [p for p in apparel_products.values() if p["garment_type"] == garment_type and p["colour_family"] == colour_family]
+        if not candidates:
+            continue  # no catalogue sku matches this ask at all: an assortment decision, not a gap
+        here = {sku: apparel_stock.get((sku, node_id), 0) for sku in (p["sku"] for p in candidates)}
+        if any(qty > 0 for qty in here.values()):
+            continue  # restocked (or never actually out) at this node since the ask; no longer a gap
+        supply: list[tuple[int, str, str]] = []  # (qty, sku, supply_node_id)
+        for p in candidates:
+            for other_node_id, other_node in nodes.items():
+                if other_node_id == node_id or other_node["cluster_id"] != node["cluster_id"]:
+                    continue
+                qty = apparel_stock.get((p["sku"], other_node_id), 0)
+                if qty > 0:
+                    supply.append((qty, p["sku"], other_node_id))
+        if not supply:
+            continue  # nothing to transfer in-cluster: an assortment/buying decision, not a gap
+        supply.sort(key=lambda s: (-s[0], s[1], s[2]))
+        best_qty, sku, supply_node_id = supply[0]
+        p = apparel_products[sku]
+        margin_per_unit = round(float(p["list_price"]) - float(p["unit_cost"]), 2)
+        deadline = as_of + timedelta(days=int(node["lead_time_days"]))
+        gid = gap_id_for("assortment_gap", sku, node_id, None)
+        gaps.append({
+            "tenant_id": tid, "gap_id": gid, "run_id": run_id, "type": "assortment_gap", "sku": sku, "node_id": node_id, "batch_id": None,
+            "units_at_risk": min(sig["count"], best_qty), "deadline_date": deadline.isoformat(), "deadline_type": "lead_time",
+            "rupees_at_stake": round(min(sig["count"], best_qty) * margin_per_unit, 2),
+            "evidence": {"on_hand": 0, "projected_sellthrough": 0.0, "forecast_run_id": run_id, "sellby_rule": tenant.sellby_rule.version,
+                         "unit_cost": float(p["unit_cost"]), "margin_per_unit": margin_per_unit,
+                         "requests_count": sig["count"], "distinct_customers": distinct, "requesting_customer_ids": sorted(sig["customers"]),
+                         "supply_node_id": supply_node_id, "garment_type": garment_type, "colour_family": colour_family,
+                         "sku_name": p["name"], "category": "apparel", "node_type": node["type"]},
             "created_at": as_of.isoformat(),
         })
 

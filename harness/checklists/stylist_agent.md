@@ -3,7 +3,7 @@ component: stylist_agent
 title: Stylist Agent
 owner: B
 spec_sections: ["5.9"]
-tests: ["tests/agents/test_stylist.py", "tests/agents/test_stylist_vision.py", "tests/unit/test_colour.py", "tests/unit/test_apparel_generator.py", "tests/sql/test_style_trends.py"]
+tests: ["tests/agents/test_stylist.py", "tests/agents/test_stylist_vision.py", "tests/unit/test_colour.py", "tests/unit/test_apparel_generator.py", "tests/sql/test_style_trends.py", "tests/sql/test_gaps.py", "tests/contract/test_tool_schemas.py", "tests/sql/test_measure_tables.py"]
 ---
 # Stylist Agent (`agents/stylist`)
 
@@ -18,7 +18,16 @@ tests: ["tests/agents/test_stylist.py", "tests/agents/test_stylist_vision.py", "
   before anything is suggested, and a selfie read is never saved without the customer confirming it
 - [x] The stylist and grocery agents never share ADK sessions for the same `customer_id:web`
 - [x] Every message validates against `docs/schemas/chat_envelope.schema.json`
-- [x] Checkout is not offered; asking to order gets a clear "not available in this build" reply
+- [x] Checkout goes through the same MCP order mock the grocery Customer Agent uses
+  (`apply_offer`/`place_order`); redeeming twice is refused ("already redeemed")
+- [x] `jobs/sense/gaps.py` resolves real, unfulfilled `style_requests` into an `assortment_gap`
+  the same shape as `rebalance` (surplus at another node in-cluster), never when no catalogue sku
+  matches or no in-cluster node carries it
+- [x] `get_candidate_audiences` reaches an assortment_gap's real askers via
+  `evidence.requesting_customer_ids`, since the grocery affinity table never covers an apparel sku
+- [x] `jobs/measure/run.py` resolves an apparel sku via `agents/gate/store.py::load_catalogue`
+  (merged with grocery `products`) and does not let one play's degenerate (zero-holdout) small
+  audience crash measurement for every other play in the tenant
 - [x] STOP ends the conversation with no consent side effect (the stylist never markets)
 - [x] `forget my skin tone` withdraws the `style_profile` consent row and deletes the saved profile
 - [x] `style_requests` and `style_trends` never carry a skin-tone field

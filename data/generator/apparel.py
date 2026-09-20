@@ -7,7 +7,7 @@ garments and accessories across ~45 types; ~350 SKUs total. Everything here is i
 from __future__ import annotations
 
 import random
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from agents.stylist.colour import family_of
@@ -227,3 +227,25 @@ def generate_apparel(rng: random.Random, tenant_id: str, nodes: list[dict], as_o
                 stock.append({"tenant_id": tenant_id, "sku": row["sku"], "node_id": node_id, "size": size, "qty_on_hand": qty, "as_of": as_of.isoformat()})
 
     return rows, stock
+
+
+def seed_style_requests(tenant_id: str, customers: list[dict], as_of: date) -> list[dict]:
+    """Planted, deterministic history for the demo's assortment_gap (DECISIONS §5.9): three real
+    DS-07 customers ask the stylist for a black blazer in the days before `as_of` and never get
+    one -- APP-BLAZER-BLACK-U is deliberately out of stock at DS-07 (see the planted `empty=True`
+    above) while DS-05 and DS-06, its own cluster-mates, carry it. jobs/sense/gaps.py's
+    assortment_gap detection resolves this into a real, named gap the same way the grocery
+    PLANTED_IDS scenarios are seeded, so the demo has one to show without waiting for a live
+    stylist conversation to write it."""
+    askers = sorted(c["customer_id"] for c in customers if c["home_node_id"] == "DS-07")[:8]
+    rows = []
+    for i, cid in enumerate(askers):
+        ts = as_of - timedelta(days=1 + i)
+        rows.append({
+            "tenant_id": tenant_id, "customer_id": cid, "node_id": "DS-07",
+            "session_id": f"{cid}:web", "ts": f"{ts.isoformat()}T{9 + (i % 10)}:00:00Z", "source": "find_apparel",
+            "garment_type": "blazer", "colour": "black", "colour_family": "black", "occasion": "party" if i % 2 else "office",
+            "query_text": "black blazer" if i % 2 else "do you have a black blazer for the office",
+            "matched_sku": None, "fulfilled": False,
+        })
+    return rows

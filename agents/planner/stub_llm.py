@@ -80,7 +80,7 @@ class StubPlannerLlm(BaseLlm):
             return self._say(f"Cannot plan: {gap['error']}")
         audiences = (by_name.get("get_candidate_audiences") or [None])[0]
         if audiences is None:
-            return self._call("get_candidate_audiences", {"sku": gap["sku"], "node_ids": [gap["node_id"]], "objective": drafting.OBJECTIVE_BY_GAP[gap["type"]]})
+            return self._call("get_candidate_audiences", {"sku": gap["sku"], "node_ids": [gap["node_id"]], "objective": drafting.OBJECTIVE_BY_GAP[gap["type"]], "gap_id": gap_id})
         audiences = audiences.get("result", audiences) if isinstance(audiences, dict) else audiences
         candidates = drafting.candidate_mechanics(gap, self.policy_text)
         if not candidates:
