@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/stylist.describe_item.schema.json",
+  "title": "stylist.describe_item",
+  "description": "Attributes of a named apparel item. A lookup, not an ask, so it records no demand signal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "output"],
+  "properties": {
+    "input": {
+      "type": "object", "additionalProperties": false, "required": ["sku"],
+      "properties": { "sku": { "type": "string" } }
+    },
+    "output": {
+      "type": "object",
+      "required": ["sku", "found"],
+      "properties": {
+        "sku": { "type": "string" }, "found": { "type": "boolean" },
+        "name": { "type": "string" }, "garment_type": { "type": "string" },
+        "role": { "type": "string", "enum": ["top", "bottom", "dress", "layer", "footwear", "accessory"] },
+        "colour": { "type": "string" }, "colour_family": { "type": "string" },
+        "pattern": { "type": ["string", "null"] }, "fabric": { "type": "string" }, "fit": { "type": "string" },
+        "occasions": { "type": "array", "items": { "type": "string" } },
+        "section": { "type": "string", "enum": ["women", "men", "unisex"] },
+        "list_price": { "type": "number" }, "season": { "type": "string" }
+      }
+    }
+  }
+}

@@ -18,5 +18,5 @@ def test_openapi_yaml_matches_app():
 
 def test_required_routes_exist():
     paths = set(app.openapi()["paths"])
-    for p in ("/health", "/approve", "/rerun", "/events/{run_id}", "/events/{run_id}/stream", "/chat", "/reset", "/capture", "/gaps", "/plays", "/plays/{play_id}", "/outcomes", "/execution", "/policy"):
+    for p in ("/health", "/approve", "/rerun", "/events/{run_id}", "/events/{run_id}/stream", "/chat", "/reset", "/capture", "/gaps", "/plays", "/plays/{play_id}", "/outcomes", "/execution", "/policy", "/trends", "/trends/recompute"):
         assert p in paths, p

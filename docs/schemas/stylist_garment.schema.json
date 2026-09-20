@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/stylist_garment.schema.json",
+  "title": "GarmentRead",
+  "description": "What the stylist read from a garment photo. colour_family is always derived deterministically from `colour` (agents/stylist/colour.py::family_of), never a model output.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["photo_ref", "model_id", "garment_type", "colour", "colour_family", "pattern", "confidence", "needs_confirmation", "description"],
+  "properties": {
+    "photo_ref": { "type": "string" },
+    "model_id": { "type": "string" },
+    "garment_type": { "type": ["string", "null"] },
+    "colour": { "type": ["string", "null"] },
+    "colour_family": { "type": ["string", "null"] },
+    "pattern": { "type": ["string", "null"] },
+    "fabric": { "type": ["string", "null"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "needs_confirmation": { "type": "boolean" },
+    "description": { "type": "string" }
+  }
+}

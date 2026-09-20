@@ -288,6 +288,67 @@ Join `orders` to `play_assignments` within `window`; per arm compute customers, 
 ### 5.8 Looker Studio (owner D)
 Public embed with owner's credentials, "anyone with the link", embed enabled, data freshness 12 h [Certain]. Cards: plays by status; treated vs holdout per play; waste avoided; margin preserved vs blanket markdown; **net margin recovered per ₹ discounted**; stockouts prevented; MAPE by tier; consent coverage; unmeasured count. The Outcomes screen reads a `play_outcomes` snapshot from Firestore and links to the full report.
 
+### 5.9 Stylist specialist (owner B; chat UI owner C)
+A second specialist on the same chat runtime, not a second headline: §0.1's warning about "three
+headline claims, therefore none" applies here too, so this is framed as a second application of
+chat-as-demand-signal (§2.3's `unmet_demand` gap type), not a new pillar of the entry.
+
+**Why a second specialist.** Kutumb Mart's chat already turns an unanswered ask into a structured
+demand signal (`customer_requests` → `unmet_demand`). A styling ask ("what goes with this kurta?")
+carries garment, colour and occasion — richer signal than a stock lookup, and a second, real use of
+the same mechanism. Retailers and the small apparel manufacturers that supply them get a live read
+on what customers are actually asking for in a store, by garment, colour and occasion — a count of
+asks, not a forecast, and labelled SYNTHETIC on this demo tenant.
+
+**Catalogue.** A separate seeded apparel line, `apparel_products` (~350 SKUs across ~45 garment
+types: ethnic and western wear, footwear, accessories) and `apparel_stock` (per size, dark stores
+only), generated on its own RNG stream (`data/generator/apparel.py`) so the grocery generator's
+300-SKU invariants and the sell-by/gap pipeline never see it and are never touched by it.
+
+**`LlmAgent`, Flash, six tools**, ADK app `taal_stylist` (never the same session as the grocery
+agent's `taal_customer`, even for the same `customer_id:web`): `get_style_context(customer_id)` →
+home node, language, recent asks, confirmed style profile if any; `find_apparel(query, node_id)` →
+in-stock matches by garment/colour/occasion words; `describe_item(sku)` → catalogue attributes;
+`suggest_pairings(anchor, node_id, occasion?)` → up to 10 in-stock pairings for a named item or a
+free-text description; `set_style_profile` / `forget_style_profile` → the skin-tone profile below.
+Checkout is not wired in this build (an apparel line in `order_lines` would break the grocery
+Measure/segments join on `products`); asking to order gets a clear "not available yet" reply.
+
+**What Gemini decides vs what is deterministic.** Exactly the same split as §2.7: the model chooses
+how to talk about a look and which pairing to lead with; the hue wheel, every pairing score and
+reason, the in-stock filter, the demand-signal write and the trend aggregation are plain Python
+(`agents/stylist/colour.py`, `tools.py`, `jobs/sense/trends.py`) — no LLM scores a pairing or
+resolves a colour family. A free-text garment description ("a mustard yellow kurta") is parsed by
+a deterministic vocabulary lookup (`parse.py`) over the same tables the catalogue was built from;
+an unrecognised colour degrades to neutral-only suggestions rather than failing.
+
+**Photo input.** A garment photo or a selfie is read into attributes before the agent runs, in the
+vision-intake pattern (`agents/capture/vision.py`): a stub returns recorded attributes for staged
+fixtures in CI, Gemini with a strict output schema in `vertex` mode. `colour_family` is always
+resolved deterministically from the read colour, never a model output.
+
+**Skin-tone profile, opt-in and confirmed.** A customer can declare an undertone/depth by button or
+share a selfie; either way the coarse read (`warm`/`cool`/`neutral` undertone, `light`/`medium`/
+`deep` depth) is repeated back and only saved after the customer confirms it — `set_style_profile`
+is never called straight off a photo read. The selfie image itself is never stored anywhere;
+`customer_style_profile` holds only the two enums, gated by a `consent(purpose="style_profile")`
+row alongside the existing `marketing` purpose, deletable on request ("forget my skin tone") the
+same way STOP withdraws marketing consent. The profile nudges a pairing's score by at most ±0.10 for
+items worn near the face, and never removes a candidate; it never reaches `style_requests` or
+`style_trends` — those tables have no skin-tone column, by schema, not just by convention.
+
+**Demand signal.** `style_requests` mirrors `customer_requests` for fashion: every ask, hit or
+miss, is recorded deterministically by the tools, never an LLM decision. `jobs/sense/trends.py`
+aggregates it into `style_trends` (by node, garment type, colour family, occasion), kept only at or
+above `style_trends_min_asks` within `style_trends_lookback_days`; `GET /trends` serves it and
+`POST /trends/recompute` runs it on demand (the `POST /measure` pattern), shown on a SYNTHETIC-
+labelled web panel.
+
+**Phase 2, not built here:** feeding `style_trends` into `future_regressors` as a per-category
+covariate, once real ask volume exists to justify it; an `assortment_gap` gap type from
+`unfulfilled_asks` so the Planner could propose a stocking play; apparel checkout through
+`agents/mcp_orders` with its own order-lines table; a `specialist` column on `conversations`.
+
 ---
 
 ## 6. Building with Antigravity, AI Studio, Vertex AI
@@ -524,6 +585,7 @@ Never cut: the legal-deadline gap, vision intake, forecast with XREG and the app
 | Planner Agent | `adk eval` on 50 gaps: schema validity ≥ 95% after revision, gate-pass-after-revision ≥ 90%, trajectory match on the required tool order; the tea gap changes mechanic when the policy fixture changes; loop terminates within 3 iterations on 50/50 | Rationale quality on a 15-item human-labelled subset; no number in a rationale that is not in `citations` |
 | Approve and assignment | Idempotent (double approve = one assignment set); arm assignment reproducible from seed; holdout customer never appears in `offers/`; `future_regressors` gains the play; single-series re-forecast returns in < 15 s on the demo tenant | UI state after approve matches §5.6 |
 | Customer Agent | Scripted conversations (20) pass: offer delivered with best-before line; out-of-stock → substitution from live stock; holdout customer asking "any offers?" gets none; STOP writes `withdrawn_at` and stops delivery; coupon stacking refused; p95 < 6 s on 50 runs; Agent Simulation guardrail pass rate ≥ 95% over ~200 personas | Tone and language per persona; wire envelope matches the schema on every message |
+| Stylist Agent | Scripted conversations (14) pass: colour theory is plain Python, no LLM scores a pairing; every ask recorded deterministically to `style_requests`; unknown colour degrades to neutrals; a photo read validates its schema and a low-confidence read is said out loud; a selfie is never saved without confirmation and never reaches `style_requests`/`style_trends`; stylist and grocery sessions never collide for the same `customer_id:web` | Tone and language per persona; pairing reasons and skin-tone notes read as styling advice |
 | Vision intake | 30 staged photos: date read accuracy ≥ 90% at confidence ≥ 0.7; rows under 0.7 always produce a confirmation question; output validates against the intake schema | Two-pass fallback engaged when single-pass fails |
 | Voice (if kept) | Tool calls fire for the three intents on 20 recorded Kannada and English clips; fallback language switch works | Spoken play summary matches the play card |
 | Measure | Fixture with known outcomes reproduces lift and CI to 3 decimals; play below `min_treated_n` is `unmeasured`; priors update alpha/beta by exact counts; dashboard never shows an unmeasured lift | Outcomes screen number equals the Looker number equals the README number |

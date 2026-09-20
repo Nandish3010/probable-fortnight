@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/stylist_skin_tone.schema.json",
+  "title": "SkinToneRead",
+  "description": "A coarse, deterministic-vocabulary read of undertone and depth from a selfie. Always needs_confirmation: true -- the customer confirms or corrects before agents/stylist/tools.py::set_style_profile ever saves anything. The image itself is never referenced by anything other than photo_ref (a fixture name or an 8-char upload digest); no pixel data crosses this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["photo_ref", "model_id", "undertone", "depth", "confidence", "needs_confirmation"],
+  "properties": {
+    "photo_ref": { "type": "string" },
+    "model_id": { "type": "string" },
+    "undertone": { "type": ["string", "null"], "enum": ["warm", "cool", "neutral", null] },
+    "depth": { "type": ["string", "null"], "enum": ["light", "medium", "deep", null] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "needs_confirmation": { "type": "boolean", "const": true }
+  }
+}

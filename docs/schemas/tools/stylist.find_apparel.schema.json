@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/stylist.find_apparel.schema.json",
+  "title": "stylist.find_apparel",
+  "description": "Search in-stock apparel at the customer's node by garment, colour and occasion words. Never an LLM decision; every ask (hit or miss) is recorded as a demand signal.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "output"],
+  "properties": {
+    "input": {
+      "type": "object", "additionalProperties": false, "required": ["query", "node_id"],
+      "properties": { "query": { "type": "string" }, "node_id": { "type": "string" } }
+    },
+    "output": {
+      "type": "object",
+      "required": ["query", "node_id", "parsed", "items"],
+      "properties": {
+        "query": { "type": "string" },
+        "node_id": { "type": "string" },
+        "parsed": {
+          "type": "object",
+          "properties": {
+            "garment_type": { "type": ["string", "null"] },
+            "colour_family": { "type": ["string", "null"] },
+            "occasion": { "type": ["string", "null"] },
+            "pattern": { "type": ["string", "null"] }
+          }
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "required": ["sku", "name", "garment_type", "role", "colour", "colour_family", "list_price", "sizes_in_stock"],
+            "properties": {
+              "sku": { "type": "string" }, "name": { "type": "string" }, "garment_type": { "type": "string" },
+              "role": { "type": "string", "enum": ["top", "bottom", "dress", "layer", "footwear", "accessory"] },
+              "colour": { "type": "string" }, "colour_family": { "type": "string" },
+              "pattern": { "type": ["string", "null"] }, "list_price": { "type": "number" },
+              "sizes_in_stock": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

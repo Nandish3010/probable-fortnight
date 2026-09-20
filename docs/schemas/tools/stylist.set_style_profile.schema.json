@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/stylist.set_style_profile.schema.json",
+  "title": "stylist.set_style_profile",
+  "description": "Save a customer's confirmed skin-tone profile (undertone + depth), gated by a style_profile consent row. Only ever called after the customer picked or confirmed a reading; never straight off a selfie.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "output"],
+  "properties": {
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["customer_id", "undertone", "depth", "source"],
+      "properties": {
+        "customer_id": { "type": "string" },
+        "undertone": { "type": "string", "enum": ["warm", "cool", "neutral"] },
+        "depth": { "type": "string", "enum": ["light", "medium", "deep"] },
+        "source": { "type": "string", "enum": ["declared", "selfie"] },
+        "confidence": { "type": ["number", "null"] }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["customer_id", "undertone", "depth", "source", "confirmed"],
+      "properties": {
+        "customer_id": { "type": "string" },
+        "undertone": { "type": "string", "enum": ["warm", "cool", "neutral"] },
+        "depth": { "type": "string", "enum": ["light", "medium", "deep"] },
+        "source": { "type": "string", "enum": ["declared", "selfie"] },
+        "confirmed": { "type": "boolean" }
+      }
+    }
+  }
+}

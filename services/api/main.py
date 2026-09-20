@@ -12,7 +12,7 @@ import threading
 import time
 from collections import defaultdict
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +24,9 @@ from agents.customer.chat import run_chat_async
 from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore, OverlayStore
 from agents.planner.run import run_planner_async
+from agents.stylist.chat import run_stylist_chat_async
 from jobs.measure.run import run_measure
+from jobs.sense.trends import build_style_trends
 
 from .approve import approve as do_approve
 from .sandbox import store_for, visitor_id
@@ -138,6 +140,10 @@ class ChatRequest(BaseModel):
     text: str = Field(max_length=2000)
     customer_id: str | None = None
     language: str | None = None
+    specialist: Literal["customer", "stylist"] = "customer"
+    image_data_url: str | None = Field(default=None, max_length=3_000_000)
+    photo_ref: str | None = None
+    image_kind: Literal["garment", "selfie"] = "garment"
 
 
 class CaptureRequest(BaseModel):
@@ -369,9 +375,15 @@ def events_stream(run_id: str, speed: float = Query(4.0, ge=0.1, le=100), store:
 @app.post("/chat")
 async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
     # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
-    # messages); wide enough that no legitimate judge session is at risk of tripping it.
+    # messages); wide enough that no legitimate judge session is at risk of tripping it. Shared
+    # by both specialists since they're the same endpoint.
     _rate_limit(request, "chat", max_calls=60, window_s=900)
-    envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
+    if req.specialist == "stylist":
+        envelopes = await run_stylist_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), image_data_url=req.image_data_url, photo_ref=req.photo_ref, image_kind=req.image_kind)
+    else:
+        if req.image_data_url or req.photo_ref:
+            raise HTTPException(422, "photo input is a stylist feature; set specialist=stylist")
+        envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
     if "application/json" in (request.headers.get("accept") or ""):
         from fastapi.responses import JSONResponse
 
@@ -390,8 +402,10 @@ def reset(request: Request, store: LocalStore = Depends(store_for)) -> dict[str,
     if isinstance(store, OverlayStore):
         store.reset()
         from agents.customer.chat import reset_sessions
+        from agents.stylist.chat import reset_sessions as reset_stylist_sessions
 
         reset_sessions()
+        reset_stylist_sessions()
         return {"ok": True, "namespace": vid, "restored_from": "base tenant snapshot"}
     return {"ok": False, "namespace": "base", "restored_from": None, "detail": "no visitor id: the base tenant is never reset through the API"}
 
@@ -502,6 +516,31 @@ def execution(req: ExecutionRequest, store: LocalStore = Depends(store_for)) -> 
     eid = f"exec_{req.play_id}_{seq}"
     store.append("execution_events", [{"tenant_id": load_tenant().tenant_id, "run_id": eid, "seq": seq, "ts": _iso(now), "ts_offset_ms": 0, "agent": "phone_view", "event_type": "steps_done", "payload": json.dumps({"play_id": req.play_id, "node_id": req.node_id, "steps_done": req.steps_done, "evidence_photo": bool(req.evidence_photo_data_url), "note": req.note})}])
     return {"ok": True, "execution_id": eid, "recorded_at": _iso(now)}
+
+
+@app.get("/trends")
+def trends(node_id: str | None = None, limit: int = Query(50, ge=1, le=500), store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
+    """Aggregated style demand signal (DECISIONS §5.9). On the demo tenant this is a count of asks
+    the generator and demo script planted, not a forecast -- always shown with data_label."""
+    rows = store.read("style_trends")
+    if node_id:
+        rows = [r for r in rows if r["node_id"] == node_id]
+    rows.sort(key=lambda r: (-int(r["asks"]), r["node_id"] or "", r["garment_type"] or ""))
+    label = os.environ.get("TAAL_OUTCOMES_LABEL", "SYNTHETIC")
+    return [{**r, "data_label": label} for r in rows[:limit]]
+
+
+@app.post("/trends/recompute")
+def trends_recompute(request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    """On-demand aggregation for the visitor sandbox, the same pattern as POST /measure."""
+    if isinstance(store, OverlayStore):
+        store._materialise("style_requests")
+    tenant = load_tenant()
+    vid = visitor_id(request) or "base"
+    now = _now()
+    rows = build_style_trends(store, _as_of(store), tenant, run_id=f"trends-{vid}", computed_at=_iso(now))
+    store.write("style_trends", rows)
+    return {"rows": len(rows), "window_days": int(tenant.thresholds.get("style_trends_lookback_days", 30)), "computed_at": _iso(now)}
 
 
 @app.get("/sense/last")

@@ -380,6 +380,10 @@ export interface ChatRequest {
   text: string;
   customer_id?: string;
   language?: string;
+  specialist?: "customer" | "stylist";
+  image_data_url?: string;
+  photo_ref?: string;
+  image_kind?: "garment" | "selfie";
 }
 
 export interface ResetResponse {
@@ -462,4 +466,25 @@ export interface DemoCustomer {
   language: string;
   role: "sample" | "holdout";
   note: string;
+}
+
+export interface StyleTrend {
+  tenant_id: string;
+  run_id: string;
+  node_id: string;
+  window_days: number;
+  garment_type: string | null;
+  colour_family: string | null;
+  occasion: string | null;
+  asks: number;
+  distinct_customers: number;
+  unfulfilled_asks: number;
+  computed_at: string;
+  data_label: "SYNTHETIC";
+}
+
+export interface TrendsRecomputeResponse {
+  rows: number;
+  window_days: number;
+  computed_at: string;
 }

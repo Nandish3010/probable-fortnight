@@ -504,6 +504,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /trends:
+    get:
+      summary: Trends
+      description: 'Aggregated style demand signal (DECISIONS §5.9). On the demo tenant
+        this is a count of asks
+
+        the generator and demo script planted, not a forecast -- always shown with
+        data_label.'
+      operationId: trends_trends_get
+      parameters:
+      - name: node_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                title: Response Trends Trends Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /trends/recompute:
+    post:
+      summary: Trends Recompute
+      description: On-demand aggregation for the visitor sandbox, the same pattern
+        as POST /measure.
+      operationId: trends_recompute_trends_recompute_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Trends Recompute Trends Recompute Post
   /sense/last:
     get:
       summary: Sense Last
@@ -684,6 +743,31 @@ components:
           - type: string
           - type: 'null'
           title: Language
+        specialist:
+          type: string
+          enum:
+          - customer
+          - stylist
+          title: Specialist
+          default: customer
+        image_data_url:
+          anyOf:
+          - type: string
+            maxLength: 3000000
+          - type: 'null'
+          title: Image Data Url
+        photo_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Photo Ref
+        image_kind:
+          type: string
+          enum:
+          - garment
+          - selfie
+          title: Image Kind
+          default: garment
       type: object
       required:
       - session_id
