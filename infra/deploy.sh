@@ -65,11 +65,27 @@ gcloud projects add-iam-policy-binding "${PROJECT}" \
   --quiet >/dev/null
 
 echo "-- creating the remote model \`${DATASET}.${COPY_MODEL_RESOURCE}\` over ${COPY_MODEL} (no-op if it already matches) --"
-bq query --project_id="${PROJECT}" --use_legacy_sql=false <<SQL
+# The IAM grant above is eventually consistent -- BigQuery's cross-service permission check for
+# the connection's service account can reject this query for up to a minute or two after
+# add-iam-policy-binding returns success (confirmed live: a fresh grant, then this query 3s
+# later, failed with "does not have the permission to access or use the endpoint" even though
+# the binding was already in the policy). Retry instead of failing the whole deploy on it.
+for attempt in 1 2 3 4 5 6; do
+  if bq query --project_id="${PROJECT}" --use_legacy_sql=false <<SQL
 CREATE OR REPLACE MODEL \`${PROJECT}\`.\`${DATASET}\`.\`${COPY_MODEL_RESOURCE}\`
 REMOTE WITH CONNECTION \`${PROJECT}.${REGION}.${CONNECTION_ID}\`
 OPTIONS (endpoint = '${COPY_MODEL}');
 SQL
+  then
+    break
+  elif [ "${attempt}" -eq 6 ]; then
+    echo "remote model creation still failing after IAM propagation retries" >&2
+    exit 1
+  else
+    echo "   IAM grant likely still propagating; retrying in 20s (attempt ${attempt}/6)"
+    sleep 20
+  fi
+done
 
 echo "-- building and deploying taal-agents (services/api) --"
 gcloud builds submit "${ROOT_DIR}" \
