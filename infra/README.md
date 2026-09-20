@@ -42,6 +42,52 @@ cross-service latency assumptions in §4.3.
 | `min_instances.sh` | `GOOGLE_CLOUD_PROJECT`, `REGION` | `on` or `off`; only touches `taal-agents` and `taal-web` (`taal-sense` is a Job, no min-instances) |
 | `smoke.sh` | `TAAL_AGENTS_URL`, `TAAL_WEB_URL` | curls `/health` on each; exits non-zero on failure |
 
+## Current deployment (`amru-509214`, `asia-south1`)
+
+Deployed 20 Sep 2026 via direct Cloud Build/Cloud Run/BigQuery/Firestore API calls (the deploying
+environment had no working `gcloud`/`bq` CLI), not literally by running these scripts -- but every
+step below matches what `deploy.sh` does, and the two real bugs it surfaced are now fixed in the
+scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
+
+- `taal-agents`: https://taal-agents-2obkp776ca-el.a.run.app
+- `taal-web`: https://taal-web-2obkp776ca-el.a.run.app
+- `taal-sense`: Cloud Run Job created; nightly Scheduler trigger `taal-sense-nightly` at 01:30 IST
+- BigQuery dataset `taal` (all 28 `data/bigquery/ddl/*.sql` files applied), Firestore Native
+  database, Artifact Registry repo `taal` -- all in `asia-south1`
+
+**Known deviation from `iam.sh`'s design, not yet corrected:** all three services currently run
+under the deploy identity (`taal-deploy@amru-509214.iam.gserviceaccount.com`, an admin-heavy
+account) rather than their own least-privilege service accounts, because creating new service
+accounts needs `roles/iam.serviceAccountAdmin`, which the deploy identity didn't have at the time.
+Run `iam.sh` for real (with a service account that has `iam.serviceAccountAdmin`) and then
+redeploy each Cloud Run resource with `--service-account taal-<name>@amru-509214.iam.gserviceaccount.com`
+to close this gap before submission.
+
+**Still needed on the `taal-deploy` service account:** `roles/aiplatform.user` -- without it every
+Vertex AI/Gemini call from `taal-agents` (Planner, Customer, Capture) will 403. Grant it at
+https://console.cloud.google.com/iam-admin/serviceaccounts/details/101345873735082654545/permissions?project=amru-509214
+(Edit access -> Add role -> search "Vertex AI User" -- not "AI Platform Editor" and not "Vertex AI
+Service Agent", both of which sound right but grant a different, unrelated permission set).
+
+## Deploy gotchas found by actually deploying (fixed here, worth knowing if you touch these files)
+
+1. **`.dockerignore`** (repo root) exists now -- without it, `Dockerfile.api`'s `COPY . .` pulls in
+   `.venv`, `web/node_modules`, `.git`, `.local` (1GB+) into every build.
+2. **`Dockerfile.api`** runs `uv sync --frozen --no-dev --no-install-project` right after copying
+   only `pyproject.toml`/`uv.lock` (fast cached layer, no source yet), then a second
+   `uv sync --frozen --no-dev` after `COPY . .`. Reversing this (installing before the source
+   tree exists) fails, because the project is a local editable package that needs `agents/` etc.
+   present to install itself.
+3. **`Dockerfile.web`** creates `public/` before `npm run build` -- the directory is currently
+   empty and unused, so git never materializes it (git doesn't track empty directories), and a
+   fresh clone hits the same `COPY --from=builder /app/public` failure without this.
+4. **`NEXT_PUBLIC_TAAL_API_URL` is a Next.js build-time value**, inlined into the client bundle by
+   `next build` -- it is *not* read from the container's runtime environment. `deploy.sh` deploys
+   `taal-agents` first, reads its URL back with `gcloud run services describe`, and passes that
+   into the `taal-web` Cloud Build as `--build-arg NEXT_PUBLIC_TAAL_API_URL=...`. If you ever
+   change `taal-agents`'s URL (a different region, a service rename), `taal-web` must be rebuilt,
+   not just redeployed with a new env var.
+
 ## Not in this directory
 
 - Secret values (API keys, service-account keys) -- created out of band in Secret Manager and
