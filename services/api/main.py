@@ -165,6 +165,28 @@ class PolicyUpdate(BaseModel):
 
 # ----------------------------------------------------------------------------- routes
 
+def _check_vertex(backend: str, models: dict[str, Any]) -> dict[str, Any]:
+    """A real check, not an assertion: in vertex mode, resolve the configured model id and
+    confirm ambient credentials and a project are present via google.auth.default(). This never
+    calls generateContent -- a health endpoint that bills tokens and takes seconds is worse than
+    one that under-claims -- so it cannot prove Gemini actually answers, only that the pieces
+    needed to call it are in place."""
+    model_id = models["ids"].get("flash")
+    if backend == "stub":
+        return {"ok": True, "detail": f"stub backend; no live Vertex call (model id if live: {model_id})"}
+    if not model_id:
+        return {"ok": False, "detail": "no model id configured under config/models.toml [ids].flash"}
+    try:
+        import google.auth
+
+        _, project = google.auth.default()
+        if not project:
+            return {"ok": False, "detail": "google.auth.default() resolved no project"}
+        return {"ok": True, "detail": f"credentials + project resolved (project={project}, model={model_id}); generateContent not called by this check"}
+    except Exception as e:
+        return {"ok": False, "detail": f"vertex credentials not resolvable: {e}"}
+
+
 @app.get("/health")
 def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     models = load_models()
@@ -173,11 +195,20 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     runs = store.read("sense_runs")
     last = runs[-1] if runs else None
     backend = models["backend"]
+    vertex_check = _check_vertex(backend, models)
     checks = {
-        "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store (BigQuery in production)" if backend == "stub" else "bigquery"},
-        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store (Firestore in production)"},
-        "vertex": {"ok": True, "checked_at": t, "detail": f"backend={backend}; model ids from config/models.toml"},
-        "sessions": {"ok": True, "checked_at": t, "detail": "InMemorySessionService" if backend == "stub" else "VertexAiSessionService"},
+        # LocalStore is the system of record for every read/write this endpoint makes, in both
+        # backends -- gaps, plays, forecasts, sense_runs never touch BigQuery. The one real
+        # bigquery.Client call in the codebase is jobs/sense/copy.py::generate_copy_bigquery,
+        # fired from POST /approve (vertex backend only) to run AI.GENERATE_TABLE over the
+        # `taal.<flash id>_remote` model for offer copy; this endpoint does not call it itself
+        # (a health check that bills tokens and takes seconds is worse than one that under-claims).
+        "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store is the system of record here; the one real BigQuery call is AI.GENERATE_TABLE for copy generation on POST /approve (vertex backend), not checked by this endpoint"},
+        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store is the system of record here; Firestore is provisioned in production but this process never queries it"},
+        "vertex": {"ok": vertex_check["ok"], "checked_at": t, "detail": vertex_check["detail"]},
+        # Both agents/customer/chat.py and agents/planner/run.py construct InMemoryRunner
+        # unconditionally -- VertexAiSessionService is not wired up in either backend.
+        "sessions": {"ok": True, "checked_at": t, "detail": "InMemorySessionService (process-local; not persisted across restarts, in either backend)"},
     }
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
     return {

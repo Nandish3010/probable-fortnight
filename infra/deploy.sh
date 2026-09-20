@@ -38,6 +38,39 @@ for f in "${ROOT_DIR}"/data/bigquery/ddl/*.sql; do
   bq query --project_id="${PROJECT}" --use_legacy_sql=false < "${f}"
 done
 
+# The model id lives only in config/models.toml -- resolved here with Python's stdlib TOML
+# parser (3.11+) so it is never hardcoded into a script or a .sql file. Copy generation uses
+# `ids.flash`, not `ids.flash_lite`: flash_lite 404s in asia-south1 (verified 20 Sep 2026; see
+# config/models.toml), and moving the dataset to us-central1 to keep flash-lite was judged not
+# worth it (services/api/README or infra/README has the reasoning).
+COPY_MODEL="$(python3 -c "import tomllib; print(tomllib.load(open('${ROOT_DIR}/config/models.toml','rb'))['ids']['flash'])")"
+# BigQuery splits a single backtick-quoted identifier on '.', so a model id with dots in it
+# (gemini-2.5-flash) mis-parses `taal.gemini-2.5-flash_remote` as more path segments than
+# intended -- confirmed by actually running this CREATE MODEL statement and reading the error
+# ("Dataset ...taal.gemini-2 was not found"), not guessed. Sanitize the resource name; the
+# literal id still goes into OPTIONS(endpoint=...) unsanitized, matching jobs/sense/copy.py.
+COPY_MODEL_RESOURCE="${COPY_MODEL//./_}_remote"
+CONNECTION_ID="taal_vertex"
+
+echo "-- creating the BigQuery <-> Vertex AI connection ${CONNECTION_ID} (no-op if it exists) --"
+bq --project_id="${PROJECT}" mk --connection --connection_type=CLOUD_RESOURCE --location="${REGION}" "${CONNECTION_ID}" 2>/dev/null || true
+CONNECTION_SA="$(bq --project_id="${PROJECT}" show --connection --location="${REGION}" --format=json "${CONNECTION_ID}" | python3 -c "import json,sys; print(json.load(sys.stdin)['cloudResource']['serviceAccountId'])")"
+echo "   connection service account: ${CONNECTION_SA}"
+
+echo "-- granting the connection's service account Vertex AI User (idempotent) --"
+gcloud projects add-iam-policy-binding "${PROJECT}" \
+  --member="serviceAccount:${CONNECTION_SA}" \
+  --role="roles/aiplatform.user" \
+  --condition=None \
+  --quiet >/dev/null
+
+echo "-- creating the remote model \`${DATASET}.${COPY_MODEL_RESOURCE}\` over ${COPY_MODEL} (no-op if it already matches) --"
+bq query --project_id="${PROJECT}" --use_legacy_sql=false <<SQL
+CREATE OR REPLACE MODEL \`${PROJECT}\`.\`${DATASET}\`.\`${COPY_MODEL_RESOURCE}\`
+REMOTE WITH CONNECTION \`${PROJECT}.${REGION}.${CONNECTION_ID}\`
+OPTIONS (endpoint = '${COPY_MODEL}');
+SQL
+
 echo "-- building and deploying taal-agents (services/api) --"
 gcloud builds submit "${ROOT_DIR}" \
   --project "${PROJECT}" \
