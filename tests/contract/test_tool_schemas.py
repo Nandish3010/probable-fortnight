@@ -14,6 +14,10 @@ from agents.customer.context import set_context as set_customer_context
 from agents.gate.config import load_tenant
 from agents.planner import tools as pt
 from agents.planner.context import PlannerContext, reset_context, set_context
+from agents.stylist import tools as st
+from agents.stylist.context import StylistContext
+from agents.stylist.context import reset_context as reset_stylist_context
+from agents.stylist.context import set_context as set_stylist_context
 from services.api.approve import approve
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +36,8 @@ def test_every_tool_has_a_contract():
         assert f"planner.{t}.schema.json" in names
     for t in ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "place_order", "record_stop", "list_products"):
         assert f"customer.{t}.schema.json" in names
+    for t in ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile"):
+        assert f"stylist.{t}.schema.json" in names
 
 
 @pytest.fixture
@@ -112,3 +118,56 @@ def test_customer_tool_output_schemas_are_not_vacuous():
     for name in names:
         schema = _schema(f"customer.{name}", "output")
         assert schema.get("properties") or schema.get("items"), f"customer.{name} output schema has no properties/items"
+
+
+def test_stylist_tool_outputs_validate(sandbox):
+    """Every stylist tool's return value validates against its schema: a real hit, a real miss, an
+    unknown sku, a catalogue-sku anchor and a free-text anchor, and the skin-tone profile round
+    trip."""
+    tenant = load_tenant()
+    ctx = StylistContext.build(sandbox, "CUST-RAVI", "2026-09-12T09:05:00Z", tenant)
+    tok = set_stylist_context(ctx)
+    try:
+        gc = st.get_style_context("CUST-RAVI")
+        jsonschema.validate(gc, _schema("stylist.get_style_context", "output"), format_checker=jsonschema.FormatChecker())
+
+        hit = st.find_apparel("mustard kurta", "DS-07")
+        jsonschema.validate(hit, _schema("stylist.find_apparel", "output"), format_checker=jsonschema.FormatChecker())
+        assert hit["items"]
+
+        miss = st.find_apparel("mustard kurta at an outlet", "OUT-01")
+        jsonschema.validate(miss, _schema("stylist.find_apparel", "output"), format_checker=jsonschema.FormatChecker())
+        assert not miss["items"]
+
+        known = st.describe_item("APP-KURTA-MUSTARD-W")
+        jsonschema.validate(known, _schema("stylist.describe_item", "output"), format_checker=jsonschema.FormatChecker())
+        assert known["found"]
+
+        unknown = st.describe_item("APP-NOT-A-REAL-SKU")
+        jsonschema.validate(unknown, _schema("stylist.describe_item", "output"), format_checker=jsonschema.FormatChecker())
+        assert not unknown["found"]
+
+        by_sku = st.suggest_pairings("APP-KURTA-MUSTARD-W", "DS-07")
+        jsonschema.validate(by_sku, _schema("stylist.suggest_pairings", "output"), format_checker=jsonschema.FormatChecker())
+        assert by_sku["fulfilled"] and by_sku["pairings"]
+
+        by_text = st.suggest_pairings("a mustard yellow kurta", "DS-07")
+        jsonschema.validate(by_text, _schema("stylist.suggest_pairings", "output"), format_checker=jsonschema.FormatChecker())
+        assert by_text["fulfilled"]
+
+        saved = st.set_style_profile("CUST-RAVI", "warm", "medium", "declared")
+        jsonschema.validate(saved, _schema("stylist.set_style_profile", "output"), format_checker=jsonschema.FormatChecker())
+        assert saved["confirmed"]
+
+        forgot = st.forget_style_profile("CUST-RAVI")
+        jsonschema.validate(forgot, _schema("stylist.forget_style_profile", "output"), format_checker=jsonschema.FormatChecker())
+        assert forgot["ok"]
+    finally:
+        reset_stylist_context(tok)
+
+
+def test_stylist_tool_output_schemas_are_not_vacuous():
+    names = ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile")
+    for name in names:
+        schema = _schema(f"stylist.{name}", "output")
+        assert schema.get("properties"), f"stylist.{name} output schema has no properties"

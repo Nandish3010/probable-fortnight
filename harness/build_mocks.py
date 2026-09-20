@@ -17,9 +17,11 @@ def main() -> int:
     from fastapi.testclient import TestClient
 
     from agents.customer.chat import reset_sessions
+    from agents.stylist.chat import reset_sessions as reset_stylist_sessions
     from services.api.main import app
 
     reset_sessions()
+    reset_stylist_sessions()
     c = TestClient(app, headers={"X-Taal-Visitor": "mock-builder"})
     c.post("/reset")
     out: dict = {"health": c.get("/health").json()}
@@ -34,8 +36,8 @@ def main() -> int:
     out["capture"] = c.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_01.jpg"}).json()
     out["execution"] = c.post("/execution", json={"play_id": "play_chips_ds07_v1", "node_id": "DS-07", "steps_done": ["print_tag"]}).json()
 
-    def turns(session: str, texts: list[str]) -> list[dict]:
-        return [c.post("/chat", json={"session_id": session, "text": t}, headers={"Accept": "application/json"}).json()[0] for t in texts]
+    def turns(session: str, texts: list[str], **extra) -> list[dict]:
+        return [c.post("/chat", json={"session_id": session, "text": t, **extra}, headers={"Accept": "application/json"}).json()[0] for t in texts]
 
     out["chat"] = {
         "greeting": turns("CUST-MEENA:web", ["Any offers today?"]), "cola_zero": turns("CUST-MEENA:web", ["Do you have Cola Zero?"]),
@@ -45,6 +47,24 @@ def main() -> int:
     c.post("/approve", json={"play_id": "play_kaju_ds03_v1"})
     c.post("/measure")
     out["outcomes"] = c.get("/outcomes").json()
+
+    import base64
+
+    mustard_photo = "data:image/png;base64," + base64.b64encode((ROOT / "fixtures" / "photos" / "garments" / "mustard_kurta.png").read_bytes()).decode()
+    out["stylist_chat"] = {
+        "greeting": turns("CUST-RAVI:web", ["hi"], specialist="stylist"),
+        "pair_kurta": turns("CUST-MEENA:web", ["What goes with a mustard yellow kurta?"], specialist="stylist"),
+        "search_navy": turns("CUST-RAVI:web", ["Do you have navy t-shirts?"], specialist="stylist"),
+        "unknown": turns("CUST-RAVI:web", ["Do you have apparel nowhere on the shelf?"], specialist="stylist"),  # exercises the fallback reply, not a genuine catalogue search
+        "item": turns("CUST-RAVI:web", ["item:APP-DUPATTA-TEAL-W"], specialist="stylist"),
+        "occasion": turns("CUST-RAVI:web", ["juttis for a wedding"], specialist="stylist"),
+        "photo": turns("CUST-MEENA:web", [""], specialist="stylist", image_data_url=mustard_photo),
+        "stop": turns("CUST-RAVI:web", ["STOP"], specialist="stylist"),
+        "default": turns("CUST-RAVI:web", ["xyzzy"], specialist="stylist"),
+    }
+    c.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "What goes with a mustard yellow kurta?", "specialist": "stylist"})
+    c.post("/trends/recompute")
+    out["trends"] = c.get("/trends").json()
     for name, obj in out.items():
         (ROOT / "web" / "mocks" / f"{name}.json").write_text(json.dumps(obj, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     c.post("/reset")

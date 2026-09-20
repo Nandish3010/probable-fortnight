@@ -9,6 +9,12 @@ interface DisplayMessage extends ChatEnvelope {
   key: string;
 }
 
+interface PendingPhoto {
+  dataUrl: string;
+  kind: "garment" | "selfie";
+  name: string;
+}
+
 export function ChatPanel({
   title = "Chat as",
   initialMessage = "Any offers today?",
@@ -16,6 +22,7 @@ export function ChatPanel({
   compact = false,
   customerId = "CUST-MEENA",
   showCustomerPicker = true,
+  specialist = "customer",
 }: {
   title?: string;
   customerId?: string;
@@ -23,6 +30,7 @@ export function ChatPanel({
   suggestedChip?: string;
   compact?: boolean;
   showCustomerPicker?: boolean;
+  specialist?: "customer" | "stylist";
 }) {
   const [customers, setCustomers] = useState<DemoCustomer[]>([]);
   const [activeId, setActiveId] = useState(customerId);
@@ -30,6 +38,7 @@ export function ChatPanel({
   const [input, setInput] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +54,7 @@ export function ChatPanel({
     sessionId.current = `${id}:web`;
     setMessages([]);
     setLatency(null);
+    setPendingPhoto(null);
   }
 
   useEffect(() => {
@@ -55,18 +65,29 @@ export function ChatPanel({
   const displayName = active?.display_name ?? "Meena";
 
   async function send(text: string) {
-    if (!text.trim() || sending) return;
+    const photo = pendingPhoto;
+    if (!text.trim() && !photo) return;
+    if (sending) return;
     setSending(true);
     setMessages((prev) => [
       ...prev,
-      { key: `u-${Date.now()}`, session_id: sessionId.current, role: "customer", text },
+      { key: `u-${Date.now()}`, session_id: sessionId.current, role: "customer", text: text || (photo ? `[photo: ${photo.name}]` : "") },
     ]);
     setInput("");
+    setPendingPhoto(null);
     try {
-      await sendChat({ session_id: sessionId.current, text }, (envelope, latencyMs) => {
-        setLatency(latencyMs);
-        setMessages((prev) => [...prev, { key: `a-${Date.now()}-${Math.random()}`, ...envelope }]);
-      });
+      await sendChat(
+        {
+          session_id: sessionId.current,
+          text,
+          specialist,
+          ...(photo ? { image_data_url: photo.dataUrl, image_kind: photo.kind } : {}),
+        },
+        (envelope, latencyMs) => {
+          setLatency(latencyMs);
+          setMessages((prev) => [...prev, { key: `a-${Date.now()}-${Math.random()}`, ...envelope }]);
+        },
+      );
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -80,6 +101,17 @@ export function ChatPanel({
     } finally {
       setSending(false);
     }
+  }
+
+  function onPhotoFile(kind: "garment" | "selfie") {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => setPendingPhoto({ dataUrl: reader.result as string, kind, name: file.name });
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    };
   }
 
   return (
@@ -151,6 +183,29 @@ export function ChatPanel({
           {suggestedChip}
         </button>
       </div>
+      {specialist === "stylist" ? (
+        <div className="chat-panel__photo-inputs">
+          <label className="camera-button">
+            <span className="camera-button__icon" aria-hidden="true">📷</span>
+            <span>Garment photo</span>
+            <input type="file" accept="image/*" onChange={onPhotoFile("garment")} aria-label="Garment photo" data-testid="garment-photo" />
+          </label>
+          <label className="camera-button">
+            <span className="camera-button__icon" aria-hidden="true">🙂</span>
+            <span>Selfie for skin tone</span>
+            <input type="file" accept="image/*" onChange={onPhotoFile("selfie")} aria-label="Selfie for skin tone" data-testid="selfie-photo" />
+          </label>
+          {pendingPhoto ? (
+            <span className="chip chat-panel__photo-chip">
+              {pendingPhoto.kind === "selfie" ? "Selfie" : "Photo"} attached: {pendingPhoto.name}
+              <button type="button" onClick={() => setPendingPhoto(null)} aria-label="Remove photo">×</button>
+            </span>
+          ) : null}
+          <p className="muted chat-panel__photo-note">
+            A selfie is used once to guess your undertone; the photo itself is never kept. You confirm before anything is saved. Say &quot;forget my skin tone&quot; any time.
+          </p>
+        </div>
+      ) : null}
       <form
         className="chat-panel__composer"
         onSubmit={(e) => {
@@ -165,9 +220,11 @@ export function ChatPanel({
           placeholder="Type a message…"
         />
         <button type="submit" disabled={sending}>Send</button>
-        <button type="button" className="chat-panel__stop" onClick={() => send("STOP")} disabled={sending}>
-          STOP
-        </button>
+        {specialist === "customer" ? (
+          <button type="button" className="chat-panel__stop" onClick={() => send("STOP")} disabled={sending}>
+            STOP
+          </button>
+        ) : null}
       </form>
     </div>
   );

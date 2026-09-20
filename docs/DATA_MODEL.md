@@ -168,6 +168,42 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
   reads it grouped by `(sku, node_id)` to enrich `stockout_risk` evidence and to raise a
   standalone `unmet_demand` gap for a forecast blind spot real customers are already hitting.
 
+
+### `apparel_products` (29)
+- `tenant_id`, `sku` -- key
+- `name`, `garment_type`, `role` (`top`/`bottom`/`dress`/`layer`/`footwear`/`accessory`), `colour`,
+  `colour_family` (resolved via `agents/stylist/colour.py::family_of`; never null), `pattern`,
+  `fabric`, `fit`, `occasions` (array), `section` (`women`/`men`/`unisex`), `metal` (jewellery/watch
+  only), `list_price`, `unit_cost`, `season`
+- Separate from `products` on purpose: the grocery 300-SKU invariants, sell-by rule and gap
+  pipeline never iterate this table (DECISIONS §5.9).
+
+### `apparel_stock` (30)
+- `tenant_id`, `sku`, `node_id`, `size` -- key; `qty_on_hand`, `as_of`
+- Dark stores only; no outlet apparel in this build.
+
+### `style_requests` (31)
+- `tenant_id`, `customer_id`, `node_id`, `session_id`, `ts`
+- `source` (`find_apparel`/`suggest_pairings`), `garment_type`, `colour`, `colour_family`,
+  `occasion`, `query_text`, `matched_sku`, `fulfilled`
+- Written deterministically by `agents/stylist/tools.py` on every ask, whether or not it found a
+  match -- the fashion analogue of `customer_requests`. Never carries a skin-tone field.
+
+### `style_trends` (32)
+- `tenant_id`, `run_id`, `node_id`, `window_days`, `garment_type`, `colour_family`, `occasion`,
+  `asks`, `distinct_customers`, `unfulfilled_asks`, `computed_at`
+- Aggregated by `jobs/sense/trends.py` from `style_requests`, kept only when `asks >=
+  style_trends_min_asks`. On the demo tenant this is a count of asks the generator and demo script
+  planted, not a forecast; every surface that shows it is labelled SYNTHETIC (DECISIONS §5.9).
+
+### `customer_style_profile` (33)
+- `tenant_id`, `customer_id`, `undertone` (`warm`/`cool`/`neutral`), `depth`
+  (`light`/`medium`/`deep`), `source` (`declared`/`selfie`), `confidence`, `confirmed`, `ts`,
+  `withdrawn_at`
+- One live row per customer; gated by a `consent(purpose="style_profile")` row. The selfie image
+  itself is never stored -- only the two coarse enums, and only after the customer confirms them.
+  Never joined by Sense, `style_trends` or the Planner (DECISIONS §5.9).
+
 ## The sell-by rule
 
 FSSAI's advisory to e-commerce food business operators (December 2024) reads: delivered food
@@ -204,6 +240,8 @@ Fixed ids, asserted by tests and used by the demo script (from `data/generator/g
 | Kaju Katli festival stockout | `SKU-KAJU-KATLI-250G` | DS-01, DS-03 | `stockout_risk` |
 | Quinoa slow mover | `SKU-QUINOA-500G` | OUT-02 | `slow_mover` |
 | Darjeeling tea, policy beat | `SKU-DARJEELING-TEA-100G` | DS-04 | `online_sellby_breach` |
+| Stylist demo anchor: mustard kurta | `APP-KURTA-MUSTARD-W` | DS-07, DS-04 | stylist pairing demo |
+| Stylist unfulfilled-ask demo: black blazer | `APP-BLAZER-BLACK-U` | zero stock at DS-07, in stock at DS-04 | stylist unfulfilled-ask demo |
 
 ## Emissions factor note
 

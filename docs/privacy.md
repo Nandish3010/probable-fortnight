@@ -23,7 +23,25 @@ Retention: photos are kept for as long as their `inventory_batches` row is usefu
 batch's shelf life plus a short buffer), then deleted by a lifecycle rule on the bucket; the
 `crop_ref` used mid-pipeline for the two-pass read is deleted once the confirmation question is
 answered. No photo is used for anything other than stock intake -- it is not linked to a customer
-identity at any point.
+identity at any point. (The one exception, a selfie for the stylist's skin-tone read, is covered
+separately below -- unlike a pallet photo, it is never stored at all, not even briefly.)
+
+## Style profile and selfies
+
+The Stylist Agent's skin-tone profile is opt-in twice over: the customer chooses to share it (by
+button or by selfie), and nothing is saved until they confirm the coarse read back. A garment photo
+follows the pallet-photo pattern above (read once, not retained beyond the read); a **selfie is
+stricter still: the image bytes are never written to disk, a bucket, or any table, at any point**
+-- `agents/stylist/vision.py` takes the upload in memory, reads two coarse attributes (undertone:
+warm/cool/neutral; depth: light/medium/deep) and discards the bytes when the call returns. What
+persists is `customer_style_profile`: those two enums, a `source` (declared or selfie), and a
+`consent(purpose="style_profile")` row alongside the existing `marketing` purpose -- never a photo,
+never a finer-grained reading, never anything read as ethnicity or any protected characteristic.
+"Forget my skin tone" withdraws that consent row and deletes the profile synchronously, the same
+immediacy STOP gives marketing consent. The profile is read only inside `suggest_pairings` to bias
+a pairing's score by at most ±0.10 for items worn near the face; it is never joined into
+`style_requests` or `style_trends` (neither table has a skin-tone column), never read by Sense or
+the Planner, and never shown to anyone but the customer it belongs to.
 
 ## What the Customer Agent can and cannot see
 

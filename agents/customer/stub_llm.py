@@ -14,6 +14,8 @@ from typing import Any
 from google.adk.models import BaseLlm, LlmRequest, LlmResponse
 from google.genai import types
 
+from agents.chat_runtime import detect_lang
+
 STRINGS = {
     "en": {
         "greet": "Hello {name}! No offers for you today. Ask me for any product and I will check your store.",
@@ -52,7 +54,6 @@ STRINGS = {
 }
 LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store", "cats": "Categories"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"}}
 GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|evening)|any (offers?|deals?|discounts?)( today)?\??|offers?|deals?|discounts?)\W*$|\b(offers?|deals?|discounts?)\b")
-KANNADA_RE = re.compile(r"[\u0C80-\u0CFF]")
 BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")
 AVAILABILITY_RE = re.compile(r"\b(do you have|is there|have you got|got any|any )\b")
@@ -118,13 +119,7 @@ class StubCustomerLlm(BaseLlm):
 
     @staticmethod
     def _detect_lang(text: str, fallback: str) -> str:
-        """Reply in the script the customer just typed in; fall back to their stored preference
-        only when the message carries no script of its own (STOP, an add: id, empty)."""
-        if KANNADA_RE.search(text):
-            return "kn"
-        if re.search(r"[A-Za-z]{2,}", text):
-            return "en"
-        return fallback
+        return detect_lang(text, fallback)
 
     def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
         products = res.get("products") or []
