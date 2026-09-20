@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from agents.capture.vision import commit_rows, intake
 from agents.customer.chat import run_chat_async
 from agents.gate.config import load_models, load_tenant
-from agents.gate.store import LocalStore, OverlayStore
+from agents.gate.store import LocalStore, OverlayStore, load_catalogue
 from agents.planner.run import run_planner_async
 from agents.stylist.chat import run_stylist_chat_async
 from jobs.measure.run import run_measure
@@ -492,7 +492,7 @@ def customers_demo(play_id: str = Query("play_chips_ds07_v1"), store: LocalStore
         play = _play_json(play_rows[-1])
         pctx = PlannerContext.__new__(PlannerContext)
         pctx.store, pctx.tenant, pctx.run_id = store, tenant, "customers-demo"
-        pctx.products = {p["sku"]: p for p in store.read("products")}
+        pctx.products = load_catalogue(store)
         pctx.nodes = {n["node_id"]: n for n in store.read("nodes")}
         ids = audience_customer_ids(pctx, play["target"]["sku"], play["target"]["node_ids"], play["audience"]["segment_ids"])
         seed, fraction = play["holdout"]["seed"], float(play["holdout"]["fraction"])
@@ -506,7 +506,7 @@ def customers_demo(play_id: str = Query("play_chips_ds07_v1"), store: LocalStore
 @app.post("/measure")
 def measure(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     if isinstance(store, OverlayStore):
-        for t in ("plays", "play_assignments", "order_lines", "play_outcomes", "estimator_priors", "products"):
+        for t in ("plays", "play_assignments", "order_lines", "play_outcomes", "estimator_priors", "products", "apparel_products"):
             store._materialise(t)
     return run_measure(store.root, computed_at=_iso(_now()))
 

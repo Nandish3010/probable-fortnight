@@ -59,6 +59,22 @@ class LocalStore:
             return [json.loads(line) for line in f if line.strip()]
 
 
+def load_catalogue(store: LocalStore) -> dict[str, Any]:
+    """Grocery `products` merged with the apparel catalogue (`apparel_products`), keyed by sku,
+    so any code path that looks a play/gap's sku up by `store.read("products")` works identically
+    for a grocery play and an apparel one (DECISIONS §5.9's assortment_gap: one guardrail-gated
+    decision loop, two catalogues). Apparel rows have no grocery `category`; they get the literal
+    "apparel" so category-keyed logic (margin_floor, bundle-partner categories) degrades to a
+    shared default instead of a KeyError, rather than inventing a second parallel pipeline.
+    """
+    out = {p["sku"]: p for p in store.read("products")}
+    for p in store.read("apparel_products"):
+        merged = dict(p)
+        merged.setdefault("category", "apparel")
+        out[p["sku"]] = merged
+    return out
+
+
 class OverlayStore(LocalStore):
     """Copy-on-write view over a base store for per-visitor judge-mode sandboxes (DECISIONS §5.6).
 

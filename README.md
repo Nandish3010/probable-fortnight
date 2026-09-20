@@ -47,7 +47,7 @@ bundle; approval assigns 287 treated and 26 holdout customers by hash, writes th
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
 | Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
-| Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with, reading a garment or selfie photo into attributes | colour theory (hue wheel), stock at the node, the demand-signal write, trend aggregation, colour family and skin-tone confirmation |
+| Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with, reading a garment or selfie photo into attributes | colour theory (hue wheel), stock at the node, the demand-signal write, trend aggregation, colour family and skin-tone confirmation, checkout, and the assortment_gap this demand signal raises when it resolves to real supply elsewhere -- same guardrail-gated, holdout-measured play loop as the grocery gaps |
 | Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 

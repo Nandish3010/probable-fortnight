@@ -11,7 +11,7 @@ tests: ["tests/sql/test_gaps.py", "tests/sql/test_demand_signals.py", "tests/uni
 - [x] Gap rupees recomputed by an independent SQL implementation equal the pipeline's within 1 rupee
 - [x] `online_sellby_breach` uses the versioned `sellby_rule` from the tenant config
 - [x] A batch past its online sell-by never yields an online play (only outlet or write-off)
-- [x] All six gap types produced with `deadline_type` set correctly
+- [x] All seven gap types produced with `deadline_type` set correctly
 - [x] Gaps validate against `docs/schemas/gap.schema.json`
 - [x] `unmet_demand` fires only when real out_of_stock chat requests reach the distinct-customer
   threshold, the pair is not already covered by another gap type this run, and current on-hand
@@ -19,6 +19,10 @@ tests: ["tests/sql/test_gaps.py", "tests/sql/test_demand_signals.py", "tests/uni
   (`tests/sql/test_demand_signals.py`)
 - [x] `stockout_risk` evidence is enriched with `requests_count`/`distinct_customers` when real
   chat requests corroborate it, without changing `rupees_at_stake`
+- [x] `assortment_gap` (a 7th type; DECISIONS §5.9) fires only when real, unfulfilled
+  `style_requests` for a (node, garment_type, colour_family) reach the distinct-customer
+  threshold, a catalogue sku matches, and that sku is stocked at another node in the same
+  cluster; resolves to `transfer_plus_nudge` via the Planner exactly like `rebalance`
 
 ## Reviewer-verified
 - [x] `evidence` struct is complete (on_hand, projected_sellthrough, forecast_run_id, sellby_rule) and citable by the Planner

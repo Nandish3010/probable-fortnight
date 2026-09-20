@@ -31,7 +31,7 @@ from agents.gate.config import TenantConfig, load_tenant
 from agents.gate.sellby import online_sellby_date
 from agents.gate.store import LocalStore
 
-from .apparel import generate_apparel
+from .apparel import generate_apparel, seed_style_requests
 from .catalog import (
     CATEGORIES,
     CATEGORY_VELOCITY,
@@ -343,11 +343,12 @@ class Generator:
         # consumes draws from self.rng: every grocery table stays byte-identical run to run and
         # independent of whether apparel generation runs before or after it.
         apparel, apparel_stock = generate_apparel(random.Random(f"{self.seed}:apparel"), self.tid, nodes, AS_OF)
+        style_requests = seed_style_requests(self.tid, customers, AS_OF)
         tables = {
             "products": products, "nodes": nodes, "sales_daily": sales, "inventory_batches": batches, "inbound": inbound,
             "customers": customers, "consent": consent, "affinity": affinity, "orders": orders, "order_lines": lines,
             "future_regressors": regressors, "estimator_priors": self.priors(),
-            "apparel_products": apparel, "apparel_stock": apparel_stock,
+            "apparel_products": apparel, "apparel_stock": apparel_stock, "style_requests": style_requests,
         }
         for name, rows in tables.items():
             store.write(name, rows)
@@ -363,6 +364,7 @@ class Generator:
                 "slow_mover_quinoa": {"sku": "SKU-QUINOA-500G", "node_id": "OUT-02"},
                 "gap_tea_ds04": {"sku": "SKU-DARJEELING-TEA-100G", "node_id": "DS-04", "batch_id": "B-TEA-DS04-01"},
                 "stylist_anchor": {"sku": "APP-KURTA-MUSTARD-W", "node_id": "DS-07"},
+                "gap_blazer_ds07": {"sku": "APP-BLAZER-BLACK-U", "node_id": "DS-07", "supply_node_id": "DS-05 or DS-06"},
             },
         }
         (store.root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")

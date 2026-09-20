@@ -29,7 +29,8 @@
         "stockout_risk",
         "rebalance",
         "slow_mover",
-        "unmet_demand"
+        "unmet_demand",
+        "assortment_gap"
       ]
     },
     "sku": {
@@ -94,10 +95,27 @@
         },
         "requests_count": {
           "type": "integer",
-          "description": "Rows in customer_requests behind this gap or its enrichment; a repeat ask from the same customer counts again."
+          "description": "Rows in customer_requests (or style_requests, for assortment_gap) behind this gap or its enrichment; a repeat ask from the same customer counts again."
         },
         "distinct_customers": {
           "type": "integer"
+        },
+        "requesting_customer_ids": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "assortment_gap only: the real customer_ids behind this demand signal, so the Planner can target them directly when no affinity-table coverage exists for the sku (apparel is not in the grocery affinity table)."
+        },
+        "supply_node_id": {
+          "type": ["string", "null"],
+          "description": "assortment_gap only: the other node that actually carries the resolved sku, if any -- the transfer_plus_nudge target."
+        },
+        "garment_type": {
+          "type": "string",
+          "description": "assortment_gap only: the garment type behind the demand signal (from style_requests)."
+        },
+        "colour_family": {
+          "type": "string",
+          "description": "assortment_gap only: the colour-wheel family behind the demand signal (agents/stylist/colour.py)."
         }
       }
     }

@@ -13,7 +13,7 @@ from typing import Any
 
 from agents.gate.assignment import assign
 from agents.gate.config import TenantConfig, load_models
-from agents.gate.store import LocalStore
+from agents.gate.store import LocalStore, load_catalogue
 from agents.planner.context import PlannerContext
 from agents.planner.tools import audience_customer_ids
 from jobs.sense.copy import generate_copy, generate_copy_bigquery, validate_copy
@@ -52,7 +52,7 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
             out["source"] = "recorded"
             return out
     gap = store.find("gaps", gap_id=play["gap_id"])[-1]
-    product = {p["sku"]: p for p in store.read("products")}[play["target"]["sku"]]
+    product = load_catalogue(store)[play["target"]["sku"]]
     # --- edits
     changes = list(edits or [])
     if holdout_fraction is not None and abs(holdout_fraction - play["holdout"]["fraction"]) > 1e-9:
@@ -74,7 +74,7 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     # waits long on BigQuery: generate_copy_bigquery's default timeout_s (3.0, applied to each of
     # its two BigQuery waits) caps this at ~6s worst case; any failure or timeout here is silently
     # absorbed and the templated variants are used as-is.
-    partner = {p["sku"]: p for p in store.read("products")}.get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
+    partner = load_catalogue(store).get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
     best_before = gap["evidence"].get("expiry_date")
     templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
     variants = templated
@@ -100,7 +100,12 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     play["copy"]["copy_status"] = "validated" if accepted and not reasons else ("rejected" if not accepted else "validated")
     # --- assignment by hash
     pctx = _planner_ctx(store, tenant)
-    ids = audience_customer_ids(pctx, play["target"]["sku"], play["target"]["node_ids"], play["audience"]["segment_ids"])
+    # An assortment_gap play's real, demonstrated askers live in the gap's evidence, never the
+    # grocery affinity table (agents/planner/tools.py::get_candidate_audiences has the same
+    # fallback for the planner's own audience-sizing call) -- re-derive it here too, since approve
+    # recomputes the audience fresh rather than trusting whatever the play declared.
+    requesting = (gap.get("evidence") or {}).get("requesting_customer_ids")
+    ids = audience_customer_ids(pctx, play["target"]["sku"], play["target"]["node_ids"], play["audience"]["segment_ids"], requesting_customer_ids=requesting)
     consented = {r["customer_id"] for r in store.read("consent") if r["purpose"] == "marketing" and not r.get("withdrawn_at")}
     subscribers = {c["customer_id"] for c in store.read("customers") if play["target"]["sku"] in (c.get("subscription_skus") or [])}
     eligible = [c for c in ids if c in consented and (play["mechanic"] not in ("coupon", "outlet_markdown", "bundle") or c not in subscribers)]
@@ -172,7 +177,7 @@ def _planner_ctx(store: LocalStore, tenant: TenantConfig) -> PlannerContext:
     ctx.store, ctx.tenant, ctx.run_id = store, tenant, "approve"
     ctx.as_of = date.fromisoformat(json.loads(mp.read_text(encoding="utf-8"))["as_of"]) if mp.exists() else date.today()
     ctx.policy_text, ctx.policy_version = tenant.policy_text, tenant.policy_version
-    ctx.products = {p["sku"]: p for p in store.read("products")}
+    ctx.products = load_catalogue(store)
     ctx.nodes = {n["node_id"]: n for n in store.read("nodes")}
     return ctx
 

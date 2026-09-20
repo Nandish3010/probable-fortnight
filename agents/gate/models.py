@@ -32,7 +32,7 @@ PlayStatus = Literal[
     "proposed", "approved", "modified", "rejected", "running", "measured", "unmeasured"
 ]
 GapType = Literal[
-    "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand"
+    "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand", "assortment_gap"
 ]
 
 MECHANICS: tuple[str, ...] = (
