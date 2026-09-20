@@ -120,6 +120,13 @@ all invisible in stub mode, all fixed:**
    pinned with `TAAL_NOW=2026-09-12T03:30:00Z` (Makefile export, Dockerfile ENV). Unset it for a
    real tenant. If you ever regenerate the tenant with a different `AS_OF`, move `TAAL_NOW` too.
 
+4. The live Customer Agent told a shopper "Cola Zero 1L -- Qty: 127". The rule "never show the
+   customer an exact stock quantity" (commit `32fda53`) had been enforced only in the stub's
+   wording; the tools still handed the model the number, and a model repeats what it is given.
+   `get_stock`, `find_substitutes` and `list_products` now return an `availability` band
+   (`in_stock` / `few_left` / `out_of_stock`) and no `qty` at all (schemas updated, prompt v2
+   forbids stating a count). Deterministic first, prompt second -- the prompt alone is a wish.
+
 ## Deploy gotchas found by actually deploying (fixed here, worth knowing if you touch these files)
 
 1. **`.dockerignore`** (repo root) exists now -- without it, `Dockerfile.api`'s `COPY . .` pulls in

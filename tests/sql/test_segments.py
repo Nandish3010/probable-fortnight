@@ -30,7 +30,7 @@ def test_find_substitutes_filters_zero_stock(base_store: LocalStore):
     tok = set_context(ctx)
     try:
         subs = find_substitutes("SKU-COLA-ZERO-500ML", "DS-07")
-        assert subs and all(s["qty"] > 0 for s in subs) and len(subs) <= 5
+        assert subs and all(s["availability"] != "out_of_stock" and "qty" not in s for s in subs) and len(subs) <= 5
         assert all(s["sku"] != "SKU-COLA-ZERO-500ML" for s in subs)
     finally:
         reset_context(tok)

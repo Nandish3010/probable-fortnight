@@ -78,6 +78,9 @@ web:
 live-test:        ## persona walkthrough against a running `make api` + `make web` (screenshots in eval/runs/screens)
 	cd web && npx playwright test -c playwright.live.config.ts
 
+sweep:            ## every API endpoint, one line each, against API (default local; pass API=https://... for Cloud Run)
+	uv run python -m harness.sweep_live $(or $(API),http://localhost:8080)
+
 demo: generate    ## local demo = api + web against generated data
 	@echo "Run 'make api' and 'make web' in two terminals; open http://localhost:3000"
 
