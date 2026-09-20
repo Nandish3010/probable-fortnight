@@ -11,9 +11,11 @@ def client(data_dir, tmp_path, monkeypatch):
     monkeypatch.setenv("TAAL_DATA_DIR", str(data_dir))
     monkeypatch.setenv("TAAL_SANDBOX_DIR", str(tmp_path / "sandbox"))
     from agents.customer.chat import reset_sessions
+    from agents.stylist.chat import reset_sessions as reset_stylist_sessions
     from services.api.main import app
 
     reset_sessions()
+    reset_stylist_sessions()
     return TestClient(app)
 
 
@@ -125,3 +127,41 @@ def test_customers_demo_includes_a_real_holdout_customer(client):
     theirs = client.post("/chat", json={"session_id": f"{holdout['customer_id']}:web", "text": "Any offers today?"}, headers={**_h("v-cust"), "Accept": "application/json"}).json()[0]
     assert "Best before" in meena["text"] or "ಬಳಕೆಗೆ" in meena["text"]
     assert "Best before" not in theirs["text"] and "ಬಳಕೆಗೆ" not in theirs["text"]
+
+
+def test_chat_stylist_specialist_and_trends(client):
+    # CUST-MEENA's home store is DS-07 (the stylist demo anchor); CUST-RAVI's is a different store.
+    r = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "What goes with a mustard yellow kurta?", "specialist": "stylist"}, headers={**_h("v-stylist"), "Accept": "application/json"})
+    assert r.status_code == 200
+    env = r.json()[0]
+    names = [t["name"] for t in env["tool_calls"]]
+    assert "suggest_pairings" in names
+    assert len((env.get("list") or {}).get("rows") or []) <= 10
+
+    grocery = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Do you have Cola Zero?"}, headers={**_h("v-stylist"), "Accept": "application/json"}).json()[0]
+    grocery_names = [t["name"] for t in grocery["tool_calls"]]
+    assert "get_stock" in grocery_names or "find_substitutes" in grocery_names
+
+    client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "What goes with a mustard yellow kurta?", "specialist": "stylist"}, headers={**_h("v-stylist"), "Accept": "application/json"})
+    rec = client.post("/trends/recompute", headers=_h("v-stylist"))
+    assert rec.status_code == 200 and rec.json()["rows"] >= 1
+
+    trends = client.get("/trends", params={"node_id": "DS-07"}, headers=_h("v-stylist")).json()
+    assert trends and trends[0]["node_id"] == "DS-07" and trends[0]["garment_type"] == "kurta"
+    assert trends[0]["data_label"] == "SYNTHETIC"
+
+
+def test_chat_photo_is_stylist_only(client):
+    import base64
+
+    png = open("fixtures/photos/garments/mustard_kurta.png", "rb").read()
+    data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+
+    r = client.post("/chat", json={"session_id": "CUST-RAVI:web", "text": "", "specialist": "stylist", "image_data_url": data_url}, headers={**_h("v-photo"), "Accept": "application/json"})
+    assert r.status_code == 200
+    env = r.json()[0]
+    names = [t["name"] for t in env["tool_calls"]]
+    assert "describe_garment_photo" in names
+
+    default_specialist = client.post("/chat", json={"session_id": "CUST-RAVI:web", "text": "", "image_data_url": data_url}, headers=_h("v-photo"))
+    assert default_specialist.status_code == 422
