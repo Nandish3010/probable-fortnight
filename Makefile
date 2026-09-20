@@ -3,6 +3,9 @@ SHELL := /bin/bash
 export TAAL_MODEL_BACKEND ?= stub
 export TAAL_DATA_DIR ?= .local/data
 export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
+# The demo tenant is a snapshot frozen at 2026-09-12 (data/generator AS_OF); pin the API clock to
+# it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
+export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
 .PHONY: live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
 

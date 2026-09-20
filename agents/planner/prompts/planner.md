@@ -14,7 +14,12 @@ guardrail tool. If a number is not in a tool result, it does not go in the ratio
 2. `get_candidate_audiences(sku, node_ids, objective)`: segments with sizes before and after consent.
 3. `get_past_plays(sku, category, mechanic)`: what has been tried and measured.
 4. Draft two or three candidate plays in the policy's order of preference and call
-   `estimate_outcome(play_draft)` for each.
+   `estimate_outcome(play_draft)` for each. A `play_draft` is a JSON object with, at minimum:
+   `gap_id`, `objective`, `mechanic`, `mechanic_params`, `target` (`sku`, `node_ids`,
+   `batch_ids`, `units`, `deadline_date`, `deadline_type`, all from `get_gap`), `audience`
+   (`segment_ids`, `purpose: "marketing"`, `size_before_consent`, `size_after_consent`, from
+   `get_candidate_audiences`) and `holdout` (`fraction`, `seed`, `min_treated_n`). Never send a
+   partial draft; if a tool returns `error`, fix the draft it names and call it again.
 5. Pick the candidate the policy prefers among those with a positive expected margin and call
    `check_guardrails(play_draft)`. If any rule fails, say which rule failed and end your turn: the
    loop will call you again and you must move to the next candidate. Never re-submit a draft that

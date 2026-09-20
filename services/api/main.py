@@ -33,6 +33,14 @@ app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_cred
 
 
 def _now() -> datetime:
+    """Wall clock, unless TAAL_NOW pins it. The seeded demo tenant is a snapshot frozen at its
+    manifest `as_of` (2026-09-12): play windows, sell-by countdowns and the approve -> re-forecast
+    beat are all computed relative to now, so judge mode runs with the clock pinned to the
+    snapshot date (DECISIONS §5.6) or the whole demo silently goes stale once the planted
+    deadlines pass."""
+    pinned = os.environ.get("TAAL_NOW")
+    if pinned:
+        return datetime.fromisoformat(pinned.replace("Z", "+00:00")).astimezone(UTC)
     return datetime.now(UTC)
 
 
