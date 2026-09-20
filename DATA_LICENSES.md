@@ -5,7 +5,7 @@ source, terms, the permission status, and the transform script that reproduces o
 
 | Dataset | Source | Terms | Permission | Script |
 |---|---|---|---|---|
-| Dunnhumby "The Complete Journey" | dunnhumby Source Files | Research use; permission required for public use | Requested 12 Sept 2026; decision by 19 Sept. Not used until granted. | `data/public/transform_complete_journey.py` (derived aggregates only) |
+| Dunnhumby "The Complete Journey" | dunnhumby Source Files | Research use; permission required for public use | Requested 12 Sept 2026; no reply by 19 Sept. Team decision 20 Sept: use derived department-level coupon-response priors only (never raw rows), at the team's own accepted risk. Not yet ingested -- pending the four source CSVs. | `data/public/transform_complete_journey.py` (derived aggregates only) |
 | Festival calendar | Public holiday calendars | Facts, no licence | n/a | `fixtures/festival_calendar.json` (hand-entered; verify dates before deploy) |
 
 The demo tenant (Kutumb Mart: catalogue, nodes, batches, sales history, customers, consent,

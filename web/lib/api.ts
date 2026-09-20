@@ -171,16 +171,26 @@ export async function capture(req: CaptureRequest): Promise<VisionIntakeResult> 
   return request<VisionIntakeResult>("/capture", { method: "POST", body: JSON.stringify(req) });
 }
 
+export interface CaptureConfirmSkip {
+  sku_guess: string;
+  reason: "not confirmed" | "unknown SKU" | "no best_before_date";
+}
+
 export interface CaptureConfirmResponse {
   ok: boolean;
   written: number;
+  batches: Record<string, unknown>[];
+  skipped: CaptureConfirmSkip[];
+  gaps_refreshed: number;
 }
 
-// Confirmed rows -> inventory_batches (source=photo). Unconfirmed low-confidence rows are skipped server-side.
+// Confirmed rows -> inventory_batches (source=photo). A row that needs but lacks confirmation,
+// names an unknown SKU, or has no best_before_date is skipped with a reason in `skipped`, never
+// silently dropped.
 export async function captureConfirm(req: { node_id: string; photo_ref: string; rows: unknown[] }): Promise<CaptureConfirmResponse> {
   if (isMockMode()) {
     await delay(200);
-    return { ok: true, written: req.rows.length };
+    return { ok: true, written: req.rows.length, batches: [], skipped: [], gaps_refreshed: 0 };
   }
   return request<CaptureConfirmResponse>("/capture/confirm", { method: "POST", body: JSON.stringify(req) });
 }

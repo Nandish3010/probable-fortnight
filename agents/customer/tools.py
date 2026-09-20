@@ -114,15 +114,24 @@ def _stock_info(ctx, sku: str, node_id: str) -> dict:
     return {"sku": sku, "node_id": node_id, "qty": qty if online_ok else 0, "online_sellby_date": sellby, "expiry_date": expiry, "batch_id": batch, "name": ctx.products.get(sku, {}).get("name", sku), "list_price": ctx.products.get(sku, {}).get("list_price")}
 
 
+LOW_STOCK_THRESHOLD = 5  # "few_left" below this; the exact count never leaves the tool layer
+
+
+def _availability(qty: int) -> str:
+    """Customers get a band, never the on-hand number: an internal inventory position is not
+    something a shopper needs, and a live model will happily repeat whatever number it is given."""
+    return "out_of_stock" if qty <= 0 else ("few_left" if qty <= LOW_STOCK_THRESHOLD else "in_stock")
+
+
 def get_stock(sku: str, node_id: str) -> dict:
-    """Units on hand at the node (unexpired lots), nearest online sell-by and expiry. A customer
+    """Availability at the node (unexpired lots), nearest online sell-by and expiry. A customer
     asking directly and finding nothing is a demand signal: recorded deterministically, read back
     by Sense (unmet_demand gaps) and by this customer's own memory next session."""
     ctx = current()
     info = _stock_info(ctx, sku, node_id)
     if info["qty"] == 0:
         _record_request(ctx, node_id, "out_of_stock", sku=sku)
-    return info
+    return {k: v for k, v in info.items() if k != "qty"} | {"availability": _availability(info["qty"])}
 
 
 def find_substitutes(sku: str, node_id: str) -> list[dict]:
@@ -134,7 +143,7 @@ def find_substitutes(sku: str, node_id: str) -> list[dict]:
     for c in cands:
         st = _stock_info(ctx, c, node_id)
         if st["qty"] > 0:
-            out.append({"sku": c, "name": st["name"], "qty": st["qty"], "list_price": st["list_price"]})
+            out.append({"sku": c, "name": st["name"], "availability": _availability(st["qty"]), "list_price": st["list_price"]})
         if len(out) == 5:
             break
     return out
@@ -252,7 +261,7 @@ def list_products(query: str, node_id: str) -> dict:
     hits.sort(key=lambda h: (-h[0], h[1], h[2]))
     if not hits:
         _record_request(ctx, node_id, "no_match", query_text=query)
-    return {"query": query, "node_id": node_id, "categories": categories, "products": [{"sku": h[3]["sku"], "name": h[3]["name"], "category": h[3]["category"], "qty": stock[h[3]["sku"]], "list_price": float(h[3]["list_price"])} for h in hits[:10]]}
+    return {"query": query, "node_id": node_id, "categories": categories, "products": [{"sku": h[3]["sku"], "name": h[3]["name"], "category": h[3]["category"], "availability": _availability(stock[h[3]["sku"]]), "list_price": float(h[3]["list_price"])} for h in hits[:10]]}
 
 
 TOOLS = [get_customer_context, get_stock, find_substitutes, apply_offer, place_order, record_stop, list_products]
