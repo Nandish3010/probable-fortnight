@@ -253,10 +253,11 @@ Gemini only via Vertex. Flash everywhere. No Vertex AI Vector Search endpoints, 
 - Tool contracts (all deterministic; inputs/outputs as JSON):
   - `get_gap(gap_id) → Gap`
   - `get_candidate_audiences(sku, node_ids[], objective) → [{ segment_id, name, size_before_consent, size_after_consent, mean_affinity }]`
-  - `estimate_outcome(play_draft) → expected_outcome + counterfactuals` (§3.4)
-  - `check_guardrails(play_draft) → [{ rule, passed, detail }], all_passed`
+  - `estimate_outcomes(play_drafts[]) → [expected_outcome + counterfactuals]` (§3.4; batched -- one call estimates every candidate draft, not one call per candidate)
+  - `check_guardrails(play_draft) → [{ rule, passed, detail }], all_passed` (available for a second look; `propose_play` already runs the same check, so this is no longer a required step)
   - `get_past_plays(sku | category, mechanic) → [{ play_id, mechanic_params, expected, measured, status }]`
-  - `propose_play(play) → play_id` (validates against the JSON Schema; writes `plays`, `events`)
+  - `propose_play(play) → play_id` (validates against the JSON Schema and runs the guardrails; writes `plays`, `events`)
+  - `get_gap`/`get_candidate_audiences`/`get_past_plays` results are fetched by the API up front and handed to the model as context, not called by the model in the common path (`agents/planner/run.py::_context_block`) -- cuts the live round trips this took from ~11 to ~3.
 - Output: Play JSON via structured output. Demonstrated behaviours: chooses `transfer_plus_nudge` when the estimator shows a markdown gives margin away; changes mechanic when policy text changes; cites estimator numbers; lists alternatives.
 - Prompts live in `agents/planner/prompts/*.md` with a changelog; iterated in AI Studio, run through Vertex.
 

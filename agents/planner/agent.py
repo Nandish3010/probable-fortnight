@@ -50,22 +50,54 @@ def build_model(tenant: TenantConfig, policy_text: str, run_id: str, as_of: str,
     raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")
 
 
+def _thinking_config(model_id: str, level: str) -> types.ThinkingConfig | None:
+    try:
+        if model_id.startswith("gemini-3"):
+            return types.ThinkingConfig(thinking_level=level)  # type: ignore[attr-defined]
+        # Gemini 2.5 rejects thinking_level outright (400 INVALID_ARGUMENT); it takes a token
+        # budget instead. 0 disables thinking on 2.5 Flash.
+        return types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(level, 1024))
+    except Exception:  # older google-genai without ThinkingConfig: keep default
+        return None
+
+
+def _has_estimates(llm_request) -> bool:
+    """True once `estimate_outcomes` has answered: the model now knows the candidates' numbers
+    and is choosing one, calling propose_play or writing the rationale -- worth planner_final's
+    thinking budget. Everything before that (drafting candidates, calling the batched estimator,
+    revising after a rejected guardrail) is mechanical tool sequencing and gets planner_route's
+    (budget 0) instead. `agents/planner/agent.py` used to read only planner_final and apply it to
+    every turn; planner_route was defined in config/models.toml and never wired up."""
+    for content in llm_request.contents:
+        for part in content.parts or []:
+            if part.function_response and part.function_response.name == "estimate_outcomes":
+                return True
+    return False
+
+
+def _route_thinking_callback(model_id: str, route_level: str, final_level: str):
+    def _callback(callback_context, llm_request):  # noqa: ARG001 -- ADK callback signature
+        level = final_level if _has_estimates(llm_request) else route_level
+        config = _thinking_config(model_id, level)
+        if config is not None:
+            llm_request.config.thinking_config = config
+        return None
+
+    return _callback
+
+
 def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, run_id: str, as_of: str, backend: str | None = None) -> LoopAgent:
     instruction = PROMPT.read_text(encoding="utf-8") + f"\n\n## Policy {policy_version}\n{policy_text.strip()}\n"
     models = load_models()
-    thinking = models.get("thinking", {}).get("planner_final", "medium")
+    thinking = models.get("thinking", {})
+    route_level = thinking.get("planner_route", "low")
+    final_level = thinking.get("planner_final", "medium")
     config = types.GenerateContentConfig(temperature=0.2)
+    before_model_callback = None
     if (backend or models["backend"]) == "vertex":
         model_id = models["ids"]["flash"]
-        try:
-            if model_id.startswith("gemini-3"):
-                config.thinking_config = types.ThinkingConfig(thinking_level=thinking)  # type: ignore[attr-defined]
-            else:
-                # Gemini 2.5 rejects thinking_level outright (400 INVALID_ARGUMENT); it takes a
-                # token budget instead. 0 disables thinking on 2.5 Flash.
-                config.thinking_config = types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(thinking, 1024))
-        except Exception:  # older google-genai without ThinkingConfig: keep default
-            pass
+        config.thinking_config = _thinking_config(model_id, route_level)
+        before_model_callback = _route_thinking_callback(model_id, route_level, final_level)
     planner = LlmAgent(
         name="planner",
         description="Designs one demand-shaping play for a supply gap under the tenant policy.",
@@ -73,6 +105,7 @@ def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, r
         instruction=instruction,
         tools=list(TOOLS),
         generate_content_config=config,
+        before_model_callback=before_model_callback,
     )
     return LoopAgent(name="planner_loop", description="Plan, check guardrails, revise up to three times.", sub_agents=[planner], max_iterations=MAX_ITERATIONS)
 
