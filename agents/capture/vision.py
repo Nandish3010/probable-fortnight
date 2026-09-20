@@ -143,27 +143,37 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     return annotate(result, names)
 
 
-def commit_rows(store: LocalStore, node_id: str, rows: list[dict[str, Any]], photo_ref: str, received_at: str) -> list[dict[str, Any]]:
-    """Confirmed rows -> inventory_batches (source=photo). Unconfirmed low-confidence rows are refused."""
+def commit_rows(store: LocalStore, node_id: str, rows: list[dict[str, Any]], photo_ref: str, received_at: str) -> dict[str, list[dict[str, Any]]]:
+    """Confirmed rows -> inventory_batches (source=photo). Returns {"written": [...], "skipped": [...]}
+    -- a row that needs but lacks confirmation, names an unknown SKU, or has no best_before_date
+    (the exact case the confirmation flow exists to let an operator fill in) is skipped with a
+    reason, never silently dropped: a caller must be able to tell 'nothing to write' from 'wrote
+    everything'."""
     tenant = load_tenant()
     products = {p["sku"]: p for p in store.read("products")}
-    out = []
+    written, skipped = [], []
     for i, r in enumerate(rows, start=1):
+        sku_guess = r.get("sku_guess")
         if r.get("needs_confirmation") and not r.get("confirmed"):
+            skipped.append({"sku_guess": sku_guess, "reason": "not confirmed"})
             continue
-        p = products.get(r["sku_guess"])
-        if not p or not r.get("best_before_date"):
+        p = products.get(sku_guess)
+        if not p:
+            skipped.append({"sku_guess": sku_guess, "reason": "unknown SKU"})
+            continue
+        if not r.get("best_before_date"):
+            skipped.append({"sku_guess": sku_guess, "reason": "no best_before_date"})
             continue
         expiry = date.fromisoformat(r["best_before_date"])
         batch_id = f"B-PHOTO-{hashlib.sha256(f'{photo_ref}|{node_id}|{i}'.encode()).hexdigest()[:6].upper()}"
-        out.append({
-            "tenant_id": tenant.tenant_id, "batch_id": batch_id, "sku": r["sku_guess"], "node_id": node_id, "qty_on_hand": int(r["facings_count"]),
+        written.append({
+            "tenant_id": tenant.tenant_id, "batch_id": batch_id, "sku": sku_guess, "node_id": node_id, "qty_on_hand": int(r["facings_count"]),
             "expiry_date": expiry.isoformat(), "online_sellby_date": online_sellby_date(expiry, int(p["shelf_life_days"]), tenant.sellby_rule, bool(p["is_food"])).isoformat(),
             "received_at": received_at[:10], "source": "photo", "capture_ref": photo_ref, "sellby_rule_version": tenant.sellby_rule.version,
         })
-    if out:
-        store.append("inventory_batches", out)
-    return out
+    if written:
+        store.append("inventory_batches", written)
+    return {"written": written, "skipped": skipped}
 
 
 def _env_backend() -> str:

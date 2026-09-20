@@ -344,9 +344,13 @@ def capture(req: CaptureRequest, store: LocalStore = Depends(store_for)) -> dict
 
 @app.post("/capture/confirm")
 def capture_confirm(req: CaptureConfirmRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
-    rows = commit_rows(store, req.node_id, req.rows, req.photo_ref, _iso(_now()))
-    new_gaps = _redetect_gaps(store, req.node_id) if rows else []
-    return {"ok": True, "written": len(rows), "batches": rows, "gaps_refreshed": len(new_gaps)}
+    result = commit_rows(store, req.node_id, req.rows, req.photo_ref, _iso(_now()))
+    written = result["written"]
+    new_gaps = _redetect_gaps(store, req.node_id) if written else []
+    # ok=false when rows were submitted but every one was skipped (nothing to write is not a
+    # success); a request with no rows at all is a trivial, real no-op.
+    ok = bool(written) or not req.rows
+    return {"ok": ok, "written": len(written), "batches": written, "skipped": result["skipped"], "gaps_refreshed": len(new_gaps)}
 
 
 def _redetect_gaps(store: LocalStore, node_id: str) -> list[dict[str, Any]]:
