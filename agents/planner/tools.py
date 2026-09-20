@@ -7,8 +7,9 @@ sets `guardrails_all_passed` in session state and escalates to end the LoopAgent
 from __future__ import annotations
 
 import json
+import os
 from collections import defaultdict
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jsonschema
@@ -299,6 +300,17 @@ def check_guardrails(play_draft: dict) -> dict:
 def propose_play(play: dict, tool_context: ToolContext) -> dict:
     """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
     ctx = current()
+    if isinstance(play, dict):
+        # Server-owned fields. A live model will otherwise invent them: the first Vertex run wrote
+        # created_at "2023-10-27" and copied the Sense run id into trace_ref.
+        pinned = os.environ.get("TAAL_NOW")
+        now = datetime.fromisoformat(pinned.replace("Z", "+00:00")).astimezone(UTC) if pinned else datetime.now(UTC)
+        play["created_at"] = now.isoformat(timespec="seconds").replace("+00:00", "Z")
+        play["status"] = "proposed"
+        play["policy_version"] = ctx.policy_version
+        play["trace_ref"] = f"events/{ctx.run_id}"
+        play.pop("approved_at", None)
+        play.pop("approved_by", None)
     errors = [f"{'/'.join(str(p) for p in e.path) or '$'}: {e.message}" for e in sorted(_VALIDATOR.iter_errors(play), key=lambda e: list(e.path))]
     if not errors:
         try:

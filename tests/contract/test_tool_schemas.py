@@ -77,11 +77,11 @@ def test_customer_tool_outputs_validate(sandbox):
 
         st_hit = ct.get_stock("SKU-MASALA-CHIPS-200G", "DS-07")
         jsonschema.validate(st_hit, _schema("customer.get_stock", "output"), format_checker=jsonschema.FormatChecker())
-        assert st_hit["qty"] > 0
+        assert st_hit["availability"] in ("in_stock", "few_left") and "qty" not in st_hit
 
         st_miss = ct.get_stock("SKU-COLA-ZERO-500ML", "DS-07")
         jsonschema.validate(st_miss, _schema("customer.get_stock", "output"), format_checker=jsonschema.FormatChecker())
-        assert st_miss["qty"] == 0
+        assert st_miss["availability"] == "out_of_stock" and "qty" not in st_miss
 
         subs = ct.find_substitutes("SKU-COLA-ZERO-500ML", "DS-07")
         jsonschema.validate(subs, _schema("customer.find_substitutes", "output"), format_checker=jsonschema.FormatChecker())

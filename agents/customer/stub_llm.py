@@ -60,7 +60,6 @@ GENERIC_STOP = {"have", "there", "your", "store", "today", "please", "about", "d
 BROWSE_STOP = GENERIC_STOP | {"what", "all", "you", "can", "products", "product", "items", "item", "menu",
                               "catalogue", "catalog", "categories", "everything", "browse", "show", "list", "me"}
 GENERAL_DISCOUNT_RE = re.compile(r"\b(which|what)\s+\w*\s*(product|item)s?\b")
-LOW_STOCK_THRESHOLD = 5  # a coarse urgency signal to the customer; never the exact count
 CUST_RE = re.compile(r"customer_id=([A-Za-z0-9_-]+)")
 
 
@@ -109,7 +108,7 @@ class StubCustomerLlm(BaseLlm):
                     responses.append((name, resp))
                     if name == "list_products" and resp.get("products"):
                         last_context = resp["products"]
-                    elif name == "get_stock" and resp.get("qty", 0) > 0:
+                    elif name == "get_stock" and resp.get("availability") != "out_of_stock":
                         last_context = [resp]
                     elif name == "find_substitutes":
                         subs = resp.get("result", resp) if isinstance(resp, dict) else resp
@@ -130,7 +129,7 @@ class StubCustomerLlm(BaseLlm):
     def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
         products = res.get("products") or []
         if products:
-            rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"₹{float(p.get('list_price') or 0):.0f}{' · few left' if p['qty'] <= LOW_STOCK_THRESHOLD else ''}"[:72]} for p in products[:10]]
+            rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"₹{float(p.get('list_price') or 0):.0f}{' · few left' if p.get('availability') == 'few_left' else ''}"[:72]} for p in products[:10]]
             return self._say({"text": s["matches"].format(q=q), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in products[:3]]})
         cats = res.get("categories") or []
         if q:
@@ -233,15 +232,15 @@ class StubCustomerLlm(BaseLlm):
             if "get_stock" not in by:
                 return self._call("get_stock", {"sku": sku, "node_id": node})
             st = by["get_stock"]
-            if st.get("qty", 0) > 0:
-                low = s["low_stock"] if st["qty"] <= LOW_STOCK_THRESHOLD else ""
+            if st.get("availability") != "out_of_stock":
+                low = s["low_stock"] if st.get("availability") == "few_left" else ""
                 return self._say({"text": s["in_stock"].format(name=st.get("name", sku), low=low, bb=_fmt_date(st.get("expiry_date"))), "buttons": [{"id": f"add:{sku}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": st.get("batch_id") or f"{sku}@{node}"}]})
             if "find_substitutes" not in by:
                 return self._call("find_substitutes", {"sku": sku, "node_id": node})
             subs = by["find_substitutes"].get("result", by["find_substitutes"]) if isinstance(by["find_substitutes"], dict) else by["find_substitutes"]
             if not subs:
                 return self._say({"text": s["none"].format(name=st.get("name", sku))})
-            rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"₹{float(r.get('list_price') or 0):.0f}{' · few left' if r['qty'] <= LOW_STOCK_THRESHOLD else ''}"[:72]} for r in subs[:10]]
+            rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"₹{float(r.get('list_price') or 0):.0f}{' · few left' if r.get('availability') == 'few_left' else ''}"[:72]} for r in subs[:10]]
             return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
         # a bare discount/offer question ("any discounts?", "can I get a discount?") with
         # nothing pending: say so against what she was just looking at. A question that asks
