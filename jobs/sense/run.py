@@ -1,4 +1,4 @@
-"""Sense job entrypoint: forecasts -> gaps -> segments -> substitutes -> run record.
+"""Sense job entrypoint: forecasts -> gaps -> segments -> substitutes -> style trends -> run record.
 
     python -m jobs.sense [--data .local/data] [--as-of 2026-09-12]
 
@@ -21,6 +21,7 @@ from agents.gate.store import LocalStore
 from .forecast import forecast, run_id_for
 from .gaps import detect
 from .segments import build_segments, build_substitutes
+from .trends import build_style_trends
 
 
 def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]:
@@ -39,14 +40,17 @@ def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]
     segments = build_segments(store, as_of)
     subs = build_substitutes(store)
     t3 = time.perf_counter()
+    trends = build_style_trends(store, as_of, tenant, run_id)
+    store.write("style_trends", trends)
+    t4 = time.perf_counter()
     threshold = float(tenant.thresholds.get("min_rupees_at_stake_for_planner", 500))
     record = {
         "run_id": run_id, "as_of": as_of.isoformat(), "tenant_id": tenant.tenant_id,
         "forecast_rows": len(rows), "series": len({(r["sku"], r["node_id"]) for r in rows}), "gaps": len(gaps),
         "gaps_by_type": {t: sum(1 for g in gaps if g["type"] == t) for t in ("online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover")},
         "planner_eligible": sum(1 for g in gaps if g["rupees_at_stake"] >= threshold), "planner_threshold_inr": threshold,
-        "segments": len(segments), "substitute_rows": len(subs),
-        "timing_ms": {"forecast": int((t1 - t0) * 1000), "gaps": int((t2 - t1) * 1000), "segments_substitutes": int((t3 - t2) * 1000), "total": int((t3 - t0) * 1000)},
+        "segments": len(segments), "substitute_rows": len(subs), "style_trends": len(trends),
+        "timing_ms": {"forecast": int((t1 - t0) * 1000), "gaps": int((t2 - t1) * 1000), "segments_substitutes": int((t3 - t2) * 1000), "trends": int((t4 - t3) * 1000), "total": int((t4 - t0) * 1000)},
         "model": rows[0]["model"] if rows else None,
     }
     store.append("sense_runs", [record])
