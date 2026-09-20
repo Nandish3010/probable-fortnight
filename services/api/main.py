@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
+from collections import defaultdict
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -165,6 +167,27 @@ class PolicyUpdate(BaseModel):
 
 # ----------------------------------------------------------------------------- routes
 
+# A generous per-visitor cap on the model-calling endpoints only (POST /plan, /rerun, /chat --
+# each makes a real Gemini call, and taal-agents is deployed --allow-unauthenticated and stays
+# reachable from submission into December). Read endpoints (/health, /gaps, /plays, ...) are
+# never limited: they cost nothing and a judge may poll them. In-memory, per-process -- fine for
+# a single Cloud Run instance at min-instances=0; would need a shared store (Firestore/Redis) to
+# hold across multiple instances, not needed at this traffic level.
+_RATE_LIMITS: dict[str, list[float]] = defaultdict(list)
+_RATE_LIMIT_LOCK = threading.Lock()
+
+
+def _rate_limit(request: Request, bucket: str, max_calls: int, window_s: float) -> None:
+    key = f"{bucket}:{visitor_id(request) or request.client.host if request.client else 'unknown'}"
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        calls = _RATE_LIMITS[key]
+        calls[:] = [t for t in calls if now - t < window_s]
+        if len(calls) >= max_calls:
+            raise HTTPException(429, f"rate limit: at most {max_calls} {bucket} calls per {int(window_s)}s per visitor; wait and retry")
+        calls.append(now)
+
+
 def _check_vertex(backend: str, models: dict[str, Any]) -> dict[str, Any]:
     """A real check, not an assertion: in vertex mode, resolve the configured model id and
     confirm ambient credentials and a project are present via google.auth.default(). This never
@@ -259,7 +282,10 @@ def play(play_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any]
 
 
 @app.post("/plan")
-async def plan(req: PlanRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    # A planner run is a real Gemini call taking ~90-110s; a generous cap (a demo runs at most a
+    # handful) still bounds an unauthenticated visitor's worst-case spend.
+    _rate_limit(request, "plan", max_calls=20, window_s=900)
     try:
         out = await run_planner_async(store.root, req.gap_id) if not isinstance(store, OverlayStore) else await _plan_overlay(store, req.gap_id)
     except KeyError as e:
@@ -285,7 +311,8 @@ def approve_play(req: ApproveRequest, store: LocalStore = Depends(store_for)) ->
 
 
 @app.post("/rerun")
-async def rerun(req: RerunRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    _rate_limit(request, "plan", max_calls=20, window_s=900)  # same planner call as /plan; shares its bucket
     version = req.policy_version or f"v{len(store.read('policy')) + 2}"
     store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
     try:
@@ -341,6 +368,9 @@ def events_stream(run_id: str, speed: float = Query(4.0, ge=0.1, le=100), store:
 
 @app.post("/chat")
 async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
+    # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
+    # messages); wide enough that no legitimate judge session is at risk of tripping it.
+    _rate_limit(request, "chat", max_calls=60, window_s=900)
     envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
     if "application/json" in (request.headers.get("accept") or ""):
         from fastapi.responses import JSONResponse

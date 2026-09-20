@@ -64,6 +64,13 @@ generator (`data/generator`) whose rule is stated in its docstring. No pilot has
 Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise. The local forecaster
 stands in for BigQuery `AI.FORECAST` and `ARIMA_PLUS_XREG` (SQL under `data/bigquery/sense`).
 
+## Evaluation
+
+`eval/evaluation.md` is the dated evaluation table: every number names the command that produced
+it and links to the raw output committed under `eval/raw/`. It also lists, explicitly, the
+DECISIONS §12 metrics this project cannot yet produce (pilot results, Agent Simulation, vision
+accuracy on 30 photos, cost from a billing export) rather than a guessed number for any of them.
+
 ## Development
 
 ```

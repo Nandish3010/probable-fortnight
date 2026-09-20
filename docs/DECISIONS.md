@@ -68,7 +68,7 @@ Two more reviews were run on v3: a rubric-maximiser that scored v3 as three judg
 Runner-up: the "what Gemini decides / is not allowed to decide" slide with trace screenshots: 3–4 h, +1 to +2.
 
 **Shortlist insurance (make rejection impossible)**
-Live URL: `min-instances=1` on all three services from submission through 7 Nov, weekly smoke test with an alert, `/health` page, first paint under 4 s tested from a second machine on mobile data, golden-run fallbacks with visible badges. Video: ≤ 2:45 by the platform counter, public/unlisted on YouTube plus a Drive backup, tested in an incognito window, "Retail & Commerce" and the retailer persona in the first 10 s. Repo: public from day 1, Apache-2.0, `DATA_LICENSES.md`, no third-party raw data, no employer code, CI green, commit history that looks like four weeks of work by several people, no 200 MB clone. Deck: PDF and Slides link, ≤ 12 slides, rubric order, a final rubric-map slide with weights. Documentation PDF never empty. Eligibility: written confirmation per member (non-student, 21+, JAPAC), team locked on the portal by 11 Oct. Google stack: architecture slide names each product; Gemini only via Vertex in a fresh project. Deadline: complete by 3 Oct.
+Live URL: **min-instances=0 (scale-to-zero), accepting cold starts** on all three services through the judging window (team decision, overriding the min-instances=1 plan below: idle cost is not worth paying for the whole window) -- weekly smoke test with an alert, `/health` page, first paint under 4 s tested from a second machine on mobile data, golden-run fallbacks with visible badges. Video: ≤ 2:45 by the platform counter, public/unlisted on YouTube plus a Drive backup, tested in an incognito window, "Retail & Commerce" and the retailer persona in the first 10 s. Repo: public from day 1, Apache-2.0, `DATA_LICENSES.md`, no third-party raw data, no employer code, CI green, commit history that looks like four weeks of work by several people, no 200 MB clone. Deck: PDF and Slides link, ≤ 12 slides, rubric order, a final rubric-map slide with weights. Documentation PDF never empty. Eligibility: written confirmation per member (non-student, 21+, JAPAC), team locked on the portal by 11 Oct. Google stack: architecture slide names each product; Gemini only via Vertex in a fresh project. Deadline: complete by 3 Oct.
 
 **The three things a reviewer must be able to retell at dinner**, delivered in this order on the first 10 s of video, slide 2, the judge-mode landing and the README top fold, with the same rupee figure on all four: a fact they did not know ("food sold online in India must have 30% of shelf life left, so a 20-day pack is unsellable online in 6, and no forecasting tool knows that"); a picture ("she photographed the pallet, asked in Kannada, the manager clicked approve and the forecast line bent on screen"); a number with integrity ("real people, a holdout, the CI shown, and one play they refused to measure").
 
@@ -209,7 +209,7 @@ Response rate per (mechanic, category, segment) ~ Beta(alpha, beta). Prior from 
 | Service | Product | Notes |
 |---|---|---|
 | `taal-sense` | Cloud Run Job + Cloud Scheduler (nightly) | forecasts → gaps → segments → copy for approved plays → Firestore mirror |
-| `taal-agents` | ADK (Python) on Cloud Run, `min-instances=1` during judging | Planner Agent, Customer Agent, Vision intake endpoint, Live voice session endpoint, deterministic tools, in-process MCP order mock, approve/rerun/reset HTTP API, SSE for trace and chat |
+| `taal-agents` | ADK (Python) on Cloud Run, min-instances=0 (team decision, see §4.5) | Planner Agent, Customer Agent, Vision intake endpoint, Live voice session endpoint, deterministic tools, in-process MCP order mock, approve/rerun/reset HTTP API, SSE for trace and chat |
 | `taal-web` | Next.js on Cloud Run | Priya's phone view (camera, mic, gap card, approve), Play Desk, customer web chat, Outcomes, judge mode, replay |
 | Data | BigQuery (system of record), Firestore (serving), Cloud Storage (photos, golden runs, reset snapshot) | |
 | Sessions | Agent Platform Sessions (`VertexAiSessionService`) | requires an Agent Engine instance created in week 1 to obtain the engine ID; no Memory Bank in v3 |
@@ -227,7 +227,7 @@ Customer Agent turn under 3 s p50 / 6 s p95 (Flash streaming; stock from Firesto
 `google-adk` pinned to an exact 2.x release (2.0 broke 1.x APIs; tutorials are mostly 1.x [Certain]); model IDs pinned in config, never defaults (ADK changed its default model and `gemini-2.5-flash` shuts down 16 Oct 2026 [Certain]); candidate IDs: `gemini-3.8-flash` for text/vision/planner [Certain that it launched 2 Sept 2026 per one reviewer; verify in Model Garden], `gemini-3.1-flash-live-preview` for voice [Likely]; a fallback text model ID in config; Agent Engine instance created and its ID in env; region decision recorded; Vertex quota increases requested; Secret Manager for all keys; budget alerts at $50/$100/$200; `uv.lock` committed.
 
 ### 4.5 Cost caps
-Gemini only via Vertex. Flash everywhere. No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on cost traps]. `min-instances=1` only from submission to 4 Dec (request-based billing: reduced-rate idle CPU plus memory [Certain]). Copy generation only for approved plays.
+Gemini only via Vertex. Flash everywhere. No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on cost traps]. **Superseded 21 Sep 2026: the team decided min-instances=0 (scale-to-zero) for the whole judging window instead of min-instances=1** -- request-based billing (CPU throttled outside requests) already applies by default and was confirmed live on both public services; idle cost for min-instances=1 across the full window was judged not worth it against the cold-start cost (see eval/evaluation.md for measured cold-start numbers). `infra/min_instances.sh on` remains available for a specific demo day if ever wanted. Copy generation only for approved plays.
 
 ---
 
@@ -280,7 +280,7 @@ Phone view (Priya): camera capture → confirmation questions → gap card (sku,
 - Below the fold, three cards with LIVE / REPLAY badges: Play Desk (live reads), Phone view (with "use a sample pallet photo": three preloaded photos; own upload labelled experimental), Outcomes ("REAL PILOT DATA, computed 3 Oct").
 - Footer: video, deck, repo, the what-is-simulated box, tenant size ("300 SKUs, 10 nodes, 4,000 customers; last Sense run N min at HH:MM"), and a health strip from `/health` (BigQuery, Firestore, Vertex, Sessions, with timestamps).
 - Per-visitor sandbox: Firestore namespace keyed by a session cookie, cloned from the Cloud Storage snapshot on first load; approve is idempotent; reset touches only the visitor's namespace; BigQuery history is never touched. Fail-safe: if a live call errors, the panel shows the golden result with a visible "showing recorded result (live call failed)" badge, never a blank.
-- English default with a language toggle; no login wall; first paint under 4 s (`min-instances=1`).
+- English default with a language toggle; no login wall; first paint under 4 s when warm -- **min-instances=0 in the actual deployment (see §4.5), so the judge's first request pays a cold start instead.**
 
 ### 5.7 Measure (owner D)
 Join `orders` to `play_assignments` within `window`; per arm compute customers, responders (order line with `play_id`, or the target SKU at the target node inside the window), units of the target lot, revenue, margin, discount cost, waste avoided; lift = treated rate − holdout rate with a normal-approximation CI; status = measured only if treated ≥ `min_treated_n` (default 20), else unmeasured; update `estimator_priors`; `future_regressors` already carries the play. No contribution analysis in v3.
@@ -369,7 +369,7 @@ Roles: **A (you)** domain, policy text, planted situations, priors, pilot recrui
 | 2 (19–25 Sept) | **Gate:** one planted gap → Planner proposes → approve on the Play Desk → forecast chart moves → Meena's chat delivers the offer and places an order → order visible, all on the live URL | Nothing outside the one pipe starts before this passes |
 | 3 (26 Sept–2 Oct) | Vision + voice capture on the phone view; policy-change beat; Measure job; Looker; evalsets; simulation pre-flight; **pilot runs all week** (≥30 people); **feature freeze 2 Oct** | Golden runs recorded at freeze |
 | 4 (3–9 Oct) | Video from hybrid mode, deck, README, documentation PDF (with the longevity section), live URL in judge mode; the five points-per-hour changes from §0.1 in order (judge-mode landing, `docs/scale.md`, video re-cut to the §9 shot list, eval numbers committed, pilot write-up); **complete submission on the portal by 9–11 Oct** | Deadline is 18 Oct (organiser-confirmed); 11–18 Oct is hardening, the write-up, and a resubmission if the portal allows edits |
-| After | Weekly live-URL smoke test to 4 Dec; `min-instances` raised on demo days; finale rehearsal on replay, then live, then replay | |
+| After | Weekly live-URL smoke test to 4 Dec; **min-instances stays 0 (scale-to-zero decision, §4.5); `infra/min_instances.sh on` available if a specific demo day ever wants it**; finale rehearsal on replay, then live, then replay | |
 
 Full scope is committed at 35–45 h/week. If capacity drops (a teammate leaves, hours fall to evenings-and-weekends), apply this day-one drop list: voice (keep vision), TimesFM baseline (keep XREG), Kannada beyond copy, gate to six rules, interviews to 4, Agent Simulation to a manual test script, Playwright breadth to the golden path only.
 
@@ -460,7 +460,7 @@ Forecast backtest MAPE and bias by tier and model (public series if licensed, el
 
 ## 13. Submission checklist
 - [ ] Public repo, first commit after 1 Sept, no employer code/data, `DATA_LICENSES.md`, sample synthetic slice, CI green
-- [ ] Live URL without login (judge mode), seeded golden plays, reset button, `min-instances=1`, weekly smoke test scheduled
+- [ ] Live URL without login (judge mode), seeded golden plays, reset button, **min-instances=0 (scale-to-zero; see §4.5)**, weekly smoke test scheduled
 - [ ] Video under 3 minutes, opens on the legal-deadline hook
 - [ ] Deck in rubric order with weights; competitor slide; what-is-simulated box
 - [ ] README with quick-start card, diagram, how-Gen-AI-is-used table, consent/privacy, Antigravity/AI Studio/Vertex evidence, cost sheet
@@ -566,7 +566,7 @@ The expensive things in agent systems are idle infrastructure and conversations.
 2. **Batch, don't stream, at night.** Planner fan-out and copy generation run through the Batch API (half price, up to 24 h; the nightly window tolerates it) [Certain on the 50% discount].
 3. **Cache what repeats.** Policy text, product context and the segment catalogue are cached inputs; per-turn tenant context for the Customer Agent is cached at conversation start.
 4. **Serve from Firestore, compute in BigQuery.** No LLM reads BigQuery at chat time; stock, offers and substitutes are precomputed nightly. BigQuery bytes scanned stay small with partitioning and clustering.
-5. **Scale to zero.** Cloud Run `min-instances=0` in production (cold start under ~3 s with a small image); `min-instances=1` only on demo days. Cloud Run Jobs for nightly work (1-minute minimum billing). No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on those cost traps].
+5. **Scale to zero.** Cloud Run `min-instances=0` in production -- **this is the actual deployed decision for the whole judging window (§4.5), not just demo days**; measured cold start is materially over the ~3s estimate here (see eval/evaluation.md). Cloud Run Jobs for nightly work (1-minute minimum billing). No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on those cost traps].
 6. **Tier the models by task, never by habit.** Flash-Lite for classification and copy; Flash for reasoning and vision; Live only during a voice session; Pro only behind an explicit "deep look" the merchant pays for.
 7. **Cap conversations.** Turns per session, sessions per customer per play, and a per-play conversation budget the Cost Governor sets from the ₹ at stake.
 8. **Multi-tenant by default.** `tenant_id` on every table; one deployment serves many shops; fixed costs (nightly job, monitoring) are shared.

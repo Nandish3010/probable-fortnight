@@ -1,0 +1,29 @@
+OK  200     0.0s  POST /reset                            {"ok": true, "namespace": "sweep-1", "restored_from": "base tenant snapshot"}
+OK  200     0.1s  GET /health                            ok backend=vertex bigquery=ok firestore=ok vertex=ok sessions=ok
+OK  200     0.0s  GET /gaps                              50 gaps
+OK  200     0.0s  GET /gaps/gap_chips_ds07               online_sellby_breach SKU-MASALA-CHIPS-200G ₹9200.0
+OK  200     0.0s  GET /plays                             20 plays
+OK  200     0.0s  GET /plays/play_chips_ds07_v1          bundle status=proposed
+OK  200     0.0s  GET /sense/last                        run=sense_20260912_baseline_2aaad73c
+OK  200     0.0s  GET /policy                            v1 566 chars
+OK  200     0.2s  GET /customers/demo                    CUST-MEENA(sample), CUST-RAVI(sample), CUST-00316(holdout)
+OK  200     0.0s  GET /outcomes (before)                 0 rows
+OK  200   110.9s  POST /plan (LIVE Gemini planner)       status=no_play iterations=2 play=None mechanic=None run=run_chips_ds07_v1_bd0a8253
+OK  200    12.3s  POST /approve                          status=approved source=live holdout_n=26 writeoff 9194.12->9194.12
+OK  200     0.0s  POST /approve (again, idempotent)      note='already approved at 2026-09-20T18:08:21Z; returning the recorded result' elapsed=12245ms
+OK  200     0.0s  GET /events/run_chips_ds07_v1_bd0a8253 3 events
+OK  200     1.5s  GET /events/run_chips_ds07_v1_bd0a8253/stream 'data: {"seq": 0, "run_id": "run_chips_ds07_v1_bd0a8253", "in'
+OK  200     5.1s  POST /chat offers? (LIVE Gemini)       Masala Chips 200G: ಇಂದು Coconut Water 1L ಜೊತೆ ₹61ಕ್ಕೆ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026ರವರೆಗ
+OK  200     6.9s  POST /chat Cola Zero? (LIVE Gemini)    Yes, Cola Zero 250ML is in stock at your home store.
+OK  200     4.5s  POST /chat holdout CUST-00316          Hello Divya! I don't have any offers for you right now. How can I help you today?
+OK  200    70.5s  POST /rerun (policy re-plan, LIVE)     status=proposed iterations=1 mechanic=transfer_plus_nudge policy=v2-sweep
+OK  200     0.0s  PUT /policy                            v3-sweep
+OK  200     0.0s  POST /capture (sample -> recorded)     model=recorded rows=3
+OK  200     3.9s  POST /capture (upload -> LIVE Gemini)  model=gemini-2.5-flash rows=0
+OK  200     0.8s  POST /capture/confirm                  {"ok": true, "written": 1, "batches": [{"tenant_id": "kutumb-mart", "batch_id": "B-PHOTO-6BC7F8", "sku": "SKU-MASALA-CHI
+OK  200     0.0s  POST /execution                        {"ok": true, "execution_id": "exec_play_chips_ds07_v1_1", "recorded_at": "2026-09-20T18:10:06Z"}
+OK  200     0.2s  POST /measure                          {"plays": 1, "measured": 1, "unmeasured": 0, "computed_at": "2026-09-20T18:10:06Z"}
+OK  200     0.0s  GET /outcomes (after)                  1 rows; play_chips_ds07_v1:measured
+4xx 404     0.0s  GET /gaps unknown id (expect 404)      {"detail":"unknown gap nope"}
+4xx 422     0.0s  POST /chat bad session id (expect 422) {"detail":[{"type":"string_pattern_mismatch","loc":["body","session_id"],"msg":"String should match pattern '^[A-Za-z0-9_-]+:(web|whatsapp)$'","input":"bad","ct
+4xx 404     0.0s  POST /approve unknown play (expect 404) {"detail":"unknown play 'nope'"}
