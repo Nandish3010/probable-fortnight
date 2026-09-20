@@ -8,9 +8,16 @@ is written whether or not the model decides to comment on it.
 """
 from __future__ import annotations
 
+import json
 import re
 from collections import defaultdict
+from datetime import timedelta
 from typing import Any
+
+from mcp.client import Client
+
+from agents.gate.assignment import assign_arm
+from agents.mcp_orders.server import server as orders_server
 
 from .colour import pairing_rules, skin_adjustment, skin_tone_rules
 from .context import current
@@ -240,4 +247,69 @@ def forget_style_profile(customer_id: str) -> dict:
     return {"ok": True}
 
 
-TOOLS = [get_style_context, find_apparel, describe_item, suggest_pairings, set_style_profile, forget_style_profile]
+def _play(ctx, play_id: str) -> dict[str, Any] | None:
+    rows = ctx.store.find("plays", play_id=play_id)
+    if not rows:
+        return None
+    r = rows[-1]
+    return json.loads(r["play_json"]) if isinstance(r.get("play_json"), str) else r.get("play_json")
+
+
+def _consent_ok(ctx, customer_id: str) -> bool:
+    rows = [r for r in ctx.store.read("consent") if r["customer_id"] == customer_id and r["purpose"] == "marketing" and r["channel"] == ctx.channel]
+    return bool(rows) and not rows[-1].get("withdrawn_at")
+
+
+def apply_offer(play_id: str, customer_id: str) -> dict:
+    """Whether this customer may redeem an assortment_gap play now: arm, consent, frequency cap,
+    no stacking. Same rules as agents/customer/tools.py::apply_offer -- the play_assignments,
+    consent and offers tables are shared across specialists, not stylist-scoped."""
+    ctx = current()
+    play = _play(ctx, play_id)
+    if not play or play.get("status") not in ("approved", "running"):
+        return {"ok": False, "reason": "play is not active"}
+    arm = next((a["arm"] for a in ctx.store.read("play_assignments") if a["play_id"] == play_id and a["customer_id"] == customer_id), None)
+    if arm != "treated" or assign_arm(customer_id, play["holdout"]["seed"], float(play["holdout"]["fraction"])) != "treated":
+        return {"ok": False, "reason": "customer is not in the treated arm of this play"}
+    if not _consent_ok(ctx, customer_id):
+        return {"ok": False, "reason": "no marketing consent on this channel"}
+    if any(ln.get("play_id") == play_id and ln["customer_id"] == customer_id for ln in ctx.store.read("order_lines")):
+        return {"ok": False, "reason": "offer already redeemed; coupons do not stack"}
+    cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
+    cutoff = (ctx.as_of - timedelta(days=7)).isoformat()
+    recent = defaultdict(int)
+    for a in ctx.store.read("play_assignments"):
+        if a["customer_id"] == customer_id and a["arm"] == "treated" and a["assigned_at"][:10] >= cutoff:
+            recent[a["play_id"]] += 1
+    if len(recent) > cap:
+        return {"ok": False, "reason": f"frequency cap {cap} plays per 7 days reached"}
+    return {"ok": True, "reason": "eligible", "mechanic": play["mechanic"], "sku": play["target"]["sku"], "node_ids": play["target"]["node_ids"]}
+
+
+async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id: str | None = None) -> dict:
+    """Place an apparel order through the same MCP order mock the grocery Customer Agent uses.
+    lines: [{sku, qty}], priced here from the apparel catalogue. Only meaningful once an
+    assortment_gap play has been approved for this customer; otherwise sold at list price with no
+    play_id, same as a walk-in purchase."""
+    ctx = current()
+    offer = apply_offer(play_id, customer_id) if play_id else {"ok": False}
+    priced = []
+    for ln in lines:
+        p = ctx.apparel.get(ln["sku"])
+        if not p:
+            return {"order_id": "", "total_inr": 0.0, "error": f"unknown sku {ln['sku']}"}
+        priced.append({"sku": ln["sku"], "qty": int(ln["qty"]), "price": float(p["list_price"]), "discount": 0.0})
+    base_dir = str(ctx.store.base.root) if hasattr(ctx.store, "base") else None
+    async with Client(orders_server) as client:
+        res = await client.call_tool("place_order", {"customer_id": customer_id, "node_id": node_id, "lines": priced, "play_id": play_id or None, "data_dir": str(ctx.store.root), "base_dir": base_dir, "ts": ctx.now_iso})
+    data = res.structured_content or json.loads(res.content[0].text)
+    data["lines"] = [{"sku": ln["sku"], "name": ctx.apparel[ln["sku"]]["name"], "qty": ln["qty"], "price": ln["price"], "discount": ln["discount"]} for ln in priced]
+    if play_id and offer.get("ok"):
+        for o in ctx.store.read("offers"):
+            if o["customer_id"] == customer_id and o["play_id"] == play_id and not o.get("redeemed_at"):
+                o["redeemed_at"] = ctx.now_iso
+                ctx.store.upsert("offers", "offer_id", o)
+    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"]}
+
+
+TOOLS = [get_style_context, find_apparel, describe_item, suggest_pairings, set_style_profile, forget_style_profile, apply_offer, place_order]

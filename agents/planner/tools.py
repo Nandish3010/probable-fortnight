@@ -50,9 +50,14 @@ def _recent_play_counts(ctx: PlannerContext) -> dict[str, int]:
     return counts
 
 
-def audience_customer_ids(ctx: PlannerContext, sku: str, node_ids: list[str], segment_ids: list[str] | None = None, min_affinity: float | None = None) -> list[str]:
+def audience_customer_ids(ctx: PlannerContext, sku: str, node_ids: list[str], segment_ids: list[str] | None = None, min_affinity: float | None = None, requesting_customer_ids: list[str] | None = None) -> list[str]:
     """Customers whose home node is in the target nodes' clusters, with affinity to the sku (or
-    strong affinity to its category), optionally restricted to segments. Order is stable."""
+    strong affinity to its category), optionally restricted to segments. Order is stable.
+
+    `requesting_customer_ids` (assortment_gap's real askers, from gap evidence) are always
+    included regardless of affinity: the affinity table only ever covers grocery skus, so an
+    apparel gap's affinity lookup is always empty, and a customer who is actually the source of
+    the demand signal is stronger evidence than a modelled score anyway."""
     min_aff = ctx.tenant.thresholds.get("min_affinity", 0.3) if min_affinity is None else min_affinity
     clusters = {ctx.nodes[n]["cluster_id"] for n in node_ids if n in ctx.nodes}
     category = ctx.products[sku]["category"]
@@ -72,6 +77,12 @@ def audience_customer_ids(ctx: PlannerContext, sku: str, node_ids: list[str], se
             continue
         if aff_sku.get(c["customer_id"], 0.0) >= min_aff or aff_cat.get(c["customer_id"], 0.0) >= 0.6:
             out.append(c["customer_id"])
+    if requesting_customer_ids:
+        seen = set(out)
+        for cid in requesting_customer_ids:
+            if cid not in seen:
+                out.append(cid)
+                seen.add(cid)
     return out
 
 
@@ -172,7 +183,10 @@ def get_gap(gap_id: str) -> dict:
 def _bundle_partners(ctx: PlannerContext, sku: str, node_id: str) -> list[dict]:
     """Up to three partner SKUs in stock at the node from a complementary category, highest stock first."""
     category = ctx.products[sku]["category"]
-    partner_cats = {"snacks": ["beverages"], "beverages": ["snacks"], "sweets": ["premium_tea", "beverages"], "premium_tea": ["sweets", "bakery"], "staples": ["staples"], "dairy": ["bakery"], "bakery": ["dairy"]}.get(category, ["snacks"])
+    # Apparel has no grocery bundle partner (pairing is the Stylist's job, agents/stylist/tools.py:
+    # suggest_pairings) -- an empty list here, not the grocery-wide "snacks" default, so an
+    # assortment_gap play never shows a nonsensical snack-bundle candidate.
+    partner_cats = {"snacks": ["beverages"], "beverages": ["snacks"], "sweets": ["premium_tea", "beverages"], "premium_tea": ["sweets", "bakery"], "staples": ["staples"], "dairy": ["bakery"], "bakery": ["dairy"], "apparel": []}.get(category, ["snacks"])
     stock: dict[str, int] = defaultdict(int)
     for b in ctx.store.read("inventory_batches"):
         if b["node_id"] == node_id and b["expiry_date"] and b["expiry_date"] >= ctx.as_of.isoformat():
@@ -192,10 +206,21 @@ def _transfer_candidates(ctx: PlannerContext, node_id: str) -> list[dict]:
     return [{"node_id": n["node_id"], "name": n["name"]} for n in ctx.nodes.values() if n["type"] == "outlet" and n["cluster_id"] == cluster]
 
 
-def get_candidate_audiences(sku: str, node_ids: list[str], objective: str) -> list[dict]:
-    """Segments reachable for this sku at these nodes: size before and after the consent filter, mean affinity."""
+def get_candidate_audiences(sku: str, node_ids: list[str], objective: str, gap_id: str | None = None) -> list[dict]:
+    """Segments reachable for this sku at these nodes: size before and after the consent filter, mean affinity.
+
+    Pass `gap_id` when it is available (get_gap's response) so a gap whose evidence carries
+    `requesting_customer_ids` -- assortment_gap, sourced from real stylist asks with no coverage
+    in the grocery affinity table -- still reaches its real, demonstrated audience instead of an
+    empty one."""
     ctx = current()
-    ids = audience_customer_ids(ctx, sku, node_ids)
+    requesting: list[str] | None = None
+    if gap_id:
+        try:
+            requesting = (_gap(ctx, gap_id).get("evidence") or {}).get("requesting_customer_ids")
+        except KeyError:
+            requesting = None
+    ids = audience_customer_ids(ctx, sku, node_ids, requesting_customer_ids=requesting)
     consented = _consented(ctx)
     seg_of = {c["customer_id"]: c.get("segment_id") for c in ctx.store.read("customers")}
     names = {s["segment_id"]: s["name"] for s in ctx.store.read("segments")}

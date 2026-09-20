@@ -1,5 +1,10 @@
 # Planner prompt changelog
 
+- v5 (2026-09-21): the Planner now plans a seventh gap type, assortment_gap (the apparel analogue
+  of unmet_demand/rebalance, sourced from real stylist asks). `get_candidate_audiences` gained a
+  `gap_id` param the model must always pass, so an assortment_gap's real requesting customers
+  (stored in the gap's evidence, since the grocery affinity table never covers an apparel sku)
+  still reach an audience instead of an empty one.
 - v4 (2026-09-20): step 8 tells the model to delete an uncited number rather than retry citing it
   a third time. Found in the same live re-plan as v3: the model failed `cite_or_drop` on the same
   number five times in a row and exhausted the loop with no play. Root number never conclusively

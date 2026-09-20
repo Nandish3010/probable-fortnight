@@ -190,7 +190,8 @@ export type GapType =
   | "stockout_risk"
   | "rebalance"
   | "slow_mover"
-  | "unmet_demand";
+  | "unmet_demand"
+  | "assortment_gap";
 
 export interface GapEvidence {
   on_hand: number;
@@ -205,6 +206,11 @@ export interface GapEvidence {
   // Real customer_requests rows behind this gap or corroborating it (stockout_risk, unmet_demand).
   requests_count?: number;
   distinct_customers?: number;
+  // assortment_gap only (style_requests-derived; agents/stylist).
+  requesting_customer_ids?: string[];
+  supply_node_id?: string | null;
+  garment_type?: string;
+  colour_family?: string;
 }
 
 export interface Gap {
@@ -396,6 +402,10 @@ export interface MeasureResponse {
   plays: number;
   measured: number;
   unmeasured: number;
+  // Plays whose assignment made a lift computation impossible this run (e.g. zero holdout by
+  // chance on a small audience) -- left out of play_outcomes entirely rather than crashing
+  // measurement for every other play.
+  skipped?: string[];
   computed_at: string;
 }
 
