@@ -18,7 +18,8 @@ RUN uv sync --frozen --no-dev
 # /health degraded with 0 SKUs, /gaps and /plays [], /sense/last 404. Stub backend here on
 # purpose -- the seeded plays are the golden fixtures; the vertex backend is a runtime setting.
 ENV TAAL_DATA_DIR=/app/.local/data \
-    TAAL_TENANT_CONFIG=config/tenant.demo.toml
+    TAAL_TENANT_CONFIG=config/tenant.demo.toml \
+    TAAL_NOW=2026-09-12T03:30:00Z
 RUN TAAL_MODEL_BACKEND=stub uv run python -m data.generator --out /app/.local/data --seed 20260912 \
  && TAAL_MODEL_BACKEND=stub uv run python -m jobs.sense \
  && TAAL_MODEL_BACKEND=stub uv run python -m harness.seed_plays

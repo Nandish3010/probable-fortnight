@@ -101,6 +101,25 @@ deploy call's return value. If you ever build tooling around the Cloud Run API i
 `gcloud` CLI, always resolve the image to its digest (`repositories.../tags/latest`'s `version`
 field in Artifact Registry) before calling `update_service`.
 
+**Three runtime bugs found by exercising every endpoint against the real Vertex backend (20 Sep),
+all invisible in stub mode, all fixed:**
+
+1. `/capture` 500 on every sample pallet: `agents/capture/vision.py` reused the JSON Schema
+   (`"type": ["string", "null"]`) as Gemini's `response_schema`, which google-genai rejects before
+   any model call, and handed `Part.from_uri` a relative local path. Now uses an explicit Gemini
+   schema (single types, `nullable`), sends only real uploads to the model, and replays the
+   recorded reads for the three staged pallets (they have no image file in the repo) with
+   `model_id: "recorded"` -- which is what the phone view's REPLAY badge already claimed.
+2. `/plan` and `/rerun` 500: `thinking_level` is a Gemini 3 parameter; `gemini-2.5-flash` answers
+   `400 INVALID_ARGUMENT`. `agents/planner/agent.py` now sends `thinking_level` only to
+   `gemini-3*` and a `thinking_budget` otherwise.
+3. Approve stopped moving the forecast on 18 Sep and nobody noticed: the seeded tenant is a
+   snapshot at `as_of = 2026-09-12`, the chips deadline is 18 Sep, and the API used the wall clock,
+   so the play window was empty once real time passed the planted deadline -- a flat chart in the
+   judged demo, and a `make verify` that would have gone red on its own. The API clock is now
+   pinned with `TAAL_NOW=2026-09-12T03:30:00Z` (Makefile export, Dockerfile ENV). Unset it for a
+   real tenant. If you ever regenerate the tenant with a different `AS_OF`, move `TAAL_NOW` too.
+
 ## Deploy gotchas found by actually deploying (fixed here, worth knowing if you touch these files)
 
 1. **`.dockerignore`** (repo root) exists now -- without it, `Dockerfile.api`'s `COPY . .` pulls in
