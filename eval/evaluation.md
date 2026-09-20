@@ -14,7 +14,7 @@ the same gaps as unticked checklist items -- the two are kept consistent on purp
 | 2 | Sense throughput, full tenant | 300 SKUs, 16 nodes/outlets: 3.83s total (forecast 2.50s, gaps 0.15s, segments+substitutes 1.18s); 550 gaps, 6 segments, 300 substitute rows | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m jobs.sense` | `eval/raw/sense_throughput_2026-09-20.json` |
 | 3 | Guardrail and test counts | 108 of 130 checklist items ticked; per-component test counts (e.g. Estimator and gate: 51 passed; Approve and assignment: 14 passed; Customer Agent: 34 passed) -- see the full table | `uv run python -m harness.status` (`make status`) | `eval/raw/status_2026-09-20.md` (full copy of `STATUS.md`) |
 | 4 | Per-endpoint latency, live Vertex backend | 20/20 endpoints 200 or the expected 4xx. Live-Gemini calls: `/plan` 110.9s (no_play, 2 iterations), `/rerun` 70.5s (proposed, 1 iteration, policy change flips mechanic), `/approve` 12.3s (includes the new BigQuery copy-generation attempt, which fell back to templates -- see Part B note below), `/chat` 4.5-6.9s x3, `/capture` (upload) 3.9s | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.sweep_live http://localhost:8080` against a local server started with `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=... GOOGLE_CLOUD_PROJECT=amru-509214` (real Vertex credentials; `*.a.run.app` is unreachable from this environment's egress policy, so this is the live backend exercised locally, not the deployed URL itself) | `eval/raw/sweep_vertex_2026-09-20.txt` |
-| 5 | Planner evalset (`adk eval`) | stub backend, 5 evalsets: (fill after run completes -- see note) | `uv run python -m harness.run_evals` (`make eval`) | `eval/raw/adk_eval_stub_2026-09-20.txt` |
+| 5 | Planner evalset (`adk eval`) | stub backend, 5/5 evalsets: **Overall Eval Status: FAILED** on all five, but for one specific reason: `response_match_score` passes on all five (1.0 vs 0.8 threshold -- the play the planner proposes matches the expected one) while `tool_trajectory_avg_score` fails on all five (0.0 vs 1.0 threshold -- the exact sequence/args of tool calls no longer matches what the evalset fixtures recorded). Real, reproduced result, not typed. | `uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals` (`google-adk[eval]` is not in this project's pinned deps -- see note below) | `eval/raw/adk_eval_stub_2026-09-20.txt` (tail; the wrapper only prints the last 2000 chars), full detail at `eval/runs/planner/adk_eval.log` (gitignored, reproduce by re-running) |
 | 6 | Copy validator pass rate | 150/150 variants accepted (100%) across the 20 seeded plays' templated copy | ad hoc script calling `jobs.sense.copy.generate_copy` + `validate_copy` over `.local/data/plays.jsonl` | `eval/raw/copy_validator_2026-09-20.json` (per-play breakdown). **Caveat: this measures the templated path only** -- the BigQuery `AI.GENERATE_TABLE` path (new this session) has never produced a variant end-to-end, because the remote model's connection lacks the `roles/aiplatform.user` grant it needs (blocked by this environment's own permission-grant restriction, not a code defect); see the approve.py fallback log line in `eval/raw/sweep_vertex_2026-09-20.txt`'s companion API log. |
 | 7 | Cold start, deployed services | `taal-web` GET `/` after ~57 min idle: 6.25s (vs <100ms warm). `taal-agents` a request after ~58 min idle: 5.46s. Combined worst case (both cold) is on the order of 11-12s; typical warm request is <100ms on both. | Cloud Logging query (`entries:list`) against `resource.type="cloud_run_revision"` for both services, since this environment cannot curl `*.a.run.app` directly (egress policy) | inline above; not saved as a separate raw file since it is a Cloud Logging query result, not a local command's stdout -- reproduce with `gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="taal-agents"' --project amru-509214 --limit 20 --format json` and look for a large gap in `httpRequest.latency` after an idle period |
 | 8 | Scaling confirmation (Part B1) | Both `taal-agents` and `taal-web`: `minInstanceCount` unset (defaults to 0, i.e. scale-to-zero) and `resources.cpuIdle` unset (defaults to `true`, i.e. CPU throttled outside requests / request-based billing -- `--no-cpu-throttling` was never set). Confirmed as already correct; no change needed. | Cloud Run Admin API v2, `services.get` on both services | not saved as a raw file (a live API read, not a repo command); reproducible with `gcloud run services describe taal-agents --project amru-509214 --region asia-south1 --format=json` (and same for `taal-web`) and inspecting `.template.scaling.minInstanceCount` / `.template.containers[].resources.cpuIdle` |
@@ -50,6 +50,39 @@ DECISIONS calls out for a manual policy-change beat rather than a fully automate
 | Planner Agent fan-out, 50 gaps, Batch API | The Batch API fan-out design in §18.3 has not been built; nothing in this repo submits a Batch job. |
 | BigQuery bytes scanned, one Sense run | Sense reads/writes `LocalStore`, not BigQuery, in this codebase today (verified: `grep -rn "bigquery.Client" agents/ services/ jobs/ data/ harness/` finds no hits outside the new `jobs/sense/copy.py::generate_copy_bigquery`). There is no BigQuery job for Sense to have a bytes-scanned figure. |
 | `AI.GENERATE_TABLE` end-to-end copy generation | Wired up this session (`jobs/sense/copy.py::generate_copy_bigquery`, `infra/deploy.sh` creates the connection + remote model), but the connection's service account lacks the `roles/aiplatform.user` grant needed for `CREATE MODEL`/`AI.GENERATE_TABLE` to work, and granting IAM roles is outside what this environment will do on its own initiative. Confirmed working as designed up to that point: a real approve() call attempted the BigQuery path and fell back to templated copy cleanly (see row 4's caveat). |
+
+### Note on row 5: two real bugs found and fixed to get this number at all
+
+`adk eval` could not run at all before this session for two independent reasons, both found by
+actually running it and reading the failure, not guessed:
+
+1. `google-adk[eval]` (the `[eval]` extra, needed for `adk eval`'s metrics) is not in this
+   project's pinned `pyproject.toml`/`uv.lock`. Worked around locally with
+   `uv run --with "google-adk[eval]==2.9.0"` to get a real number without changing the
+   committed lockfile (adding the extra permanently is a call for whoever owns dependency
+   pinning, since it pulls in `numpy`, `pandas`, `scipy`, `scikit-learn`, `litellm`,
+   `google-cloud-aiplatform` and more -- a real, sizeable dependency-surface decision).
+2. `agents/planner/__init__.py` never re-exported `root_agent` from `agent.py`, so
+   `adk eval agents/planner ...`'s directory-based agent discovery failed immediately with
+   `ValueError: Agent module should have either 'root_agent' or 'get_agent_async'`. Fixed with a
+   one-line re-export (committed separately); verified `pytest tests/agents tests/api` still
+   green after the change.
+
+With both fixed, `adk eval` actually runs and produces the real, if imperfect, result in the
+table above -- rather than the evalsets remaining permanently unexercised.
+
+**Reconciling with `harness/checklists/planner_agent.md`:** that checklist ticks "`adk eval` on
+50 gaps: schema validity >= 95% after revision" and "Trajectory match on the required tool
+order." Only 5 evalsets exist under `agents/planner/evalsets/` (not 50), and `adk eval` had never
+successfully run before this session (both blockers above), so that first item's checkbox was
+never actually backed by a real `adk eval` run. The trajectory item is separately, legitimately
+verified by `tests/agents/test_planner.py::_is_subsequence`, which checks the required tool order
+as a subsequence of the real (stub-mode) event trajectory -- a materially looser check than `adk
+eval`'s `tool_trajectory_avg_score`, which wants an exact match against the evalset fixture's
+recorded trajectory. Both checks can be true at once (order preserved, exact trajectory not
+identical); this is not a contradiction, but the checklist item's wording ("`adk eval` on 50
+gaps") overstates what has actually been run, and should be corrected by whoever owns
+`harness/checklists/` next.
 
 ## Part B evidence
 
