@@ -55,19 +55,44 @@ scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
 - BigQuery dataset `taal` (all 28 `data/bigquery/ddl/*.sql` files applied), Firestore Native
   database, Artifact Registry repo `taal` -- all in `asia-south1`
 
-**Known deviation from `iam.sh`'s design, not yet corrected:** all three services currently run
-under the deploy identity (`taal-deploy@amru-509214.iam.gserviceaccount.com`, an admin-heavy
-account) rather than their own least-privilege service accounts, because creating new service
-accounts needs `roles/iam.serviceAccountAdmin`, which the deploy identity didn't have at the time.
-Run `iam.sh` for real (with a service account that has `iam.serviceAccountAdmin`) and then
-redeploy each Cloud Run resource with `--service-account taal-<name>@amru-509214.iam.gserviceaccount.com`
-to close this gap before submission.
+**IAM: resolved.** `taal-deploy@amru-509214.iam.gserviceaccount.com` was granted `roles/owner` on
+20 Sep 2026 (after two earlier attempts at a narrower Vertex role picked the wrong entries --
+"AI Platform Editor"/`roles/ml.editor` and "Vertex AI Service Agent"/`roles/aiplatform.serviceAgent`
+both sound right but grant unrelated permission sets; the correct one is "Vertex AI User" under
+the *Vertex AI* product, not the legacy *AI Platform* one -- search "vertex", not "ai platform", in
+the role picker). Verified with a real `generateContent` call, not just a permission check: genuine
+200, real model text back.
 
-**Still needed on the `taal-deploy` service account:** `roles/aiplatform.user` -- without it every
-Vertex AI/Gemini call from `taal-agents` (Planner, Customer, Capture) will 403. Grant it at
-https://console.cloud.google.com/iam-admin/serviceaccounts/details/101345873735082654545/permissions?project=amru-509214
-(Edit access -> Add role -> search "Vertex AI User" -- not "AI Platform Editor" and not "Vertex AI
-Service Agent", both of which sound right but grant a different, unrelated permission set).
+**Known deviation from `iam.sh`'s design, not yet corrected:** all three services currently run
+under the deploy identity (`taal-deploy`, now `roles/owner` -- considerably broader than intended)
+rather than their own least-privilege service accounts, because creating new service accounts
+needs `roles/iam.serviceAccountAdmin`, which wasn't granted at the time this was deployed. Run
+`iam.sh` for real and then redeploy each Cloud Run resource with
+`--service-account taal-<name>@amru-509214.iam.gserviceaccount.com` to close this gap, and drop
+`taal-deploy` back down from `owner` to the specific admin roles listed in `deploy.sh`/this file's
+history, before submission -- `owner` is a deliberate, temporary shortcut, not the end state.
+
+**Model IDs: fixed.** Every ID originally pinned in `config/models.toml` (`gemini-3.8-flash`,
+`gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.7-flash`) was invalid -- none
+exist in Vertex's publisher model catalog, confirmed by direct `generateContent` calls, not
+assumed. Real availability, checked against this project: `gemini-2.5-flash` responds in
+`asia-south1`; `gemini-2.5-flash-lite` and `gemini-2.5-pro` 404 there but respond in `us-central1`
+(Vertex model availability is genuinely narrower per-region, exactly the risk DECISIONS §3.3/§4.4
+flagged and never checked). `ids.flash` -- the only field any code currently reads
+(`agents/planner/agent.py`, `agents/customer/agent.py`, `agents/capture/vision.py`) -- is now
+`gemini-2.5-flash`, verified live in `asia-south1`, deployed. `flash_lite`/`live`/`fallback` remain
+unwired to any code path; requalify them (region included) before wiring up copy generation or
+voice.
+
+**Redeploy gotcha specific to REST/client-library deploys (not `gcloud run deploy`, which is
+unaffected):** `Service.update()` via the Cloud Run API silently no-ops if the container image
+*tag* string is textually unchanged, even when that tag now resolves to a new digest -- unlike
+`gcloud run deploy`, it does not re-resolve mutable tags on update. This looked like a successful
+redeploy (no error, a plausible URI printed) while actually still serving the old revision; caught
+by checking the live revision's `create_time` and image digest directly rather than trusting the
+deploy call's return value. If you ever build tooling around the Cloud Run API instead of the
+`gcloud` CLI, always resolve the image to its digest (`repositories.../tags/latest`'s `version`
+field in Artifact Registry) before calling `update_service`.
 
 ## Deploy gotchas found by actually deploying (fixed here, worth knowing if you touch these files)
 
