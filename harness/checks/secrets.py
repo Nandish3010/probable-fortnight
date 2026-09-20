@@ -34,7 +34,21 @@ def main() -> int:
             if pat.search(text):
                 print(f"{name}: {f}")
                 bad += 1
-    log = subprocess.run(["git", "log", "--format=%B", "-n", "50"], capture_output=True, text=True).stdout
+    # Scan only the commits this run is actually introducing (since the merge-base with the
+    # default branch), not a fixed trailing window: a fixed window re-triggers forever on any
+    # attribution trailer that ever lands in history, permanently red regardless of who pushes
+    # next. On a PR this is exactly the new commits; on a push to main after merge, HEAD already
+    # equals the base so there is nothing left to re-check -- the gate already ran at PR time.
+    base_ref = None
+    for ref in ("origin/main", "main"):
+        if subprocess.run(["git", "rev-parse", "--verify", "--quiet", ref], capture_output=True).returncode == 0:
+            base_ref = ref
+            break
+    if base_ref:
+        merge_base = subprocess.run(["git", "merge-base", "HEAD", base_ref], capture_output=True, text=True).stdout.strip()
+        log = subprocess.run(["git", "log", "--format=%B", f"{merge_base}..HEAD"], capture_output=True, text=True).stdout
+    else:
+        log = subprocess.run(["git", "log", "--format=%B", "-n", "50"], capture_output=True, text=True).stdout
     for name in ("attribution trailer", "assistant/model vendor name"):
         if PATTERNS[name].search(log):
             print(f"{name} in recent commit messages")
