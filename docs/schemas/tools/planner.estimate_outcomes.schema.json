@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/planner.estimate_outcomes.schema.json",
+  "title": "planner.estimate_outcomes",
+  "description": "Contract for the planner agent tool `estimate_outcomes`. Tools are deterministic Python or store reads; no LLM inside. Batched: one call estimates every candidate draft, saving the round trips a call-per-candidate used to cost.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "input",
+    "output"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "play_drafts"
+      ],
+      "properties": {
+        "play_drafts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "expected_outcome",
+          "counterfactuals"
+        ],
+        "properties": {
+          "expected_outcome": {
+            "type": "object"
+          },
+          "counterfactuals": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

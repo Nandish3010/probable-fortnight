@@ -8,7 +8,7 @@ from google.adk.agents import LlmAgent
 from google.adk.models.registry import LLMRegistry
 from google.genai import types
 
-from agents.chat_runtime import vertex_env
+from agents.chat_runtime import chat_generate_config, vertex_env
 from agents.gate.config import load_models
 
 from .stub_llm import StubStylistLlm
@@ -23,11 +23,13 @@ LLMRegistry.register(StubStylistLlm)
 def build_stylist_agent(apparel: dict[str, dict], backend: str | None = None) -> LlmAgent:
     models = load_models()
     backend = backend or models["backend"]
+    config = types.GenerateContentConfig(temperature=0.3)
     if backend == "stub":
         model = StubStylistLlm(apparel=apparel)
     elif backend == "vertex":
         vertex_env(models)
         model = models["ids"]["flash"]
+        config = chat_generate_config(models, "stylist", temperature=0.3)
     else:
         raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")
     catalogue_lines = "\n".join(f"- {p['name']}: {sku} ({p['role']}, {p['colour_family']})" for sku, p in sorted(apparel.items())[:400])
@@ -38,5 +40,5 @@ def build_stylist_agent(apparel: dict[str, dict], backend: str | None = None) ->
         model=model,
         instruction=instruction,
         tools=list(TOOLS),
-        generate_content_config=types.GenerateContentConfig(temperature=0.3),
+        generate_content_config=config,
     )

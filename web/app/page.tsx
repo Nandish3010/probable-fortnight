@@ -88,7 +88,7 @@ export default function LandingPage() {
         <Link className="card-link" href="/desk">
           <div className="card">
             <div className="card__header">
-              <h3>Play Desk</h3>
+              <h3><span className="card-link__icon" aria-hidden="true">🗂️</span>Play Desk</h3>
               <Badge kind="live" detail="live reads" />
             </div>
             <p className="muted">Inbox ranked by rupees at stake, guardrails, trace, policy editor.</p>
@@ -97,7 +97,7 @@ export default function LandingPage() {
         <Link className="card-link" href="/phone">
           <div className="card">
             <div className="card__header">
-              <h3>Phone view</h3>
+              <h3><span className="card-link__icon" aria-hidden="true">📱</span>Phone view</h3>
               <Badge kind="replay" detail="sample pallet photo" />
             </div>
             <p className="muted">Priya's capture-to-approve flow. Own upload is experimental.</p>
@@ -106,7 +106,7 @@ export default function LandingPage() {
         <Link className="card-link" href="/outcomes">
           <div className="card">
             <div className="card__header">
-              <h3>Outcomes</h3>
+              <h3><span className="card-link__icon" aria-hidden="true">📈</span>Outcomes</h3>
               <Badge kind="replay" detail="synthetic tenant · no pilot yet" />
             </div>
             <p className="muted">Treated vs holdout, the CEO number, unmeasured plays.</p>

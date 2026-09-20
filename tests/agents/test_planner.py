@@ -109,4 +109,4 @@ def test_evalsets_committed():
     assert len(files) >= 5
     for f in files:
         d = json.loads(f.read_text())
-        assert d["eval_cases"][0]["conversation"][0]["intermediate_data"]["tool_uses"][0]["name"] == "get_gap"
+        assert d["eval_cases"][0]["conversation"][0]["intermediate_data"]["tool_uses"][0]["name"] == "estimate_outcomes"

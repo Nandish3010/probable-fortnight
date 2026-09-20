@@ -1,12 +1,17 @@
 """Scripted stand-in for Gemini used when TAAL_MODEL_BACKEND=stub (CI, fixtures, judge-mode replay).
 
 It is an ADK `BaseLlm`, so the LlmAgent, LoopAgent, tools, session state, escalation and event
-log are the real thing; only the decision policy is a script. It reads the transcript, decides the
-next tool call the way prompts/planner.md tells Gemini to, and ends its turn with text when a
-guardrail fails (so the LoopAgent can iterate) or when the proposal is accepted.
+log are the real thing; only the decision policy is a script. `get_gap`, `get_candidate_audiences`
+and `get_past_plays` are no longer called: run.py fetches them up front (deterministic reads) and
+embeds the results as a fenced JSON block in the initial user message -- this script reads that
+block the way prompts/planner.md tells Gemini to, instead of issuing a tool call for it. It then
+estimates every candidate in one `estimate_outcomes` call and tries `propose_play` on candidates
+in policy order, ending its turn with text when a guardrail fails (so the LoopAgent can iterate)
+or when the proposal is accepted.
 """
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -16,8 +21,8 @@ from google.genai import types
 
 from . import drafting
 
-GAP_RE = re.compile(r"gap_id=(gap_[A-Za-z0-9_-]+)")
 POLICY_RE = re.compile(r"policy_version=([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)")
+CONTEXT_RE = re.compile(r"```json\n(.*)\n```", re.S)
 
 
 def _text(parts: list[types.Part] | None) -> str:
@@ -53,6 +58,15 @@ class StubPlannerLlm(BaseLlm):
                     last = "response"
         return {"user_text": user_text, "calls": calls, "responses": responses, "last": last}
 
+    def _parse_context(self, user_text: str) -> dict[str, Any] | None:
+        m = CONTEXT_RE.search(user_text)
+        if not m:
+            return None
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            return None
+
     def _call(self, name: str, args: dict[str, Any]) -> LlmResponse:
         return LlmResponse(content=types.Content(role="model", parts=[types.Part(function_call=types.FunctionCall(name=name, args=args))]))
 
@@ -64,68 +78,56 @@ class StubPlannerLlm(BaseLlm):
 
     def decide(self, req: LlmRequest) -> LlmResponse:
         t = self._transcript(req)
-        m = GAP_RE.search(t["user_text"])
-        if not m:
+        context = self._parse_context(t["user_text"])
+        if context is None:
             return self._say("I need a gap_id=<id> to plan.")
-        gap_id = m.group(1)
-        pv = POLICY_RE.search(t["user_text"])
-        policy_version = pv.group(1) if pv else "v1"
-        by_name: dict[str, list[dict[str, Any]]] = {}
-        for name, resp in t["responses"]:
-            by_name.setdefault(name, []).append(resp)
-        gap = (by_name.get("get_gap") or [None])[0]
-        if gap is None:
-            return self._call("get_gap", {"gap_id": gap_id})
+        gap = context["gap"]
         if "error" in gap and "gap_id" not in gap:
             return self._say(f"Cannot plan: {gap['error']}")
-        audiences = (by_name.get("get_candidate_audiences") or [None])[0]
-        if audiences is None:
-            return self._call("get_candidate_audiences", {"sku": gap["sku"], "node_ids": [gap["node_id"]], "objective": drafting.OBJECTIVE_BY_GAP[gap["type"]], "gap_id": gap_id})
-        audiences = audiences.get("result", audiences) if isinstance(audiences, dict) else audiences
+        audiences = context["candidate_audiences"]
+        pv = POLICY_RE.search(t["user_text"])
+        policy_version = pv.group(1) if pv else "v1"
         candidates = drafting.candidate_mechanics(gap, self.policy_text)
         if not candidates:
             return self._say("No admissible mechanic for this gap under the current policy; escalate to a human.")
-        if "get_past_plays" not in by_name:
-            return self._call("get_past_plays", {"sku": gap["sku"], "category": (gap.get("product") or {}).get("category", ""), "mechanic": candidates[0]["mechanic"]})
-        # pair estimate calls with responses in order
-        est_calls = [args for name, args in t["calls"] if name == "estimate_outcome"]
-        est_resps = by_name.get("estimate_outcome", [])
-        estimates = {drafting.draft_key(a["play_draft"]): r for a, r in zip(est_calls, est_resps, strict=False)}
         drafts = {drafting.draft_key(c): drafting.build_draft(gap, audiences, c, policy_version, self.run_id, self.holdout_fraction, self.min_treated_n, self.languages, self.as_of) for c in candidates}
-        for c in candidates:
-            k = drafting.draft_key(c)
-            if k not in estimates:
-                return self._call("estimate_outcome", {"play_draft": drafts[k]})
-        check_calls = [args for name, args in t["calls"] if name == "check_guardrails"]
-        check_resps = by_name.get("check_guardrails", [])
-        checks = {drafting.draft_key(a["play_draft"]): r for a, r in zip(check_calls, check_resps, strict=False)}
+
+        by_name: dict[str, list[dict[str, Any]]] = {}
+        for name, resp in t["responses"]:
+            by_name.setdefault(name, []).append(resp)
+
+        est_resps = by_name.get("estimate_outcomes", [])
+        if not est_resps:
+            return self._call("estimate_outcomes", {"play_drafts": [drafts[drafting.draft_key(c)] for c in candidates]})
+        estimates_list = est_resps[0]
+        estimates_list = estimates_list.get("result", estimates_list) if isinstance(estimates_list, dict) else estimates_list
+        estimates = {drafting.draft_key(c): estimates_list[i] for i, c in enumerate(candidates)}
+
         prop_calls = [args for name, args in t["calls"] if name == "propose_play"]
         prop_resps = by_name.get("propose_play", [])
         proposals = {drafting.draft_key(a["play"]): r for a, r in zip(prop_calls, prop_resps, strict=False)}
         if proposals and list(proposals.values())[-1].get("valid"):
             return self._say(f"DONE {list(proposals.values())[-1]['play_id']}")
+
         rejected: list[dict[str, Any]] = []
         for c in candidates:
             k = drafting.draft_key(c)
             est = estimates[k]
-            chk = checks.get(k)
             prop = proposals.get(k)
             if prop is not None and not prop.get("valid"):
-                rejected.append(self._alt(c, est, "; ".join(prop.get("errors") or ["rejected"])))
-                continue
-            if chk is None:
-                return self._call("check_guardrails", {"play_draft": self._with_estimate(drafts[k], est, gap, audiences, rejected)})
-            if not chk.get("all_passed"):
-                failed = [r for r in chk["results"] if not r["passed"]]
-                rejected.append(self._alt(c, est, "; ".join(f"{r['rule']}: {r['detail']}" for r in failed)))
-                last_check_key = drafting.draft_key(check_calls[-1]["play_draft"]) if check_calls else None
-                if last_check_key == k and t["last"] == "response":
+                errors = prop.get("errors") or ["rejected"]
+                detail = "; ".join(e[len("guardrail "):] if e.startswith("guardrail ") else e for e in errors)
+                rejected.append(self._alt(c, est, detail))
+                last_prop_key = drafting.draft_key(prop_calls[-1]["play"]) if prop_calls else None
+                if last_prop_key == k and t["last"] == "response":
                     # the failure is the newest thing in the transcript: end the iteration so the loop can revise
-                    return self._say("Guardrail failed: " + "; ".join(f"{r['rule']} ({r['detail']})" for r in failed) + ". Revising the play.")
+                    return self._say(f"Guardrail failed: {detail}. Revising the play.")
                 continue
-            play = self._with_estimate(drafts[k], est, gap, audiences, rejected)
-            play["guardrails"] = chk["results"]
-            return self._call("propose_play", {"play": play})
+            if prop is None:
+                if "error" in est:
+                    continue
+                play = self._with_estimate(drafts[k], est, gap, audiences, rejected)
+                return self._call("propose_play", {"play": play})
         return self._say("No candidate passed the guardrails within the loop budget; escalate to a human.")
 
     def _alt(self, c: dict[str, Any], est: dict[str, Any], why: str) -> dict[str, Any]:

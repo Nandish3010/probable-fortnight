@@ -13,7 +13,7 @@ the same gaps as unticked checklist items -- the two are kept consistent on purp
 | 1 | Forecast backtest MAPE/bias by category tier | 9 tiers x 7 rolling origins = 63 rows. Mean MAPE ranges 0.107 (bakery) to 0.221 (premium_tea); mean bias -0.06 to +0.07. Full per-tier table below. | `uv run python -m jobs.sense.backtest` | `eval/raw/backtest_2026-09-20.txt` (summary printed by the job), `eval/raw/backtest_rows_2026-09-20.jsonl` (all 63 rows written to `eval_forecast`), `eval/raw/backtest_summary_2026-09-20.txt` (per-tier means computed from the raw rows) |
 | 2 | Sense throughput, full tenant | 300 SKUs, 16 nodes/outlets: 3.83s total (forecast 2.50s, gaps 0.15s, segments+substitutes 1.18s); 550 gaps, 6 segments, 300 substitute rows | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m jobs.sense` | `eval/raw/sense_throughput_2026-09-20.json` |
 | 3 | Guardrail and test counts | 108 of 130 checklist items ticked; per-component test counts (e.g. Estimator and gate: 51 passed; Approve and assignment: 14 passed; Customer Agent: 34 passed) -- see the full table | `uv run python -m harness.status` (`make status`) | `eval/raw/status_2026-09-20.md` (full copy of `STATUS.md`) |
-| 4 | Per-endpoint latency, live Vertex backend | 20/20 endpoints 200 or the expected 4xx. Live-Gemini calls: `/plan` 110.9s (no_play, 2 iterations), `/rerun` 70.5s (proposed, 1 iteration, policy change flips mechanic), `/approve` 12.3s (includes the new BigQuery copy-generation attempt, which fell back to templates -- see Part B note below), `/chat` 4.5-6.9s x3, `/capture` (upload) 3.9s | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.sweep_live http://localhost:8080` against a local server started with `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=... GOOGLE_CLOUD_PROJECT=amru-509214` (real Vertex credentials; `*.a.run.app` is unreachable from this environment's egress policy, so this is the live backend exercised locally, not the deployed URL itself) | `eval/raw/sweep_vertex_2026-09-20.txt` |
+| 4 | Per-endpoint latency, live Vertex backend | **Correction, see "`/plan` latency" section below: this row is broken and should not be read as a clean 20/20 pass.** 20/20 endpoints did return 200 or the expected 4xx, and the Live-Gemini timings themselves are real (`/plan` 110.9s no_play, `/rerun` 70.5s, `/approve` 12.3s, `/chat` 4.5-6.9s x3, `/capture` 3.9s) -- but the server this sweep ran against was started **without `TAAL_NOW`**, so `/approve` used the wall clock instead of the pinned demo date, the play window was already outside "now", and the write-off never actually moved: the raw log shows `writeoff 9194.12->9194.12` and `already approved at 2026-09-20T18:08:21Z` on the idempotent retry. `TAAL_NOW` must be set on the **server process** that `harness.sweep_live` hits, not on the sweep client (the client command above does set it, on itself, which does nothing for the server's clock). This was not caught or disclosed when the row was first written. | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.sweep_live http://localhost:8080` against a local server started with `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=... GOOGLE_CLOUD_PROJECT=amru-509214` (real Vertex credentials; `*.a.run.app` is unreachable from this environment's egress policy, so this is the live backend exercised locally, not the deployed URL itself) | `eval/raw/sweep_vertex_2026-09-20.txt` |
 | 5 | Planner evalset (`adk eval`) | stub backend, 5/5 evalsets: **Overall Eval Status: FAILED** on all five, but for one specific reason: `response_match_score` passes on all five (1.0 vs 0.8 threshold -- the play the planner proposes matches the expected one) while `tool_trajectory_avg_score` fails on all five (0.0 vs 1.0 threshold -- the exact sequence/args of tool calls no longer matches what the evalset fixtures recorded). Real, reproduced result, not typed. | `uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals` (`google-adk[eval]` is not in this project's pinned deps -- see note below) | `eval/raw/adk_eval_stub_2026-09-20.txt` (tail; the wrapper only prints the last 2000 chars), full detail at `eval/runs/planner/adk_eval.log` (gitignored, reproduce by re-running) |
 | 6 | Copy validator pass rate | 150/150 variants accepted (100%) across the 20 seeded plays' templated copy | ad hoc script calling `jobs.sense.copy.generate_copy` + `validate_copy` over `.local/data/plays.jsonl` | `eval/raw/copy_validator_2026-09-20.json` (per-play breakdown). **Caveat: this measures the templated path only** -- the BigQuery `AI.GENERATE_TABLE` path (new this session) has never produced a variant end-to-end, because the remote model's connection lacks the `roles/aiplatform.user` grant it needs (blocked by this environment's own permission-grant restriction, not a code defect); see the approve.py fallback log line in `eval/raw/sweep_vertex_2026-09-20.txt`'s companion API log. |
 | 7 | Cold start, deployed services | `taal-web` GET `/` after ~57 min idle: 6.25s (vs <100ms warm). `taal-agents` a request after ~58 min idle: 5.46s. Combined worst case (both cold) is on the order of 11-12s; typical warm request is <100ms on both. | Cloud Logging query (`entries:list`) against `resource.type="cloud_run_revision"` for both services, since this environment cannot curl `*.a.run.app` directly (egress policy) | inline above; not saved as a separate raw file since it is a Cloud Logging query result, not a local command's stdout -- reproduce with `gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="taal-agents"' --project amru-509214 --limit 20 --format json` and look for a large gap in `httpRequest.latency` after an idle period |
@@ -100,7 +100,76 @@ gaps") overstates what has actually been run, and should be corrected by whoever
   `infra/budgets.sh` themselves once (`BILLING_ACCOUNT_ID=01AFA8-481EFC-C09462`), or by granting
   `taal-deploy` a billing-account-level role first. **Budget alerts are not yet confirmed live.**
 - **B3 (rate limit):** added a generous per-visitor cap (`services/api/main.py::_rate_limit`) on
-  `POST /plan`, `POST /rerun` (20 calls / 15 min per visitor -- a live planner run takes
-  70-110s, so this bounds worst-case concurrent spend without a normal demo ever seeing it) and
-  `POST /chat` (60 calls / 15 min per visitor). Read endpoints (`/health`, `/gaps`, `/plays`, ...)
-  are untouched. `tests/api` still passes unmodified (well under both limits).
+  `POST /plan`, `POST /rerun` (20 calls / 15 min per visitor -- a live planner run took
+  70-110s before this session's `/plan` latency work below, so this bounds worst-case concurrent
+  spend without a normal demo ever seeing it) and `POST /chat` (60 calls / 15 min per visitor).
+  Read endpoints (`/health`, `/gaps`, `/plays`, ...) are untouched. `tests/api` still passes
+  unmodified (well under both limits).
+
+## `/plan` latency and `no_play` (this session)
+
+Full diagnosis: `eval/raw/no_play_diagnosis_2026-09-20.md`. Short version: this session had no
+Vertex credentials available (no `GOOGLE_APPLICATION_CREDENTIALS`, no ADC), and the previous live
+sweep's own note says it was run against credentials injected from outside the repository into a
+locally-started server -- not something reproducible from inside this session. Everything below
+is real code, verified in stub mode (which exercises the same drafting/estimator/guardrail
+pipeline and the same tool contracts as the live model), not a live measurement.
+
+**Diagnosis (Part A):** the committed summary for the failing run (`iterations=2`, 3 total
+events including the governor event) shows the model produced two turns of plain text and never
+issued a single function call -- not a guardrail rejection, not a schema error, not a swallowed
+exception (any of those would show up as a `function_response` event, and none exist). That is
+protocol drift: `agents/planner/agent.py` was applying `thinking.planner_final` (budget 1024) to
+every turn, including the very first one, on top of a nine-step strict-order prompt -- exactly
+the combination the task brief names as a known way to get a model narrating instead of calling
+tools. `thinking.planner_route` (budget 0) was already defined in `config/models.toml` and never
+read by any code path.
+
+**Fix (Part B):** `agents/planner/agent.py` now wires `planner_route` (budget 0) for every planner
+turn except the one after `estimate_outcomes` has answered (a `before_model_callback`, since ADK
+sets `generate_content_config` once per agent, not once per call). `get_gap`,
+`get_candidate_audiences` and `get_past_plays` are no longer steps the model has to remember to
+call: `run.py` fetches them (plain deterministic reads) and hands the results to the model as
+context in the initial message; the tools stay registered for a model that wants to double-check
+one. `estimate_outcome` is now `estimate_outcomes`, batched -- one call estimates every candidate
+draft. The mandatory `check_guardrails` step is gone; `propose_play` already ran the same check
+internally and the model now revises directly from its rejection. `prompts/planner.md` is shorter
+and names two tool calls (`estimate_outcomes`, `propose_play`) instead of five.
+Reproduced in stub mode on `gap_chips_ds07`:
+`estimate_outcomes -> propose_play -> propose_play` (one guardrail revision, then success) -- 3
+tool round trips where the pre-change trajectory needed 10 (`get_gap -> get_candidate_audiences
+-> get_past_plays -> estimate_outcome x4 -> check_guardrails x2 -> propose_play`).
+
+**Fallback (Part D):** `run_planner_async` now wraps the live model loop in a wall-clock deadline
+(`TAAL_PLANNER_DEADLINE_S`, default 8s -- chosen to leave headroom under the 10s response budget
+for API/network overhead on top of this call) and falls back to `agents/planner/deterministic.py`
+on either a timeout or a `no_play` result. That module runs the exact same drafting/estimator/
+guardrail pipeline the stub model already drives (`drafting.py` + `tools.py`), directly, with no
+LLM in the loop -- consistent with the Cost Governor already deciding which gaps get a model call
+at all (`governor.py`, DECISIONS §18). The result is labelled `planner_source:
+"deterministic_fallback"` (vs `"model"`) end to end through `run_planner_async` and both
+`/plan` and `/rerun`; a fallback play is never merged into the `"source": "live"` label a judge
+would read as model output. **UI labelling for this (a visible badge on the Play Desk) and the
+`/events/{run_id}/stream` live-tool-call view the task also asks for are not wired up in this
+session** -- both are frontend work this session did not reach; the backend field is there for
+whichever frontend change does it.
+
+**Customer and stylist chat:** `agents/chat_runtime.py` gained `chat_generate_config`, which both
+`agents/customer/agent.py` and `agents/stylist/agent.py` now call on the vertex backend, wiring
+`thinking.customer` / `thinking.stylist` (both "low", budget 0) the same way the planner does.
+Neither agent set any `thinking_config` before this change, so both were running on the model's
+default dynamic thinking on every turn.
+
+**`/approve`'s BigQuery copy path:** `jobs/sense/copy.py::generate_copy_bigquery` made two
+sequential BigQuery waits, each with an independent 8s timeout (`timeout_s=8.0`, applied twice --
+once to the load job, once to the `AI.GENERATE_TABLE` query) -- a worst case of ~16s on its own,
+before any of the rest of `/approve`'s work. Default lowered to `timeout_s=3.0` (~6s worst case
+across both waits); `services/api/approve.py`'s comment at the call site updated to match. Not
+re-measured live for the reason stated above.
+
+**Not done in this session, and why:** a fresh `harness/sweep_live.py` run against a live-Vertex
+server, correctly pinned with `TAAL_NOW` on the server process this time -- no Vertex credentials
+available here. Without that, the "Done when" bar this task sets (`/plan` under 10s, reproduced
+three times live; a fresh committed sweep with `/approve`'s write-off actually moving) is not
+met by this session's work alone; what's here is the code change plus the stub-mode evidence that
+the pipeline it now runs is unchanged in outcome, only shorter in round trips.
