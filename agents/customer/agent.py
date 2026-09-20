@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 
 from google.adk.agents import LlmAgent
 from google.adk.models.registry import LLMRegistry
 from google.genai import types
 
+from agents.chat_runtime import vertex_env
 from agents.gate.config import load_models
 
 from .stub_llm import StubCustomerLlm
@@ -27,9 +27,7 @@ def build_customer_agent(catalog: dict[str, str], backend: str | None = None) ->
     if backend == "stub":
         model = StubCustomerLlm(catalog=catalog)
     elif backend == "vertex":
-        os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "TRUE")
-        if models["vertex"].get("location") and not os.environ.get("GOOGLE_CLOUD_LOCATION"):
-            os.environ["GOOGLE_CLOUD_LOCATION"] = models["vertex"]["location"]
+        vertex_env(models)
         model = models["ids"]["flash"]
     else:
         raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")
