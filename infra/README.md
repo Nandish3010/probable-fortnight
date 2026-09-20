@@ -54,6 +54,13 @@ scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
 - `taal-sense`: Cloud Run Job created; nightly Scheduler trigger `taal-sense-nightly` at 01:30 IST
 - BigQuery dataset `taal` (all 28 `data/bigquery/ddl/*.sql` files applied), Firestore Native
   database, Artifact Registry repo `taal` -- all in `asia-south1`
+- **Tenant data ships inside the API image** (`Dockerfile.api` runs the generator, Sense and
+  `harness.seed_plays` at build time). Before that step existed the deployed container served an
+  empty tenant -- `/health` degraded with 0 SKUs / 0 nodes / 0 customers, `/gaps` and `/plays`
+  `[]`, `/sense/last` 404 -- because `.local/` is dockerignored and nothing generates data at
+  startup. Consequence to know: the per-visitor judge-mode sandboxes live on the container's
+  ephemeral filesystem, so a visitor's approvals reset when the instance is replaced (scale-to-zero,
+  redeploy). Fine for judging; not a system of record (that is BigQuery, per DECISIONS §3.3).
 
 **IAM: resolved.** `taal-deploy@amru-509214.iam.gserviceaccount.com` was granted `roles/owner` on
 20 Sep 2026 (after two earlier attempts at a narrower Vertex role picked the wrong entries --
