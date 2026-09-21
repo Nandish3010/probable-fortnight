@@ -36,6 +36,7 @@ export default function TrendsPage() {
 
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <div className="card__header">
         <h2>Style trends</h2>
         <Badge kind="synthetic" detail="/trends" />
