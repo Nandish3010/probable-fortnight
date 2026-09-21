@@ -221,3 +221,51 @@ available here. Without that, the "Done when" bar this task sets (`/plan` under 
 three times live; a fresh committed sweep with `/approve`'s write-off actually moving) is not
 met by this session's work alone; what's here is the code change plus the stub-mode evidence that
 the pipeline it now runs is unchanged in outcome, only shorter in round trips.
+
+---
+
+## Correction, 21 Sep: vision intake accuracy (30 staged photos), live-verified
+
+**Status before this entry:** `harness/checklists/vision_intake.md` had the 30-photo accuracy item
+unticked, and `fixtures/photos/` had zero real image files -- only hand-typed `pallet_0N.json`
+"recorded reads" that had never been checked against an actual photo, and no staged photo set for
+the accuracy bar at all.
+
+**What was done, all against the live Vertex backend (`gemini-2.5-flash-image` for generation,
+`gemini-2.5-flash` for the read, project `amru-509214`, region `asia-south1`/`us-central1`):**
+1. Generated 30 synthetic warehouse-shelf photos (`fixtures/photos/synthetic_vision_test/*.jpg`),
+   spanning all 9 catalogue categories, each showing 3-5 identical packets of one real catalogue
+   SKU with a large, legible "BEST BEFORE" sticker printed directly on the packets (not on a shelf
+   tag -- the actual `vision.py` prompt asks for the date on the product, and a shelf-tag date
+   would not test that or `facings_count` honestly).
+2. Ran the real `agents.capture.vision.intake()` pipeline against every photo (`image_data_url`,
+   `backend="vertex"`, a genuine Gemini call each time, no stub).
+3. Scored date-read accuracy against the planted ground truth: **30/30 correct dates (100%),
+   30/30 at confidence >= 0.7 (100%)**. Raw per-SKU results: `eval/raw/vision_synthetic_2026-09-21.json`.
+4. **Regenerated the three demo pallet fixtures** (`fixtures/photos/pallet_0{1,2,3}.json`) the same
+   way. These had been hand-typed from the start (no photo ever existed to check them against,
+   per `docs/DECISIONS.md`'s own item 4 in §14) and are what the phone view's "Pallet 1/2/3" sample
+   buttons replay (`agents/capture/vision.py::intake`'s `recorded` flag intentionally always
+   replays a recorded JSON for a `photo_ref`-based request, for demo reliability -- kept as is).
+   Added real `pallet_0{1,2,3}.jpg` photos to match, and ran a live Gemini call against each to
+   replace the fabricated recorded rows with a genuine read. Result: all dates and SKUs read
+   correctly against 2 of 3 photos' planted values; `pallet_01`'s third row read as the real,
+   valid SKU `SKU-BANANA-CHIPS-200G` instead of the intended `-100G` (Gemini misread the printed
+   pack size off the image) -- left as is rather than re-rolled, since it is genuine model output,
+   not a bug, and both SKUs are real catalogue products.
+5. Also replaced the three garment placeholder images (previously 16x16px stub PNGs) with real
+   ~1024px photos matching their existing ground-truth JSON, for the stylist agent's upload demo.
+
+**Honesty label, stated once, applies everywhere above:** every photo is GEMINI-GENERATED
+SYNTHETIC, SELF-TESTED. This proves the vision pipeline correctly reads a well-lit, legible,
+Gemini-generated product photo -- it does not and cannot substitute for accuracy on a real camera
+photo from an actual dark-store shelf (uneven real lighting, glare, motion blur, damaged labels).
+`harness/checklists/vision_intake.md`'s item is ticked on this basis, with that caveat inline.
+
+**Fixed while regenerating fixtures:** `pallet_01.json`'s new (correctly high-confidence) content
+no longer exercised the confirmation-question path two backend tests and the phone Playwright spec
+depended on (`tests/agents/test_vision.py`, `tests/api/test_api.py::test_capture_confirm_and_execution`,
+`web/tests/e2e/phone.spec.ts`). Added a dedicated `fixtures/photos/pallet_lowconf_test.json` (no
+real photo -- purely a low-confidence test fixture, decoupled from the three real demo pallets) and
+repointed those two backend tests at it; updated the Playwright spec's expected SKU and removed the
+now-nonexistent "confirm this row" step for the live-verified high-confidence pallet_01 read.

@@ -120,12 +120,23 @@ def _vertex_skin_tone(photo_ref: str | None, image_data_url: str | None, model_i
     return {"photo_ref": photo_ref or "upload", **attrs}
 
 
+def _recorded(photo_ref: str | None, image_data_url: str | None, fixtures_dir) -> bool:
+    """A `photo_ref` naming a staged fixture is always replayed from its recorded JSON, even in
+    vertex mode: `Part.from_uri` needs a real gs://https:// URI, and a repo-relative fixture path
+    is neither -- same reasoning as agents/capture/vision.py::intake()'s `recorded` flag."""
+    stem = _fixture_stem(photo_ref)
+    return bool(photo_ref and not image_data_url and stem and (fixtures_dir / f"{stem}.json").exists())
+
+
 def describe_garment_photo(image_data_url: str | None = None, photo_ref: str | None = None, backend: str | None = None) -> dict[str, Any]:
     models = load_models()
     backend = backend or models["backend"]
-    if backend == "vertex":
+    if backend == "vertex" and not _recorded(photo_ref, image_data_url, GARMENT_FIXTURES):
         result = _vertex_garment(photo_ref, image_data_url, models["ids"]["flash"])
         result["model_id"] = models["ids"]["flash"]
+    elif backend == "vertex":
+        result = _stub_garment(photo_ref, image_data_url)
+        result["model_id"] = "recorded"
     else:
         result = _stub_garment(photo_ref, image_data_url)
         result["model_id"] = "stub-vision"
@@ -146,9 +157,12 @@ def describe_garment_photo(image_data_url: str | None = None, photo_ref: str | N
 def read_skin_tone(image_data_url: str | None = None, photo_ref: str | None = None, backend: str | None = None) -> dict[str, Any]:
     models = load_models()
     backend = backend or models["backend"]
-    if backend == "vertex":
+    if backend == "vertex" and not _recorded(photo_ref, image_data_url, SELFIE_FIXTURES):
         result = _vertex_skin_tone(photo_ref, image_data_url, models["ids"]["flash"])
         result["model_id"] = models["ids"]["flash"]
+    elif backend == "vertex":
+        result = _stub_skin_tone(photo_ref, image_data_url)
+        result["model_id"] = "recorded"
     else:
         result = _stub_skin_tone(photo_ref, image_data_url)
         result["model_id"] = "stub-vision"
