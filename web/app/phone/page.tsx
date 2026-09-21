@@ -145,6 +145,7 @@ export default function PhoneViewPage() {
     <main className="page">
       <h2>Priya's phone</h2>
 
+      <div className="phone-frame">
       <section className="card">
         <label>
           Node{" "}
@@ -294,6 +295,7 @@ export default function PhoneViewPage() {
           {executionSaved ? <p className="muted">Execution recorded.</p> : null}
         </section>
       ) : null}
+      </div>
     </main>
   );
 }
