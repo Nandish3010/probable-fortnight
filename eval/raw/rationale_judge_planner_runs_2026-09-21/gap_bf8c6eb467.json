@@ -1,0 +1,1442 @@
+{
+  "run_id": "run_bf8c6eb467_v1_9404c28a",
+  "play": {
+    "window": {
+      "end": "2026-09-16",
+      "start": "2026-09-12"
+    },
+    "alternatives": [
+      {
+        "expected_margin_inr": 446.15,
+        "mechanic": "transfer",
+        "expected_units": 26.51,
+        "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+        "mechanic_params": {
+          "transfer_price": 115,
+          "transfer_node_id": "OUT-03"
+        }
+      }
+    ],
+    "mechanic": "bundle",
+    "play_id": "play_bf8c6eb467_v1",
+    "objective": "clear_online_sellby",
+    "target": {
+      "units": 163,
+      "sku": "SKU-FULL-CREAM-MILK-500ML",
+      "deadline_date": "2026-09-16",
+      "batch_ids": [
+        "B-FULL-CREAM-MILK-500ML-DS-06-01"
+      ],
+      "deadline_type": "online_sellby",
+      "node_ids": [
+        "DS-06"
+      ]
+    },
+    "audience": {
+      "filters": {},
+      "purpose": "marketing",
+      "size_after_consent": 387,
+      "size_before_consent": 448,
+      "segment_ids": [
+        "seg_5",
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_4",
+        "seg_6"
+      ]
+    },
+    "channel": "app_push",
+    "gap_id": "gap_bf8c6eb467",
+    "copy": {
+      "variants": [],
+      "language_set": [
+        "en"
+      ],
+      "copy_status": "pending"
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 16001.71,
+      "blanket_markdown_pct": 20,
+      "blanket_markdown_inr": 11646.02
+    },
+    "mechanic_params": {
+      "bundle_price": 197,
+      "bundle_sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "expected_outcome": {
+      "ci_low": 1.43,
+      "waste_avoided_inr": 2602.44,
+      "units": 26.51,
+      "margin_inr": 1043.68,
+      "measured_n": 0,
+      "discount_cost_inr": 0,
+      "estimator_version": "est-v1",
+      "ci_high": 77.34,
+      "prior_n": 20
+    },
+    "citations": [
+      {
+        "ref": "B-FULL-CREAM-MILK-500ML-DS-06-01",
+        "type": "stock"
+      },
+      {
+        "ref": "est-v1",
+        "type": "estimator"
+      },
+      {
+        "type": "forecast",
+        "ref": "sense_20260912_baseline_2aaad73c"
+      },
+      {
+        "type": "gap",
+        "ref": "gap_bf8c6eb467"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      }
+    ],
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 327 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "audience filtered by consent: 448 -> 387"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 5%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "7 number(s) in rationale all cited; 5 citation(s) resolve"
+      }
+    ],
+    "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement.",
+    "holdout": {
+      "seed": "random_seed_12345",
+      "fraction": 0.05,
+      "min_treated_n": 20
+    },
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_bf8c6eb467_v1_9404c28a",
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 50.31,
+      "pct_of_rupees_at_stake": 0.324
+    }
+  },
+  "status": "proposed",
+  "iterations": 2,
+  "events": [
+    {
+      "seq": 0,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "",
+      "author": "cost_governor",
+      "timestamp": 1790008724.3146772,
+      "ts_offset_ms": 0,
+      "text": "rupees at stake 16002 >= threshold 500",
+      "level": "info"
+    },
+    {
+      "seq": 1,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008724.7440004,
+      "ts_offset_ms": 0,
+      "level": "info",
+      "text": "The gap is an `online_sellby_breach` for \"Full Cream Milk 500ML\" at node \"DS-06\", with 163 units at risk and a deadline of \"2026-09-16\". The policy prefers bundles and transfers over markdowns. Since this is an `online_sellby_breach`, the product can only be moved through outlets.\n\nI will draft two plays:\n1. A bundle with \"Wheat Bread 400G\" (the top bundle partner candidate).\n2. A transfer to \"OUT-03\" (the first transfer candidate).\n\nBoth plays will target all available audience segments to maximize clearance of the at-risk units.\n",
+      "function_call": {
+        "name": "estimate_outcomes",
+        "args": {
+          "play_drafts": [
+            {
+              "holdout": {
+                "seed": 123,
+                "fraction": 0.05,
+                "min_treated_n": 20
+              },
+              "audience": {
+                "purpose": "marketing",
+                "size_before_consent": 448,
+                "segment_ids": [
+                  "seg_5",
+                  "seg_2",
+                  "seg_1",
+                  "seg_3",
+                  "seg_4",
+                  "seg_6"
+                ],
+                "size_after_consent": 387
+              },
+              "mechanic": "bundle",
+              "target": {
+                "deadline_type": "online_sellby",
+                "batch_ids": [
+                  "B-FULL-CREAM-MILK-500ML-DS-06-01"
+                ],
+                "node_ids": [
+                  "DS-06"
+                ],
+                "units": 163,
+                "sku": "SKU-FULL-CREAM-MILK-500ML",
+                "deadline_date": "2026-09-16"
+              },
+              "objective": "clear_online_sellby",
+              "gap_id": "gap_bf8c6eb467",
+              "mechanic_params": {
+                "bundle_price": 197,
+                "bundle_sku": "SKU-WHEAT-BREAD-400G"
+              }
+            },
+            {
+              "objective": "clear_online_sellby",
+              "mechanic_params": {
+                "transfer_price": 115,
+                "transfer_node_id": "OUT-03"
+              },
+              "holdout": {
+                "fraction": 0.05,
+                "min_treated_n": 20,
+                "seed": 123
+              },
+              "mechanic": "transfer",
+              "audience": {
+                "size_after_consent": 387,
+                "purpose": "marketing",
+                "segment_ids": [
+                  "seg_5",
+                  "seg_2",
+                  "seg_1",
+                  "seg_3",
+                  "seg_4",
+                  "seg_6"
+                ],
+                "size_before_consent": 448
+              },
+              "gap_id": "gap_bf8c6eb467",
+              "target": {
+                "sku": "SKU-FULL-CREAM-MILK-500ML",
+                "deadline_type": "online_sellby",
+                "deadline_date": "2026-09-16",
+                "batch_ids": [
+                  "B-FULL-CREAM-MILK-500ML-DS-06-01"
+                ],
+                "node_ids": [
+                  "DS-06"
+                ],
+                "units": 163
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008730.8954494,
+      "ts_offset_ms": 6151,
+      "level": "info",
+      "function_response": {
+        "name": "estimate_outcomes",
+        "response": {
+          "result": [
+            {
+              "expected_outcome": {
+                "units": 26.51,
+                "margin_inr": 1043.68,
+                "waste_avoided_inr": 2602.44,
+                "discount_cost_inr": 0.0,
+                "ci_low": 1.43,
+                "ci_high": 77.34,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 16001.71,
+                "blanket_markdown_inr": 11646.02,
+                "blanket_markdown_pct": 20.0
+              }
+            },
+            {
+              "expected_outcome": {
+                "units": 26.51,
+                "margin_inr": 446.15,
+                "waste_avoided_inr": 2602.44,
+                "discount_cost_inr": 0.0,
+                "ci_low": 1.43,
+                "ci_high": 77.34,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 16001.71,
+                "blanket_markdown_inr": 11646.02,
+                "blanket_markdown_pct": 20.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008730.8985112,
+      "ts_offset_ms": 6154,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 16001.71,
+              "blanket_markdown_inr": 11646.02
+            },
+            "mechanic": "bundle",
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "gap_id": "gap_bf8c6eb467",
+            "alternatives": [
+              {
+                "mechanic": "transfer",
+                "play_id": "play_bf8c6eb467_v1_alt1",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-03",
+                  "transfer_price": 115
+                },
+                "rejected_reason": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+                "expected_outcome": {
+                  "waste_avoided_inr": 2602.44,
+                  "ci_low": 1.43,
+                  "prior_n": 20,
+                  "estimator_version": "est-v1",
+                  "ci_high": 77.34,
+                  "units": 26.51,
+                  "measured_n": 0,
+                  "margin_inr": 446.15,
+                  "discount_cost_inr": 0
+                }
+              }
+            ],
+            "expected_outcome": {
+              "units": 26.51,
+              "ci_low": 1.43,
+              "margin_inr": 1043.68,
+              "measured_n": 0,
+              "prior_n": 20,
+              "waste_avoided_inr": 2602.44,
+              "discount_cost_inr": 0,
+              "ci_high": 77.34,
+              "estimator_version": "est-v1"
+            },
+            "holdout": {
+              "seed": 123,
+              "fraction": 0.05,
+              "min_treated_n": 20
+            },
+            "audience": {
+              "size_before_consent": 448,
+              "size_after_consent": 387,
+              "purpose": "marketing",
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ]
+            },
+            "citations": {
+              "gap_id": "gap_bf8c6eb467",
+              "forecast_run_id": "sense_20260912_baseline_2aaad73c",
+              "batch_id": "B-FULL-CREAM-MILK-500ML-DS-06-01",
+              "policy_version": "v1",
+              "estimator_version": "est-v1"
+            },
+            "copy_status": "pending",
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "objective": "clear_online_sellby",
+            "play_id": "play_bf8c6eb467_v1",
+            "target": {
+              "units": 163,
+              "deadline_type": "online_sellby",
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "node_ids": [
+                "DS-06"
+              ],
+              "deadline_date": "2026-09-16"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008738.372401,
+      "ts_offset_ms": 13628,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: Additional properties are not allowed ('copy_status' was unexpected)",
+            "$: 'channel' is a required property",
+            "$: 'window' is a required property",
+            "$: 'copy' is a required property",
+            "$: 'guardrails' is a required property",
+            "alternatives/0: Additional properties are not allowed ('expected_outcome', 'play_id', 'rejected_reason' were unexpected)",
+            "alternatives/0: 'expected_units' is a required property",
+            "alternatives/0: 'expected_margin_inr' is a required property",
+            "... 4 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008738.374723,
+      "ts_offset_ms": 13630,
+      "level": "info",
+      "function_call": {
+        "name": "check_guardrails",
+        "args": {
+          "play_draft": {
+            "target": {
+              "node_ids": [
+                "DS-06"
+              ],
+              "deadline_type": "online_sellby",
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "units": 163,
+              "deadline_date": "2026-09-16",
+              "sku": "SKU-FULL-CREAM-MILK-500ML"
+            },
+            "holdout": {
+              "fraction": 0.05,
+              "min_treated_n": 20,
+              "seed": 123
+            },
+            "gap_id": "gap_bf8c6eb467",
+            "audience": {
+              "size_after_consent": 387,
+              "purpose": "marketing",
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_before_consent": 448
+            },
+            "objective": "clear_online_sellby",
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 197
+            },
+            "mechanic": "bundle"
+          }
+        }
+      }
+    },
+    {
+      "seq": 6,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008744.1033158,
+      "ts_offset_ms": 19359,
+      "level": "info",
+      "function_response": {
+        "name": "check_guardrails",
+        "response": {
+          "results": [
+            {
+              "rule": "margin_floor",
+              "passed": true,
+              "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%"
+            },
+            {
+              "rule": "frequency_cap",
+              "passed": true,
+              "detail": "all 327 customers under 2 plays in 7 days"
+            },
+            {
+              "rule": "consent_required",
+              "passed": true,
+              "detail": "audience filtered by consent: 448 -> 387"
+            },
+            {
+              "rule": "sellby_disclosure",
+              "passed": true,
+              "detail": "copy pending; best-before disclosure enforced at copy validation"
+            },
+            {
+              "rule": "subscription_protect",
+              "passed": true,
+              "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+            },
+            {
+              "rule": "no_cannibalise_stockout",
+              "passed": true,
+              "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06"
+            },
+            {
+              "rule": "holdout_required",
+              "passed": true,
+              "detail": "holdout 5%, min_treated_n 20"
+            },
+            {
+              "rule": "cite_or_drop",
+              "passed": true,
+              "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+            }
+          ],
+          "all_passed": true
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008744.106316,
+      "ts_offset_ms": 19362,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "citations": {
+              "policy_version": "v1",
+              "forecast_run_id": "sense_20260912_baseline_2aaad73c",
+              "gap_id": "gap_bf8c6eb467",
+              "estimator_version": "est-v1",
+              "batch_id": "B-FULL-CREAM-MILK-500ML-DS-06-01"
+            },
+            "holdout": {
+              "fraction": 0.05,
+              "min_treated_n": 20,
+              "seed": "123"
+            },
+            "alternatives": [
+              {
+                "expected_margin_inr": 446.15,
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-03",
+                  "transfer_price": 115
+                },
+                "mechanic": "transfer",
+                "expected_units": 26.51,
+                "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR)."
+              }
+            ],
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "target": {
+              "deadline_date": "2026-09-16",
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "node_ids": [
+                "DS-06"
+              ],
+              "units": 163,
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "deadline_type": "online_sellby"
+            },
+            "expected_outcome": {
+              "estimator_version": "est-v1",
+              "margin_inr": 1043.68,
+              "measured_n": 0,
+              "prior_n": 20,
+              "units": 26.51,
+              "ci_high": 77.34,
+              "discount_cost_inr": 0,
+              "ci_low": 1.43,
+              "waste_avoided_inr": 2602.44
+            },
+            "objective": "clear_online_sellby",
+            "channel": "app_notification",
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "window": {
+              "end_date": "2026-09-16",
+              "start_date": "2026-09-12"
+            },
+            "play_id": "play_bf8c6eb467_v1",
+            "audience": {
+              "filters": [],
+              "purpose": "marketing",
+              "size_before_consent": 448,
+              "size_after_consent": 387,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ]
+            },
+            "copy": "Limited time offer on Full Cream Milk 500ML. Best before 2026-09-18.",
+            "mechanic": "bundle",
+            "gap_id": "gap_bf8c6eb467",
+            "guardrails": {
+              "all_passed": true,
+              "results": [
+                {
+                  "rule": "margin_floor",
+                  "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%",
+                  "passed": true
+                },
+                {
+                  "detail": "all 327 customers under 2 plays in 7 days",
+                  "rule": "frequency_cap",
+                  "passed": true
+                },
+                {
+                  "rule": "consent_required",
+                  "detail": "audience filtered by consent: 448 -> 387",
+                  "passed": true
+                },
+                {
+                  "passed": true,
+                  "detail": "copy pending; best-before disclosure enforced at copy validation",
+                  "rule": "sellby_disclosure"
+                },
+                {
+                  "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience",
+                  "passed": true,
+                  "rule": "subscription_protect"
+                },
+                {
+                  "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06",
+                  "passed": true,
+                  "rule": "no_cannibalise_stockout"
+                },
+                {
+                  "rule": "holdout_required",
+                  "detail": "holdout 5%, min_treated_n 20",
+                  "passed": true
+                },
+                {
+                  "passed": true,
+                  "rule": "cite_or_drop",
+                  "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 8,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008750.0001454,
+      "ts_offset_ms": 25256,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: 'counterfactuals' is a required property",
+            "audience/filters: [] is not of type 'object'",
+            "channel: 'app_notification' is not one of ['web_chat', 'app_push', 'outlet']",
+            "citations: {'policy_version': 'v1', 'forecast_run_id': 'sense_20260912_baseline_2aaad73c', 'gap_id': 'gap_bf8c6eb467', 'estimator_version': 'est-v1', 'batch_id': 'B-FULL-CREAM-MILK-500ML-DS-06-01'} is not of type 'array'",
+            "copy: 'Limited time offer on Full Cream Milk 500ML. Best before 2026-09-18.' is not of type 'object'",
+            "guardrails: {'all_passed': True, 'results': [{'rule': 'margin_floor', 'detail': 'net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%', 'passed': True}, {'detail': 'all 327 customers under 2 plays in 7 days', 'rule': 'frequency_cap', 'passed': True}, {'rule': 'consent_required', 'detail': 'audience filtered by consent: 448 -> 387', 'passed': True}, {'passed': True, 'detail': 'cop...",
+            "holdout/seed: '123' is too short",
+            "window: Additional properties are not allowed ('end_date', 'start_date' were unexpected)",
+            "... 2 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008750.0026996,
+      "ts_offset_ms": 25258,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "copy": {
+              "text": "Limited time offer on Full Cream Milk 500ML. Best before 2026-09-18.",
+              "status": "pending"
+            },
+            "target": {
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "deadline_date": "2026-09-16",
+              "deadline_type": "online_sellby",
+              "units": 163,
+              "node_ids": [
+                "DS-06"
+              ]
+            },
+            "holdout": {
+              "min_treated_n": 20,
+              "fraction": 0.05,
+              "seed": "random_seed_12345"
+            },
+            "guardrails": [
+              {
+                "passed": true,
+                "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%",
+                "rule": "margin_floor"
+              },
+              {
+                "rule": "frequency_cap",
+                "detail": "all 327 customers under 2 plays in 7 days",
+                "passed": true
+              },
+              {
+                "rule": "consent_required",
+                "passed": true,
+                "detail": "audience filtered by consent: 448 -> 387"
+              },
+              {
+                "detail": "copy pending; best-before disclosure enforced at copy validation",
+                "passed": true,
+                "rule": "sellby_disclosure"
+              },
+              {
+                "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience",
+                "passed": true,
+                "rule": "subscription_protect"
+              },
+              {
+                "rule": "no_cannibalise_stockout",
+                "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06",
+                "passed": true
+              },
+              {
+                "passed": true,
+                "detail": "holdout 5%, min_treated_n 20",
+                "rule": "holdout_required"
+              },
+              {
+                "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+                "passed": true,
+                "rule": "cite_or_drop"
+              }
+            ],
+            "audience": {
+              "size_before_consent": 448,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "purpose": "marketing",
+              "filters": {},
+              "size_after_consent": 387
+            },
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "objective": "clear_online_sellby",
+            "gap_id": "gap_bf8c6eb467",
+            "alternatives": [
+              {
+                "expected_units": 26.51,
+                "expected_margin_inr": 446.15,
+                "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+                "mechanic": "transfer",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-03",
+                  "transfer_price": 115
+                }
+              }
+            ],
+            "mechanic": "bundle",
+            "citations": [
+              "gap_id: gap_bf8c6eb467",
+              "estimator_version: est-v1",
+              "policy_version: v1",
+              "forecast_run_id: sense_20260912_baseline_2aaad73c",
+              "batch_id: B-FULL-CREAM-MILK-500ML-DS-06-01"
+            ],
+            "play_id": "play_bf8c6eb467_v1",
+            "counterfactuals": {
+              "blanket_markdown_inr": 11646.02,
+              "do_nothing_inr": 16001.71,
+              "blanket_markdown_pct": 20
+            },
+            "channel": "app_push",
+            "window": {
+              "start": "2026-09-12",
+              "end": "2026-09-16"
+            },
+            "expected_outcome": {
+              "waste_avoided_inr": 2602.44,
+              "discount_cost_inr": 0,
+              "ci_low": 1.43,
+              "estimator_version": "est-v1",
+              "measured_n": 0,
+              "ci_high": 77.34,
+              "margin_inr": 1043.68,
+              "prior_n": 20,
+              "units": 26.51
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008758.050377,
+      "ts_offset_ms": 33306,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "citations/0: 'gap_id: gap_bf8c6eb467' is not of type 'object'",
+            "citations/1: 'estimator_version: est-v1' is not of type 'object'",
+            "citations/2: 'policy_version: v1' is not of type 'object'",
+            "citations/3: 'forecast_run_id: sense_20260912_baseline_2aaad73c' is not of type 'object'",
+            "citations/4: 'batch_id: B-FULL-CREAM-MILK-500ML-DS-06-01' is not of type 'object'",
+            "copy: Additional properties are not allowed ('status', 'text' were unexpected)",
+            "copy: 'language_set' is a required property",
+            "copy: 'variants' is a required property",
+            "... 1 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008758.0530393,
+      "ts_offset_ms": 33309,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "channel": "app_push",
+            "copy": {
+              "variants": [],
+              "language_set": "en",
+              "copy_status": "pending"
+            },
+            "target": {
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "units": 163,
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "node_ids": [
+                "DS-06"
+              ],
+              "deadline_date": "2026-09-16",
+              "deadline_type": "online_sellby"
+            },
+            "citations": [
+              {
+                "batch_id": "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              },
+              {
+                "estimator_version": "est-v1"
+              },
+              {
+                "forecast_run_id": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "gap_id": "gap_bf8c6eb467"
+              },
+              {
+                "policy_version": "v1"
+              }
+            ],
+            "play_id": "play_bf8c6eb467_v1",
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "mechanic": "bundle",
+            "objective": "clear_online_sellby",
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "expected_outcome": {
+              "waste_avoided_inr": 2602.44,
+              "prior_n": 20,
+              "ci_high": 77.34,
+              "estimator_version": "est-v1",
+              "ci_low": 1.43,
+              "margin_inr": 1043.68,
+              "discount_cost_inr": 0,
+              "measured_n": 0,
+              "units": 26.51
+            },
+            "holdout": {
+              "min_treated_n": 20,
+              "seed": "random_seed_12345",
+              "fraction": 0.05
+            },
+            "gap_id": "gap_bf8c6eb467",
+            "window": {
+              "end": "2026-09-16",
+              "start": "2026-09-12"
+            },
+            "alternatives": [
+              {
+                "expected_margin_inr": 446.15,
+                "mechanic": "transfer",
+                "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-03",
+                  "transfer_price": 115
+                },
+                "expected_units": 26.51
+              }
+            ],
+            "guardrails": [
+              {
+                "passed": true,
+                "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%",
+                "rule": "margin_floor"
+              },
+              {
+                "detail": "all 327 customers under 2 plays in 7 days",
+                "passed": true,
+                "rule": "frequency_cap"
+              },
+              {
+                "passed": true,
+                "detail": "audience filtered by consent: 448 -> 387",
+                "rule": "consent_required"
+              },
+              {
+                "detail": "copy pending; best-before disclosure enforced at copy validation",
+                "passed": true,
+                "rule": "sellby_disclosure"
+              },
+              {
+                "rule": "subscription_protect",
+                "passed": true,
+                "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+              },
+              {
+                "rule": "no_cannibalise_stockout",
+                "passed": true,
+                "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06"
+              },
+              {
+                "detail": "holdout 5%, min_treated_n 20",
+                "passed": true,
+                "rule": "holdout_required"
+              },
+              {
+                "passed": true,
+                "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+                "rule": "cite_or_drop"
+              }
+            ],
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "blanket_markdown_inr": 11646.02,
+              "do_nothing_inr": 16001.71
+            },
+            "audience": {
+              "filters": {},
+              "purpose": "marketing",
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_before_consent": 448,
+              "size_after_consent": 387
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 12,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008765.4042618,
+      "ts_offset_ms": 40660,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "citations/0: Additional properties are not allowed ('batch_id' was unexpected)",
+            "citations/0: 'type' is a required property",
+            "citations/0: 'ref' is a required property",
+            "citations/1: Additional properties are not allowed ('estimator_version' was unexpected)",
+            "citations/1: 'type' is a required property",
+            "citations/1: 'ref' is a required property",
+            "citations/2: Additional properties are not allowed ('forecast_run_id' was unexpected)",
+            "citations/2: 'type' is a required property",
+            "... 8 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 13,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008765.407826,
+      "ts_offset_ms": 40663,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "citations": [
+              {
+                "type": "batch",
+                "ref": "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              },
+              {
+                "type": "estimator",
+                "ref": "est-v1"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast_run"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_bf8c6eb467"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "audience": {
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_after_consent": 387,
+              "purpose": "marketing",
+              "size_before_consent": 448,
+              "filters": {}
+            },
+            "counterfactuals": {
+              "do_nothing_inr": 16001.71,
+              "blanket_markdown_inr": 11646.02,
+              "blanket_markdown_pct": 20
+            },
+            "window": {
+              "start": "2026-09-12",
+              "end": "2026-09-16"
+            },
+            "play_id": "play_bf8c6eb467_v1",
+            "channel": "app_push",
+            "mechanic": "bundle",
+            "objective": "clear_online_sellby",
+            "guardrails": [
+              {
+                "passed": true,
+                "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%",
+                "rule": "margin_floor"
+              },
+              {
+                "rule": "frequency_cap",
+                "passed": true,
+                "detail": "all 327 customers under 2 plays in 7 days"
+              },
+              {
+                "rule": "consent_required",
+                "passed": true,
+                "detail": "audience filtered by consent: 448 -> 387"
+              },
+              {
+                "rule": "sellby_disclosure",
+                "detail": "copy pending; best-before disclosure enforced at copy validation",
+                "passed": true
+              },
+              {
+                "rule": "subscription_protect",
+                "passed": true,
+                "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+              },
+              {
+                "rule": "no_cannibalise_stockout",
+                "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06",
+                "passed": true
+              },
+              {
+                "rule": "holdout_required",
+                "passed": true,
+                "detail": "holdout 5%, min_treated_n 20"
+              },
+              {
+                "rule": "cite_or_drop",
+                "passed": true,
+                "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+              }
+            ],
+            "expected_outcome": {
+              "prior_n": 20,
+              "units": 26.51,
+              "measured_n": 0,
+              "estimator_version": "est-v1",
+              "ci_high": 77.34,
+              "margin_inr": 1043.68,
+              "discount_cost_inr": 0,
+              "waste_avoided_inr": 2602.44,
+              "ci_low": 1.43
+            },
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "target": {
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "deadline_date": "2026-09-16",
+              "node_ids": [
+                "DS-06"
+              ],
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "units": 163,
+              "deadline_type": "online_sellby"
+            },
+            "alternatives": [
+              {
+                "expected_units": 26.51,
+                "mechanic": "transfer",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-03",
+                  "transfer_price": 115
+                },
+                "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+                "expected_margin_inr": 446.15
+              }
+            ],
+            "copy": {
+              "copy_status": "pending",
+              "language_set": [
+                "en"
+              ],
+              "variants": []
+            },
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "gap_id": "gap_bf8c6eb467",
+            "holdout": {
+              "fraction": 0.05,
+              "seed": "random_seed_12345",
+              "min_treated_n": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008771.4868772,
+      "ts_offset_ms": 46742,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "citations/0/type: 'batch' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "citations/2/type: 'forecast_run' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 15,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008771.4896064,
+      "ts_offset_ms": 46745,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "window": {
+              "end": "2026-09-16",
+              "start": "2026-09-12"
+            },
+            "alternatives": [
+              {
+                "expected_margin_inr": 446.15,
+                "mechanic": "transfer",
+                "expected_units": 26.51,
+                "rejected_because": "Lower expected margin (446.15 INR) compared to the selected bundle play (1043.68 INR).",
+                "mechanic_params": {
+                  "transfer_price": 115,
+                  "transfer_node_id": "OUT-03"
+                }
+              }
+            ],
+            "mechanic": "bundle",
+            "play_id": "play_bf8c6eb467_v1",
+            "objective": "clear_online_sellby",
+            "target": {
+              "units": 163,
+              "sku": "SKU-FULL-CREAM-MILK-500ML",
+              "deadline_date": "2026-09-16",
+              "batch_ids": [
+                "B-FULL-CREAM-MILK-500ML-DS-06-01"
+              ],
+              "deadline_type": "online_sellby",
+              "node_ids": [
+                "DS-06"
+              ]
+            },
+            "audience": {
+              "filters": {},
+              "purpose": "marketing",
+              "size_after_consent": 387,
+              "size_before_consent": 448,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ]
+            },
+            "channel": "app_push",
+            "gap_id": "gap_bf8c6eb467",
+            "copy": {
+              "variants": [],
+              "language_set": [
+                "en"
+              ],
+              "copy_status": "pending"
+            },
+            "counterfactuals": {
+              "do_nothing_inr": 16001.71,
+              "blanket_markdown_pct": 20,
+              "blanket_markdown_inr": 11646.02
+            },
+            "mechanic_params": {
+              "bundle_price": 197,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "expected_outcome": {
+              "ci_low": 1.43,
+              "waste_avoided_inr": 2602.44,
+              "units": 26.51,
+              "margin_inr": 1043.68,
+              "measured_n": 0,
+              "discount_cost_inr": 0,
+              "estimator_version": "est-v1",
+              "ci_high": 77.34,
+              "prior_n": 20
+            },
+            "citations": [
+              {
+                "ref": "B-FULL-CREAM-MILK-500ML-DS-06-01",
+                "type": "stock"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "type": "forecast",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_bf8c6eb467"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "guardrails": [
+              {
+                "rule": "margin_floor",
+                "passed": true,
+                "detail": "net margin 19.98% (net price 197.00, cost 157.63) vs dairy floor 8.00%"
+              },
+              {
+                "passed": true,
+                "detail": "all 327 customers under 2 plays in 7 days",
+                "rule": "frequency_cap"
+              },
+              {
+                "passed": true,
+                "detail": "audience filtered by consent: 448 -> 387",
+                "rule": "consent_required"
+              },
+              {
+                "rule": "sellby_disclosure",
+                "detail": "copy pending; best-before disclosure enforced at copy validation",
+                "passed": true
+              },
+              {
+                "rule": "subscription_protect",
+                "passed": true,
+                "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+              },
+              {
+                "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at DS-06",
+                "passed": true,
+                "rule": "no_cannibalise_stockout"
+              },
+              {
+                "rule": "holdout_required",
+                "passed": true,
+                "detail": "holdout 5%, min_treated_n 20"
+              },
+              {
+                "passed": true,
+                "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+                "rule": "cite_or_drop"
+              }
+            ],
+            "rationale": "This play bundles Full Cream Milk 500ML with Wheat Bread 400G to clear 26.51 units at risk of online sell-by breach by 2026-09-16. The bundle is preferred over a transfer due to a higher expected margin of 1043.68 INR compared to 446.15 INR for the transfer. The play targets 387 customers across all segments and is expected to avoid 2602.44 INR in waste. A holdout of 5% is included for measurement...",
+            "holdout": {
+              "seed": "random_seed_12345",
+              "fraction": 0.05,
+              "min_treated_n": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 16,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008777.5954611,
+      "ts_offset_ms": 52851,
+      "level": "ok",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": "play_bf8c6eb467_v1",
+          "valid": true,
+          "errors": []
+        }
+      },
+      "escalate": true
+    },
+    {
+      "seq": 17,
+      "run_id": "run_bf8c6eb467_v1_9404c28a",
+      "invocation_id": "e-73b55dbd-a0f6-428d-8c10-4fc74ba6dbc0",
+      "author": "planner",
+      "timestamp": 1790008777.5987134,
+      "ts_offset_ms": 52854,
+      "level": "ok",
+      "text": "DONE play_bf8c6eb467_v1"
+    }
+  ],
+  "policy_version": "v1",
+  "elapsed_ms": 54681,
+  "planner_source": "model",
+  "fallback_reason": null
+}

@@ -17,5 +17,11 @@ tests: ["tests/agents/test_planner.py", "make eval"]
 - [x] Prompts live in `agents/planner/prompts/*.md` with a changelog
 
 ## Reviewer-verified
-- [ ] Rationale quality on the 15-item human-labelled subset
+- [ ] Rationale quality on the 15-item human-labelled subset -- the Gemini-as-judge half is real
+  and measured: mean 5.0/5, 15/15 clear the >= 4.0 bar (`harness/rationale_judge.py`,
+  `eval/evaluation.md`'s "Gemini-as-judge rationale score, 15-item subset" section,
+  `eval/raw/rationale_judge_2026-09-21.json`). Left unticked because the human-labelled agreement
+  half genuinely needs an independent person to score the same 15 rationales
+  (`eval/raw/rationale_judge_plays_2026-09-21/`) against the written rubric -- not something this
+  session can supply itself without it being a self-graded, non-independent label.
 - [x] No number in a rationale that is not in `citations`
