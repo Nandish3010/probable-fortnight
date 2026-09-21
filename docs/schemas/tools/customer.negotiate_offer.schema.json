@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/tools/customer.negotiate_offer.schema.json",
+  "title": "customer.negotiate_offer",
+  "description": "Contract for the customer agent tool `negotiate_offer`. Tools are deterministic Python or store reads; no LLM inside. A live, ad-hoc concession for a sku with no approved play targeting this customer -- distinct from apply_offer, which only redeems an already planner-drafted, holdout-measured play.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "input",
+    "output"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "customer_id",
+        "sku"
+      ],
+      "properties": {
+        "customer_id": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "ok",
+        "reason"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable: why a concession is refused, or 'eligible' when ok is true."
+        },
+        "sku": {
+          "type": "string"
+        },
+        "mechanic": {
+          "type": "string",
+          "enum": ["flat_discount", "volume_discount"]
+        },
+        "discount_pct": {
+          "type": "number"
+        },
+        "min_qty": {
+          "type": "integer",
+          "description": "Present only for mechanic 'volume_discount': the quantity that must be ordered together for the discount to apply."
+        }
+      }
+    }
+  }
+}

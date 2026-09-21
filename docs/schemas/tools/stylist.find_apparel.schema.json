@@ -5,25 +5,70 @@
   "description": "Search in-stock apparel at the customer's node by garment, colour and occasion words. Never an LLM decision; every ask (hit or miss) is recorded as a demand signal.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["input", "output"],
+  "required": [
+    "input",
+    "output"
+  ],
   "properties": {
     "input": {
-      "type": "object", "additionalProperties": false, "required": ["query", "node_id"],
-      "properties": { "query": { "type": "string" }, "node_id": { "type": "string" } }
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query",
+        "node_id"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "The customer's home node id, exactly as returned by get_customer_context/get_style_context (field home_node_id) -- never invent one. A node id that does not exist falls back to the customer's real home node server-side."
+        }
+      }
     },
     "output": {
       "type": "object",
-      "required": ["query", "node_id", "parsed", "items"],
+      "required": [
+        "query",
+        "node_id",
+        "parsed",
+        "items"
+      ],
       "properties": {
-        "query": { "type": "string" },
-        "node_id": { "type": "string" },
+        "query": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string"
+        },
         "parsed": {
           "type": "object",
           "properties": {
-            "garment_type": { "type": ["string", "null"] },
-            "colour_family": { "type": ["string", "null"] },
-            "occasion": { "type": ["string", "null"] },
-            "pattern": { "type": ["string", "null"] }
+            "garment_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "colour_family": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "occasion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pattern": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         },
         "items": {
@@ -31,13 +76,58 @@
           "maxItems": 10,
           "items": {
             "type": "object",
-            "required": ["sku", "name", "garment_type", "role", "colour", "colour_family", "list_price", "sizes_in_stock"],
+            "required": [
+              "sku",
+              "name",
+              "garment_type",
+              "role",
+              "colour",
+              "colour_family",
+              "list_price",
+              "sizes_in_stock"
+            ],
             "properties": {
-              "sku": { "type": "string" }, "name": { "type": "string" }, "garment_type": { "type": "string" },
-              "role": { "type": "string", "enum": ["top", "bottom", "dress", "layer", "footwear", "accessory"] },
-              "colour": { "type": "string" }, "colour_family": { "type": "string" },
-              "pattern": { "type": ["string", "null"] }, "list_price": { "type": "number" },
-              "sizes_in_stock": { "type": "array", "items": { "type": "string" } }
+              "sku": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "garment_type": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "top",
+                  "bottom",
+                  "dress",
+                  "layer",
+                  "footwear",
+                  "accessory"
+                ]
+              },
+              "colour": {
+                "type": "string"
+              },
+              "colour_family": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "list_price": {
+                "type": "number"
+              },
+              "sizes_in_stock": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         }

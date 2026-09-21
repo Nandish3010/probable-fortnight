@@ -5,53 +5,190 @@
   "description": "Colour-theory and role pairings for an anchor garment (a catalogue sku or a free-text description), filtered to what is in stock at the node. Every score and reason comes from agents/stylist/colour.py; no LLM scores a pairing. Records the ask as a demand signal.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["input", "output"],
+  "required": [
+    "input",
+    "output"
+  ],
   "properties": {
     "input": {
-      "type": "object", "additionalProperties": false, "required": ["anchor", "node_id"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchor",
+        "node_id"
+      ],
       "properties": {
-        "anchor": { "type": "string" }, "node_id": { "type": "string" },
-        "occasion": { "type": ["string", "null"] }
+        "anchor": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "The customer's home node id, exactly as returned by get_customer_context/get_style_context (field home_node_id) -- never invent one. A node id that does not exist falls back to the customer's real home node server-side."
+        },
+        "occasion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "output": {
       "type": "object",
-      "required": ["anchor", "node_id", "profile_applied", "pairings", "fulfilled"],
+      "required": [
+        "anchor",
+        "node_id",
+        "profile_applied",
+        "pairings",
+        "fulfilled"
+      ],
       "properties": {
         "anchor": {
           "type": "object",
-          "required": ["description", "known_colour"],
+          "required": [
+            "description",
+            "known_colour"
+          ],
           "properties": {
-            "sku": { "type": ["string", "null"] }, "description": { "type": "string" },
-            "garment_type": { "type": ["string", "null"] },
-            "role": { "type": ["string", "null"] },
-            "colour": { "type": ["string", "null"] }, "colour_family": { "type": ["string", "null"] },
-            "pattern": { "type": ["string", "null"] }, "known_colour": { "type": "boolean" }
+            "sku": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": "string"
+            },
+            "garment_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "role": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "colour": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "colour_family": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pattern": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "known_colour": {
+              "type": "boolean"
+            }
           }
         },
-        "occasion": { "type": ["string", "null"] },
-        "node_id": { "type": "string" },
-        "profile_applied": { "type": "boolean" },
+        "occasion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "node_id": {
+          "type": "string"
+        },
+        "profile_applied": {
+          "type": "boolean"
+        },
         "pairings": {
           "type": "array",
           "maxItems": 10,
           "items": {
             "type": "object",
-            "required": ["sku", "name", "role", "colour", "colour_family", "reason", "score", "list_price", "sizes_in_stock"],
+            "required": [
+              "sku",
+              "name",
+              "role",
+              "colour",
+              "colour_family",
+              "reason",
+              "score",
+              "list_price",
+              "sizes_in_stock"
+            ],
             "properties": {
-              "sku": { "type": "string" }, "name": { "type": "string" },
-              "role": { "type": "string", "enum": ["top", "bottom", "dress", "layer", "footwear", "accessory"] },
-              "colour": { "type": "string" }, "colour_family": { "type": "string" },
-              "pattern": { "type": ["string", "null"] },
-              "reason": { "type": "string", "enum": ["complementary", "analogous", "split-complementary", "triadic", "neutral anchor", "tonal"] },
-              "skin_note": { "type": ["string", "null"] },
-              "score": { "type": "number", "minimum": 0, "maximum": 1 },
-              "list_price": { "type": "number" },
-              "sizes_in_stock": { "type": "array", "items": { "type": "string" } }
+              "sku": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "top",
+                  "bottom",
+                  "dress",
+                  "layer",
+                  "footwear",
+                  "accessory"
+                ]
+              },
+              "colour": {
+                "type": "string"
+              },
+              "colour_family": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "complementary",
+                  "analogous",
+                  "split-complementary",
+                  "triadic",
+                  "neutral anchor",
+                  "tonal"
+                ]
+              },
+              "skin_note": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "list_price": {
+                "type": "number"
+              },
+              "sizes_in_stock": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
-        "fulfilled": { "type": "boolean" }
+        "fulfilled": {
+          "type": "boolean"
+        }
       }
     }
   }
