@@ -1,0 +1,25 @@
+name: smoke
+on:
+  workflow_dispatch:
+    inputs:
+      taal_agents_url:
+        description: "Live taal-agents URL"
+        required: false
+        default: "https://taal-agents-2obkp776ca-el.a.run.app"
+      taal_web_url:
+        description: "Live taal-web URL"
+        required: false
+        default: "https://taal-web-2obkp776ca-el.a.run.app"
+  schedule:
+    # weekly, per DECISIONS §17.2 "a weekly live-URL smoke test through 4 Dec"
+    - cron: "0 3 * * 1"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: infra/smoke_test.sh against the live URL (health, a real gap, a real approve, a real chat reply)
+        env:
+          TAAL_AGENTS_URL: ${{ github.event.inputs.taal_agents_url || 'https://taal-agents-2obkp776ca-el.a.run.app' }}
+          TAAL_WEB_URL: ${{ github.event.inputs.taal_web_url || 'https://taal-web-2obkp776ca-el.a.run.app' }}
+        run: bash infra/smoke_test.sh
