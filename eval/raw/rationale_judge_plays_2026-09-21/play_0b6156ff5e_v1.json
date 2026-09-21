@@ -1,0 +1,157 @@
+{
+  "play_id": "play_0b6156ff5e_v1",
+  "gap_id": "gap_0b6156ff5e",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "target": {
+    "sku": "SKU-CREAM-400G",
+    "node_ids": [
+      "DS-07"
+    ],
+    "batch_ids": [
+      "B-CREAM-400G-DS-07-01"
+    ],
+    "units": 106,
+    "deadline_date": "2026-09-17",
+    "deadline_type": "online_sellby"
+  },
+  "mechanic": "bundle",
+  "mechanic_params": {
+    "bundle_sku": "SKU-WHEAT-BREAD-400G",
+    "bundle_price": 254.0
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_1",
+      "seg_3",
+      "seg_4"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 369,
+    "size_after_consent": 311
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-17T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_0b6156ff5e_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 11.17% (net price 254.00, cost 225.64) vs dairy floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 308 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 369 -> 311"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CREAM-400G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-CREAM-400G at DS-07"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+    }
+  ],
+  "rationale": "106 units of Cream 400G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-17; doing nothing writes off ₹17615 and a blanket 20% markdown costs ₹11012. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹254 for 311 consented customers (Household essentials buyers, Tea connoisseurs, Festival sweets loyalists, Everyday staples shoppers, Personal care regulars): expected 21 units, margin ₹593, discount cost ₹334, waste avoided ₹3473 (CI 1 to 61 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_0b6156ff5e"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    },
+    {
+      "type": "stock",
+      "ref": "B-CREAM-400G-DS-07-01"
+    }
+  ],
+  "alternatives": [
+    {
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      },
+      "expected_units": 20.9,
+      "expected_margin_inr": -97.81,
+      "rejected_because": "margin_floor: net margin -2.90% (net price 161.50, cost 166.18) vs dairy floor 8.00%"
+    }
+  ],
+  "policy_version": "v1",
+  "trace_ref": "events/run_0b6156ff5e_v1_d1f09fc3",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 20.9,
+    "margin_inr": 592.7,
+    "waste_avoided_inr": 3473.03,
+    "discount_cost_inr": 334.39,
+    "ci_low": 1.13,
+    "ci_high": 60.97,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 17615.08,
+    "blanket_markdown_inr": 11011.72,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 40.43,
+    "pct_of_rupees_at_stake": 0.238
+  }
+}

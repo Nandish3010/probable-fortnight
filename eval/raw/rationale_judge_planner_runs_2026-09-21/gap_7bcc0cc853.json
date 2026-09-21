@@ -1,0 +1,1401 @@
+{
+  "run_id": "run_7bcc0cc853_v1_2144081f",
+  "play": {
+    "play_id": "play_7bcc0cc853_v1",
+    "objective": "clear_expiry",
+    "mechanic": "bundle",
+    "counterfactuals": {
+      "blanket_markdown_inr": 3991,
+      "blanket_markdown_pct": 20,
+      "do_nothing_inr": 8641.36
+    },
+    "mechanic_params": {
+      "bundle_price": 250,
+      "bundle_sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "audience": {
+      "purpose": "marketing",
+      "filters": {},
+      "size_before_consent": 544,
+      "segment_ids": [
+        "seg_5",
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_4",
+        "seg_6"
+      ],
+      "size_after_consent": 475
+    },
+    "gap_id": "gap_7bcc0cc853",
+    "channel": "app_push",
+    "alternatives": [
+      {
+        "mechanic": "outlet_markdown",
+        "expected_margin_inr": 777.57,
+        "expected_units": 31.92,
+        "rejected_because": "Policy prefers bundles over markdowns.",
+        "mechanic_params": {
+          "discount_percentage": 0.1
+        }
+      }
+    ],
+    "window": {
+      "end": "2026-09-19",
+      "start": "2026-09-12"
+    },
+    "holdout": {
+      "seed": "gap_7bcc0cc853_seed",
+      "fraction": 0.05,
+      "min_treated_n": 1
+    },
+    "target": {
+      "deadline_date": "2026-09-18",
+      "deadline_type": "expiry",
+      "node_ids": [
+        "OUT-01"
+      ],
+      "sku": "SKU-CREAM-400G",
+      "batch_ids": [
+        "B-CREAM-400G-OUT-01-01"
+      ],
+      "units": 52
+    },
+    "expected_outcome": {
+      "ci_high": 93.12,
+      "prior_n": 20,
+      "units": 31.92,
+      "waste_avoided_inr": 5304.47,
+      "measured_n": 0,
+      "estimator_version": "est-v1",
+      "ci_low": 1.72,
+      "margin_inr": 777.57,
+      "discount_cost_inr": 638.4
+    },
+    "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 777.57 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin above the category floor. The play targets all available segments to maximize reach for this near-deadline gap.",
+    "copy": {
+      "copy_status": "pending",
+      "variants": [],
+      "language_set": [
+        "en"
+      ]
+    },
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 9.74% (net price 250.00, cost 225.64) vs dairy floor 8.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 475 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "audience filtered by consent: 544 -> 475"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "no active subscribers of SKU-CREAM-400G in audience"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "no stockout gap for SKU-CREAM-400G at OUT-01"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 5%, min_treated_n 1"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "6 number(s) in rationale all cited; 5 citation(s) resolve"
+      }
+    ],
+    "citations": [
+      {
+        "type": "stock",
+        "ref": "B-CREAM-400G-OUT-01-01"
+      },
+      {
+        "type": "estimator",
+        "ref": "est-v1"
+      },
+      {
+        "type": "forecast",
+        "ref": "sense_20260912_baseline_2aaad73c"
+      },
+      {
+        "type": "gap",
+        "ref": "gap_7bcc0cc853"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      }
+    ],
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_7bcc0cc853_v1_2144081f",
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 61.75,
+      "pct_of_rupees_at_stake": 0.732
+    }
+  },
+  "status": "proposed",
+  "iterations": 1,
+  "events": [
+    {
+      "seq": 0,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "",
+      "author": "cost_governor",
+      "timestamp": 1790008779.0091712,
+      "ts_offset_ms": 0,
+      "text": "rupees at stake 8641 >= threshold 500",
+      "level": "info"
+    },
+    {
+      "seq": 1,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008779.4160373,
+      "ts_offset_ms": 0,
+      "level": "info",
+      "function_call": {
+        "name": "estimate_outcomes",
+        "args": {
+          "play_drafts": [
+            {
+              "mechanic": "bundle_discount",
+              "gap_id": "gap_7bcc0cc853",
+              "holdout": {
+                "min_treated_n": 1,
+                "fraction": 0.05,
+                "seed": 1
+              },
+              "objective": "clear_expiry",
+              "audience": {
+                "size_before_consent": 544,
+                "purpose": "marketing",
+                "segment_ids": [
+                  "seg_5",
+                  "seg_2",
+                  "seg_1",
+                  "seg_3",
+                  "seg_4",
+                  "seg_6"
+                ],
+                "size_after_consent": 475
+              },
+              "mechanic_params": {
+                "bundle_sku": "SKU-WHEAT-BREAD-400G",
+                "bundle_price": 250
+              },
+              "target": {
+                "units": 52,
+                "deadline_date": "2026-09-18",
+                "deadline_type": "expiry",
+                "node_ids": [
+                  "OUT-01"
+                ],
+                "batch_ids": [
+                  "B-CREAM-400G-OUT-01-01"
+                ],
+                "sku": "SKU-CREAM-400G"
+              }
+            },
+            {
+              "objective": "clear_expiry",
+              "mechanic": "outlet_markdown",
+              "audience": {
+                "segment_ids": [
+                  "seg_5",
+                  "seg_2",
+                  "seg_1",
+                  "seg_3",
+                  "seg_4",
+                  "seg_6"
+                ],
+                "size_after_consent": 475,
+                "size_before_consent": 544,
+                "purpose": "marketing"
+              },
+              "target": {
+                "batch_ids": [
+                  "B-CREAM-400G-OUT-01-01"
+                ],
+                "deadline_type": "expiry",
+                "deadline_date": "2026-09-18",
+                "node_ids": [
+                  "OUT-01"
+                ],
+                "sku": "SKU-CREAM-400G",
+                "units": 52
+              },
+              "holdout": {
+                "seed": 1,
+                "fraction": 0.05,
+                "min_treated_n": 1
+              },
+              "gap_id": "gap_7bcc0cc853",
+              "mechanic_params": {
+                "discount_percentage": 0.1
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008784.8181777,
+      "ts_offset_ms": 5402,
+      "level": "info",
+      "function_response": {
+        "name": "estimate_outcomes",
+        "response": {
+          "result": [
+            {
+              "expected_outcome": {
+                "units": 31.92,
+                "margin_inr": 760.33,
+                "waste_avoided_inr": 5304.47,
+                "discount_cost_inr": 0.0,
+                "ci_low": 1.72,
+                "ci_high": 93.12,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 8641.36,
+                "blanket_markdown_inr": 3991.0,
+                "blanket_markdown_pct": 20.0
+              }
+            },
+            {
+              "expected_outcome": {
+                "units": 31.92,
+                "margin_inr": 760.33,
+                "waste_avoided_inr": 5304.47,
+                "discount_cost_inr": 0.0,
+                "ci_low": 1.72,
+                "ci_high": 93.12,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 8641.36,
+                "blanket_markdown_inr": 3991.0,
+                "blanket_markdown_pct": 20.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008784.821603,
+      "ts_offset_ms": 5405,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "copy_status": "pending",
+            "rationale": "This play uses a bundle discount, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin of 9.744%, which is above the category floor of 8.0%. The play targets all available segments to maximize...",
+            "objective": "clear_expiry",
+            "expected_outcome": {
+              "estimator_version": "est-v1",
+              "waste_avoided_inr": 5304.47,
+              "margin_inr": 760.33,
+              "prior_n": 20,
+              "measured_n": 0,
+              "units": 31.92,
+              "ci_low": 1.72,
+              "ci_high": 93.12,
+              "discount_cost_inr": 0
+            },
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 250
+            },
+            "citations": {
+              "batch": "B-CREAM-400G-OUT-01-01",
+              "policy_version": "v1",
+              "gap": "gap_7bcc0cc853",
+              "estimator_version": "est-v1",
+              "forecast_run": "sense_20260912_baseline_2aaad73c"
+            },
+            "alternatives": [
+              {
+                "rejection_reason": "Policy prefers bundles over markdowns.",
+                "mechanic": "outlet_markdown",
+                "expected_outcome": {
+                  "measured_n": 0,
+                  "estimator_version": "est-v1",
+                  "waste_avoided_inr": 5304.47,
+                  "ci_low": 1.72,
+                  "prior_n": 20,
+                  "units": 31.92,
+                  "discount_cost_inr": 0,
+                  "ci_high": 93.12,
+                  "margin_inr": 760.33
+                }
+              }
+            ],
+            "mechanic": "bundle_discount",
+            "audience": {
+              "size_before_consent": 544,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "purpose": "marketing",
+              "size_after_consent": 475
+            },
+            "holdout": {
+              "seed": 1,
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "play_id": "play_7bcc0cc853_v1",
+            "target": {
+              "units": 52,
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "deadline_type": "expiry",
+              "deadline_date": "2026-09-18",
+              "node_ids": [
+                "OUT-01"
+              ],
+              "sku": "SKU-CREAM-400G"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008792.6279209,
+      "ts_offset_ms": 13211,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: Additional properties are not allowed ('copy_status' was unexpected)",
+            "$: 'gap_id' is a required property",
+            "$: 'channel' is a required property",
+            "$: 'window' is a required property",
+            "$: 'copy' is a required property",
+            "$: 'counterfactuals' is a required property",
+            "$: 'guardrails' is a required property",
+            "alternatives/0: Additional properties are not allowed ('expected_outcome', 'rejection_reason' were unexpected)",
+            "... 8 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008792.631877,
+      "ts_offset_ms": 13215,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "audience": {
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_after_consent": 475,
+              "size_before_consent": 544,
+              "purpose": "marketing"
+            },
+            "mechanic": "bundle_discount",
+            "channel": "app_push",
+            "objective": "clear_expiry",
+            "play_id": "play_7bcc0cc853_v1",
+            "copy": "",
+            "counterfactuals": {
+              "blanket_markdown_inr": 3991,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 8641.36
+            },
+            "mechanic_params": {
+              "bundle_price": 250,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "rationale": "This play uses a bundle discount, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin of 9.744%, which is above the category floor of 8.0%. The play targets all available segments to maximize...",
+            "holdout": {
+              "seed": "1",
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "window": 7,
+            "gap_id": "gap_7bcc0cc853",
+            "citations": [
+              {
+                "batch": "B-CREAM-400G-OUT-01-01"
+              },
+              {
+                "estimator_version": "est-v1"
+              },
+              {
+                "forecast_run": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "gap": "gap_7bcc0cc853"
+              },
+              {
+                "policy_version": "v1"
+              }
+            ],
+            "target": {
+              "deadline_date": "2026-09-18",
+              "sku": "SKU-CREAM-400G",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "units": 52,
+              "deadline_type": "expiry",
+              "node_ids": [
+                "OUT-01"
+              ]
+            },
+            "alternatives": [
+              {
+                "mechanic": "outlet_markdown",
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "expected_units": 31.92,
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "expected_margin_inr": 760.33
+              }
+            ],
+            "expected_outcome": {
+              "ci_low": 1.72,
+              "waste_avoided_inr": 5304.47,
+              "units": 31.92,
+              "margin_inr": 760.33,
+              "prior_n": 20,
+              "ci_high": 93.12,
+              "measured_n": 0,
+              "discount_cost_inr": 0,
+              "estimator_version": "est-v1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 6,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008798.8324292,
+      "ts_offset_ms": 19416,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: 'guardrails' is a required property",
+            "audience: 'filters' is a required property",
+            "citations/0: Additional properties are not allowed ('batch' was unexpected)",
+            "citations/0: 'type' is a required property",
+            "citations/0: 'ref' is a required property",
+            "citations/1: Additional properties are not allowed ('estimator_version' was unexpected)",
+            "citations/1: 'type' is a required property",
+            "citations/1: 'ref' is a required property",
+            "... 13 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008798.8370426,
+      "ts_offset_ms": 19421,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "audience": {
+              "size_before_consent": 544,
+              "filters": [],
+              "purpose": "marketing",
+              "size_after_consent": 475,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ]
+            },
+            "objective": "clear_expiry",
+            "guardrails": {},
+            "holdout": {
+              "seed": "gap_7bcc0cc853_seed",
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "counterfactuals": {
+              "blanket_markdown_inr": 3991,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 8641.36
+            },
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin of 9.744%, which is above the category floor of 8.0%. The play targets all available segments to maximize reach fo...",
+            "gap_id": "gap_7bcc0cc853",
+            "alternatives": [
+              {
+                "mechanic": "outlet_markdown",
+                "expected_margin_inr": 760.33,
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "expected_units": 31.92
+              }
+            ],
+            "target": {
+              "node_ids": [
+                "OUT-01"
+              ],
+              "deadline_date": "2026-09-18",
+              "units": 52,
+              "deadline_type": "expiry",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "sku": "SKU-CREAM-400G"
+            },
+            "play_id": "play_7bcc0cc853_v1",
+            "citations": [
+              {
+                "type": "batch",
+                "ref": "B-CREAM-400G-OUT-01-01"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator_version"
+              },
+              {
+                "type": "forecast_run",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_7bcc0cc853"
+              },
+              {
+                "ref": "v1",
+                "type": "policy_version"
+              }
+            ],
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 250
+            },
+            "copy": {
+              "headline": "",
+              "body": ""
+            },
+            "channel": "app_push",
+            "mechanic": "bundle",
+            "expected_outcome": {
+              "units": 31.92,
+              "ci_high": 93.12,
+              "estimator_version": "est-v1",
+              "measured_n": 0,
+              "prior_n": 20,
+              "waste_avoided_inr": 5304.47,
+              "discount_cost_inr": 0,
+              "margin_inr": 760.33,
+              "ci_low": 1.72
+            },
+            "window": {
+              "value": 7,
+              "unit": "days"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 8,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008805.6866753,
+      "ts_offset_ms": 26270,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "audience/filters: [] is not of type 'object'",
+            "citations/0/type: 'batch' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "citations/1/type: 'estimator_version' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "citations/2/type: 'forecast_run' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "citations/4/type: 'policy_version' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "copy: Additional properties are not allowed ('body', 'headline' were unexpected)",
+            "copy: 'language_set' is a required property",
+            "copy: 'variants' is a required property",
+            "... 5 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008805.6899757,
+      "ts_offset_ms": 26273,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "gap_id": "gap_7bcc0cc853",
+            "audience": {
+              "filters": {},
+              "size_before_consent": 544,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "purpose": "marketing",
+              "size_after_consent": 475
+            },
+            "guardrails": [],
+            "holdout": {
+              "fraction": 0.05,
+              "seed": "gap_7bcc0cc853_seed",
+              "min_treated_n": 1
+            },
+            "citations": [
+              {
+                "ref": "B-CREAM-400G-OUT-01-01",
+                "type": "stock"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast"
+              },
+              {
+                "ref": "gap_7bcc0cc853",
+                "type": "gap"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "target": {
+              "deadline_date": "2026-09-18",
+              "units": 52,
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "sku": "SKU-CREAM-400G",
+              "deadline_type": "expiry",
+              "node_ids": [
+                "OUT-01"
+              ]
+            },
+            "copy": {
+              "variants": [],
+              "language_set": [],
+              "copy_status": "pending"
+            },
+            "objective": "clear_expiry",
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "blanket_markdown_inr": 3991,
+              "do_nothing_inr": 8641.36
+            },
+            "window": {
+              "end": "2026-09-19",
+              "start": "2026-09-12"
+            },
+            "alternatives": [
+              {
+                "expected_units": 31.92,
+                "mechanic": "outlet_markdown",
+                "expected_margin_inr": 760.33,
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "rejected_because": "Policy prefers bundles over markdowns."
+              }
+            ],
+            "expected_outcome": {
+              "measured_n": 0,
+              "discount_cost_inr": 0,
+              "margin_inr": 760.33,
+              "units": 31.92,
+              "ci_high": 93.12,
+              "waste_avoided_inr": 5304.47,
+              "estimator_version": "est-v1",
+              "ci_low": 1.72,
+              "prior_n": 20
+            },
+            "channel": "app_push",
+            "mechanic_params": {
+              "bundle_price": 250,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "mechanic": "bundle",
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin of 9.744%, which is above the category floor of 8.0%. The play targets all available segments to maximize reach fo...",
+            "play_id": "play_7bcc0cc853_v1"
+          }
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008811.9533663,
+      "ts_offset_ms": 32537,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "copy/language_set: [] should be non-empty"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008811.956112,
+      "ts_offset_ms": 32540,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "counterfactuals": {
+              "blanket_markdown_inr": 3991,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 8641.36
+            },
+            "mechanic_params": {
+              "bundle_price": 250,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "audience": {
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "filters": {},
+              "purpose": "marketing",
+              "size_before_consent": 544,
+              "size_after_consent": 475
+            },
+            "gap_id": "gap_7bcc0cc853",
+            "holdout": {
+              "seed": "gap_7bcc0cc853_seed",
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "guardrails": [],
+            "copy": {
+              "copy_status": "pending",
+              "variants": [],
+              "language_set": [
+                "en"
+              ]
+            },
+            "mechanic": "bundle",
+            "play_id": "play_7bcc0cc853_v1",
+            "window": {
+              "start": "2026-09-12",
+              "end": "2026-09-19"
+            },
+            "target": {
+              "sku": "SKU-CREAM-400G",
+              "deadline_type": "expiry",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "deadline_date": "2026-09-18",
+              "node_ids": [
+                "OUT-01"
+              ],
+              "units": 52
+            },
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin of 9.744%, which is above the category floor of 8.0%. The play targets all available segments to maximize reach fo...",
+            "channel": "app_push",
+            "expected_outcome": {
+              "margin_inr": 760.33,
+              "ci_low": 1.72,
+              "waste_avoided_inr": 5304.47,
+              "discount_cost_inr": 0,
+              "ci_high": 93.12,
+              "units": 31.92,
+              "estimator_version": "est-v1",
+              "measured_n": 0,
+              "prior_n": 20
+            },
+            "objective": "clear_expiry",
+            "alternatives": [
+              {
+                "mechanic": "outlet_markdown",
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "expected_units": 31.92,
+                "expected_margin_inr": 760.33
+              }
+            ],
+            "citations": [
+              {
+                "type": "stock",
+                "ref": "B-CREAM-400G-OUT-01-01"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "type": "forecast",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "ref": "gap_7bcc0cc853",
+                "type": "gap"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "seq": 12,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008816.1578355,
+      "ts_offset_ms": 36741,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "guardrail cite_or_drop: uncited numbers in rationale: 8, 9.744"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 13,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008816.164275,
+      "ts_offset_ms": 36748,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "mechanic": "bundle",
+            "target": {
+              "node_ids": [
+                "OUT-01"
+              ],
+              "units": 52,
+              "deadline_date": "2026-09-18",
+              "sku": "SKU-CREAM-400G",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "deadline_type": "expiry"
+            },
+            "holdout": {
+              "fraction": 0.05,
+              "min_treated_n": 1,
+              "seed": "gap_7bcc0cc853_seed"
+            },
+            "citations": [
+              {
+                "ref": "B-CREAM-400G-OUT-01-01",
+                "type": "stock"
+              },
+              {
+                "type": "estimator",
+                "ref": "est-v1"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_7bcc0cc853"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "play_id": "play_7bcc0cc853_v1",
+            "expected_outcome": {
+              "prior_n": 20,
+              "margin_inr": 760.33,
+              "discount_cost_inr": 0,
+              "waste_avoided_inr": 5304.47,
+              "measured_n": 0,
+              "ci_low": 1.72,
+              "ci_high": 93.12,
+              "units": 31.92,
+              "estimator_version": "est-v1"
+            },
+            "channel": "app_push",
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin above the category floor of 8.0%. The play targets all available segments to maximize reach for this near-deadline...",
+            "window": {
+              "start": "2026-09-12",
+              "end": "2026-09-19"
+            },
+            "mechanic_params": {
+              "bundle_price": 250,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "audience": {
+              "purpose": "marketing",
+              "size_after_consent": 475,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_before_consent": 544,
+              "filters": {}
+            },
+            "copy": {
+              "variants": [],
+              "copy_status": "pending",
+              "language_set": [
+                "en"
+              ]
+            },
+            "gap_id": "gap_7bcc0cc853",
+            "alternatives": [
+              {
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "expected_units": 31.92,
+                "mechanic": "outlet_markdown",
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "expected_margin_inr": 760.33
+              }
+            ],
+            "guardrails": [],
+            "objective": "clear_expiry",
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 8641.36,
+              "blanket_markdown_inr": 3991
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008821.9652302,
+      "ts_offset_ms": 42549,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "guardrail cite_or_drop: uncited numbers in rationale: 8"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 15,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008821.9690683,
+      "ts_offset_ms": 42553,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "guardrails": [],
+            "window": {
+              "end": "2026-09-19",
+              "start": "2026-09-12"
+            },
+            "holdout": {
+              "seed": "gap_7bcc0cc853_seed",
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "gap_id": "gap_7bcc0cc853",
+            "audience": {
+              "purpose": "marketing",
+              "size_after_consent": 475,
+              "size_before_consent": 544,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "filters": {}
+            },
+            "copy": {
+              "variants": [],
+              "copy_status": "pending",
+              "language_set": [
+                "en"
+              ]
+            },
+            "target": {
+              "deadline_date": "2026-09-18",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "sku": "SKU-CREAM-400G",
+              "units": 52,
+              "node_ids": [
+                "OUT-01"
+              ],
+              "deadline_type": "expiry"
+            },
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 760.33 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin above the category floor. The play targets all available segments to maximize reach for this near-deadline gap.",
+            "objective": "clear_expiry",
+            "alternatives": [
+              {
+                "expected_margin_inr": 760.33,
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "mechanic": "outlet_markdown",
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                },
+                "expected_units": 31.92
+              }
+            ],
+            "expected_outcome": {
+              "waste_avoided_inr": 5304.47,
+              "discount_cost_inr": 0,
+              "measured_n": 0,
+              "units": 31.92,
+              "margin_inr": 760.33,
+              "ci_high": 93.12,
+              "estimator_version": "est-v1",
+              "prior_n": 20,
+              "ci_low": 1.72
+            },
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 250
+            },
+            "citations": [
+              {
+                "type": "stock",
+                "ref": "B-CREAM-400G-OUT-01-01"
+              },
+              {
+                "type": "estimator",
+                "ref": "est-v1"
+              },
+              {
+                "type": "forecast",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_7bcc0cc853"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "play_id": "play_7bcc0cc853_v1",
+            "channel": "app_push",
+            "mechanic": "bundle",
+            "counterfactuals": {
+              "blanket_markdown_inr": 3991,
+              "do_nothing_inr": 8641.36,
+              "blanket_markdown_pct": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 16,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008828.0539966,
+      "ts_offset_ms": 48637,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "runtime invariant: margin_inr: play reports 760.33, independent recomputation is 777.57",
+            "runtime invariant: discount_cost_inr: play reports 0, independent recomputation is 638.40"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008828.057059,
+      "ts_offset_ms": 48641,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "play_id": "play_7bcc0cc853_v1",
+            "objective": "clear_expiry",
+            "mechanic": "bundle",
+            "counterfactuals": {
+              "blanket_markdown_inr": 3991,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 8641.36
+            },
+            "mechanic_params": {
+              "bundle_price": 250,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "audience": {
+              "purpose": "marketing",
+              "filters": {},
+              "size_before_consent": 544,
+              "segment_ids": [
+                "seg_5",
+                "seg_2",
+                "seg_1",
+                "seg_3",
+                "seg_4",
+                "seg_6"
+              ],
+              "size_after_consent": 475
+            },
+            "gap_id": "gap_7bcc0cc853",
+            "channel": "app_push",
+            "alternatives": [
+              {
+                "mechanic": "outlet_markdown",
+                "expected_margin_inr": 777.57,
+                "expected_units": 31.92,
+                "rejected_because": "Policy prefers bundles over markdowns.",
+                "mechanic_params": {
+                  "discount_percentage": 0.1
+                }
+              }
+            ],
+            "window": {
+              "end": "2026-09-19",
+              "start": "2026-09-12"
+            },
+            "holdout": {
+              "seed": "gap_7bcc0cc853_seed",
+              "fraction": 0.05,
+              "min_treated_n": 1
+            },
+            "target": {
+              "deadline_date": "2026-09-18",
+              "deadline_type": "expiry",
+              "node_ids": [
+                "OUT-01"
+              ],
+              "sku": "SKU-CREAM-400G",
+              "batch_ids": [
+                "B-CREAM-400G-OUT-01-01"
+              ],
+              "units": 52
+            },
+            "expected_outcome": {
+              "ci_high": 93.12,
+              "prior_n": 20,
+              "units": 31.92,
+              "waste_avoided_inr": 5304.47,
+              "measured_n": 0,
+              "estimator_version": "est-v1",
+              "ci_low": 1.72,
+              "margin_inr": 777.57,
+              "discount_cost_inr": 638.4
+            },
+            "rationale": "This play uses a bundle, which is preferred by policy v1 over markdowns, to clear 52 units of Cream 400G at risk of expiry by 2026-09-18. The estimated outcome is a margin of 777.57 INR and 31.92 units sold, avoiding 5304.47 INR in waste. The bundle price of 250 INR maintains a margin above the category floor. The play targets all available segments to maximize reach for this near-deadline gap.",
+            "copy": {
+              "copy_status": "pending",
+              "variants": [],
+              "language_set": [
+                "en"
+              ]
+            },
+            "guardrails": [],
+            "citations": [
+              {
+                "type": "stock",
+                "ref": "B-CREAM-400G-OUT-01-01"
+              },
+              {
+                "type": "estimator",
+                "ref": "est-v1"
+              },
+              {
+                "type": "forecast",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "type": "gap",
+                "ref": "gap_7bcc0cc853"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "seq": 18,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008837.1082253,
+      "ts_offset_ms": 57692,
+      "level": "ok",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": "play_7bcc0cc853_v1",
+          "valid": true,
+          "errors": []
+        }
+      },
+      "escalate": true
+    },
+    {
+      "seq": 19,
+      "run_id": "run_7bcc0cc853_v1_2144081f",
+      "invocation_id": "e-c64265eb-5059-4820-bbad-2fa61a2cd267",
+      "author": "planner",
+      "timestamp": 1790008837.1111798,
+      "ts_offset_ms": 57695,
+      "level": "ok",
+      "text": "DONE play_7bcc0cc853_v1"
+    }
+  ],
+  "policy_version": "v1",
+  "elapsed_ms": 59996,
+  "planner_source": "model",
+  "fallback_reason": null
+}

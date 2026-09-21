@@ -1,0 +1,67 @@
+{
+  "sanity_checks": [
+    {
+      "name": "empty_rationale",
+      "input": "fixtures/plays/invalid/rationale_empty.json",
+      "result": {
+        "play_id": "play_chips_ds07_v1",
+        "gap_id": "gap_chips_ds07",
+        "model_id": "gemini-2.5-flash",
+        "judge_result": {
+          "criteria": {
+            "cite_or_drop_compliance": {
+              "score": 1,
+              "justification": "The rationale is empty and therefore cites no numbers, failing to provide any traceable data from the play's fields."
+            },
+            "guardrail_consistency": {
+              "score": 1,
+              "justification": "The rationale is empty and offers no reasoning, thus failing to explain the play's consistency with guardrail outcomes."
+            },
+            "no_invented_facts": {
+              "score": 1,
+              "justification": "The rationale is empty and asserts no facts, failing to provide any supporting information from the play's fields."
+            },
+            "operator_actionability": {
+              "score": 1,
+              "justification": "The rationale is empty, providing no information for an operator to understand the play, its mechanic, or the approval required."
+            }
+          },
+          "overall_score": 1.0,
+          "overall_justification": "The rationale is completely empty, which means it fails to meet any of the criteria for a useful explanation. It provides no information for an operator, cites no data, and offers no reasoning regarding guardrails or facts."
+        }
+      }
+    },
+    {
+      "name": "fabricated_rationale",
+      "input": "synthetic (competitor promotion, complaint-volume spike, fake internal survey, wrong margin-floor number -- none grounded in any play field)",
+      "rationale_text": "This play targets 368 units at DS-07. A competitor recently ran a similar promotion that failed, so we expect strong uptake. The customer complaint volume for this SKU tripled last week, and our internal survey shows 94% satisfaction with bundle offers. Margin is comfortably above the 45% floor.",
+      "result": {
+        "play_id": "play_chips_ds07_v1",
+        "gap_id": "gap_chips_ds07",
+        "model_id": "gemini-2.5-flash",
+        "judge_result": {
+          "criteria": {
+            "cite_or_drop_compliance": {
+              "score": 1,
+              "justification": "The rationale invents numbers such as \"94% satisfaction\" and \"45% floor\" which are not traceable to any provided fields like `expected_outcome`, `guardrails`, or `policy_text`."
+            },
+            "guardrail_consistency": {
+              "score": 1,
+              "justification": "The rationale states \"Margin is comfortably above the 45% floor\", which directly contradicts the `margin_floor` guardrail detail showing the actual floor is \"8.00%\"."
+            },
+            "no_invented_facts": {
+              "score": 1,
+              "justification": "The rationale invents several facts, such as \"A competitor recently ran a similar promotion that failed\", \"The customer complaint volume for this SKU tripled last week\", and \"our internal survey shows 94% satisfaction with bundle offers\", none of which are supported by the play's fields or context."
+            },
+            "operator_actionability": {
+              "score": 1,
+              "justification": "The rationale contains invented facts and numbers, making its reasoning untrustworthy and actively misleading for an operator trying to understand and approve the play. It fails to explain why this specific bundle mechanic was chosen or how it addresses the `clear_online_sellby` objective."
+            }
+          },
+          "overall_score": 1.0,
+          "overall_justification": "The rationale is severely flawed, inventing multiple facts and numbers that are not supported by the play's data, and directly contradicting guardrail details. This makes the explanation untrustworthy and provides no reliable basis for an operator to understand or approve the play."
+        }
+      }
+    }
+  ]
+}

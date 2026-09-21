@@ -1,0 +1,139 @@
+{
+  "play_id": "play_cola_ds02_v1",
+  "gap_id": "gap_cola_ds02",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "prevent_stockout",
+  "target": {
+    "sku": "SKU-COLA-ZERO-500ML",
+    "node_ids": [
+      "DS-02"
+    ],
+    "batch_ids": [],
+    "units": 65,
+    "deadline_date": "2026-09-15",
+    "deadline_type": "lead_time"
+  },
+  "mechanic": "preorder",
+  "mechanic_params": {
+    "preorder_eta_date": "2026-09-21"
+  },
+  "audience": {
+    "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_1",
+      "seg_3"
+    ],
+    "filters": {
+      "min_affinity": 0.3
+    },
+    "purpose": "marketing",
+    "size_before_consent": 380,
+    "size_after_consent": 325
+  },
+  "channel": "web_chat",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-15T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en",
+      "kn"
+    ],
+    "variants": [],
+    "copy_status": "pending"
+  },
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_cola_ds02_v1",
+    "min_treated_n": 20
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 25.00% (net price 40.00, cost 30.00) vs beverages floor 6.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 325 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 380 -> 325"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "not a near-deadline play; disclosure not required"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "preorder is not a discount play"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "preorder does not push SKU-COLA-ZERO-500ML; stockout rule not applicable"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "11 number(s) in rationale all cited; 4 citation(s) resolve"
+    }
+  ],
+  "rationale": "65 units of Cola Zero 500ML at Dark store 02 (North Bengaluru) are projected unsold before the lead-time deadline on 2026-09-15; doing nothing writes off ₹1950 and a blanket 20% markdown costs ₹855. This play uses a pre-order for the 2026-09-21 delivery for 325 consented customers (Household essentials buyers, Casual beverage buyers, Festival sweets loyalists, Everyday staples shoppers): expected 22 units, margin ₹222, discount cost ₹0, waste avoided ₹667 (CI 1 to 65 units; prior n 20, measured n 0). Policy v1: \"Kutumb Mart pricing and promotion policy.\"",
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_cola_ds02"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    }
+  ],
+  "alternatives": [],
+  "policy_version": "v1",
+  "trace_ref": "events/run_cola_ds02_v1_6cd55629",
+  "status": "proposed",
+  "expected_outcome": {
+    "units": 22.23,
+    "margin_inr": 222.3,
+    "waste_avoided_inr": 666.9,
+    "discount_cost_inr": 0.0,
+    "ci_low": 1.2,
+    "ci_high": 64.85,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 1950.0,
+    "blanket_markdown_inr": 855.44,
+    "blanket_markdown_pct": 20.0
+  },
+  "cost": {
+    "plan_cost_inr": 1.51,
+    "conversation_budget_inr": 11.49,
+    "pct_of_rupees_at_stake": 2.0
+  }
+}
