@@ -257,7 +257,7 @@ function pickMockScenario(req: ChatRequest): ChatEnvelope[] {
   if (req.specialist === "stylist") {
     const chat = mockStylistChat as unknown as Record<string, ChatEnvelope[]>;
     if (req.image_data_url && req.image_kind === "selfie") return chat.greeting; // no selfie mock scenario recorded yet
-    if (req.image_data_url) return chat.photo;
+    if (req.image_data_url || req.photo_ref) return chat.photo;
     if (t.includes("stop")) return chat.stop;
     if (t.startsWith("add:") || t.startsWith("add ") || t.startsWith("order")) return chat.default;
     if (t.startsWith("item:")) return chat.item;

@@ -24,13 +24,13 @@ def test_staged_photos_validate_and_flag_low_confidence(base_store):
 
 
 def test_model_id_matches_config_in_vertex_mode_and_is_labelled_in_stub(base_store):
-    res = intake(base_store, "DS-07", photo_ref="fixtures/photos/pallet_01.jpg", backend="stub")
+    res = intake(base_store, "DS-07", photo_ref="fixtures/photos/pallet_lowconf_test.jpg", backend="stub")
     assert res["model_id"] == "stub-vision"
     assert load_models()["ids"]["flash"]  # the vertex branch uses this id; exercised only with credentials
 
 
 def test_commit_writes_photo_batches_with_derived_sellby(sandbox):
-    res = intake(sandbox, "DS-07", photo_ref="fixtures/photos/pallet_01.jpg")
+    res = intake(sandbox, "DS-07", photo_ref="fixtures/photos/pallet_lowconf_test.jpg")
     result = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
     assert len(result["written"]) == 2  # the low-confidence row was not confirmed
     assert result["skipped"] == [{"sku_guess": res["rows"][2]["sku_guess"], "reason": "not confirmed"}]

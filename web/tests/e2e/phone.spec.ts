@@ -15,10 +15,10 @@ test.describe("phone view", () => {
     await expect(table).toBeVisible();
     await expect(table.getByText("SKU-MASALA-CHIPS-200G")).toBeVisible();
     await expect(table.getByText("SKU-SALTED-CHIPS-200G")).toBeVisible();
-    await expect(table.getByText("SKU-BANANA-CHIPS-100G")).toBeVisible();
+    await expect(table.getByText("SKU-BANANA-CHIPS-200G")).toBeVisible();
 
-    await page.getByRole("button", { name: "Yes" }).click();
-
+    // This real, live-Gemini-verified pallet photo reads with high confidence on every row, so
+    // there is no confirmation question to answer before confirming.
     await page.getByRole("button", { name: "Confirm rows" }).click();
 
     await expect(page.getByText("₹9,200")).toBeVisible();
