@@ -3,7 +3,7 @@
     "play_id": "play_tea_ds04_v1",
     "gap_id": "gap_tea_ds04",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:40Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "clear_online_sellby",
     "target": {
       "sku": "SKU-DARJEELING-TEA-100G",
@@ -147,7 +147,7 @@
     "play_id": "play_quinoa_out02_v1",
     "gap_id": "gap_quinoa_out02",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:45Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "revive_slow_mover",
     "target": {
       "sku": "SKU-QUINOA-500G",
@@ -290,7 +290,7 @@
     "play_id": "play_chips_ds07_v1",
     "gap_id": "gap_chips_ds07",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:39Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "clear_online_sellby",
     "target": {
       "sku": "SKU-MASALA-CHIPS-200G",
@@ -444,10 +444,152 @@
     }
   },
   {
+    "play_id": "play_blazer_ds07_v1",
+    "gap_id": "gap_blazer_ds07",
+    "tenant_id": "kutumb-mart",
+    "created_at": "2026-09-12T03:30:00Z",
+    "objective": "rebalance",
+    "target": {
+      "sku": "APP-BLAZER-BLACK-U",
+      "node_ids": [
+        "DS-07"
+      ],
+      "batch_ids": [],
+      "units": 8,
+      "deadline_date": "2026-09-15",
+      "deadline_type": "lead_time"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "mechanic_params": {
+      "transfer_to_node": "DS-07",
+      "transfer_units": 8
+    },
+    "audience": {
+      "segment_ids": [
+        "seg_1",
+        "seg_2",
+        "seg_3",
+        "seg_4",
+        "seg_5",
+        "seg_6"
+      ],
+      "filters": {
+        "min_affinity": 0.3
+      },
+      "purpose": "marketing",
+      "size_before_consent": 8,
+      "size_after_consent": 6
+    },
+    "channel": "web_chat",
+    "window": {
+      "start": "2026-09-12T00:00:00Z",
+      "end": "2026-09-15T23:59:59Z"
+    },
+    "copy": {
+      "language_set": [
+        "en",
+        "kn"
+      ],
+      "variants": [],
+      "copy_status": "pending"
+    },
+    "holdout": {
+      "fraction": 0.1,
+      "seed": "seed-play_blazer_ds07_v1",
+      "min_treated_n": 20
+    },
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 35.00% (net price 2999.00, cost 1949.35) vs apparel floor 20.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 0 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "audience filtered by consent: 8 -> 6"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "not a near-deadline play; disclosure not required"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "transfer_plus_nudge is not a discount play"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "transfer_plus_nudge does not push APP-BLAZER-BLACK-U; stockout rule not applicable"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "6 number(s) in rationale all cited; 4 citation(s) resolve"
+      }
+    ],
+    "rationale": "8 units of Black Linen Blazer at Dark store 07 (South Bengaluru) are projected unsold before the lead-time deadline on 2026-09-15; doing nothing writes off ₹15595 and a blanket 20% markdown costs ₹15595. This play uses a transfer of 8 units to DS-07 with a nudge for 6 consented customers (Festival sweets loyalists, Tea connoisseurs, Everyday staples shoppers, Personal care regulars, Household essentials buyers, Casual beverage buyers): expected 0 units, margin ₹569, discount cost ₹0, waste avoided ₹585 (CI 0 to 1 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_blazer_ds07"
+      },
+      {
+        "type": "estimator",
+        "ref": "est-v1"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      },
+      {
+        "type": "forecast",
+        "ref": "sense_20260912_baseline_2aaad73c"
+      }
+    ],
+    "alternatives": [],
+    "policy_version": "v1",
+    "trace_ref": "events/run_blazer_ds07_v1_bc39cd4a",
+    "status": "proposed",
+    "expected_outcome": {
+      "units": 0.3,
+      "margin_inr": 568.81,
+      "waste_avoided_inr": 584.81,
+      "discount_cost_inr": 0.0,
+      "ci_low": 0.02,
+      "ci_high": 0.88,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 15594.8,
+      "blanket_markdown_inr": 15594.8,
+      "blanket_markdown_pct": 20.0
+    },
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 0.78,
+      "pct_of_rupees_at_stake": 0.027
+    }
+  },
+  {
     "play_id": "play_kaju_ds01_v1",
     "gap_id": "gap_kaju_ds01",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:43Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "prevent_stockout",
     "target": {
       "sku": "SKU-KAJU-KATLI-250G",
@@ -584,7 +726,7 @@
     "play_id": "play_cola_ds02_v1",
     "gap_id": "gap_cola_ds02",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:42Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "prevent_stockout",
     "target": {
       "sku": "SKU-COLA-ZERO-500ML",
@@ -723,7 +865,7 @@
     "play_id": "play_cola_ds07_v1",
     "gap_id": "gap_cola_ds07",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:41Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "prevent_stockout",
     "target": {
       "sku": "SKU-COLA-ZERO-500ML",
@@ -863,7 +1005,7 @@
     "play_id": "play_kaju_ds03_v1",
     "gap_id": "gap_kaju_ds03",
     "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-20T18:50:44Z",
+    "created_at": "2026-09-12T03:30:00Z",
     "objective": "prevent_stockout",
     "target": {
       "sku": "SKU-KAJU-KATLI-250G",
