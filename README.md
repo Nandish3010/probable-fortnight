@@ -16,6 +16,19 @@ inventory-aware chat agent, and measured against a holdout.
 - Live vs replay: every panel carries a LIVE or REPLAY badge. Sense and Plan are nightly and replayed; approve, re-forecast, chat, capture and execution are live calls.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
 
+## Screenshots
+
+Captured with Playwright against the real local stack (`make api` + `make web`, mock mode off,
+`TAAL_MODEL_BACKEND=stub`) -- real seeded data, not mocks. `web/tests/live/screens.spec.ts`
+reproduces them.
+
+| | |
+|---|---|
+| ![Judge mode landing page](docs/screenshots/judge-mode-landing.png) Judge mode landing | ![The 60-second beat's gap card, approve pending](docs/screenshots/60-second-beat-gap-card.png) 60-second beat: gap card |
+| ![The 60-second beat after Approve, forecast chart moved](docs/screenshots/60-second-beat-approved-chart.png) 60-second beat: approved, chart moved | ![Play Desk with a play's guardrails, counterfactuals and trace](docs/screenshots/play-desk.png) Play Desk |
+| ![Phone view intake table after a sample pallet photo capture](docs/screenshots/phone-view-intake-table.png) Phone view: intake table | ![Stylist chat with a real pairing reply and the sample-garment picker](docs/screenshots/stylist-chat-pairing.png) Stylist chat: pairing + garment picker |
+| ![Outcomes screen with measured and unmeasured plays](docs/screenshots/outcomes-measured.png) Outcomes: measured | |
+
 ## The hook
 
 India's food regulator asks that food delivered online still has 30% of its shelf life or 45 days
@@ -71,10 +84,13 @@ generated colour swatches, never real photos.
 
 ## Evaluation
 
-`eval/evaluation.md` is the dated evaluation table: every number names the command that produced
-it and links to the raw output committed under `eval/raw/`. It also lists, explicitly, the
-DECISIONS §12 metrics this project cannot yet produce (pilot results, Agent Simulation, vision
-accuracy on 30 photos, cost from a billing export) rather than a guessed number for any of them.
+[`eval/evaluation_table.md`](eval/evaluation_table.md) is the DECISIONS §12 submission table,
+built by `make eval-table` from `eval/evaluation.md` and `eval/raw/` -- every cell is parsed from
+already-committed, already-measured output, never typed by hand. `eval/evaluation.md` is the dated
+narrative behind it: every number names the command that produced it and links to the raw output
+committed under `eval/raw/`. Rows §12 asks for that this project genuinely cannot produce yet
+(pilot results, Gemini-as-judge scoring, cost from a billing export, planner throughput timing) say
+so explicitly in the table rather than a guessed number.
 
 ## Development
 
