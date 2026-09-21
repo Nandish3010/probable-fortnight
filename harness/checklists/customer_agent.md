@@ -14,7 +14,15 @@ tests: ["tests/agents/test_customer.py", "tests/agents/test_mcp_orders.py"]
 - [x] Holdout customer asking "any offers?" gets none
 - [x] STOP writes `consent.withdrawn_at` and stops delivery
 - [x] Coupon stacking refused by `apply_offer`
-- [ ] p95 < 6 s on 50 runs (vertex mode; stub mode records the harness overhead only)
+- [ ] p95 < 6 s on 50 runs (vertex mode; stub mode records the harness overhead only) --
+  **measured 2026-09-21, does not clear the bar**: 50 real `/chat` calls against a local server on
+  the live Vertex backend (`amru-509214`, `asia-south1`, `gemini-2.5-flash`), one fresh
+  `X-Taal-Visitor` per call, varied messages (product asks, offers, STOP, browse). 49/50 succeeded;
+  p50 5.195s, **p95 7.202s** -- over the 6s bar. One 500 (`jsonschema.exceptions.ValidationError:
+  None is not of type 'object'`, model returned `"list": null` instead of omitting the key) is a
+  separate, real bug worth fixing but not the cause of the latency miss. Raw per-call data:
+  `eval/raw/customer_latency_2026-09-21.json`; summary: `eval/raw/customer_latency_summary_2026-09-21.json`.
+  See `eval/evaluation.md` for the full write-up.
 - [ ] Agent Simulation guardrail pass rate >= 95% over ~200 personas (report under `eval/`)
 - [x] Every message validates against `docs/schemas/chat_envelope.schema.json`
 - [x] `place_order` goes through the in-process FastMCP mock and writes `orders.play_id`

@@ -1,0 +1,46 @@
+# infra/smoke_test.sh -- local-substitute run, 2026-09-21
+#
+# This environment's egress proxy allows *.googleapis.com but blocks *.a.run.app directly (a
+# direct curl to https://taal-agents-2obkp776ca-el.a.run.app or
+# https://taal-web-2obkp776ca-el.a.run.app from inside this sandbox gets a 403 from the proxy,
+# confirmed separately), so infra/smoke_test.sh could not be run against the literal deployed
+# URLs from here. GitHub Actions runners do have real internet access -- a .github/workflows/
+# smoke.yml (workflow_dispatch + weekly cron) was added on this branch to run it there -- but
+# GitHub only lets workflow_dispatch fire a workflow that already exists on the repo's default
+# branch, and this branch is not main and this task does not merge it. So `gh`/the GitHub API
+# both refuse to dispatch smoke.yml from this branch right now (404 Not Found on the dispatch
+# call, confirmed): the live-URL run genuinely could not be triggered from this session.
+#
+# What follows is the same script, same commands, run for real against a LOCAL server (this
+# session's own `uv run uvicorn services.api.main:app`) that is wired to the exact same live
+# backend the deployed services use: TAAL_MODEL_BACKEND=vertex, GOOGLE_CLOUD_PROJECT=amru-509214,
+# GOOGLE_CLOUD_LOCATION=asia-south1, the same tenant data (config/tenant.demo.toml, TAAL_NOW
+# pinned to 2026-09-12T03:30:00Z), the same seeded plays. It is a documented, honestly-labelled
+# substitute for "passes against the live URL" -- not the same claim as literally curling the
+# Cloud Run URL. The literal deployed-URL run still needs either (a) someone with a working
+# *.a.run.app-reachable network running `TAAL_AGENTS_URL=... TAAL_WEB_URL=... ./infra/smoke_test.sh`
+# by hand, or (b) merging this branch's .github/workflows/smoke.yml to main once, after which
+# workflow_dispatch (or its weekly cron) can run it for real from a GitHub-hosted runner.
+#
+# Command run:
+#   TAAL_AGENTS_URL=http://localhost:8091 TAAL_WEB_URL=http://localhost:8091 \
+#     TAAL_SMOKE_PLAY_ID=play_cola_ds07_v1 ./infra/smoke_test.sh
+# (the local server on :8091 was started with:
+#   TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json \
+#   GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 \
+#   TAAL_NOW=2026-09-12T03:30:00Z TAAL_TENANT_CONFIG=config/tenant.demo.toml \
+#   uv run uvicorn services.api.main:app --port 8091)
+#
+# Raw output:
+
+== [1/4] health: taal-web http://localhost:8091/health ==
+OK: taal-web /health
+== [1/4] health: taal-agents http://localhost:8091/health ==
+OK: taal-agents /health
+== [2/4] a real gap: GET http://localhost:8091/gaps ==
+OK: got a real gap: gap_tea_ds04
+== [3/4] a real approve: POST http://localhost:8091/approve (play=play_cola_ds07_v1, visitor=smoke17899617406280 -- sandbox overlay, base tenant untouched) ==
+OK: /approve -> status=approved
+== [4/4] a real chat reply: POST http://localhost:8091/chat (customer=CUST-MEENA, visitor=smoke17899617406280) ==
+OK: /chat replied: Cola Zero 500ML 21 Sep 2026ರಂದು ಬರುತ್ತಿದೆ. ಈಗಲೇ ಕಾಯ್ದಿರಿಸಿ.
+== smoke test passed (health x2, 1 real gap, 1 real approve, 1 real chat reply) ==

@@ -154,6 +154,53 @@ gaps") overstates what has actually been run, and should be corrected by whoever
   Read endpoints (`/health`, `/gaps`, `/plays`, ...) are untouched. `tests/api` still passes
   unmodified (well under both limits).
 
+## Customer Agent `/chat` p95 latency and `infra/smoke_test.sh` (2026-09-21 session)
+
+**`/chat` p95, 50 real runs, live Vertex backend.** A local server
+(`TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1
+TAAL_NOW=2026-09-12T03:30:00Z TAAL_TENANT_CONFIG=config/tenant.demo.toml uv run uvicorn
+services.api.main:app`) took 50 real `POST /chat` calls, each a genuine `generateContent` call to
+`gemini-2.5-flash` (no caching), a fresh `X-Taal-Visitor`/`session_id` per call so sessions never
+collide, messages cycling through product asks, offer asks, browse, and STOP (see
+`agents/customer/prompts/customer.md`). 49/50 returned 200; 1/50 returned a 500
+(`jsonschema.exceptions.ValidationError: None is not of type 'object'` -- the model returned
+`"list": null` instead of omitting the key on a turn with no list to show; a real, separate bug in
+`agents/chat_runtime.py`'s envelope validation, not a latency artifact). Latencies over the 49
+successful calls (seconds): p50 **5.195**, p95 **7.202**, min 3.439, max 7.885, mean 4.991.
+
+**This does not clear the "p95 < 6s" bar in `harness/checklists/customer_agent.md`.** Reported as
+measured, not adjusted: live Gemini calls on this tenant/model/region genuinely run slower than
+6s at the tail. Command: `uv run python <ad hoc script>` hitting the running server's `/chat`;
+raw per-call data in `eval/raw/customer_latency_2026-09-21.json`, summary in
+`eval/raw/customer_latency_summary_2026-09-21.json`.
+
+**`infra/smoke_test.sh` (new this session).** `infra/smoke.sh` only checked `/health`;
+`harness/checklists/infra_deploy.md` wants health, a real gap, a real approve, and a real chat
+reply. `infra/smoke_test.sh` does all four against `TAAL_AGENTS_URL`/`TAAL_WEB_URL`, using a
+disposable `X-Taal-Visitor` per run so `/approve` and `/chat` never touch the base tenant.
+
+This sandbox's egress proxy allows `*.googleapis.com` but blocks `*.a.run.app` directly --
+confirmed by a direct curl to `https://taal-agents-2obkp776ca-el.a.run.app` returning a 403 from
+the proxy, not from Cloud Run -- so the script could not be run against the literal deployed URLs
+from inside this session. A `.github/workflows/smoke.yml` (`workflow_dispatch` + a weekly cron,
+per DECISIONS §17.2) was added to run it from a GitHub-hosted runner, which does have real
+internet access; triggering it via the GitHub API from this branch failed with a genuine 404
+(`POST .../actions/workflows/smoke.yml/dispatches`) because GitHub only lets `workflow_dispatch`
+fire a workflow that already exists on the repository's default branch, and this task does not
+merge `add-latency-and-smoke-evidence` into `main`. `mcp__github__actions_list` confirms only
+`verify.yml` is registered as a workflow today.
+
+As a documented, honestly-labelled substitute, the same script was instead run against a local
+server pointed at the exact same live backend (`amru-509214`, `asia-south1`, same
+`config/tenant.demo.toml` tenant data) that the deployed services use -- all four checks passed
+for real (health x2, `gap_tea_ds04`, `/approve` on `play_cola_ds07_v1` -> `status: approved`, a
+real Kannada `/chat` reply). Raw output: `eval/raw/smoke_test_local_substitute_2026-09-21.txt`.
+**This is not the same claim as "passes against the live URL"** -- the literal deployed-URL run
+still needs either someone with a working `*.a.run.app`-reachable network to run
+`TAAL_AGENTS_URL=https://taal-agents-2obkp776ca-el.a.run.app
+TAAL_WEB_URL=https://taal-web-2obkp776ca-el.a.run.app ./infra/smoke_test.sh` by hand, or a merge
+of this branch to `main` so `smoke.yml` becomes dispatchable.
+
 ## `/plan` latency and `no_play` (this session)
 
 Full diagnosis: `eval/raw/no_play_diagnosis_2026-09-20.md`. Short version: this session had no
