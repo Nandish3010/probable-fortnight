@@ -14,14 +14,23 @@ tests: ["tests/agents/test_customer.py", "tests/agents/test_mcp_orders.py"]
 - [x] Holdout customer asking "any offers?" gets none
 - [x] STOP writes `consent.withdrawn_at` and stops delivery
 - [x] Coupon stacking refused by `apply_offer`
-- [ ] p95 < 6 s on 50 runs (vertex mode; stub mode records the harness overhead only) --
-  **measured 2026-09-21, does not clear the bar**: 50 real `/chat` calls against a local server on
-  the live Vertex backend (`amru-509214`, `asia-south1`, `gemini-2.5-flash`), one fresh
-  `X-Taal-Visitor` per call, varied messages (product asks, offers, STOP, browse). 49/50 succeeded;
-  p50 5.195s, **p95 7.202s** -- over the 6s bar. One 500 (`jsonschema.exceptions.ValidationError:
-  None is not of type 'object'`, model returned `"list": null` instead of omitting the key) is a
-  separate, real bug worth fixing but not the cause of the latency miss. Raw per-call data:
-  `eval/raw/customer_latency_2026-09-21.json`; summary: `eval/raw/customer_latency_summary_2026-09-21.json`.
+- [x] p95 < 6 s on 50 runs (vertex mode; stub mode records the harness overhead only) --
+  **measured 2026-09-21, clears the bar after a real fix**: the first measurement (same session)
+  found p50 5.195s / **p95 7.202s**, over the 6s bar. Root cause: every single-turn `/chat` call
+  paid for two sequential live `generateContent` round trips (the model deciding to call
+  `get_customer_context`, then a second call to produce the final reply) even on turns that needed
+  no other tool -- `get_customer_context` is a pure, deterministic store lookup that gains nothing
+  from being a model-invoked tool call. Fixed by prefetching it in Python (`agents/customer/chat.py`,
+  the same pattern `agents/stylist/chat.py` already uses for its vision reads) and folding the
+  result into the turn text as an already-done tool result, with the prompt told not to call it
+  again; a turn needing no other tool now resolves in one round trip instead of two. Re-measured
+  with the identical 50-call methodology (same message mix, one fresh `X-Taal-Visitor` per call):
+  50/50 succeeded, p50 **4.401s**, p95 **5.752s** -- under the 6s bar. Turns that still need a real
+  tool (`list_products`/`get_stock`/etc.) keep two round trips and remain the slower half of the
+  distribution; this is a real, if partial, fix, not a full elimination of the underlying
+  per-round-trip cost. Before: `eval/raw/customer_latency_2026-09-21.json` /
+  `eval/raw/customer_latency_summary_2026-09-21.json`. After:
+  `eval/raw/customer_latency_fix_2026-09-21.json` / `eval/raw/customer_latency_fix_summary_2026-09-21.json`.
   See `eval/evaluation.md` for the full write-up.
 - [x] Agent Simulation guardrail pass rate >= 95% over ~200 personas (report under `eval/`) -- 190/190
   (100%) live-Vertex personas, `harness/agent_simulation.py`,

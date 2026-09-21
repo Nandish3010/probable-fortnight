@@ -246,6 +246,67 @@ measured, not adjusted: live Gemini calls on this tenant/model/region genuinely 
 raw per-call data in `eval/raw/customer_latency_2026-09-21.json`, summary in
 `eval/raw/customer_latency_summary_2026-09-21.json`.
 
+## Customer Agent `/chat` p95 latency, round two: real fix, re-measured (2026-09-21, later same session)
+
+**Root cause, found by looking, not guessing.** With `agents/chat_runtime.py`'s `chat_generate_config`
+already wired (confirmed still applying `thinking_budget=0` on every turn, not just the first --
+verified live by hitting a running vertex-backend server directly and reading each envelope's
+`latency_ms`/`tool_calls`), the p95 miss above was re-investigated by looking at what a single
+`/chat` turn actually does on the wire. Four live probes against a freshly seeded tenant, one fresh
+visitor each (`hi`, `any offers for me?`, `do you have chips?`, `STOP`) all showed the same shape:
+**every turn made exactly one function call, then a second model call to produce the final reply --
+two sequential live `generateContent` round trips, each ~2-3s, for every single turn regardless of
+message content.** `agents/customer/prompts/customer.md` told the model to call
+`get_customer_context(customer_id)` "on the first turn" before anything else; since the latency
+methodology uses a fresh visitor (hence a fresh ADK session) per call, *every* call in the 50-run
+sweep is a first turn, so essentially every call paid for that tool round trip on top of whatever
+tool the actual message needed -- for `hi` and `any offers for me?`, `get_customer_context` was the
+*only* tool call the model made, meaning those turns paid for a second full model round trip purely
+to relay context that a deterministic store lookup already had.
+
+`get_customer_context` (`agents/customer/tools.py`) is a pure, deterministic read (home node,
+language, pending offers, consent, cross-session memory) with no LLM reasoning in it -- there is no
+reason it needs to be a model-invoked tool call at all. `agents/stylist/chat.py` already established
+the pattern for exactly this situation (its vision reads are fetched in Python and folded into the
+turn text, not left as a tool the model must remember to call); `agents/planner/agent.py`'s
+`planner_route`/`get_gap` fix (documented above, same session) is the same idea applied to the
+planner. Applied here: `agents/customer/chat.py::run_chat_async` now calls `get_customer_context`
+itself on the vertex backend (the stub backend is left untouched -- its scripted model parses the
+raw user text with regexes in `agents/customer/stub_llm.py` and has no use for an injected JSON
+blob, and never pays a real network round trip anyway), folds the JSON result into the turn text as
+an already-done tool result, and passes `extra_tool_calls` so the envelope's audit trail still
+records that the lookup happened. `agents/customer/prompts/customer.md` was updated to say the
+context is already provided and must not be requested again, and -- a real bug caught while
+iterating, not shipped silently -- to say the injected block is internal state that must never be
+quoted or echoed into the reply: the first version of this fix, without that instruction, produced
+a live reply ending in a literal `[CUST-MEENA, DS-07, kn, consent_marketing: True]` fragment leaked
+from the injected JSON. Fixed by making the "never echo this" instruction explicit and re-verified
+live that the leak is gone (`STOP` reply: "You have been unsubscribed from marketing communications.
+We're sad to see you go!" -- clean).
+
+**Re-measured, same methodology, same message mix, fresh visitor per call.** 50/50 `POST /chat`
+calls returned 200 (no envelope-validation 500 this run, unlike the first measurement -- the earlier
+`"list": null` schema bug is a separate, pre-existing issue in `agents/chat_runtime.py`'s envelope
+handling, not touched by this fix, and simply did not trigger on this particular run of live model
+output; it is not claimed fixed here). Latencies over all 50 calls (seconds): p50 **4.401**
+(was 5.195), **p95 5.752** (was 7.202), min 2.966, max 6.465, mean 4.403.
+**This now clears the "p95 < 6s" bar.** Command: same ad hoc script pattern as before, this time
+saved at run time (`/chat` against the running server, one `X-Taal-Visitor` per call, cycling
+through the identical 15-message pool the first measurement used); raw per-call data:
+`eval/raw/customer_latency_fix_2026-09-21.json`, summary:
+`eval/raw/customer_latency_fix_summary_2026-09-21.json`.
+
+**Honest limits of this fix.** It removes exactly one universal round trip (the `get_customer_context`
+call every first turn used to make), which is a full win for turns that needed no other tool (plain
+greetings, a bare offer ask, STOP-adjacent chatter) but only a partial one for turns that genuinely
+need `list_products`/`get_stock`/etc: those still pay for a tool-decide round trip plus a final-reply
+round trip, and remain the slower half of the new distribution (e.g. `chips please` and `I want cola`
+were consistently the two slowest messages in the after-fix run, 5.3-6.5s). No context caching was
+implemented (each call still resends the full ~400-line catalogue and all 8 tool schemas as fresh
+system-instruction tokens on every call); that remains a real, unexplored further lever for the
+tool-requiring half of the distribution, not attempted this session for lack of time to validate
+Vertex context-cache behavior live rather than guess at it.
+
 **`infra/smoke_test.sh` (new this session).** `infra/smoke.sh` only checked `/health`;
 `harness/checklists/infra_deploy.md` wants health, a real gap, a real approve, and a real chat
 reply. `infra/smoke_test.sh` does all four against `TAAL_AGENTS_URL`/`TAAL_WEB_URL`, using a
