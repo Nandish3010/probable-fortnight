@@ -19,6 +19,12 @@
   --good: #0d9488;
   --live: #0d9488;
   --replay: #6366a3;
+  /* Darker than --live/--replay/--text-muted specifically for text on a badge's tinted light
+     background -- the base tokens are used elsewhere (dot animation, chart bars) at a contrast
+     ratio that only works against a plain surface, not against their own 14% tint. */
+  --live-text: #096f66;
+  --replay-text: #595b92;
+  --muted-badge-text: #5c6370;
   --focus: #4f46e5;
   --radius: 12px;
   --radius-sm: 8px;
@@ -59,6 +65,9 @@
     --good: #2dd4bf;
     --live: #2dd4bf;
     --replay: #9aa1e8;
+    --live-text: #2dd4bf;
+    --replay-text: #9aa1e8;
+    --muted-badge-text: #9aa0b3;
     --focus: #8b85f7;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -92,6 +101,9 @@
   --good: #2dd4bf;
   --live: #2dd4bf;
   --replay: #9aa1e8;
+  --live-text: #2dd4bf;
+  --replay-text: #9aa1e8;
+  --muted-badge-text: #9aa0b3;
   --focus: #8b85f7;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -394,7 +406,7 @@ p {
 
 .badge--live {
   background: color-mix(in srgb, var(--live) 14%, var(--surface));
-  color: var(--live);
+  color: var(--live-text);
   border-color: color-mix(in srgb, var(--live) 35%, transparent);
 }
 
@@ -404,7 +416,7 @@ p {
 
 .badge--replay {
   background: color-mix(in srgb, var(--replay) 14%, var(--surface));
-  color: var(--replay);
+  color: var(--replay-text);
   border-color: color-mix(in srgb, var(--replay) 35%, transparent);
 }
 
@@ -416,7 +428,7 @@ p {
 
 .badge--synthetic {
   background: color-mix(in srgb, var(--text-muted) 16%, var(--surface));
-  color: var(--text-muted);
+  color: var(--muted-badge-text);
   border-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
 }
 
@@ -1204,8 +1216,31 @@ textarea:focus-visible {
 }
 
 .trace-panel__event--error .trace-panel__body { color: var(--danger); }
-.trace-panel__event--ok .trace-panel__body { color: var(--good); }
+.trace-panel__event--ok .trace-panel__body { color: var(--live-text); }
 .trace-panel__event--warn .trace-panel__body { color: var(--warn); }
+
+.trace-panel__raw {
+  flex-basis: 100%;
+}
+
+.trace-panel__raw summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.trace-panel__raw pre {
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
 
 /* ---------- policy editor ---------- */
 
@@ -1438,4 +1473,18 @@ input[type="range"] {
 
 input[type="checkbox"] {
   accent-color: var(--accent);
+}
+
+/* Standard visually-hidden pattern: each page has exactly one real <h1> for assistive tech
+   (page-has-heading-one), without changing the visual heading hierarchy any page already uses. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

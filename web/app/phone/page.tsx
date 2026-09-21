@@ -143,6 +143,7 @@ export default function PhoneViewPage() {
 
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <h2>Priya's phone</h2>
 
       <div className="phone-frame">
@@ -156,7 +157,7 @@ export default function PhoneViewPage() {
           </select>
         </label>
 
-        <h4>Use a sample pallet photo</h4>
+        <h3>Use a sample pallet photo</h3>
         <div className="photo-choices">
           {SAMPLE_PHOTOS.map((p) => (
             <button

@@ -48,6 +48,7 @@ export default function OutcomesPage() {
 
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <div className="card__header">
         <h2>Outcomes</h2>
         <Badge kind="live" detail="/outcomes" />
