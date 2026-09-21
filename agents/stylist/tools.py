@@ -39,6 +39,22 @@ def _tokens(text: str) -> list[str]:
     return [t for t in re.findall(r"[a-z]+", text.lower()) if len(t) >= 3 and t not in STOPWORDS]
 
 
+def _resolve_node(ctx, node_id: str | None) -> str:
+    """The node to search at: the model's own `node_id`/`home_node_id` argument if it names a
+    node that actually exists (a deliberate cross-node check, e.g. "is it at the outlet"), else
+    the customer's real home node. Found live: neither find_apparel's nor suggest_pairings's tool
+    schema gives `node_id` a description, and the prompt inconsistently calls the same schema
+    field "home_node_id" in prose -- with no strong signal to reuse the value get_style_context
+    already returned, a live Gemini call fabricated a plausible-looking but nonexistent id
+    ("NODE-KUTUMB-MART-HYD-1") instead, so every apparel search silently matched zero stock
+    regardless of what was actually on the shelf. A real, different node id is trusted (the model
+    may legitimately mean a specific other store); a fabricated one is not."""
+    if node_id and ctx.store.find("nodes", node_id=node_id):
+        return node_id
+    cust = ctx.store.find("customers", customer_id=ctx.customer_id)
+    return cust[-1]["home_node_id"] if cust else "DS-01"
+
+
 def _in_stock_at(ctx, node_id: str) -> dict[str, list[str]]:
     """sku -> sizes in stock at the node, right now."""
     out: dict[str, list[str]] = defaultdict(list)
@@ -87,8 +103,10 @@ def get_style_context(customer_id: str) -> dict:
 
 def find_apparel(query: str, node_id: str) -> dict:
     """Search in-stock apparel at the node by garment, colour and occasion words in the query;
-    records the ask whether or not anything matched, so a genuine miss is a real demand signal."""
+    records the ask whether or not anything matched, so a genuine miss is a real demand signal.
+    `node_id` is validated against real nodes, not trusted blindly -- see `_resolve_node`."""
     ctx = current()
+    node_id = _resolve_node(ctx, node_id)
     stock = _in_stock_at(ctx, node_id)
     parsed = parse_description(query)
     words = _tokens(query)
@@ -139,8 +157,10 @@ def suggest_pairings(anchor: str, node_id: str, occasion: str | None = None) -> 
     """Deterministic colour-theory + role pairing over in-stock apparel at the node. Gemini never
     scores a pairing; it only decides how to present these rows. The `reason` a row carries always
     comes from agents/stylist/colour.py; `skin_note` (if any) is a separate, additive annotation
-    from the customer's own confirmed style profile, applied only to face-adjacent items."""
+    from the customer's own confirmed style profile, applied only to face-adjacent items.
+    `node_id` is validated against real nodes, not trusted blindly -- see `_resolve_node`."""
     ctx = current()
+    node_id = _resolve_node(ctx, node_id)
     anchor_info, anchor_is_sku = _resolve_anchor(ctx, anchor)
     occasion = occasion or (parse_description(anchor).occasion if not anchor_is_sku else None)
     garment_type, colour, role = anchor_info["garment_type"], anchor_info["colour"], anchor_info["role"]

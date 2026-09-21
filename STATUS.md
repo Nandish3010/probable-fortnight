@@ -6,7 +6,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 
 | Component | Owner | Spec | Checklist | Last test result |
 |---|---|---|---|---|
-| [Schemas and DDL](harness/checklists/schemas_ddl.md) | D | §2.4, §3.3, §17.1 | 8 of 8 | green: 60 passed, 0 failed, 0 skipped |
+| [Schemas and DDL](harness/checklists/schemas_ddl.md) | D | §2.4, §3.3, §17.1 | 8 of 8 | green: 61 passed, 0 failed, 0 skipped |
 | [Synthetic generator](harness/checklists/generator.md) | D | §3.2, §3.3 | 8 of 9 | green: 40 passed, 0 failed, 0 skipped |
 | [Sense: forecasts](harness/checklists/sense_forecasts.md) | D | §5.2, §4.2 | 8 of 8 | green: 10 passed, 0 failed, 0 skipped |
 | [Sense: gaps](harness/checklists/sense_gaps.md) | D | §2.3, §3.4, §5.2 | 10 of 10 | green: 13 passed, 0 failed, 0 skipped |
@@ -15,7 +15,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 | [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 9 | green: 12 passed, 0 failed, 0 skipped; via `make eval` |
 | [Approve and assignment](harness/checklists/approve_assignment.md) | B | §5.4, §5.6 | 7 of 7 | green: 16 passed, 0 failed, 0 skipped |
 | [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 11 of 14 | green: 34 passed, 0 failed, 0 skipped |
-| [Stylist Agent](harness/checklists/stylist_agent.md) | B | §5.9 | 15 of 17 | green: 64 passed, 0 failed, 0 skipped |
+| [Stylist Agent](harness/checklists/stylist_agent.md) | B | §5.9 | 15 of 17 | green: 65 passed, 0 failed, 0 skipped |
 | [Vision intake](harness/checklists/vision_intake.md) | B | §5.1 | 5 of 6 | green: 5 passed, 0 failed, 0 skipped |
 | [Voice (if kept)](harness/checklists/voice.md) | B | §5.1 | 0 of 4 | no tests yet (tests/agents/test_voice.py) |
 | [Measure](harness/checklists/measure.md) | D | §5.7, §5.8, §18.3 | 6 of 8 | green: 6 passed, 0 failed, 0 skipped |

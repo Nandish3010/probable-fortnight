@@ -40,6 +40,16 @@ assortment_gap_min_requests = 2
 markdown_elasticity = 4.0
 min_affinity = 0.3
 transfer_cost_per_unit_inr = 2.0
+# Customer Agent ad-hoc negotiation (agents/customer/tools.py::negotiate_offer): the hard ceiling
+# on a discount the chat agent may offer a customer who asks directly, on a sku with no approved
+# play targeting them. Distinct from any play's own mechanic_params.discount_pct -- a played
+# discount is planner-drafted, guardrail-checked and holdout-measured; this one is a live,
+# unmeasured, per-customer concession, so it is capped far more conservatively and additionally
+# bounded by margin_floor_pct per category (never both at once -- whichever is lower wins).
+ad_hoc_max_discount_pct = 8.0
+# A repeat customer (>=1 past order at this tenant) gets this many extra points on top of the
+# base ad-hoc discount, still capped by ad_hoc_max_discount_pct and the margin floor above.
+ad_hoc_loyalty_bonus_pct = 3.0
 
 [margin_floor_pct]
 default = 8.0
