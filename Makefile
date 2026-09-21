@@ -69,6 +69,9 @@ docs:             ## README/docs lint: links, quick-start card first, required s
 status:           ## regenerate STATUS.md from checklists + test results
 	uv run python -m harness.status
 
+eval-table:       ## regenerate eval/evaluation_table.md from eval/evaluation.md + eval/raw/ (never typed by hand)
+	uv run python -m harness.build_eval_table
+
 api:              ## run the local API against fixtures
 	uv run uvicorn services.api.main:app --port 8080 --reload
 

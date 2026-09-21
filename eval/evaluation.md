@@ -1,5 +1,10 @@
 # Evaluation table -- 20-22 Sep 2026
 
+**The DECISIONS §12 submission table lives at [`eval/evaluation_table.md`](evaluation_table.md)**,
+regenerated from this file and `eval/raw/` by `make eval-table` (`python -m
+harness.build_eval_table`) -- never typed by hand. Everything below is this table's source
+material: the dated narrative, the raw commands, and the caveats.
+
 ## Correction, 22 Sep: the live-Vertex and AI.GENERATE_TABLE blockers below were real, are now closed
 
 Everything under "Not measured, and why" that blamed missing Vertex credentials or a missing IAM
