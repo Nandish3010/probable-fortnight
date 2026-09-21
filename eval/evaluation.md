@@ -1,4 +1,52 @@
-# Evaluation table -- 20-21 Sep 2026
+# Evaluation table -- 20-22 Sep 2026
+
+## Correction, 22 Sep: the live-Vertex and AI.GENERATE_TABLE blockers below were real, are now closed
+
+Everything under "Not measured, and why" that blamed missing Vertex credentials or a missing IAM
+grant no longer applies -- both were re-tested with real credentials in a later session and both
+now work. Specifically:
+
+- **Live Vertex access exists.** A direct `generateContent` call against
+  `asia-south1-aiplatform.googleapis.com` using `/root/.gcp/taal-deploy-key.json` returns a real
+  200. The claim two sections down ("this session had no Vertex credentials available") was true
+  for that session, not a permanent property of the environment.
+- **A clean, fully live sweep passed 20/20**, this time with `TAAL_NOW` correctly pinned on the
+  server process: `/plan` proposed the real play in 9.8s with 0 revision iterations; `/approve`
+  moved the write-off for real (9194.12 -> 8067.53, holdout_n=26); `/chat` delivered a real
+  Kannada offer to the treated customer and correctly withheld it from the holdout customer;
+  `/rerun` under an edited policy line changed the mechanic live (`bundle` -> `transfer_plus_nudge`)
+  in one iteration -- the exact "change one sentence of policy, the agent's choice changes" beat
+  DECISIONS §9 shot 10 describes. Full transcript: `eval/raw/sweep_vertex_2026-09-21.txt`. This
+  supersedes row 4 below, which is left in place as the historical record of the bug it found.
+- **`AI.GENERATE_TABLE` now produces real copy end-to-end, and three real bugs are fixed** in
+  `jobs/sense/copy.py` (all found live, not guessed from docs -- the function's accepted syntax
+  differs from most public examples):
+  1. `output_schema` is rejected as a named (`=>`) argument; it must be a field inside the
+     `STRUCT(...)` argument instead.
+  2. `AI.GENERATE_TABLE` reads its prompt from a column literally named `prompt` -- the
+     `prompt_column` STRUCT field used to rename it does not exist ("unsupported setting field").
+  3. The disclosure-required date check compared the model's output against
+     `gap.evidence.expiry_date`, while the play's own target for an `online_sellby_breach` gap
+     carries a *different* date (`target.deadline_date`, the legally-relevant online sell-by
+     cutoff) -- so a correctly-compliant BigQuery variant was rejected by `validate_copy` on
+     every single approve() call. Fixed by making the BigQuery prompt state the same
+     `best_before` value the templated path already uses (the physical expiry date -- what a
+     shopper actually cares about; the online sell-by date decides mechanic eligibility via the
+     guardrails, not customer-facing copy), so both paths and the validator agree on one date.
+  Separately, the original implementation created a physical temp table (create + load + query:
+  three sequential BigQuery jobs), measured live at **~10s** for a 10-variant play -- longer than
+  `approve()`'s own timeout budget, so this path silently lost to the templated fallback on
+  *every* real call, not just some. Rewritten as a single parameterized
+  `AI.GENERATE_TABLE(..., (SELECT * FROM UNNEST(@rows)), ...)` query (no temp table, no
+  injection risk from string-built SQL): measured live at **~3-4s** for the same 10 variants.
+  Verified end to end through the real `/approve` endpoint: `eval/raw/copy_bigquery_2026-09-21.json`
+  shows the approved chips play's committed copy is genuinely varied per segment ("Grab our
+  Masala Chips 200G bundle for just Rs 61! Best before: 2026-10-15. Enjoy!" /
+  "Masala Chips 200G bundle for just Rs 61! Best before 2026-10-15. Grab yours today!"), not the
+  rigid template string. New regression tests: `tests/unit/test_copy.py` (this module had zero
+  test coverage before, which is how the date-mismatch bug went unnoticed).
+- Row 6's "Copy validator pass rate" caveat about the BigQuery path never producing a variant is
+  now false; superseded by the paragraph above.
 
 Every row below names the exact command that produced it and the raw output it summarises,
 committed alongside this file under `eval/raw/`. Nothing here is typed or estimated; where
@@ -49,7 +97,7 @@ DECISIONS calls out for a manual policy-change beat rather than a fully automate
 | Cost per play from the billing export | No billing export has been pulled for this project. The cost figures in `docs/DECISIONS.md` §18.4/§18.5 remain list-price estimates, explicitly labelled as such. |
 | Planner Agent fan-out, 50 gaps, Batch API | The Batch API fan-out design in §18.3 has not been built; nothing in this repo submits a Batch job. |
 | BigQuery bytes scanned, one Sense run | Sense reads/writes `LocalStore`, not BigQuery, in this codebase today (verified: `grep -rn "bigquery.Client" agents/ services/ jobs/ data/ harness/` finds no hits outside the new `jobs/sense/copy.py::generate_copy_bigquery`). There is no BigQuery job for Sense to have a bytes-scanned figure. |
-| `AI.GENERATE_TABLE` end-to-end copy generation | Wired up this session (`jobs/sense/copy.py::generate_copy_bigquery`, `infra/deploy.sh` creates the connection + remote model), but the connection's service account lacks the `roles/aiplatform.user` grant needed for `CREATE MODEL`/`AI.GENERATE_TABLE` to work, and granting IAM roles is outside what this environment will do on its own initiative. Confirmed working as designed up to that point: a real approve() call attempted the BigQuery path and fell back to templated copy cleanly (see row 4's caveat). |
+| ~~`AI.GENERATE_TABLE` end-to-end copy generation~~ | **No longer true as of 22 Sep -- see the correction at the top of this file.** Now working end-to-end through a real `/approve` call, three real bugs fixed. Left struck through here rather than deleted so the "blocked, needs IAM" history stays visible. |
 
 ### Note on row 5: two real bugs found and fixed to get this number at all
 

@@ -70,10 +70,11 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     play["approved_by"], play["approved_at"] = approved_by, now_iso
     # --- copy: templated always computed first (the immediate result and the fallback);
     # AI.GENERATE_TABLE in BigQuery, vertex backend only, replaces it on success within the
-    # timeout. Approve is on the demo's critical path (10s response budget), so a judge never
-    # waits long on BigQuery: generate_copy_bigquery's default timeout_s (3.0, applied to each of
-    # its two BigQuery waits) caps this at ~6s worst case; any failure or timeout here is silently
-    # absorbed and the templated variants are used as-is.
+    # timeout. Approve is on the demo's critical path, so a judge never waits too long on
+    # BigQuery: generate_copy_bigquery issues one parameterized AI.GENERATE_TABLE query (no temp
+    # table) and its default timeout_s (6.0, measured live at ~3-4s for a 10-variant play) caps
+    # the wait; any failure or timeout here is silently absorbed and the templated variants are
+    # used as-is.
     partner = load_catalogue(store).get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
     best_before = gap["evidence"].get("expiry_date")
     templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
