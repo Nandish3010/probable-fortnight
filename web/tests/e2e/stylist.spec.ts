@@ -28,6 +28,16 @@ test.describe("stylist: pairings and photo upload", () => {
     const log = page.getByTestId("chat-log").first();
     await expect(log).toContainText(/kurta/i, { timeout: 6_000 });
   });
+
+  test("picking a sample garment photo needs no file dialog", async ({ page }) => {
+    await page.goto("/stylist");
+    await page.getByTestId("sample-garment-choices").getByRole("button", { name: "Mustard kurta" }).click();
+    await expect(page.getByText(/photo attached/i)).toBeVisible();
+
+    await page.getByRole("button", { name: "Send" }).click();
+    const log = page.getByTestId("chat-log").first();
+    await expect(log).toContainText(/kurta/i, { timeout: 6_000 });
+  });
 });
 
 test.describe("trends: recompute button", () => {

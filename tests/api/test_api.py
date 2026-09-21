@@ -96,7 +96,7 @@ def test_rerun_with_policy_and_events(client):
 
 
 def test_capture_confirm_and_execution(client):
-    cap = client.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_01.jpg"}, headers=_h("v-cap")).json()
+    cap = client.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_lowconf_test.jpg"}, headers=_h("v-cap")).json()
     assert cap["model_id"] and len(cap["rows"]) == 3
     low = [r for r in cap["rows"] if r["needs_confirmation"]]
     assert low and all(r["confirmation_question"] for r in low)

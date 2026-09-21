@@ -10,10 +10,17 @@ interface DisplayMessage extends ChatEnvelope {
 }
 
 interface PendingPhoto {
-  dataUrl: string;
+  dataUrl?: string;
+  photoRef?: string;
   kind: "garment" | "selfie";
   name: string;
 }
+
+const SAMPLE_GARMENTS = [
+  { ref: "fixtures/photos/garments/mustard_kurta.png", label: "Mustard kurta" },
+  { ref: "fixtures/photos/garments/navy_tshirt.png", label: "Navy T-shirt" },
+  { ref: "fixtures/photos/garments/red_floral_dress.png", label: "Red floral dress" },
+];
 
 export function ChatPanel({
   title = "Chat as",
@@ -81,7 +88,11 @@ export function ChatPanel({
           session_id: sessionId.current,
           text,
           specialist,
-          ...(photo ? { image_data_url: photo.dataUrl, image_kind: photo.kind } : {}),
+          ...(photo?.photoRef
+            ? { photo_ref: photo.photoRef, image_kind: photo.kind }
+            : photo?.dataUrl
+              ? { image_data_url: photo.dataUrl, image_kind: photo.kind }
+              : {}),
         },
         (envelope, latencyMs) => {
           setLatency(latencyMs);
@@ -112,6 +123,10 @@ export function ChatPanel({
       reader.readAsDataURL(file);
       e.target.value = "";
     };
+  }
+
+  function pickSampleGarment(ref: string, label: string) {
+    setPendingPhoto({ photoRef: ref, kind: "garment", name: label });
   }
 
   return (
@@ -185,9 +200,23 @@ export function ChatPanel({
       </div>
       {specialist === "stylist" ? (
         <div className="chat-panel__photo-inputs">
+          <p className="muted chat-panel__photo-note">Use a sample garment photo</p>
+          <div className="photo-choices" data-testid="sample-garment-choices">
+            {SAMPLE_GARMENTS.map((g) => (
+              <button
+                key={g.ref}
+                type="button"
+                className="photo-choice"
+                aria-pressed={pendingPhoto?.photoRef === g.ref}
+                onClick={() => pickSampleGarment(g.ref, g.label)}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
           <label className="camera-button">
             <span className="camera-button__icon" aria-hidden="true">📷</span>
-            <span>Garment photo</span>
+            <span>Own garment photo (experimental)</span>
             <input type="file" accept="image/*" onChange={onPhotoFile("garment")} aria-label="Garment photo" data-testid="garment-photo" />
           </label>
           <label className="camera-button">
