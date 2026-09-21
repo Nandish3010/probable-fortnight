@@ -3,6 +3,7 @@ import { ChatPanel } from "../../components/ChatPanel";
 export default function StylistPage() {
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <h2>Style assistant</h2>
       <p className="muted">
         Ask what goes with a piece of clothing, or show a photo. Pairings come from a deterministic
