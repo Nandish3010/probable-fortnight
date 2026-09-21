@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getDemoCustomers, isMockMode, sendChat } from "../lib/api";
+import { swatchFor } from "../lib/colour";
 import { Badge } from "./Badge";
 import type { ChatEnvelope, DemoCustomer } from "../lib/types";
 
@@ -175,14 +176,20 @@ export function ChatPanel({
               <div className="chat-msg__list">
                 <p className="chat-msg__list-title">{m.list.title}</p>
                 <ul>
-                  {m.list.rows.map((row) => (
-                    <li key={row.id}>
-                      <button type="button" className="chat-msg__list-item" onClick={() => send(row.id)} disabled={sending}>
-                        <strong>{row.title}</strong>
-                        {row.desc ? <span> — {row.desc}</span> : null}
-                      </button>
-                    </li>
-                  ))}
+                  {m.list.rows.map((row) => {
+                    const swatch = specialist === "stylist" ? swatchFor(row.title) : null;
+                    return (
+                      <li key={row.id}>
+                        <button type="button" className="chat-msg__list-item" onClick={() => send(row.id)} disabled={sending}>
+                          {swatch ? (
+                            <span className="chat-msg__swatch" style={{ background: swatch }} aria-hidden="true" />
+                          ) : null}
+                          <strong>{row.title}</strong>
+                          {row.desc ? <span>&nbsp;— {row.desc}</span> : null}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ) : null}
