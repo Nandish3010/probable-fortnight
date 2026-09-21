@@ -15,7 +15,11 @@ tests: ["tests/agents/test_customer.py", "tests/agents/test_mcp_orders.py"]
 - [x] STOP writes `consent.withdrawn_at` and stops delivery
 - [x] Coupon stacking refused by `apply_offer`
 - [ ] p95 < 6 s on 50 runs (vertex mode; stub mode records the harness overhead only)
-- [ ] Agent Simulation guardrail pass rate >= 95% over ~200 personas (report under `eval/`)
+- [x] Agent Simulation guardrail pass rate >= 95% over ~200 personas (report under `eval/`) -- 190/190
+  (100%) live-Vertex personas, `harness/agent_simulation.py`,
+  `eval/raw/agent_simulation_2026-09-21.json`, `eval/evaluation.md`. No hosted GCP "Agent
+  Simulation" product is reachable for a custom ADK agent in this project (see eval/evaluation.md);
+  this harness talks to the real Customer Agent directly instead.
 - [x] Every message validates against `docs/schemas/chat_envelope.schema.json`
 - [x] `place_order` goes through the in-process FastMCP mock and writes `orders.play_id`
 - [x] `get_customer_context` returns a cross-session `memory` of what a customer has recently
