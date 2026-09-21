@@ -1,0 +1,39 @@
+{
+  "measured_at": "2026-09-21T16:38:50Z",
+  "project": "amru-509214",
+  "window_days": 30,
+  "blocked": true,
+  "reason": "No BigQuery billing export table (gcp_billing_export_v1_* or gcp_billing_export_resource_v1_*) exists in any dataset of project 'amru-509214'. Billing export is configured at the Cloud Billing account level, not the project level; the credentials used here could not be checked for that permission without attempting it, so the Cloud Billing API diagnostics below record what was actually tried.",
+  "billing_api_diagnostics": {
+    "caller": "taal-deploy@amru-509214.iam.gserviceaccount.com",
+    "projects.getBillingInfo": {
+      "status": 200,
+      "body": {
+        "name": "projects/amru-509214/billingInfo",
+        "projectId": "amru-509214",
+        "billingAccountName": "billingAccounts/01AFA8-481EFC-C09462",
+        "billingEnabled": true
+      }
+    },
+    "billingAccounts.get": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": 403,
+          "message": "The caller does not have permission",
+          "status": "PERMISSION_DENIED"
+        }
+      }
+    },
+    "billingbudgets.list": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": 403,
+          "message": "The caller does not have permission",
+          "status": "PERMISSION_DENIED"
+        }
+      }
+    }
+  }
+}
