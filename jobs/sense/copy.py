@@ -7,8 +7,7 @@ rejected -- a model-generated variant is never trusted just because BigQuery als
 from __future__ import annotations
 
 import re
-import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import date
 from typing import Any
 
 TEMPLATES = {
@@ -43,6 +42,14 @@ def _fmt_date(iso: str | None) -> str:
     return d.strftime("%d %b %Y")
 
 
+def _date_stated(iso: str | None, text: str) -> bool:
+    """Whether `text` states the date `iso`, accepting either the templated "%d %b %Y" form or
+    the raw ISO form -- a live model asked to "state the date plainly" reliably writes the ISO
+    string it was given rather than reformatting it, so a check for only the formatted form
+    rejects genuinely correct BigQuery-generated copy."""
+    return bool(iso) and (_fmt_date(iso) in text or iso in text)
+
+
 def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[str, Any] | None, best_before: str | None, languages: list[str]) -> list[dict[str, Any]]:
     params = play.get("mechanic_params") or {}
     ctx = {
@@ -55,35 +62,51 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
         for lang in languages:
             tpl = TEMPLATES.get(lang, TEMPLATES["en"]).get(play["mechanic"], TEMPLATES["en"]["usual_order_addon"])
             text = tpl.format(**ctx)
-            variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": ctx["best_before"] in text and best_before is not None})
+            variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": _date_stated(best_before, text)})
     return variants
 
 
-def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, deadline_type: str, deadline_date: str, language: str) -> str:
+def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, best_before: str | None, language: str) -> str:
     """Same instructions as data/bigquery/sense/08_copy.sql's prompt_text CONCAT, ported to
     Python because the minimal BigQuery path (see generate_copy_bigquery) builds its request
     rows here rather than reading them back out of `taal.plays`/`taal.products`, which this
-    codebase never writes to."""
+    codebase never writes to.
+
+    Always states `best_before` (the physical expiry/use-by date), never the online sell-by
+    date, matching generate_copy()'s templates exactly: a shopper decides whether to buy near-
+    expiry food from when it actually spoils, not from Taal's internal online-channel cutoff.
+    The online sell-by date decides which mechanic is even admissible (the guardrails, before
+    copy is drafted); it was never meant to be customer-facing. An earlier version of this
+    function asked the model to state the online sell-by date instead for that deadline type,
+    which `validate_copy` then rejected as a disclosure mismatch every time -- found live: the
+    model correctly wrote the date it was told to, and was discarded anyway because the check
+    compares against `best_before`, the same field the templated path is built from."""
     parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}."]
     if discount_pct is not None:
         parts.append(f"Discount: {discount_pct:g}% -- copy this number exactly, do not change it.")
     if bundle_price is not None:
         parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
-    if deadline_type == "online_sellby":
-        parts.append(f"State the best-before date {deadline_date} plainly.")
+    if best_before:
+        parts.append(f"State the best-before date {best_before} plainly.")
     parts.append("Do not invent any other number or date. Keep it under 40 words.")
     return " ".join(parts)
 
 
-def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 3.0) -> list[dict[str, Any]]:
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 6.0) -> list[dict[str, Any]]:
     """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
     `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
     are never populated by this codebase -- LocalStore is the system of record -- so this cannot
     join against them the way data/bigquery/sense/08_copy.sql does; instead it builds the
-    variant_requests rows in Python from the play already in memory, loads them into a
-    short-lived temp table, and runs AI.GENERATE_TABLE over that. Raises on any failure or on
-    the timeout; the caller is expected to fall back to generate_copy() (templates) rather than
-    let this block or fail the approve request -- see services/api/approve.py.
+    variant_requests rows in Python from the play already in memory and passes them as a single
+    parameterized `UNNEST(@rows)` array -- no temp table, no separate load job. Raises on any
+    failure or on the timeout; the caller is expected to fall back to generate_copy() (templates)
+    rather than let this block or fail the approve request -- see services/api/approve.py.
+
+    An earlier version created a physical temp table (create + load + query: three sequential
+    BigQuery jobs). Measured live at ~10s for a 10-row play, which never fit inside approve()'s
+    critical-path timeout budget -- meaning this path silently lost to the templated fallback on
+    every real approve() call, not just some. The single parameterized query measures ~3-4s for
+    the same 10 rows, comfortably inside budget.
     """
     from google.cloud import bigquery
 
@@ -96,10 +119,8 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     params = play.get("mechanic_params") or {}
     discount_pct = params.get("discount_pct") or params.get("markdown_pct")
     bundle_price = params.get("bundle_price")
-    deadline_type = play["target"]["deadline_type"]
-    deadline_date = play["target"]["deadline_date"]
     requests = [
-        {"segment_id": seg, "language": lang, "prompt_text": _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, deadline_type, deadline_date, lang)}
+        (seg, lang, _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, best_before, lang))
         for seg in play["audience"]["segment_ids"]
         for lang in languages
     ]
@@ -107,33 +128,40 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
         return []
 
     client = bigquery.Client(project=project, location=region)
-    table_id = f"{project}.{dataset}.tmp_copy_{uuid.uuid4().hex[:12]}"
-    table = bigquery.Table(table_id, schema=[bigquery.SchemaField("segment_id", "STRING"), bigquery.SchemaField("language", "STRING"), bigquery.SchemaField("prompt_text", "STRING")])
-    table.expires = datetime.now(UTC) + timedelta(hours=1)  # belt-and-braces if the delete below never runs
-    try:
-        client.create_table(table)
-        client.load_table_from_json(requests, table_id).result(timeout=timeout_s)
-        query = (
-            f"SELECT segment_id, language, copy_text FROM AI.GENERATE_TABLE("
-            f"MODEL `{project}`.`{dataset}`.`{model_resource}`, "
-            f"TABLE `{table_id}`, "
-            "STRUCT('prompt_text' AS prompt_column), "
-            "output_schema => 'copy_text STRING')"
-        )
-        by_key = {(r["segment_id"], r["language"]): r["copy_text"] for r in client.query(query).result(timeout=timeout_s)}
-    finally:
-        try:
-            client.delete_table(table_id, not_found_ok=True)
-        except Exception:
-            pass  # best-effort cleanup; the 1h expiry above is the real backstop
+    # AI.GENERATE_TABLE reads its prompt from a column literally named `prompt` -- there is no
+    # STRUCT field to rename it (`prompt_column` is rejected: "unsupported setting field"), and
+    # `output_schema` must live inside the STRUCT too, not as a separate named (=>) argument
+    # (rejected: "Named argument output_schema not found in signature"). Both confirmed live
+    # against a real AI.GENERATE_TABLE call, not guessed from docs -- the function's accepted
+    # signature isn't the one most examples online show.
+    row_type = bigquery.StructQueryParameterType(
+        bigquery.ScalarQueryParameterType("STRING", name="segment_id"),
+        bigquery.ScalarQueryParameterType("STRING", name="language"),
+        bigquery.ScalarQueryParameterType("STRING", name="prompt"),
+    )
+    rows_param = bigquery.ArrayQueryParameter(
+        "rows",
+        row_type,
+        [
+            bigquery.StructQueryParameter(None, bigquery.ScalarQueryParameter("segment_id", "STRING", seg), bigquery.ScalarQueryParameter("language", "STRING", lang), bigquery.ScalarQueryParameter("prompt", "STRING", prompt))
+            for seg, lang, prompt in requests
+        ],
+    )
+    query = (
+        f"SELECT segment_id, language, copy_text FROM AI.GENERATE_TABLE("
+        f"MODEL `{project}`.`{dataset}`.`{model_resource}`, "
+        "(SELECT * FROM UNNEST(@rows)), "
+        "STRUCT('copy_text STRING' AS output_schema))"
+    )
+    job_config = bigquery.QueryJobConfig(query_parameters=[rows_param])
+    by_key = {(r["segment_id"], r["language"]): r["copy_text"] for r in client.query(query, job_config=job_config).result(timeout=timeout_s)}
 
-    fmt_before = _fmt_date(best_before)
     variants = []
     for seg in play["audience"]["segment_ids"]:
         for lang in languages:
             text = by_key.get((seg, lang))
             if text:
-                variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": fmt_before in text and best_before is not None})
+                variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": _date_stated(best_before, text)})
     return variants
 
 
@@ -154,7 +182,7 @@ def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_bef
         if need_disclosure and not v.get("disclosure_included"):
             reasons.append(f"{v['segment_id']}/{v['language']}: best-before missing")
             continue
-        if best_before and need_disclosure and _fmt_date(best_before) not in text:
+        if best_before and need_disclosure and not _date_stated(best_before, text):
             reasons.append(f"{v['segment_id']}/{v['language']}: best-before date mismatch")
             continue
         ok.append(v)
