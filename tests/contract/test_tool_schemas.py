@@ -34,7 +34,7 @@ def test_every_tool_has_a_contract():
     names = {p.name for p in TOOLS.glob("*.schema.json")}
     for t in ("get_gap", "get_candidate_audiences", "estimate_outcomes", "check_guardrails", "get_past_plays", "propose_play"):
         assert f"planner.{t}.schema.json" in names
-    for t in ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "place_order", "record_stop", "list_products"):
+    for t in ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "negotiate_offer", "place_order", "record_stop", "list_products"):
         assert f"customer.{t}.schema.json" in names
     for t in ("get_style_context", "find_apparel", "describe_item", "suggest_pairings", "set_style_profile", "forget_style_profile", "apply_offer", "place_order"):
         assert f"stylist.{t}.schema.json" in names
@@ -106,6 +106,26 @@ def test_customer_tool_outputs_validate(sandbox):
         jsonschema.validate(order, _schema("customer.place_order", "output"), format_checker=jsonschema.FormatChecker())
         assert {ln["sku"] for ln in order["lines"]} == {"SKU-MASALA-CHIPS-200G", offer["bundle_sku"]}, "bundle partner must be named, not just totalled"
 
+        # A sku with no play targeting this customer: negotiate_offer, not apply_offer, is the
+        # only path to a discount. "snacks" is a volume-friendly category, so this should offer a
+        # buy-N-get-extra-%-off deal, not a flat cut -- see the category list in
+        # agents/customer/tools.py::_VOLUME_FRIENDLY_CATEGORIES.
+        neg = ct.negotiate_offer("CUST-MEENA", "SKU-COLA-ZERO-500ML")
+        jsonschema.validate(neg, _schema("customer.negotiate_offer", "output"), format_checker=jsonschema.FormatChecker())
+        assert neg["ok"] and neg["mechanic"] == "volume_discount" and neg["min_qty"] and neg["discount_pct"] > 0
+
+        # Below min_qty: no discount applied, order still succeeds at list price, and the
+        # negotiated offer stays pending (not redeemed) for a later order that does meet it.
+        under = asyncio.run(ct.place_order("CUST-MEENA", "DS-07", [{"sku": "SKU-COLA-ZERO-500ML", "qty": neg["min_qty"] - 1}], ""))
+        line = next(ln for ln in under["lines"] if ln["sku"] == "SKU-COLA-ZERO-500ML")
+        assert line["discount"] == 0.0
+
+        # Meeting min_qty this time: the same still-pending offer applies automatically, with no
+        # play_id -- this is exactly the "buy 4, get an extra 5% off" case, not a play redemption.
+        met = asyncio.run(ct.place_order("CUST-MEENA", "DS-07", [{"sku": "SKU-COLA-ZERO-500ML", "qty": neg["min_qty"]}], ""))
+        line2 = next(ln for ln in met["lines"] if ln["sku"] == "SKU-COLA-ZERO-500ML")
+        assert line2["discount"] > 0.0
+
         stop = ct.record_stop("CUST-MEENA", "web_chat")
         jsonschema.validate(stop, _schema("customer.record_stop", "output"), format_checker=jsonschema.FormatChecker())
     finally:
@@ -115,7 +135,7 @@ def test_customer_tool_outputs_validate(sandbox):
 def test_customer_tool_output_schemas_are_not_vacuous():
     """Every customer.*.schema.json output actually names its fields (guards against a schema file
     that validates anything because someone forgot to list `required`/`properties`)."""
-    names = ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "place_order", "record_stop", "list_products")
+    names = ("get_customer_context", "get_stock", "find_substitutes", "apply_offer", "negotiate_offer", "place_order", "record_stop", "list_products")
     for name in names:
         schema = _schema(f"customer.{name}", "output")
         assert schema.get("properties") or schema.get("items"), f"customer.{name} output schema has no properties/items"
@@ -163,6 +183,28 @@ def test_stylist_tool_outputs_validate(sandbox):
         forgot = st.forget_style_profile("CUST-RAVI")
         jsonschema.validate(forgot, _schema("stylist.forget_style_profile", "output"), format_checker=jsonschema.FormatChecker())
         assert forgot["ok"]
+    finally:
+        reset_stylist_context(tok)
+
+
+def test_stylist_ignores_a_hallucinated_node_id(sandbox):
+    """Found live: a real Gemini call passed a plausible-looking but nonexistent node_id
+    ("NODE-KUTUMB-MART-HYD-1") to find_apparel/suggest_pairings instead of the customer's real
+    home node, so every apparel search silently matched zero stock regardless of what was
+    actually on the shelf. Neither tool's schema gives node_id a description, and the prompt
+    inconsistently calls the same field "home_node_id" -- nothing told the model to reuse the
+    value get_style_context already gave it. Both tools must fall back to the customer's real
+    home node for any node_id that isn't a real node, while still honouring a genuinely different,
+    real node id (test_stylist_tool_outputs_validate's OUT-01 miss case)."""
+    tenant = load_tenant()
+    ctx = StylistContext.build(sandbox, "CUST-RAVI", "2026-09-12T09:05:00Z", tenant)
+    tok = set_stylist_context(ctx)
+    try:
+        hit = st.find_apparel("mustard kurta", "NODE-KUTUMB-MART-HYD-1")
+        assert hit["items"], "a hallucinated node_id must fall back to the customer's real home node, not return an empty miss"
+
+        by_sku = st.suggest_pairings("APP-KURTA-MUSTARD-W", "NODE-DOES-NOT-EXIST")
+        assert by_sku["fulfilled"] and by_sku["pairings"]
     finally:
         reset_stylist_context(tok)
 

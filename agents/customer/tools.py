@@ -1,13 +1,17 @@
-"""The six Customer Agent tools (DECISIONS §5.5). Contracts: docs/schemas/tools/customer.*.
+"""The Customer Agent tools (DECISIONS §5.5). Contracts: docs/schemas/tools/customer.*.
 
 Holdout customers never see an offer: `get_customer_context` returns no pending offers for them,
 `apply_offer` refuses, and proactive delivery (services/api) checks the arm before writing offers.
-`place_order` goes through the MCP order mock over an in-memory MCP session.
+`negotiate_offer` is the one exception to "every discount comes from an approved, holdout-measured
+play": a live, ad-hoc concession for a sku with no play targeting the customer, bounded by its own
+(more conservative) guardrails -- see its docstring. `place_order` goes through the MCP order mock
+over an in-memory MCP session.
 """
 from __future__ import annotations
 
 import json
 import re
+import uuid
 from collections import defaultdict
 from datetime import timedelta
 from typing import Any
@@ -18,6 +22,20 @@ from agents.gate.assignment import assign_arm
 from agents.mcp_orders.server import server as orders_server
 
 from .context import current
+
+
+def _resolve_node(ctx, node_id: str | None) -> str:
+    """The node to act at: the model's own `node_id`/`home_node_id` argument if it names a node
+    that actually exists, else the customer's real home node. Same defensive fix as
+    agents/stylist/tools.py::_resolve_node, for the identical root cause: get_stock,
+    find_substitutes and list_products all name this parameter "home_node_id" in
+    agents/customer/prompts/customer.md but the actual schema field is "node_id" with no
+    description -- nothing tells the model to reuse the value get_customer_context already gave
+    it, so a live call can fabricate a plausible-looking but nonexistent id instead."""
+    if node_id and ctx.store.find("nodes", node_id=node_id):
+        return node_id
+    cust = ctx.store.find("customers", customer_id=ctx.customer_id)
+    return cust[-1]["home_node_id"] if cust else "DS-01"
 
 
 def _arms(ctx, customer_id: str) -> dict[str, str]:
@@ -128,6 +146,7 @@ def get_stock(sku: str, node_id: str) -> dict:
     asking directly and finding nothing is a demand signal: recorded deterministically, read back
     by Sense (unmet_demand gaps) and by this customer's own memory next session."""
     ctx = current()
+    node_id = _resolve_node(ctx, node_id)
     info = _stock_info(ctx, sku, node_id)
     if info["qty"] == 0:
         _record_request(ctx, node_id, "out_of_stock", sku=sku)
@@ -137,6 +156,7 @@ def get_stock(sku: str, node_id: str) -> dict:
 def find_substitutes(sku: str, node_id: str) -> list[dict]:
     """Precomputed same-category candidates filtered by stock at the node right now; top 5."""
     ctx = current()
+    node_id = _resolve_node(ctx, node_id)
     rows = ctx.store.find("substitutes", sku=sku)
     cands = rows[-1]["candidates"] if rows else []
     out = []
@@ -179,11 +199,83 @@ def apply_offer(play_id: str, customer_id: str) -> dict:
     return out
 
 
+_VOLUME_FRIENDLY_CATEGORIES = {"snacks", "beverages", "staples", "personal_care", "household"}
+
+
+def negotiate_offer(customer_id: str, sku: str) -> dict:
+    """A live, ad-hoc concession for a sku with no approved play targeting this customer -- the
+    customer asked directly ("what offer can I get"), so unlike apply_offer (which only redeems
+    an already planner-drafted, holdout-measured play) there is no pre-approved play to check.
+    Every number here is still deterministic, never an LLM decision: the category margin floor,
+    the tenant's separate (more conservative) ad-hoc discount ceiling, the frequency cap shared
+    with played offers, and whether this customer has ordered from Kutumb Mart before. Gemini
+    only decides how to phrase whatever this returns; it never invents a percentage or a
+    quantity threshold.
+
+    Returns one of two mechanics, chosen deterministically by category, never by the model:
+    `volume_discount` (buy `min_qty` units, get the full ceiling off) for everyday multi-buy
+    categories where committing to a bigger basket justifies the maximum concession; otherwise
+    `flat_discount` (half the ceiling, no purchase commitment)."""
+    ctx = current()
+    product = ctx.products.get(sku)
+    if not product:
+        return {"ok": False, "reason": f"unknown sku {sku}"}
+    if not _consent_ok(ctx, customer_id):
+        return {"ok": False, "reason": "no marketing consent on this channel"}
+
+    cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
+    cutoff = (ctx.as_of - timedelta(days=7)).isoformat()
+    recent_plays = {a["play_id"] for a in ctx.store.read("play_assignments") if a["customer_id"] == customer_id and a["arm"] == "treated" and a["assigned_at"][:10] >= cutoff}
+    recent_ad_hoc = [o for o in ctx.store.read("ad_hoc_offers") if o["customer_id"] == customer_id and o["ts"][:10] >= cutoff]
+    if len(recent_plays) + len(recent_ad_hoc) >= cap:
+        return {"ok": False, "reason": f"frequency cap {cap} offers per 7 days reached"}
+
+    floor = float(product.get("margin_floor_pct") or ctx.tenant.margin_floor(product["category"]))
+    list_price, unit_cost = float(product["list_price"]), float(product["unit_cost"])
+    current_margin_pct = (list_price - unit_cost) / list_price * 100.0
+    headroom_pct = max(0.0, current_margin_pct - floor)
+    ceiling = min(float(ctx.tenant.thresholds.get("ad_hoc_max_discount_pct", 8.0)), headroom_pct)
+    if ceiling <= 0:
+        return {"ok": False, "reason": "margin floor leaves no room for a discount on this item"}
+
+    # "Customer's previous behaviour": the simplest deterministic signal available -- has this
+    # customer ordered from Kutumb Mart before at all. A repeat customer's flat-discount base
+    # gets a loyalty bonus (still capped at the ceiling); a volume commitment already earns the
+    # full ceiling regardless, so the bonus has nothing left to add there.
+    is_repeat = any(o["customer_id"] == customer_id for o in ctx.store.read("orders"))
+    loyalty_bonus = float(ctx.tenant.thresholds.get("ad_hoc_loyalty_bonus_pct", 3.0)) if is_repeat else 0.0
+
+    if product["category"] in _VOLUME_FRIENDLY_CATEGORIES:
+        mechanic, min_qty, discount_pct = "volume_discount", 4, round(ceiling, 1)
+    else:
+        mechanic, min_qty, discount_pct = "flat_discount", None, round(min(ceiling, ceiling / 2.0 + loyalty_bonus), 1)
+
+    offer_id = f"adhoc_{customer_id}_{sku}_{uuid.uuid4().hex[:8]}"
+    ctx.store.append("ad_hoc_offers", [{
+        "tenant_id": ctx.tenant.tenant_id, "offer_id": offer_id, "customer_id": customer_id, "sku": sku, "mechanic": mechanic,
+        "discount_pct": discount_pct, "min_qty": min_qty, "session_id": f"{customer_id}:{ctx.channel}",
+        "ts": ctx.now_iso, "redeemed_at": None,
+    }])
+    out: dict[str, Any] = {"ok": True, "reason": "eligible", "sku": sku, "mechanic": mechanic, "discount_pct": discount_pct}
+    if min_qty is not None:
+        out["min_qty"] = min_qty
+    return out
+
+
+def _pending_ad_hoc_offer(ctx, customer_id: str, sku: str) -> dict[str, Any] | None:
+    """The most recent un-redeemed negotiate_offer result for this customer and sku, if any."""
+    rows = [o for o in ctx.store.read("ad_hoc_offers") if o["customer_id"] == customer_id and o["sku"] == sku and not o.get("redeemed_at")]
+    return rows[-1] if rows else None
+
+
 async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id: str) -> dict:
-    """Place the order through the MCP order mock. lines: [{sku, qty}], priced here from the catalogue and the play."""
+    """Place the order through the MCP order mock. lines: [{sku, qty}], priced here from the
+    catalogue, the play (if any) and any pending negotiate_offer for a line's sku (checked
+    per-line, independently of the play offer, since a negotiated concession has no play_id)."""
     ctx = current()
     priced = []
     offer = apply_offer(play_id, customer_id) if play_id else {"ok": False}
+    redeemed_ad_hoc: list[dict[str, Any]] = []
     for ln in lines:
         p = ctx.products.get(ln["sku"])
         if not p:
@@ -192,6 +284,11 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
         disc = 0.0
         if offer.get("ok") and ln["sku"] == offer.get("sku") and offer.get("discount_pct"):
             disc = round(price * float(offer["discount_pct"]) / 100.0, 2)
+        else:
+            ad_hoc = _pending_ad_hoc_offer(ctx, customer_id, ln["sku"])
+            if ad_hoc and (ad_hoc["mechanic"] != "volume_discount" or int(ln["qty"]) >= int(ad_hoc["min_qty"])):
+                disc = round(price * float(ad_hoc["discount_pct"]) / 100.0, 2)
+                redeemed_ad_hoc.append(ad_hoc)
         priced.append({"sku": ln["sku"], "qty": int(ln["qty"]), "price": price, "discount": disc})
     if offer.get("ok") and offer.get("mechanic") == "bundle" and offer.get("bundle_sku"):
         skus = {ln["sku"] for ln in priced}
@@ -211,6 +308,9 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
             if o["customer_id"] == customer_id and o["play_id"] == play_id and not o.get("redeemed_at"):
                 o["redeemed_at"] = ctx.now_iso
                 ctx.store.upsert("offers", "offer_id", o)
+    for ad_hoc in redeemed_ad_hoc:
+        ad_hoc["redeemed_at"] = ctx.now_iso
+        ctx.store.upsert("ad_hoc_offers", "offer_id", ad_hoc)
     return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"]}
 
 
@@ -242,6 +342,7 @@ def list_products(query: str, node_id: str) -> dict:
     """Browse: up to 10 in-stock products at the node whose name or category matches the query
     words; with an empty query, the categories on the shelf. Never lists items with zero stock."""
     ctx = current()
+    node_id = _resolve_node(ctx, node_id)
     today = ctx.as_of.isoformat()
     stock: dict[str, int] = defaultdict(int)
     for b in ctx.store.read("inventory_batches"):
@@ -264,4 +365,4 @@ def list_products(query: str, node_id: str) -> dict:
     return {"query": query, "node_id": node_id, "categories": categories, "products": [{"sku": h[3]["sku"], "name": h[3]["name"], "category": h[3]["category"], "availability": _availability(stock[h[3]["sku"]]), "list_price": float(h[3]["list_price"])} for h in hits[:10]]}
 
 
-TOOLS = [get_customer_context, get_stock, find_substitutes, apply_offer, place_order, record_stop, list_products]
+TOOLS = [get_customer_context, get_stock, find_substitutes, apply_offer, negotiate_offer, place_order, record_stop, list_products]
