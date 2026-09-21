@@ -62,6 +62,7 @@ export default function PlayDeskPage() {
 
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <h2>Play Desk</h2>
       <div className="desk-layout">
         <div className="inbox" aria-label="Play inbox">

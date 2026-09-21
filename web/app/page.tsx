@@ -44,6 +44,7 @@ export default function LandingPage() {
 
   return (
     <main className="page">
+      <h1 className="visually-hidden">Taal</h1>
       <section className="judge-band">
         <span>
           Taal judge mode: seeded tenant Kutumb Mart. Nothing you do here persists beyond your session.
