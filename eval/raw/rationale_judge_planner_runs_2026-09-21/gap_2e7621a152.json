@@ -1,0 +1,1265 @@
+{
+  "run_id": "run_2e7621a152_v1_9dd93dd7",
+  "play": {
+    "play_id": "play_2e7621a152_v1",
+    "gap_id": "gap_2e7621a152",
+    "tenant_id": "kutumb-mart",
+    "created_at": "2026-09-12T03:30:00Z",
+    "objective": "revive_slow_mover",
+    "target": {
+      "sku": "SKU-ASSAM-GOLD-TEA-250G",
+      "node_ids": [
+        "OUT-06"
+      ],
+      "batch_ids": [
+        "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+      ],
+      "units": 4,
+      "deadline_date": "2027-10-02",
+      "deadline_type": "expiry"
+    },
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+      "markdown_pct": 10
+    },
+    "audience": {
+      "segment_ids": [
+        "seg_2",
+        "seg_1",
+        "seg_5",
+        "seg_3"
+      ],
+      "filters": {
+        "min_affinity": 0.3
+      },
+      "purpose": "marketing",
+      "size_before_consent": 360,
+      "size_after_consent": 305
+    },
+    "channel": "outlet",
+    "window": {
+      "start": "2026-09-12T00:00:00Z",
+      "end": "2027-10-02T23:59:59Z"
+    },
+    "copy": {
+      "language_set": [
+        "en",
+        "kn"
+      ],
+      "variants": [],
+      "copy_status": "pending"
+    },
+    "holdout": {
+      "fraction": 0.1,
+      "seed": "seed-play_2e7621a152_v1",
+      "min_treated_n": 20
+    },
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 21.08% (net price 747.00, cost 589.50) vs premium_tea floor 12.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 0 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "outlet channel: no personal message, consent not required"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "no active subscribers of SKU-ASSAM-GOLD-TEA-250G in audience"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "no stockout gap for SKU-ASSAM-GOLD-TEA-250G at OUT-06"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+      }
+    ],
+    "rationale": "4 units of Assam Gold Tea 250G at Outlet 06 (East Bengaluru) are projected unsold before the expiry deadline on 2027-10-02; doing nothing writes off ₹2358 and a blanket 10% markdown costs ₹2138. This play uses a 10% in-store markdown for 305 consented customers (Tea connoisseurs, Festival sweets loyalists, Household essentials buyers, Everyday staples shoppers): expected 21 units, margin ₹3288, discount cost ₹1733, waste avoided ₹2358 (CI 1 to 61 units; prior n 20, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\"",
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_2e7621a152"
+      },
+      {
+        "type": "estimator",
+        "ref": "est-v1"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      },
+      {
+        "type": "forecast",
+        "ref": "sense_20260912_baseline_2aaad73c"
+      },
+      {
+        "type": "stock",
+        "ref": "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+      }
+    ],
+    "alternatives": [],
+    "policy_version": "v1",
+    "trace_ref": "events/run_2e7621a152_v1_9dd93dd7",
+    "status": "proposed",
+    "expected_outcome": {
+      "units": 20.88,
+      "margin_inr": 3288.17,
+      "waste_avoided_inr": 2358.0,
+      "discount_cost_inr": 1732.81,
+      "ci_low": 1.13,
+      "ci_high": 60.91,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 2358.0,
+      "blanket_markdown_inr": 2137.97,
+      "blanket_markdown_pct": 10.0
+    },
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 39.65,
+      "pct_of_rupees_at_stake": 1.746
+    }
+  },
+  "status": "proposed",
+  "iterations": 7,
+  "events": [
+    {
+      "seq": 0,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "",
+      "author": "cost_governor",
+      "timestamp": 1790008839.0181386,
+      "ts_offset_ms": 0,
+      "text": "rupees at stake 2358 >= threshold 500",
+      "level": "info"
+    },
+    {
+      "seq": 1,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008839.3541222,
+      "ts_offset_ms": 0,
+      "level": "info",
+      "text": "The user has provided a gap of type `slow_mover` for SKU `SKU-ASSAM-GOLD-TEA-250G` at node `OUT-06`. The policy prefers bundles and transfers over markdowns. Since this is a slow mover, there is no hard deadline, so a smaller, higher-affinity audience is acceptable.\n\nI will draft two plays:\n1. A bundle play with \"Wheat Bread 400G\" as the bundle partner, targeting the \"Tea connoisseurs\" segment.\n2. A transfer play to \"OUT-05\", targeting the \"Tea connoisseurs\" segment.\n\nI will then estimate the outcomes of both plays and propose the one that aligns best with the policy and has a positive expected margin.\n",
+      "function_call": {
+        "name": "estimate_outcomes",
+        "args": {
+          "play_drafts": [
+            {
+              "mechanic_params": {
+                "bundle_sku": "SKU-WHEAT-BREAD-400G",
+                "bundle_price": 750
+              },
+              "holdout": {
+                "seed": 1,
+                "fraction": 0.05,
+                "min_treated_n": 1
+              },
+              "audience": {
+                "purpose": "marketing",
+                "size_before_consent": 226,
+                "segment_ids": [
+                  "seg_2"
+                ],
+                "size_after_consent": 189
+              },
+              "mechanic": "bundle_discount",
+              "target": {
+                "sku": "SKU-ASSAM-GOLD-TEA-250G",
+                "units": 4,
+                "deadline_date": "2027-10-02",
+                "deadline_type": "expiry",
+                "batch_ids": [
+                  "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+                ],
+                "node_ids": [
+                  "OUT-06"
+                ]
+              },
+              "gap_id": "gap_2e7621a152",
+              "objective": "revive_slow_mover"
+            },
+            {
+              "audience": {
+                "purpose": "marketing",
+                "size_after_consent": 189,
+                "size_before_consent": 226,
+                "segment_ids": [
+                  "seg_2"
+                ]
+              },
+              "mechanic": "transfer_plus_nudge",
+              "target": {
+                "sku": "SKU-ASSAM-GOLD-TEA-250G",
+                "deadline_type": "expiry",
+                "batch_ids": [
+                  "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+                ],
+                "node_ids": [
+                  "OUT-06"
+                ],
+                "units": 4,
+                "deadline_date": "2027-10-02"
+              },
+              "objective": "revive_slow_mover",
+              "mechanic_params": {
+                "transfer_node_id": "OUT-05"
+              },
+              "gap_id": "gap_2e7621a152",
+              "holdout": {
+                "min_treated_n": 1,
+                "seed": 1,
+                "fraction": 0.05
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008844.886696,
+      "ts_offset_ms": 5532,
+      "level": "info",
+      "function_response": {
+        "name": "estimate_outcomes",
+        "response": {
+          "result": [
+            {
+              "expected_outcome": {
+                "units": 12.94,
+                "margin_inr": 3111.36,
+                "waste_avoided_inr": 2358.0,
+                "discount_cost_inr": 0.0,
+                "ci_low": 0.7,
+                "ci_high": 37.74,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 2358.0,
+                "blanket_markdown_inr": 1917.94,
+                "blanket_markdown_pct": 20.0
+              }
+            },
+            {
+              "expected_outcome": {
+                "units": 4.0,
+                "margin_inr": 2350.0,
+                "waste_avoided_inr": 2358.0,
+                "discount_cost_inr": 0.0,
+                "ci_low": 0.7,
+                "ci_high": 4.0,
+                "prior_n": 20.0,
+                "measured_n": 0,
+                "estimator_version": "est-v1"
+              },
+              "counterfactuals": {
+                "do_nothing_inr": 2358.0,
+                "blanket_markdown_inr": 1917.94,
+                "blanket_markdown_pct": 20.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008844.8894386,
+      "ts_offset_ms": 5535,
+      "level": "info",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "gap_id": "gap_2e7621a152",
+            "target": {
+              "sku": "SKU-ASSAM-GOLD-TEA-250G",
+              "deadline_type": "expiry",
+              "node_ids": [
+                "OUT-06"
+              ],
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "deadline_date": "2027-10-02",
+              "units": 4
+            },
+            "audience": {
+              "size_after_consent": 189,
+              "purpose": "marketing",
+              "segment_ids": [
+                "seg_2"
+              ],
+              "size_before_consent": 226
+            },
+            "copy_status": "pending",
+            "holdout": {
+              "seed": 1,
+              "min_treated_n": 1,
+              "fraction": 0.05
+            },
+            "mechanic": "bundle_discount",
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle discount mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% h...",
+            "citations": {
+              "batch": "B-ASSAM-GOLD-TEA-250G-OUT-06-01",
+              "policy_version": "v1",
+              "forecast_run": "sense_20260912_baseline_2aaad73c",
+              "estimator_version": "est-v1",
+              "gap": "gap_2e7621a152"
+            },
+            "objective": "revive_slow_mover",
+            "alternatives": [
+              {
+                "play_draft": {
+                  "holdout": {
+                    "fraction": 0.05,
+                    "seed": 1,
+                    "min_treated_n": 1
+                  },
+                  "mechanic": "transfer_plus_nudge",
+                  "target": {
+                    "units": 4,
+                    "deadline_date": "2027-10-02",
+                    "sku": "SKU-ASSAM-GOLD-TEA-250G",
+                    "node_ids": [
+                      "OUT-06"
+                    ],
+                    "deadline_type": "expiry",
+                    "batch_ids": [
+                      "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+                    ]
+                  },
+                  "objective": "revive_slow_mover",
+                  "gap_id": "gap_2e7621a152",
+                  "mechanic_params": {
+                    "transfer_node_id": "OUT-05"
+                  },
+                  "audience": {
+                    "size_before_consent": 226,
+                    "segment_ids": [
+                      "seg_2"
+                    ],
+                    "purpose": "marketing",
+                    "size_after_consent": 189
+                  }
+                },
+                "rejection_reason": "The bundle discount play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "estimated_outcome": {
+                  "counterfactuals": {
+                    "blanket_markdown_pct": 20,
+                    "blanket_markdown_inr": 1917.94,
+                    "do_nothing_inr": 2358
+                  },
+                  "expected_outcome": {
+                    "margin_inr": 2350,
+                    "estimator_version": "est-v1",
+                    "units": 4,
+                    "prior_n": 20,
+                    "ci_high": 4,
+                    "measured_n": 0,
+                    "discount_cost_inr": 0,
+                    "ci_low": 0.7,
+                    "waste_avoided_inr": 2358
+                  }
+                }
+              }
+            ],
+            "play_id": "play_2e7621a152_v1",
+            "mechanic_params": {
+              "bundle_price": 750,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008849.6370568,
+      "ts_offset_ms": 10282,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: Additional properties are not allowed ('copy_status' was unexpected)",
+            "$: 'channel' is a required property",
+            "$: 'window' is a required property",
+            "$: 'copy' is a required property",
+            "$: 'expected_outcome' is a required property",
+            "$: 'counterfactuals' is a required property",
+            "$: 'guardrails' is a required property",
+            "alternatives/0: Additional properties are not allowed ('estimated_outcome', 'play_draft', 'rejection_reason' were unexpected)",
+            "... 9 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008849.6393008,
+      "ts_offset_ms": 10285,
+      "level": "info",
+      "text": "The previous `propose_play` call failed due to several schema validation errors. I will correct these errors and resubmit the play.\n\nHere's a summary of the changes I'll make:\n*   Remove `copy_status`.\n*   Add `channel` (set to \"email\"), `window` (start tomorrow, end in 7 days), and `copy` (placeholder).\n*   Move `expected_outcome` and `counterfactuals` from the `estimate_outcomes_response` directly into the `play` object.\n*   Remove `guardrails` as it's generated by `propose_play`.\n*   Correct the `alternatives` schema to include `mechanic`, `mechanic_params`, `expected_units`, `expected_margin_inr`, and `rejected_because`.\n*   Add an empty `filters` object to the `audience`.\n*   Change `citations` to be an array of strings.\n*   Change `holdout.seed` to a string.\n*   **Crucially**, the `mechanic` \"bundle_discount\" is not a valid option. I need to use \"bundle\" instead.\n\nLet's try again with the corrected play.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "mechanic": "bundle",
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 750
+            },
+            "target": {
+              "sku": "SKU-ASSAM-GOLD-TEA-250G",
+              "units": 4,
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "deadline_type": "expiry",
+              "deadline_date": "2027-10-02",
+              "node_ids": [
+                "OUT-06"
+              ]
+            },
+            "holdout": {
+              "seed": "1",
+              "fraction": 0.05,
+              "min_treated_n": 1
+            },
+            "channel": "email",
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "blanket_markdown_inr": 1917.94,
+              "do_nothing_inr": 2358
+            },
+            "alternatives": [
+              {
+                "expected_margin_inr": 2350,
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "mechanic": "transfer_plus_nudge",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                },
+                "expected_units": 4
+              }
+            ],
+            "window": {
+              "start": "2026-09-13",
+              "end": "2026-09-20"
+            },
+            "copy": "See app for details.",
+            "citations": [
+              "gap_2e7621a152",
+              "est-v1",
+              "sense_20260912_baseline_2aaad73c",
+              "B-ASSAM-GOLD-TEA-250G-OUT-06-01",
+              "v1"
+            ],
+            "gap_id": "gap_2e7621a152",
+            "expected_outcome": {
+              "discount_cost_inr": 0,
+              "waste_avoided_inr": 2358,
+              "ci_low": 0.7,
+              "units": 12.94,
+              "estimator_version": "est-v1",
+              "ci_high": 37.74,
+              "margin_inr": 3111.36,
+              "measured_n": 0,
+              "prior_n": 20
+            },
+            "play_id": "play_2e7621a152_v1",
+            "objective": "revive_slow_mover",
+            "audience": {
+              "size_after_consent": 189,
+              "filters": {},
+              "size_before_consent": 226,
+              "segment_ids": [
+                "seg_2"
+              ],
+              "purpose": "marketing"
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 6,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008856.9821594,
+      "ts_offset_ms": 17628,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "$: 'guardrails' is a required property",
+            "channel: 'email' is not one of ['web_chat', 'app_push', 'outlet']",
+            "citations/0: 'gap_2e7621a152' is not of type 'object'",
+            "citations/1: 'est-v1' is not of type 'object'",
+            "citations/2: 'sense_20260912_baseline_2aaad73c' is not of type 'object'",
+            "citations/3: 'B-ASSAM-GOLD-TEA-250G-OUT-06-01' is not of type 'object'",
+            "citations/4: 'v1' is not of type 'object'",
+            "copy: 'See app for details.' is not of type 'object'",
+            "... 1 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008856.9844778,
+      "ts_offset_ms": 17630,
+      "level": "info"
+    },
+    {
+      "seq": 8,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008862.6017413,
+      "ts_offset_ms": 23247,
+      "level": "info",
+      "text": "The `propose_play` call failed again. I need to address the remaining schema validation errors.\n\nHere's a plan to fix them:\n1.  **`guardrails` is a required property**: I will add an empty `guardrails` object to the play.\n2.  **`channel: 'email' is not one of ['web_chat', 'app_push', 'outlet']`**: I will change the channel to `app_push`.\n3.  **`citations`**: This field expects an array of objects, each with `type` and `value` properties. I will restructure the citations accordingly.\n4.  **`copy`**: This field expects an object with `headline` and `body` properties. I will provide placeholder values for these.\n5.  **`holdout/seed: '1' is too short`**: I will use a longer string for the `seed`.\n\nLet's try again with these corrections.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "holdout": {
+              "min_treated_n": 1,
+              "seed": "play_2e7621a152_v1_seed",
+              "fraction": 0.05
+            },
+            "objective": "revive_slow_mover",
+            "channel": "app_push",
+            "copy": {
+              "headline": "Special Offer on Assam Gold Tea",
+              "body": "Bundle Assam Gold Tea with Wheat Bread and save!"
+            },
+            "audience": {
+              "filters": {},
+              "purpose": "marketing",
+              "segment_ids": [
+                "seg_2"
+              ],
+              "size_before_consent": 226,
+              "size_after_consent": 189
+            },
+            "alternatives": [
+              {
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                },
+                "mechanic": "transfer_plus_nudge",
+                "expected_units": 4,
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "expected_margin_inr": 2350
+              }
+            ],
+            "counterfactuals": {
+              "blanket_markdown_inr": 1917.94,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 2358
+            },
+            "window": {
+              "end": "2026-09-20",
+              "start": "2026-09-13"
+            },
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 750
+            },
+            "play_id": "play_2e7621a152_v1",
+            "citations": [
+              {
+                "type": "gap",
+                "value": "gap_2e7621a152"
+              },
+              {
+                "value": "est-v1",
+                "type": "estimator_version"
+              },
+              {
+                "value": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast_run"
+              },
+              {
+                "value": "B-ASSAM-GOLD-TEA-250G-OUT-06-01",
+                "type": "batch"
+              },
+              {
+                "type": "policy_version",
+                "value": "v1"
+              }
+            ],
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "guardrails": {},
+            "gap_id": "gap_2e7621a152",
+            "expected_outcome": {
+              "waste_avoided_inr": 2358,
+              "ci_low": 0.7,
+              "prior_n": 20,
+              "estimator_version": "est-v1",
+              "ci_high": 37.74,
+              "units": 12.94,
+              "measured_n": 0,
+              "margin_inr": 3111.36,
+              "discount_cost_inr": 0
+            },
+            "target": {
+              "units": 4,
+              "deadline_date": "2027-10-02",
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "node_ids": [
+                "OUT-06"
+              ],
+              "deadline_type": "expiry",
+              "sku": "SKU-ASSAM-GOLD-TEA-250G"
+            },
+            "mechanic": "bundle"
+          }
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008869.7290869,
+      "ts_offset_ms": 30374,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "citations/0: Additional properties are not allowed ('value' was unexpected)",
+            "citations/0: 'ref' is a required property",
+            "citations/1: Additional properties are not allowed ('value' was unexpected)",
+            "citations/1: 'ref' is a required property",
+            "citations/1/type: 'estimator_version' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "citations/2: Additional properties are not allowed ('value' was unexpected)",
+            "citations/2: 'ref' is a required property",
+            "citations/2/type: 'forecast_run' is not one of ['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']",
+            "... 11 more"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008869.7325299,
+      "ts_offset_ms": 30378,
+      "level": "info",
+      "text": "The `propose_play` call failed again due to schema validation errors, specifically with `citations`, `copy`, and `guardrails`. I need to ensure these fields strictly adhere to the expected schema.\n\nHere's how I'll address each error:\n\n1.  **`citations`**: The schema requires an array of objects, where each object has a `type` and a `ref`. The `type` must be one of `['gap', 'estimator', 'outcome', 'policy', 'forecast', 'stock']`. I will map the current citations to this format. The `batch` citation does not fit these types, so I will remove it.\n    *   `gap_2e7621a152` becomes `{\"type\": \"gap\", \"ref\": \"gap_2e7621a152\"}`\n    *   `est-v1` becomes `{\"type\": \"estimator\", \"ref\": \"est-v1\"}`\n    *   `sense_20260912_baseline_2aaad73c` becomes `{\"type\": \"forecast\", \"ref\": \"sense_20260912_baseline_2aaad73c\"}`\n    *   `v1` (policy version) becomes `{\"type\": \"policy\", \"ref\": \"v1\"}`\n\n2.  **`copy`**: The schema requires an object with `language_set`, `variants` (an array of objects, each with `headline` and `body`), and `copy_status`. I will provide these.\n\n3.  **`guardrails`**: This field should be an empty array `[]`, not an empty object `{}`.\n\nLet's try to propose the play with these final corrections.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "target": {
+              "deadline_date": "2027-10-02",
+              "sku": "SKU-ASSAM-GOLD-TEA-250G",
+              "deadline_type": "expiry",
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "units": 4,
+              "node_ids": [
+                "OUT-06"
+              ]
+            },
+            "copy": {
+              "language_set": "en_US",
+              "variants": [
+                {
+                  "headline": "Special Offer on Assam Gold Tea",
+                  "body": "Bundle Assam Gold Tea with Wheat Bread and save!"
+                }
+              ],
+              "copy_status": "pending"
+            },
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "audience": {
+              "segment_ids": [
+                "seg_2"
+              ],
+              "filters": {},
+              "size_before_consent": 226,
+              "size_after_consent": 189,
+              "purpose": "marketing"
+            },
+            "holdout": {
+              "min_treated_n": 1,
+              "seed": "play_2e7621a152_v1_seed",
+              "fraction": 0.05
+            },
+            "mechanic_params": {
+              "bundle_price": 750,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "citations": [
+              {
+                "ref": "gap_2e7621a152",
+                "type": "gap"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "alternatives": [
+              {
+                "mechanic": "transfer_plus_nudge",
+                "expected_margin_inr": 2350,
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "expected_units": 4,
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                }
+              }
+            ],
+            "play_id": "play_2e7621a152_v1",
+            "counterfactuals": {
+              "do_nothing_inr": 2358,
+              "blanket_markdown_pct": 20,
+              "blanket_markdown_inr": 1917.94
+            },
+            "channel": "app_push",
+            "objective": "revive_slow_mover",
+            "mechanic": "bundle",
+            "window": {
+              "start": "2026-09-13",
+              "end": "2026-09-20"
+            },
+            "guardrails": [],
+            "expected_outcome": {
+              "discount_cost_inr": 0,
+              "prior_n": 20,
+              "waste_avoided_inr": 2358,
+              "margin_inr": 3111.36,
+              "units": 12.94,
+              "ci_high": 37.74,
+              "measured_n": 0,
+              "estimator_version": "est-v1",
+              "ci_low": 0.7
+            },
+            "gap_id": "gap_2e7621a152"
+          }
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008877.043873,
+      "ts_offset_ms": 37689,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "copy/language_set: 'en_US' is not of type 'array'",
+            "copy/variants/0: Additional properties are not allowed ('body', 'headline' were unexpected)",
+            "copy/variants/0: 'segment_id' is a required property",
+            "copy/variants/0: 'language' is a required property",
+            "copy/variants/0: 'text' is a required property",
+            "copy/variants/0: 'disclosure_included' is a required property"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 12,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008877.0461774,
+      "ts_offset_ms": 37692,
+      "level": "info",
+      "text": "The `propose_play` call failed again, specifically with the `copy` field. I need to correctly structure the `copy` object according to the schema.\n\nHere's how I'll address the remaining errors:\n\n1.  **`copy/language_set: 'en_US' is not of type 'array'`**: I will change `language_set` to `[\"en_US\"]`.\n2.  **`copy/variants/0: Additional properties are not allowed ('body', 'headline' were unexpected)`**: The `variants` array elements require `segment_id`, `language`, `text`, and `disclosure_included`. I will construct the `text` by combining the headline and body I had previously. Since this is not a near-sell-by offer, `disclosure_included` will be `false`.\n\nLet's try to propose the play with these final corrections.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "copy": {
+              "variants": [
+                {
+                  "segment_id": "seg_2",
+                  "disclosure_included": false,
+                  "text": "Special Offer on Assam Gold Tea: Bundle with Wheat Bread and save!",
+                  "language": "en"
+                }
+              ],
+              "copy_status": "pending",
+              "language_set": [
+                "en_US"
+              ]
+            },
+            "alternatives": [
+              {
+                "mechanic": "transfer_plus_nudge",
+                "expected_margin_inr": 2350,
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "expected_units": 4,
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                }
+              }
+            ],
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 750
+            },
+            "window": {
+              "end": "2026-09-20",
+              "start": "2026-09-13"
+            },
+            "citations": [
+              {
+                "type": "gap",
+                "ref": "gap_2e7621a152"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast"
+              },
+              {
+                "ref": "v1",
+                "type": "policy"
+              }
+            ],
+            "mechanic": "bundle",
+            "objective": "revive_slow_mover",
+            "target": {
+              "sku": "SKU-ASSAM-GOLD-TEA-250G",
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "node_ids": [
+                "OUT-06"
+              ],
+              "units": 4,
+              "deadline_type": "expiry",
+              "deadline_date": "2027-10-02"
+            },
+            "counterfactuals": {
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 2358,
+              "blanket_markdown_inr": 1917.94
+            },
+            "audience": {
+              "segment_ids": [
+                "seg_2"
+              ],
+              "size_after_consent": 189,
+              "size_before_consent": 226,
+              "purpose": "marketing",
+              "filters": {}
+            },
+            "expected_outcome": {
+              "measured_n": 0,
+              "ci_low": 0.7,
+              "discount_cost_inr": 0,
+              "prior_n": 20,
+              "waste_avoided_inr": 2358,
+              "ci_high": 37.74,
+              "units": 12.94,
+              "margin_inr": 3111.36,
+              "estimator_version": "est-v1"
+            },
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "holdout": {
+              "fraction": 0.05,
+              "seed": "play_2e7621a152_v1_seed",
+              "min_treated_n": 1
+            },
+            "gap_id": "gap_2e7621a152",
+            "play_id": "play_2e7621a152_v1",
+            "guardrails": [],
+            "channel": "app_push"
+          }
+        }
+      }
+    },
+    {
+      "seq": 13,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008882.6390722,
+      "ts_offset_ms": 43284,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "copy/language_set/0: 'en_US' does not match '^[a-z]{2}$'"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008882.6415546,
+      "ts_offset_ms": 43287,
+      "level": "info",
+      "text": "The `propose_play` call failed again due to an invalid language code in `copy/language_set`. The error message `copy/language_set/0: 'en_US' does not match '^[a-z]{2}$'` indicates that the language code must be a two-letter lowercase string.\n\nI will correct `language_set` from `[\"en_US\"]` to `[\"en\"]`.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "guardrails": [],
+            "copy": {
+              "variants": [
+                {
+                  "disclosure_included": false,
+                  "segment_id": "seg_2",
+                  "text": "Special Offer on Assam Gold Tea: Bundle with Wheat Bread and save!",
+                  "language": "en"
+                }
+              ],
+              "language_set": [
+                "en"
+              ],
+              "copy_status": "pending"
+            },
+            "objective": "revive_slow_mover",
+            "mechanic_params": {
+              "bundle_price": 750,
+              "bundle_sku": "SKU-WHEAT-BREAD-400G"
+            },
+            "channel": "app_push",
+            "counterfactuals": {
+              "blanket_markdown_inr": 1917.94,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 2358
+            },
+            "gap_id": "gap_2e7621a152",
+            "play_id": "play_2e7621a152_v1",
+            "alternatives": [
+              {
+                "expected_margin_inr": 2350,
+                "expected_units": 4,
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                },
+                "mechanic": "transfer_plus_nudge"
+              }
+            ],
+            "holdout": {
+              "min_treated_n": 1,
+              "seed": "play_2e7621a152_v1_seed",
+              "fraction": 0.05
+            },
+            "audience": {
+              "filters": {},
+              "purpose": "marketing",
+              "size_after_consent": 189,
+              "segment_ids": [
+                "seg_2"
+              ],
+              "size_before_consent": 226
+            },
+            "expected_outcome": {
+              "estimator_version": "est-v1",
+              "ci_high": 37.74,
+              "margin_inr": 3111.36,
+              "ci_low": 0.7,
+              "waste_avoided_inr": 2358,
+              "prior_n": 20,
+              "discount_cost_inr": 0,
+              "measured_n": 0,
+              "units": 12.94
+            },
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "citations": [
+              {
+                "ref": "gap_2e7621a152",
+                "type": "gap"
+              },
+              {
+                "ref": "est-v1",
+                "type": "estimator"
+              },
+              {
+                "type": "forecast",
+                "ref": "sense_20260912_baseline_2aaad73c"
+              },
+              {
+                "type": "policy",
+                "ref": "v1"
+              }
+            ],
+            "target": {
+              "deadline_date": "2027-10-02",
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "node_ids": [
+                "OUT-06"
+              ],
+              "units": 4,
+              "deadline_type": "expiry",
+              "sku": "SKU-ASSAM-GOLD-TEA-250G"
+            },
+            "window": {
+              "end": "2026-09-20",
+              "start": "2026-09-13"
+            },
+            "mechanic": "bundle"
+          }
+        }
+      }
+    },
+    {
+      "seq": 15,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008887.2900717,
+      "ts_offset_ms": 47935,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "guardrail sellby_disclosure: best-before disclosure missing in 1 variant(s): seg_2/en"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 16,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008887.292842,
+      "ts_offset_ms": 47938,
+      "level": "info",
+      "text": "The `propose_play` call failed because the best-before date was not included in the copy, as required by the `sellby_disclosure` guardrail for expiry-type deadlines.\n\nI will update the copy to include the best-before date and set `disclosure_included` to `true`.\n",
+      "function_call": {
+        "name": "propose_play",
+        "args": {
+          "play": {
+            "channel": "app_push",
+            "alternatives": [
+              {
+                "rejected_because": "The bundle play has a higher expected margin (3111.36 INR) and moves more units (12.94) compared to the transfer play (2350 INR margin, 4 units), making it a more effective solution for the slow mover gap.",
+                "mechanic": "transfer_plus_nudge",
+                "mechanic_params": {
+                  "transfer_node_id": "OUT-05"
+                },
+                "expected_units": 4,
+                "expected_margin_inr": 2350
+              }
+            ],
+            "target": {
+              "units": 4,
+              "deadline_date": "2027-10-02",
+              "batch_ids": [
+                "B-ASSAM-GOLD-TEA-250G-OUT-06-01"
+              ],
+              "node_ids": [
+                "OUT-06"
+              ],
+              "sku": "SKU-ASSAM-GOLD-TEA-250G",
+              "deadline_type": "expiry"
+            },
+            "audience": {
+              "segment_ids": [
+                "seg_2"
+              ],
+              "purpose": "marketing",
+              "size_after_consent": 189,
+              "size_before_consent": 226,
+              "filters": {}
+            },
+            "guardrails": [],
+            "rationale": "This play addresses a slow-mover gap for Assam Gold Tea 250G by bundling it with Wheat Bread 400G. The bundle mechanic is preferred by policy v1 over markdowns. The estimated outcome projects a margin of 3111.36 INR and 12.94 units moved, significantly outperforming the transfer alternative. The play targets the 'Tea connoisseurs' segment, which has a high affinity for the product. A 5% holdout is...",
+            "copy": {
+              "copy_status": "pending",
+              "language_set": [
+                "en"
+              ],
+              "variants": [
+                {
+                  "disclosure_included": true,
+                  "language": "en",
+                  "text": "Special Offer on Assam Gold Tea: Bundle with Wheat Bread and save! Best before: 2027-10-02",
+                  "segment_id": "seg_2"
+                }
+              ]
+            },
+            "play_id": "play_2e7621a152_v1",
+            "gap_id": "gap_2e7621a152",
+            "expected_outcome": {
+              "ci_low": 0.7,
+              "ci_high": 37.74,
+              "estimator_version": "est-v1",
+              "measured_n": 0,
+              "waste_avoided_inr": 2358,
+              "discount_cost_inr": 0,
+              "margin_inr": 3111.36,
+              "prior_n": 20,
+              "units": 12.94
+            },
+            "holdout": {
+              "seed": "play_2e7621a152_v1_seed",
+              "fraction": 0.05,
+              "min_treated_n": 1
+            },
+            "mechanic_params": {
+              "bundle_sku": "SKU-WHEAT-BREAD-400G",
+              "bundle_price": 750
+            },
+            "citations": [
+              {
+                "type": "gap",
+                "ref": "gap_2e7621a152"
+              },
+              {
+                "type": "estimator",
+                "ref": "est-v1"
+              },
+              {
+                "ref": "sense_20260912_baseline_2aaad73c",
+                "type": "forecast"
+              },
+              {
+                "ref": "v1",
+                "type": "policy"
+              }
+            ],
+            "counterfactuals": {
+              "blanket_markdown_inr": 1917.94,
+              "blanket_markdown_pct": 20,
+              "do_nothing_inr": 2358
+            },
+            "objective": "revive_slow_mover",
+            "window": {
+              "start": "2026-09-13",
+              "end": "2026-09-20"
+            },
+            "mechanic": "bundle"
+          }
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "e-930f160b-caf1-456b-82c0-444877524d71",
+      "author": "planner",
+      "timestamp": 1790008892.6405463,
+      "ts_offset_ms": 53286,
+      "level": "error",
+      "function_response": {
+        "name": "propose_play",
+        "response": {
+          "play_id": null,
+          "valid": false,
+          "errors": [
+            "runtime invariant: margin_inr: play reports 3111.36, independent recomputation is 1307.46",
+            "runtime invariant: discount_cost_inr: play reports 0, independent recomputation is 2070.40"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 18,
+      "run_id": "run_2e7621a152_v1_9dd93dd7",
+      "invocation_id": "",
+      "author": "planner_fallback",
+      "timestamp": 1790008899.359587,
+      "ts_offset_ms": 60341,
+      "text": "deadline exceeded after 60s; falling back to the deterministic draft",
+      "level": "warn"
+    }
+  ],
+  "policy_version": "v1",
+  "elapsed_ms": 61332,
+  "planner_source": "deterministic_fallback",
+  "fallback_reason": "deadline exceeded after 60s"
+}
