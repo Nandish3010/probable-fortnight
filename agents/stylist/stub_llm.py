@@ -211,7 +211,7 @@ class StubStylistLlm(BaseLlm):
             rows = []
             for p in res["pairings"][:10]:
                 note = f" · {p['skin_note']}" if p.get("skin_note") else ""
-                rows.append({"id": f"item:{p['sku']}", "title": p["name"][:24], "desc": f"{p['role']} · {p['reason']}{note} · ₹{p['list_price']:.0f}"[:72]})
+                rows.append({"id": f"item:{p['sku']}", "title": p["name"][:24], "desc": f"{p['role']} · {p['reason']}{note} · ₹{p['list_price']:.0f}"[:72], "garment_type": p["garment_type"]})
             citations = [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in res["pairings"][:3]]
             if anchor.get("sku"):
                 citations.append({"type": "stock", "ref": f"{anchor['sku']}@{node}"})
@@ -230,7 +230,7 @@ class StubStylistLlm(BaseLlm):
             items = res.get("items") or []
             if not items:
                 return self._say({"text": s["nomatch"].format(q=text)})
-            rows = [{"id": f"item:{it['sku']}", "title": it["name"][:24], "desc": f"{it['role']} · ₹{it['list_price']:.0f}"[:72]} for it in items[:10]]
+            rows = [{"id": f"item:{it['sku']}", "title": it["name"][:24], "desc": f"{it['role']} · ₹{it['list_price']:.0f}"[:72], "garment_type": it["garment_type"]} for it in items[:10]]
             return self._say({"text": s["matches"].format(q=text), "list": {"title": "In stock", "rows": rows}, "citations": [{"type": "stock", "ref": f"{it['sku']}@{node}"} for it in items[:3]]})
 
         if GREETING_RE.match(low) or not text:
