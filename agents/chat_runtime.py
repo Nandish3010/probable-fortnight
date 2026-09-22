@@ -89,6 +89,19 @@ def parse_envelope(text: str) -> dict[str, Any]:
     return {"text": raw[:4096]}
 
 
+# Defense in depth, not the primary fix: the primary fix is that agents/customer/chat.py and
+# agents/stylist/chat.py no longer inject raw JSON + a "don't quote this" instruction into a
+# turn's own text (a live reply once echoed exactly that block back to a customer -- see
+# eval/evaluation.md). A model can still occasionally quote a parenthetical context note despite
+# being told not to, so strip anything shaped like one before it ever reaches a customer, rather
+# than trusting the prompt alone a second time.
+_INTERNAL_LEAK_RE = re.compile(r"\(known:.*?\)|\[internal[^\]]*\]", re.I | re.S)
+
+
+def _strip_internal_leak(text: str) -> str:
+    return _INTERNAL_LEAK_RE.sub("", text).strip()
+
+
 def clamp(env: dict[str, Any]) -> dict[str, Any]:
     if env.get("buttons"):
         env["buttons"] = [{"id": str(b["id"])[:64], "label": str(b["label"])[:20]} for b in env["buttons"][:3]]
@@ -97,7 +110,7 @@ def clamp(env: dict[str, Any]) -> dict[str, Any]:
         env["list"] = {"title": str(env["list"].get("title", ""))[:60], "rows": [{"id": str(r["id"])[:64], "title": str(r["title"])[:24], **({"desc": str(r["desc"])[:72]} if r.get("desc") else {})} for r in rows[:10]]}
     if env.get("citations"):
         env["citations"] = [c for c in env["citations"] if c.get("type") in ("stock", "play", "forecast") and c.get("ref")]
-    env["text"] = str(env.get("text", ""))[:4096]
+    env["text"] = _strip_internal_leak(str(env.get("text", "")))[:4096]
     return env
 
 

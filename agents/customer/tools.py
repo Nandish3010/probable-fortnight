@@ -112,6 +112,33 @@ def get_customer_context(customer_id: str) -> dict:
     return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent, "memory": _customer_memory(ctx, customer_id)}
 
 
+def context_summary(context: dict) -> str:
+    """A one-line, plain-prose rendering of get_customer_context's result, meant to be folded
+    straight into a chat turn's text. Deliberately NOT the raw dict: a model handed a JSON blob
+    plus a "never quote this" instruction inline in its own turn text will sometimes quote it
+    anyway (observed live -- the whole bracketed block leaked into a real reply); a short sentence
+    with no JSON syntax in it removes the thing there is to quote, rather than asking the model
+    not to. Sensitive per-play internals (play_id, mechanic_params) are dropped -- the model only
+    ever needs the offer's own customer-facing text, not the mechanics behind it."""
+    lang = "Kannada" if context.get("language") == "kn" else "English"
+    bits = [f"home store {context['home_node_id']}", f"writes in {lang}"]
+    if context.get("consent_marketing"):
+        offers = context.get("pending_offers") or []
+        if offers:
+            bits.append(f'one pending offer to deliver now, exact wording: "{offers[0]["text"]}"')
+        else:
+            bits.append("no pending offers right now")
+    else:
+        bits.append("marketing consent withdrawn -- never mention any offer")
+    memory = context.get("memory") or []
+    if memory:
+        m = memory[0]
+        what = m.get("name") or m.get("query_text") or "something"
+        status = "back in stock now" if m.get("now_in_stock") else "still not in stock"
+        bits.append(f"previously asked about {what} ({status})")
+    return "; ".join(bits)
+
+
 def _stock_info(ctx, sku: str, node_id: str) -> dict:
     """Pure lookup, no side effects. Shared by get_stock (which records the demand signal on top),
     find_substitutes and _customer_memory, so checking on a customer's behalf internally never
