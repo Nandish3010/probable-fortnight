@@ -7,7 +7,6 @@ shared runtime in agents/chat_runtime.py.
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +16,7 @@ from agents.gate.store import LocalStore
 
 from .agent import build_customer_agent
 from .context import CustomerContext, reset_context, set_context
-from .tools import get_customer_context
+from .tools import context_summary, get_customer_context
 
 APP = "taal_customer"
 RUNTIME = ChatRuntime(APP, "customer", lambda store, backend: build_customer_agent({p["name"].lower(): p["sku"] for p in store.read("products")}, backend))
@@ -45,21 +44,24 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
         # uses for its vision reads) and folded into the turn text as an already-done tool result,
         # so a turn that needs no other tool resolves in one round trip instead of two. Only done
         # on the vertex backend: the stub model parses the raw user text with regexes (agents/
-        # customer/stub_llm.py) and has no use for -- and would be confused by -- an appended JSON
-        # blob, and it never pays a real network round trip anyway.
+        # customer/stub_llm.py) and has no use for -- and would be confused by -- the appended
+        # note, and it never pays a real network round trip anyway.
+        #
+        # The first version of this fix appended the raw customer_context dict as JSON plus a
+        # "never quote this" instruction, inline in the user turn's own text. Live-verified to
+        # leak: a real reply on the deployed app echoed the entire bracketed block, JSON and all,
+        # to the customer (see eval/evaluation.md's write-up of the incident). Asking a model not
+        # to repeat a block of JSON syntax sitting right in front of it in its own turn is not a
+        # reliable guardrail -- context_summary() renders the same facts as one line of plain
+        # prose instead, so there is no JSON left to quote, matching the pattern
+        # agents/stylist/chat.py already used successfully (a short parenthetical description,
+        # never a raw dict).
         effective_backend = backend or load_models()["backend"]
         turn_text = text
         extra_tool_calls: list[dict[str, Any]] = []
         if effective_backend == "vertex":
             customer_context = get_customer_context(customer_id)
-            turn_text = (
-                f"{text}\n\n"
-                f"[INTERNAL, not part of what the customer said or should ever see verbatim: "
-                f"get_customer_context has already run for you this turn -- do not call it again. "
-                f"Use these facts to decide your reply, then write that reply as ordinary prose; "
-                f"never quote this bracket, its field names, or its raw values.\n"
-                f"get_customer_context_result = {json.dumps(customer_context, ensure_ascii=False)}]"
-            )
+            turn_text = f"{text}\n\n(known: {context_summary(customer_context)})"
             extra_tool_calls = [{"name": "get_customer_context", "args": {"customer_id": customer_id}}]
         envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls)
         return [envelope]
