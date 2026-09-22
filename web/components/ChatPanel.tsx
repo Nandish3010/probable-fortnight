@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { getDemoCustomers, isMockMode, sendChat } from "../lib/api";
 import { swatchFor } from "../lib/colour";
+import { GarmentGlyph, iconKeyFor } from "../lib/garmentArt";
 import { Badge } from "./Badge";
 import type { ChatEnvelope, DemoCustomer } from "../lib/types";
 
 interface DisplayMessage extends ChatEnvelope {
   key: string;
+  photoDataUrl?: string;
+  photoName?: string;
 }
 
 interface PendingPhoto {
@@ -79,7 +82,14 @@ export function ChatPanel({
     setSending(true);
     setMessages((prev) => [
       ...prev,
-      { key: `u-${Date.now()}`, session_id: sessionId.current, role: "customer", text: text || (photo ? `[photo: ${photo.name}]` : "") },
+      {
+        key: `u-${Date.now()}`,
+        session_id: sessionId.current,
+        role: "customer",
+        text: text || (photo ? `[photo: ${photo.name}]` : ""),
+        photoDataUrl: photo?.dataUrl,
+        photoName: photo?.name,
+      },
     ]);
     setInput("");
     setPendingPhoto(null);
@@ -162,6 +172,12 @@ export function ChatPanel({
         {messages.length === 0 ? <p className="muted">Send a message to start.</p> : null}
         {messages.map((m) => (
           <div key={m.key} className={`chat-msg chat-msg--${m.role}`}>
+            {m.photoDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="chat-msg__photo" src={m.photoDataUrl} alt={m.photoName ?? "Attached photo"} />
+            ) : m.photoName ? (
+              <p className="chat-msg__photo-label muted">📷 {m.photoName}</p>
+            ) : null}
             <p>{m.text}</p>
             {m.buttons ? (
               <div className="chat-msg__buttons">
@@ -178,10 +194,15 @@ export function ChatPanel({
                 <ul>
                   {m.list.rows.map((row) => {
                     const swatch = specialist === "stylist" ? swatchFor(row.title) : null;
+                    const hasGlyph = specialist === "stylist" && !!iconKeyFor(row.garment_type, null);
                     return (
                       <li key={row.id}>
                         <button type="button" className="chat-msg__list-item" onClick={() => send(row.id)} disabled={sending}>
-                          {swatch ? (
+                          {hasGlyph ? (
+                            <span className="chat-msg__glyph-wrap" style={{ color: swatch ?? undefined }}>
+                              <GarmentGlyph garmentType={row.garment_type} hex={swatch} />
+                            </span>
+                          ) : swatch ? (
                             <span className="chat-msg__swatch" style={{ background: swatch }} aria-hidden="true" />
                           ) : null}
                           <strong>{row.title}</strong>

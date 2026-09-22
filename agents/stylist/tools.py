@@ -207,7 +207,7 @@ def suggest_pairings(anchor: str, node_id: str, occasion: str | None = None) -> 
         if profile_rules is not None:
             adj, skin_note = skin_adjustment(fam, item["role"], profile_rules, metal=item.get("metal"), garment_type=item["garment_type"], depth=ctx.profile["depth"])
             score += adj
-        candidates.append({"sku": sku, "name": item["name"], "role": item["role"], "colour": item["colour"], "colour_family": fam, "pattern": item["pattern"], "reason": reason, "skin_note": skin_note, "score": round(max(0.0, min(1.0, score)), 3), "list_price": float(item["list_price"]), "sizes_in_stock": sorted(sizes)})
+        candidates.append({"sku": sku, "name": item["name"], "garment_type": item["garment_type"], "role": item["role"], "colour": item["colour"], "colour_family": fam, "pattern": item["pattern"], "reason": reason, "skin_note": skin_note, "score": round(max(0.0, min(1.0, score)), 3), "list_price": float(item["list_price"]), "sizes_in_stock": sorted(sizes)})
 
     candidates.sort(key=lambda c: (-c["score"], allowed_roles.index(c["role"]), c["list_price"], c["sku"]))
 

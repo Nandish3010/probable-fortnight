@@ -240,6 +240,7 @@ export interface ChatListRow {
   id: string;
   title: string; // <= 24 chars
   desc?: string; // <= 72 chars
+  garment_type?: string; // stylist rows only -- picks a garment icon; this catalogue has no per-SKU photo
 }
 
 export interface ChatList {
