@@ -18,6 +18,30 @@ function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
   );
 }
 
+function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
+  const measured = outcomes.filter((o) => o.status === "measured");
+  if (measured.length === 0) return null;
+  const kg = measured.reduce((sum, o) => sum + (o.waste_kg_est ?? 0), 0);
+  const co2e = measured.reduce((sum, o) => sum + (o.co2e_kg_est ?? 0), 0);
+  const rupees = measured.reduce((sum, o) => sum + (o.waste_avoided_inr ?? 0), 0);
+  return (
+    <div className="card impact-summary">
+      <div className="impact-summary__stat">
+        <span className="impact-summary__number">{kg.toFixed(1)} kg</span>
+        <span className="muted">of food diverted from waste, across {measured.length} measured play{measured.length === 1 ? "" : "s"}</span>
+      </div>
+      <div className="impact-summary__stat">
+        <span className="impact-summary__number">{co2e.toFixed(1)} kg</span>
+        <span className="muted">CO2e avoided (estimate; see the emissions factor caveat in docs/DATA_MODEL.md)</span>
+      </div>
+      <div className="impact-summary__stat">
+        <span className="impact-summary__number">{inr(rupees)}</span>
+        <span className="muted">margin preserved that would otherwise have been written off</span>
+      </div>
+    </div>
+  );
+}
+
 export default function OutcomesPage() {
   const [outcomes, setOutcomes] = useState<Outcome[] | null>(null);
   const [measuring, setMeasuring] = useState(false);
@@ -54,6 +78,14 @@ export default function OutcomesPage() {
         <Badge kind="live" detail="/outcomes" />
       </div>
       <p className="muted">Per play: treated vs holdout, lift with CI when measured, the CEO number.</p>
+      <p className="holdout-explainer">
+        <strong>Holdout</strong> is a randomly assigned control group -- customers who see no offer for this
+        play at all, chosen the same way as everyone in "Treated" except for a coin flip. Every lift number
+        below is the difference between what the treated group actually did and what this control group did,
+        not a before/after comparison against the same customers. This is the only honest way to know a play
+        caused the change, rather than a trend that would have happened anyway.
+      </p>
+      {outcomes ? <ImpactSummary outcomes={outcomes} /> : null}
       <div className="outcomes-measure">
         <button type="button" onClick={runMeasure} disabled={measuring}>
           {measuring ? "Measuring…" : "Run Measure"}
@@ -115,7 +147,10 @@ export default function OutcomesPage() {
                       <span className="muted">unmeasured</span>
                     )}
                   </td>
-                  <td>{o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}</td>
+                  <td>
+                    {o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}
+                    {o.waste_kg_est != null ? <div className="muted">{o.waste_kg_est.toFixed(1)} kg</div> : null}
+                  </td>
                   <td>
                     {o.status === "measured" && o.margin_per_discount_rupee != null ? (
                       <div>

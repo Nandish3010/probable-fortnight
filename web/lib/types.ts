@@ -440,6 +440,8 @@ export interface Outcome {
   ci_high?: number | null;
   waste_avoided_inr?: number | null;
   margin_per_discount_rupee?: number | null; // the CEO number; null when no discount was given
+  waste_kg_est?: number | null;
+  co2e_kg_est?: number | null;
   looker_url?: string;
   data_label: "REAL PILOT" | "SYNTHETIC";
 }
