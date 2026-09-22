@@ -82,6 +82,46 @@ from the same seeded generator on its own RNG stream; the style-trends panel agg
 chat asks, not a forecast, and is labelled SYNTHETIC; garment and selfie photo fixtures are
 generated colour swatches, never real photos.
 
+## Related work
+
+Two outside references anchor design decisions here, rather than left as unverified intuition:
+
+- **[OTTO's forecasting team, "Team Lumen"](https://cloud.google.com/customers/otto)** put a
+  Time-series Dense Encoder (TiDE) model on Vertex AI, BigQuery and GKE and measured up to a 30%
+  improvement in demand-forecast accuracy for seasonal inventory. It is the production evidence
+  that this project's own choice of stack (BigQuery `AI.FORECAST`/`ARIMA_PLUS_XREG` on Vertex) is
+  not a hackathon-only convenience -- the same primitives already carry real retail forecasting
+  load elsewhere.
+- **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
+  for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
+  2026), a two-step regression study over 1,700+ SKUs across 676 stores of a major European
+  grocery retailer, finds that standard demand forecasts systematically underestimate the demand
+  uplift a markdown produces on expiring stock -- because the discount itself is not fed back into
+  the forecast as a covariate. That is precisely the gap Taal's approve step closes: an approved
+  play is written into `future_regressors` and the series is re-forecast with the play as a known
+  covariate, rather than left for the next forecast cycle to be surprised by the uplift after the
+  fact.
+
+## Related work: AP2 vocabulary for consent and approval
+
+Google's [Agent Payments Protocol (AP2)](https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol)
+names three stages of machine-to-machine consent as signed Mandates: **Intent** (what the user
+authorised an agent to do, and its scope), **Cart** (the exact items and price the user approved),
+and **Payment** (authorisation to charge a specific instrument). Taal does not implement AP2's
+protocol or its cryptographic Verifiable Credentials -- there is no agent-to-agent payment here,
+only one retailer's own agent talking to its own customer -- but the same three-stage discipline
+already existed in this codebase before AP2 was named, and stating it in AP2's vocabulary makes the
+design legible to anyone who already knows that framework:
+
+| AP2 concept | Taal's equivalent |
+|---|---|
+| Intent Mandate | Marketing consent (`consent` table) plus the guardrail-approved play itself: what this customer may be offered, and under what limits (frequency cap, margin floor) |
+| Cart Mandate | `apply_offer(play_id, customer_id)` -- the customer's own `add:<sku>` click locks in the exact play, sku and discount before `place_order` runs |
+| Payment Mandate | `place_order(...)` -- the MCP order tool executes the transaction against the cart `apply_offer` already fixed |
+
+"STOP" (`record_stop`) revokes the Intent Mandate outright: the consent gate re-checks it on every
+proposed play, not just at signup.
+
 ## Evaluation
 
 [`eval/evaluation_table.md`](eval/evaluation_table.md) is the DECISIONS §12 submission table,
