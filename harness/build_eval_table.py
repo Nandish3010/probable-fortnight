@@ -164,11 +164,14 @@ def build_rows() -> list[Row]:
     key = next(k for k in not_measured if "Pilot treated-vs-holdout" in k)
     rows.append(Row("Pilot: treated vs holdout with CI, unmeasured count, pre-registered metric", NOT_MEASURED, not_measured[key]))
 
-    # 10. Customer Agent p50/p95 and approve -> re-forecast latency
+    # 10. Customer Agent p50/p95 and approve -> re-forecast latency. The first live sweep (49/50
+    # OK, one envelope-validation 500) predates the get_customer_context prefetch fix and is
+    # superseded by the "round two" re-measurement below (50/50 OK, ~15% faster) -- pull that
+    # corrected paragraph, not the first one, so the table states the current number.
     chat_latency = _extract(
         text,
-        r"\*\*`/chat` p95, 50 real runs, live Vertex backend\.\*\*(.*?)\n\n",
-        "the /chat p95 latency paragraph",
+        r"\*\*Re-measured, same methodology, same message mix, fresh visitor per call\.\*\*(.*?)\n\n",
+        "the /chat p95 latency round-two paragraph",
     )
     sweep_raw = ROOT / "eval" / "raw" / "sweep_vertex_2026-09-21.txt"
     approve_line = ""
@@ -179,7 +182,7 @@ def build_rows() -> list[Row]:
     latency_result = chat_latency
     if approve_line:
         latency_result += f" Approve latency (includes the re-forecast call), same clean live-Vertex sweep: `{approve_line}`."
-    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_2026-09-21.json`, `eval/raw/customer_latency_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`"))
+    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_fix_2026-09-21.json`, `eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`"))
 
     # 11. Vision read accuracy on 30 staged photos
     vision = _extract(
