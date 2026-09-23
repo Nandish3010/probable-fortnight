@@ -4,7 +4,9 @@ get_customer_context JSON block, plus its "never quote this" instruction, back t
 line of plain prose (no JSON syntax left to quote) and clamp() strips anything shaped like the
 old or new injected note as a second line of defence -- both are tested here.
 """
-from agents.chat_runtime import clamp
+import jsonschema
+
+from agents.chat_runtime import ENVELOPE_SCHEMA, clamp
 from agents.customer.tools import context_summary
 
 
@@ -46,3 +48,15 @@ def test_clamp_strips_the_old_bracketed_internal_block_too():
 def test_clamp_leaves_ordinary_replies_untouched():
     env = {"text": "We have Cola Zero in 1L, 250ML and 500ML. Which size would you like?"}
     assert clamp(env)["text"] == env["text"]
+
+
+def test_clamp_drops_explicit_null_buttons_list_citations_instead_of_leaving_them():
+    """A model turn can emit these keys as a literal JSON null rather than omitting them. The
+    schema declares them optional but typed array/object with no null variant, so a null that
+    survives clamp() unchanged used to fail schema validation uncaught -- the documented
+    live-chat 500 for a vertex-backend turn.
+    """
+    env = {"session_id": "s:web", "role": "agent", "text": "Sure.", "buttons": None, "list": None, "citations": None}
+    clamped = clamp(env)
+    assert "buttons" not in clamped and "list" not in clamped and "citations" not in clamped
+    jsonschema.Draft202012Validator(ENVELOPE_SCHEMA, format_checker=jsonschema.FormatChecker()).validate(clamped)
