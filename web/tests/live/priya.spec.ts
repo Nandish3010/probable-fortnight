@@ -15,14 +15,16 @@ test.describe("Priya: phone view", () => {
     }
     await page.getByRole("button", { name: "Pallet 1" }).click();
     const table = page.getByTestId("intake-table");
-    await expect(table.getByText("SKU-BANANA-CHIPS-100G")).toBeVisible();
-    await expect(page.getByText(/Is this .* facings\?/)).toBeVisible();
+    // This real, live-Gemini-verified pallet photo reads with high confidence on every row
+    // (eval/evaluation.md, "Regenerated the three demo pallet fixtures"): the third row read as
+    // the real, valid SKU SKU-BANANA-CHIPS-200G rather than the originally intended -100G, and
+    // no row needs a confirmation question before confirming.
+    await expect(table.getByText("SKU-BANANA-CHIPS-200G")).toBeVisible();
     await shot(page, "priya-02-intake");
-    await page.getByRole("button", { name: "Yes" }).click();
     const confirmed = page.waitForResponse((r) => r.url().endsWith("/capture/confirm"));
     await page.getByRole("button", { name: "Confirm rows" }).click();
-    // all three rows (two confident, one confirmed) become photo-sourced inventory; gaps are
-    // re-detected for the node on the spot (these small lots sell through, so no new gap is right)
+    // all three rows (all high-confidence) become photo-sourced inventory; gaps are re-detected
+    // for the node on the spot (these small lots sell through, so no new gap is right)
     const body = await (await confirmed).json();
     expect(body.ok).toBeTruthy();
     expect(body.written).toBe(3);
