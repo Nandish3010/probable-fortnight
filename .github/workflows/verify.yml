@@ -19,6 +19,52 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: status, path: STATUS.md }
+  live-test:
+    # Persona walkthrough (make live-test) against the real running stack -- api-test/web-test
+    # above only exercise fixtures and mock mode, so this is the only CI job that would have
+    # caught the live-mode regressions a judge review found (stale test fixtures, a guardrail id
+    # only visible in raw trace JSON). Runs after `verify` so it never masks a base-level red.
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: uv python install 3.11
+      - run: uv sync --group dev
+      - run: cd web && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: make generate
+      - name: Start make api in the background
+        run: nohup make api > api.log 2>&1 &
+      - name: Wait for the API to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/health > /dev/null && exit 0
+            sleep 2
+          done
+          echo "API never became healthy"; cat api.log; exit 1
+      - name: Start make web in the background (mock mode off)
+        run: nohup make web > web.log 2>&1 &
+      - name: Wait for the web app to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/ > /dev/null && exit 0
+            sleep 2
+          done
+          echo "Web app never became healthy"; cat web.log; exit 1
+      - run: make live-test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-test-results
+          path: |
+            api.log
+            web.log
+            eval/runs/live-results
+            eval/runs/screens
+
   spec-review:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
