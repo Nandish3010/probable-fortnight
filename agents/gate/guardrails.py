@@ -217,13 +217,25 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
 
 
 def _matches(value: float, cited: Iterable[float]) -> bool:
+    # 0.5% of a large cited value (e.g. a rupees-at-stake figure in the thousands) used to open
+    # a wide match window -- tightened to 0.1%, which still tolerates real rounding differences
+    # (₹9,194 vs ₹9,194.2) without accepting a materially different number as "the same" one.
     for c in cited:
-        if abs(value - c) <= max(0.5, 0.005 * abs(c)):
+        if abs(value - c) <= max(0.5, 0.001 * abs(c)):
             return True
     return False
 
 
 def rule_cite_or_drop(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
+    """Real scope, stated plainly rather than implied by the name: this is not a strict
+    per-citation link check (it does not verify *which* citation backs *which* number in the
+    rationale). It checks that every number the rationale states also appears somewhere in the
+    play's own structured fields (expected_outcome, counterfactuals, target, mechanic_params,
+    audience, holdout) or in a guardrail rule's own tool-computed detail string -- i.e. the
+    model did not invent a number that appears nowhere in the facts it was given. That is a real
+    and useful check (see test_cite_or_drop_rejects_an_uncited_number), but a rationale can still
+    cite a true number for the wrong reason; this rule cannot catch that.
+    """
     citations = draft.get("citations") or []
     unresolved = []
     if ctx.resolve_citation is not None:

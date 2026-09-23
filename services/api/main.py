@@ -33,7 +33,15 @@ from .sandbox import store_for, visitor_id
 
 VERSION = "0.1.0"
 app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
-app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+# allow_origin_regex=r"https?://.*" with allow_credentials=True used to reflect literally any
+# calling origin back with credentials enabled -- any site can make a credentialed
+# cross-origin request (carrying the taal_visitor sandbox cookie) against this public,
+# unauthenticated API from a victim's browser. Restricted to an explicit allowlist instead:
+# TAAL_ALLOWED_ORIGINS (comma-separated) for the deployed taal-web origin(s) in production,
+# defaulting to the local dev server only.
+_default_origins = "http://localhost:3000,http://127.0.0.1:3000"
+_allowed_origins = [o.strip() for o in os.environ.get("TAAL_ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 def _now() -> datetime:

@@ -103,6 +103,13 @@ gcloud run deploy taal-agents \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT}" \
   --allow-unauthenticated
+# TODO: services/api/main.py now restricts CORS to TAAL_ALLOWED_ORIGINS (default localhost
+# only) instead of reflecting any origin -- a real credentialed-CORS fix. This script deploys
+# taal-agents before taal-web's URL is known, so TAAL_ALLOWED_ORIGINS is not yet set here. Add a
+# second `gcloud run services update taal-agents --update-env-vars TAAL_ALLOWED_ORIGINS=<taal-web
+# URL>` after taal-web is deployed below, the same way NEXT_PUBLIC_TAAL_API_URL is threaded
+# through in the other direction -- otherwise the deployed web app's own requests will be
+# rejected by CORS once this fix ships.
 
 AGENTS_URL="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format='value(status.url)')"
 echo "   taal-agents URL: ${AGENTS_URL}"

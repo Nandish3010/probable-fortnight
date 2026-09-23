@@ -41,6 +41,36 @@ def _rate(responders: int, customers: int) -> float:
     return responders / customers if customers else 0.0
 
 
+def _wilson_interval(r: int, n: int, z: float = Z95) -> tuple[float, float]:
+    """Wilson score interval for one proportion. Unlike the Wald (normal-approximation)
+    interval, this does not collapse to a single point at r=0 or r=n -- it stays a real,
+    non-degenerate interval, which is why it is used here instead.
+    """
+    if n == 0:
+        return 0.0, 0.0
+    p = r / n
+    denom = 1 + z * z / n
+    center = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return max(0.0, center - half), min(1.0, center + half)
+
+
+def _lift_ci_newcombe(r_t: int, n_t: int, r_h: int, n_h: int, z: float = Z95) -> tuple[float, float, float]:
+    """95% CI for the difference of two independent proportions (Newcombe 1998's hybrid-score
+    method): a Wilson interval on each arm, combined. Non-degenerate even at zero responders in
+    both arms, unlike the plain normal-approximation difference used previously (which gives
+    exactly [0.0, 0.0] whenever both arms have zero responders, and cannot be told apart from a
+    genuinely precise zero lift).
+    """
+    p_t, p_h = _rate(r_t, n_t), _rate(r_h, n_h)
+    lift = p_t - p_h
+    l_t, u_t = _wilson_interval(r_t, n_t, z)
+    l_h, u_h = _wilson_interval(r_h, n_h, z)
+    ci_low = lift - math.sqrt((p_t - l_t) ** 2 + (u_h - p_h) ** 2)
+    ci_high = lift + math.sqrt((u_t - p_t) ** 2 + (p_h - l_h) ** 2)
+    return lift, ci_low, ci_high
+
+
 def measure_play(play: dict[str, Any], assignments: list[dict[str, Any]], lines: list[dict[str, Any]], product: dict[str, Any], computed_at: str) -> list[dict[str, Any]]:
     """Two play_outcomes rows (treated, holdout) for one play."""
     arms: dict[str, set[str]] = {"treated": set(), "holdout": set()}
@@ -74,12 +104,9 @@ def measure_play(play: dict[str, Any], assignments: list[dict[str, Any]], lines:
     r_t, r_h = len(per_arm["treated"]["responders"]), len(per_arm["holdout"]["responders"])
     min_treated = int(play["holdout"]["min_treated_n"])
     measurable = n_t >= min_treated and n_h >= 1
-    p_t, p_h = _rate(r_t, n_t), _rate(r_h, n_h)
     lift = ci_low = ci_high = None
     if measurable:
-        lift = p_t - p_h
-        se = math.sqrt(p_t * (1 - p_t) / n_t + p_h * (1 - p_h) / n_h)
-        ci_low, ci_high = lift - Z95 * se, lift + Z95 * se
+        lift, ci_low, ci_high = _lift_ci_newcombe(r_t, n_t, r_h, n_h)
     units_at_risk = int(play["target"]["units"])
     rows = []
     for arm in ("treated", "holdout"):

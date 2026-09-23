@@ -31,6 +31,25 @@ def test_all_eight_rules_run_and_report():
     assert out["all_passed"]
 
 
+def test_consent_frequency_subscription_rules_can_genuinely_fail():
+    """On the runtime path (agents/planner/tools.py::_guardrail_context), the audience handed to
+    these three rules is already filtered by exactly the predicate each rule re-checks -- so on
+    that path they always pass, and no test in this repo previously proved they *could* fail.
+    That is a real test-coverage gap, not evidence the rules are fake: each rule's own logic is
+    independent of the filter and genuinely rejects a violating, unfiltered audience, which is
+    what this test demonstrates directly.
+    """
+    violating_audience = ["C1", "C2", "C3"]
+    result = gr.rule_consent_required(draft(), ctx(audience_customer_ids=violating_audience, consented_customer_ids=frozenset()))
+    assert not result["passed"] and "lack marketing consent" in result["detail"]
+
+    result = gr.rule_frequency_cap(draft(), ctx(audience_customer_ids=violating_audience, recent_plays_count={"C1": 5, "C2": 5, "C3": 5}))
+    assert not result["passed"] and "already at" in result["detail"]
+
+    result = gr.rule_subscription_protect(draft(mechanic="coupon", mechanic_params={"discount_pct": 5}), ctx(audience_customer_ids=violating_audience, subscribers_for_sku=frozenset(violating_audience)))
+    assert not result["passed"] and "active subscriber" in result["detail"]
+
+
 def test_margin_floor_pass_and_fail():
     assert gr.rule_margin_floor(draft(mechanic_params={"discount_pct": 5}), ctx())["passed"]
     assert not gr.rule_margin_floor(draft(mechanic_params={"discount_pct": 15}), ctx())["passed"]
@@ -89,6 +108,20 @@ def test_cite_or_drop_rejects_an_uncited_number():
     res = gr.rule_cite_or_drop(d, ctx())
     assert not res["passed"] and "999" in res["detail"]
     assert gr.rule_cite_or_drop(draft(), ctx())["passed"]
+
+
+def test_cite_or_drop_tight_tolerance_on_large_numbers():
+    """The old 0.5% relative tolerance opened a +-46 window around a cited ₹9,200 -- wide enough
+    that a materially different number in that range would be wrongly accepted as "cited".
+    Tightened to 0.1% (+-9.2 around ₹9,200); a number just outside that is still correctly
+    rejected, and real rounding noise well within it still matches.
+    """
+    d = draft(target={"sku": "SKU-MASALA-CHIPS-200G", "node_ids": ["DS-07"], "deadline_type": "online_sellby", "units": 9200}, rationale="We project 9230 rupees at stake.")
+    res = gr.rule_cite_or_drop(d, ctx())
+    assert not res["passed"] and "9230" in res["detail"], "9230 is 30 away from the cited 9200 -- outside the tightened +-9.2 window, must still be flagged"
+
+    d2 = draft(target={"sku": "SKU-MASALA-CHIPS-200G", "node_ids": ["DS-07"], "deadline_type": "online_sellby", "units": 9200}, rationale="We project 9205 rupees at stake.")
+    assert gr.rule_cite_or_drop(d2, ctx())["passed"], "9205 is 5 away from the cited 9200 -- real rounding noise, should still match"
 
 
 def test_cite_or_drop_unresolved_citation():
