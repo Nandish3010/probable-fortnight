@@ -1307,6 +1307,14 @@ textarea:focus-visible {
   background: color-mix(in srgb, var(--danger) 8%, var(--surface));
 }
 
+/* The --warn/--error body-text colors are tuned for a plain surface background; combined with
+   this row's own red tint they fall under AA contrast (axe: 3.25:1 for the warn text). The
+   marker badge and left border already carry the "this failed" signal, so the body text can stay
+   the normal, always-readable text color here. */
+.trace-panel__event--guardrail-fail .trace-panel__body {
+  color: var(--text);
+}
+
 .trace-panel__marker {
   display: inline-flex;
   align-items: center;
@@ -1321,7 +1329,9 @@ textarea:focus-visible {
 
 .trace-panel__marker--fail {
   color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  /* A lighter tint than the row background above -- axe measured the previous 16% mix at
+     4.33:1 against --danger, just under the 4.5:1 AA threshold. */
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
@@ -1545,7 +1555,10 @@ textarea:focus-visible {
 }
 
 .outcomes-table th {
-  color: var(--text-muted);
+  /* --text-muted fails AA contrast at this small, uppercase weight (axe: 4.03:1, needs 4.5:1);
+     --muted-badge-text is the darker (light mode) / equally-light (dark mode) token already
+     built for exactly this problem on badges (b0565d1). */
+  color: var(--muted-badge-text);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
