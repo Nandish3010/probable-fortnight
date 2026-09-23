@@ -63,6 +63,17 @@ amber = the estimator-priors feedback into the next Planner run, dashed red = a 
 sending a draft back to revise). Same underlying facts as the second revision's two slides,
 denser and closer to how a real system diagram reads.
 
+## Fourth revision: `system-diagram` build-format fix, no content change
+
+The platform's own artifact viewer rejected `system-diagram.html` after the third revision: 30
+`position:absolute` label elements inside one `position:relative` host div exceeded the format's
+24-per-host limit, making the slide unreadable. Fixed by merging each node's title+subtitle pair
+into a single `<p>` (bold `<span>` for the title, `<br>`, a second `<span>` for the subtitle,
+since spans can't carry their own font-size in this format) — 30 labels down to 19, verified via
+`grep -c 'position:absolute'`. Two labels ("Capture", "Approve") then clipped at the merged font
+size; fixed with small font-size/position adjustments. No factual or visual content changed — same
+diagram, same claims, now rendering. `docs/deck.pdf` regenerated (still 14 pages).
+
 ## Summary
 
 - 3 OVERCLAIM, 1 STALE found and fixed in the deck (Phase 2), plus the 2 credibility redesigns, 3 clarity fixes, and the diagram consolidation above.
