@@ -6,11 +6,24 @@ garments and accessories across ~45 types; ~350 SKUs total. Everything here is i
 """
 from __future__ import annotations
 
+import json
 import random
+from collections import defaultdict
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 from agents.stylist.colour import family_of
+
+FESTIVALS = Path(__file__).resolve().parents[2] / "fixtures" / "festival_calendar.json"
+
+STYLE_OCCASIONS: list[str] = ["casual", "office", "festive", "wedding", "party", "travel"]
+STYLE_OCCASION_BASE_WEIGHTS: list[float] = [0.35, 0.15, 0.15, 0.10, 0.15, 0.10]
+STYLE_SOURCES: list[str] = ["find_apparel", "suggest_pairings"]
+STYLE_TIER_CHATTINESS: dict[str, float] = {"gold": 1.6, "silver": 1.1, "bronze": 0.6, "new": 0.3}
+STYLE_HISTORY_DAYS = 70
+N_HOT_NODES_PER_CLUSTER = 1
+N_TRENDING_PAIRS_PER_CLUSTER = 2
 
 # garment_type -> spec. role drives the pairing rules in agents/stylist/colour.py's ROLE_PAIRS.
 # sections: which of women/men/unisex the type is cut for (affects sizing only, not who can pair).
@@ -248,4 +261,134 @@ def seed_style_requests(tenant_id: str, customers: list[dict], as_of: date) -> l
             "query_text": "black blazer" if i % 2 else "do you have a black blazer for the office",
             "matched_sku": None, "fulfilled": False,
         })
+    return rows
+
+
+def _festival_windows(as_of: date, history_days: int) -> list[tuple[date, date]]:
+    """(start, end) day ranges, clipped to the generation window, during which any festival in
+    `fixtures/festival_calendar.json` is lifting demand. Reused as-is from the grocery generator's
+    calendar: apparel does not need its own festival dates, only the same real-world lift window
+    applied to festive/wedding occasion asks instead of sweets and snacks."""
+    festivals = json.loads(FESTIVALS.read_text(encoding="utf-8"))["festivals"]
+    start = as_of - timedelta(days=history_days)
+    windows: list[tuple[date, date]] = []
+    for f in festivals:
+        fd = date.fromisoformat(f["date"])
+        lo = max(start, fd - timedelta(days=f["window_days"]))
+        hi = min(as_of, fd)
+        if lo <= hi:
+            windows.append((lo, hi))
+    return windows
+
+
+def generate_style_requests(
+    rng: random.Random, tenant_id: str, customers: list[dict], nodes: list[dict],
+    apparel_products: list[dict], apparel_stock: list[dict], as_of: date, history_days: int = STYLE_HISTORY_DAYS,
+) -> list[dict]:
+    """Simulated stylist asks across the same 70-day window and customer base the grocery
+    generator uses, on its own RNG stream (never `self.rng`, so grocery and apparel-catalogue
+    draws stay unaffected by this function existing or not).
+
+    The rule, stated so it can be checked against the output:
+
+    1. Every customer's home node is a dark store (apparel is dark-store-only stock), so every
+       customer is a candidate asker. How often they ask over the window is `binomial(4, p)` where
+       `p` scales with their RFM tier (`STYLE_TIER_CHATTINESS`: gold customers ask ~5x as often as
+       new ones, mirroring the same tier-based engagement the grocery order-frequency rule uses)
+       and with a x1.8 multiplier if their home node was picked (deterministically, from the run
+       seed) as that node cluster's one "hot" dark store for the run -- concentration by node, so
+       one store shows a visibly bigger local signal than its cluster-mates.
+    2. Each cluster (north/south/east) is also seeded with `N_TRENDING_PAIRS_PER_CLUSTER`
+       (garment_type, colour_family) pairs, drawn from the real apparel catalogue. Every ask in
+       that cluster has a 55% chance of drawing one of its cluster's trending pairs and a 45%
+       chance of drawing any catalogue pair uniformly -- this is what makes distinct trends emerge
+       from aggregation (jobs/sense/trends.py) instead of uniform noise across ~45 garment types x
+       12 colour families x 3 clusters.
+    3. The occasion is drawn from `STYLE_OCCASION_BASE_WEIGHTS`, except that a day inside a real
+       festival window (`fixtures/festival_calendar.json`, the same calendar the grocery generator
+       already discloses) triples the relative weight of "festive" and "wedding" -- the same
+       seasonality mechanism already used for sweets and snacks, applied to garments instead.
+    4. Whether the ask is fulfilled is computed the same way `agents/stylist/tools.py::find_apparel`
+       computes it live: does the customer's home node currently carry any in-stock sku of that
+       (garment_type, colour_family)? If yes, `matched_sku` is that sku and `fulfilled=True`; if
+       no, `matched_sku=None` and `fulfilled=False` -- a real, unfulfilled ask, exactly the signal
+       `jobs/sense/gaps.py::_style_demand_signals` looks for.
+
+    Nothing here is hand-placed to hit a row-count target: every row is a draw from this rule: only
+    the RNG seed is fixed, for reproducibility, the same way every other seeded table in this
+    generator is.
+    """
+    dark_store_nodes = [n for n in nodes if n["type"] == "dark_store"]
+    clusters: dict[str, list[str]] = defaultdict(list)
+    for n in dark_store_nodes:
+        clusters[n["cluster_id"]].append(n["node_id"])
+
+    hot_nodes: set[str] = set()
+    for node_ids in (v for _, v in sorted(clusters.items())):
+        hot_nodes.update(rng.sample(sorted(node_ids), k=min(N_HOT_NODES_PER_CLUSTER, len(node_ids))))
+
+    combo_products: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for p in apparel_products:
+        combo_products[(p["garment_type"], p["colour_family"])].append(p)
+    all_combos = sorted(combo_products)
+
+    cluster_trending: dict[str, list[tuple[str, str]]] = {}
+    for cluster_id in sorted(clusters):
+        cluster_trending[cluster_id] = rng.sample(all_combos, k=min(N_TRENDING_PAIRS_PER_CLUSTER, len(all_combos)))
+
+    node_cluster: dict[str, str] = {n["node_id"]: n["cluster_id"] for n in dark_store_nodes}
+
+    # sku -> (garment_type, colour_family), for the stock join below.
+    sku_combo = {p["sku"]: (p["garment_type"], p["colour_family"]) for p in apparel_products}
+    in_stock = defaultdict(set)
+    for r in apparel_stock:
+        if int(r["qty_on_hand"]) <= 0:
+            continue
+        combo = sku_combo.get(r["sku"])
+        if combo:
+            in_stock[(r["node_id"], *combo)].add(r["sku"])
+
+    festival_windows = _festival_windows(as_of, history_days)
+    start = as_of - timedelta(days=history_days)
+
+    def _is_festival_day(d: date) -> bool:
+        return any(lo <= d <= hi for lo, hi in festival_windows)
+
+    rows: list[dict[str, Any]] = []
+    for c in customers:
+        node_id = c["home_node_id"]
+        cluster_id = node_cluster.get(node_id)
+        if cluster_id is None:
+            continue  # customer homed to an outlet: apparel has no outlet stock to ask about
+        p = 0.028 * STYLE_TIER_CHATTINESS.get(c["rfm_tier"], 0.5) * (1.8 if node_id in hot_nodes else 1.0)
+        n_asks = sum(1 for _ in range(4) if rng.random() < p)
+        for _ in range(n_asks):
+            day_offset = rng.randint(0, history_days - 1)
+            d = start + timedelta(days=day_offset)
+            if rng.random() < 0.55 and cluster_trending[cluster_id]:
+                garment_type, colour_family = rng.choice(cluster_trending[cluster_id])
+            else:
+                garment_type, colour_family = rng.choice(all_combos)
+            weights = list(STYLE_OCCASION_BASE_WEIGHTS)
+            if _is_festival_day(d):
+                for i, occ in enumerate(STYLE_OCCASIONS):
+                    if occ in ("festive", "wedding"):
+                        weights[i] *= 3.0
+            occasion = rng.choices(STYLE_OCCASIONS, weights=weights)[0]
+            product = rng.choice(combo_products[(garment_type, colour_family)])
+            colour_word = product["colour"]
+            candidates = in_stock.get((node_id, garment_type, colour_family), set())
+            fulfilled = bool(candidates)
+            matched_sku = sorted(candidates)[0] if candidates else None
+            source = rng.choices(STYLE_SOURCES, weights=[0.65, 0.35])[0]
+            query_text = f"any {colour_word} {garment_type} for {occasion}?" if source == "find_apparel" else f"what goes with a {colour_word} {garment_type}"
+            hour = rng.randint(8, 21)
+            minute = rng.randint(0, 59)
+            rows.append({
+                "tenant_id": tenant_id, "customer_id": c["customer_id"], "node_id": node_id,
+                "session_id": f"{c['customer_id']}:web", "ts": f"{d.isoformat()}T{hour:02d}:{minute:02d}:00Z",
+                "source": source, "garment_type": garment_type, "colour": colour_word, "colour_family": colour_family,
+                "occasion": occasion, "query_text": query_text, "matched_sku": matched_sku, "fulfilled": fulfilled,
+            })
+    rows.sort(key=lambda r: r["ts"])
     return rows
