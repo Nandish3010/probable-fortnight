@@ -119,9 +119,12 @@ export default function LandingPage() {
 
       <footer className="footer">
         <div className="footer__links">
-          <a href="#">Video (pending)</a>
-          <a href="#">Deck</a>
-          <a href="#">Repo</a>
+          <a href="/deck.pdf" target="_blank" rel="noreferrer">
+            Deck
+          </a>
+          <a href="https://github.com/Nandish3010/probable-fortnight" target="_blank" rel="noreferrer">
+            Repo
+          </a>
         </div>
         <div className="sim-box">
           <strong>What is simulated:</strong> catalogue, sales history, stock and customers are a seeded
