@@ -12,7 +12,7 @@ inventory-aware chat agent, and measured against a holdout.
 - Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
 - Click **Run the 60-second beat**, then **Approve**, and watch the forecast line move and the write-off change.
 - Then **Chat as Meena**: the offer arrives in Kannada with the best-before date; ask for Cola Zero and get what is actually on her shelf.
-- Video (under 3 min): _pending_ · Deck: _pending_
+- Video (under 3 min): _pending_ · Deck: [`docs/deck.pdf`](docs/deck.pdf)
 - Live vs replay: every panel carries a LIVE or REPLAY badge. Sense and Plan are nightly and replayed; approve, re-forecast, chat, capture and execution are live calls.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
 

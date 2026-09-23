@@ -51,11 +51,17 @@ BEGIN
   SET n = (SELECT COUNT(*) FROM series_pairs);
 
   WHILE i < n DO
+    -- BigQuery scripting's LIMIT/OFFSET rejects a variable in the OFFSET position ("OFFSET
+    -- expects an integer literal or parameter"); ROW_NUMBER() indexed by the loop variable is
+    -- the workaround. Found and fixed by actually running this script -- see eval/raw/ for the
+    -- real BigQuery job this was verified against.
     SET (cur_sku, cur_cluster) = (
       SELECT AS STRUCT sku, cluster_id
-      FROM series_pairs
-      ORDER BY sku, cluster_id
-      LIMIT 1 OFFSET i
+      FROM (
+        SELECT sku, cluster_id, ROW_NUMBER() OVER (ORDER BY sku, cluster_id) - 1 AS rn
+        FROM series_pairs
+      )
+      WHERE rn = i
     );
     -- sanitise sku/cluster into a legal BigQuery model id fragment
     SET model_suffix = REGEXP_REPLACE(LOWER(cur_sku || '_' || cur_cluster), r'[^a-z0-9_]', '_');
@@ -93,13 +99,17 @@ BEGIN
       FROM ML.FORECAST(
         MODEL `%s`,
         STRUCT(28 AS horizon, 0.8 AS confidence_level),
-        TABLE (SELECT date, sku, cluster_id, on_promo, is_festival FROM `taal.future_regressors`
+        (SELECT date, sku, cluster_id, on_promo, is_festival FROM `taal.future_regressors`
                WHERE tenant_id = @tenant_id AND sku = @s AND cluster_id = @c)
       )
     """, model_name)
     USING @tenant_id AS tenant_id, @run_id AS run_id, @as_of AS as_of, cur_sku AS s, cur_cluster AS c;
 
-    -- decomposition for the Play card's "why this forecast" drawer
+    -- decomposition for the Play card's "why this forecast" drawer. Column names and the
+    -- required third (data table) argument verified by actually running this against real
+    -- BigQuery, not from docs: ARIMA_PLUS_XREG's ML.EXPLAIN_FORECAST needs the same data table
+    -- ML.FORECAST does, and names its per-regressor columns attribution_<name>, not
+    -- xreg_<name>_coefficient as originally guessed here.
     EXECUTE IMMEDIATE FORMAT("""
       INSERT INTO `taal.forecast_explain`
         (tenant_id, run_id, sku, cluster_id, date, time_series_type, trend,
@@ -108,16 +118,15 @@ BEGIN
       SELECT
         @tenant_id, @run_id, sku, cluster_id, DATE(time_series_timestamp), time_series_type,
         trend, seasonal_period_yearly, seasonal_period_weekly, holiday_effect,
-        IFNULL(xreg_on_promo_coefficient, 0.0), IFNULL(xreg_is_festival_coefficient, 0.0), residual
+        IFNULL(attribution_on_promo, 0.0), IFNULL(attribution_is_festival, 0.0), residual
       FROM ML.EXPLAIN_FORECAST(
         MODEL `%s`,
-        STRUCT(28 AS horizon, 0.8 AS confidence_level)
+        STRUCT(28 AS horizon, 0.8 AS confidence_level),
+        (SELECT date, sku, cluster_id, on_promo, is_festival FROM `taal.future_regressors`
+               WHERE tenant_id = @tenant_id AND sku = @s AND cluster_id = @c)
       )
     """, model_name)
-    -- VERIFY: exact ML.EXPLAIN_FORECAST output column names for xreg coefficients; the docs at
-    -- time of writing show trend/seasonal/holiday columns plus one column per regressor named
-    -- after the regressor, which this assumes as xreg_<name>_coefficient.
-    USING @tenant_id AS tenant_id, @run_id AS run_id;
+    USING @tenant_id AS tenant_id, @run_id AS run_id, cur_sku AS s, cur_cluster AS c;
 
     SET i = i + 1;
   END WHILE;
