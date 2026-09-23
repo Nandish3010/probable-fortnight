@@ -1436,6 +1436,11 @@ textarea:focus-visible {
 
 .intake-table {
   width: 100%;
+  /* Auto layout let long cell content (SKU guesses, the "sku N% · date N% · count N%"
+     confidence string) grow the table past its 100% width instead of wrapping within it; on the
+     phone view's narrow card (clipped by overflow: hidden, no scrollbar) that silently cut the
+     right column off entirely. Fixed layout keeps every column within the card's own width. */
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.84rem;
@@ -1450,6 +1455,7 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--border);
   padding: 8px 10px;
   text-align: left;
+  word-break: break-word;
 }
 
 .intake-table tbody tr:hover td {
