@@ -1,76 +1,12 @@
-# Taal — Build Guide v3.1 for the AI Builder Cup 2026 (Retail & Commerce)
+# Taal — Design decisions
 
 **Positioning line:** "Every forecast tells a retailer what will be thrown away. Taal is the agent that sells it first: legally, to the right people, at the right margin, with a holdout to prove it."
 
-This is a build guide for a 3–4 person team using Antigravity, AI Studio and Vertex AI (Gemini Enterprise Agent Platform). No implementation code. It is written so a teammate can build each component without asking questions: schemas, tool contracts, wire protocols, screens, evaluation design, deployment, week-by-week tasks per role, demo script, deck, submission checklist. Every factual claim is tagged [Certain], [Likely] or [Guessing]. This session could not open aibuildercup.com, hack2skill.com, YouTube or Google docs directly; competition facts come from official-page search snippets plus the text you pasted from the portal.
-
----
-
-## 0. Verdict: can this win?
-
-Three independent reviews were run on the previous version (v2): a CEO/jury review, an outside principal-engineer review, and a contrarian brief whose job was to beat the idea with a better one. They converged.
-
-| Reviewer | Verdict on v2 | Recommendation |
-|---|---|---|
-| CEO / Google Cloud MD jury lens | Shortlist-likely (top 10–15% of the Retail track); finale-winner-plausible only after changes | Improvise Taal (confidence ~70%): one pipe, a real pilot with ≥30 consented customers, the FSSAI legal-deadline reframe, TimesFM-3 headline if it lands, rebuild the video |
-| Outside engineer / hackathon mentor | Strong product spec, not yet a build spec; four missing contracts; full scope ≈ 750 person-hours vs ≈ 440 available | Add the contracts; cut to one pipe; hard week-2 gate; fix two wrong product claims |
-| Contrarian strategist | v2 scores ≈ 64/100 at shortlist, ≈ 66 at finale; finale probability 30–40%; grand prize 2–3% [Guessing, calibrated] | Build "Taal Live" (confidence ~60%): merchant-side voice + vision intake, "approve → forecast moves" as the live beat, demote the customer chat, cut WhatsApp/Memory Bank/contribution analysis; projected ≈ 74–77/100 |
-
-**Honest answer to "can we win the whole cup with this?"** As v2 was written: no. It would likely shortlist and would likely not win the room, because its wow was a table, its impact was simulated, and its scope would not have shipped. The v3 below is the improvised version all three reviewers pointed at. It is a plausible finale contender, in the same band as the two higher-variance alternatives (a merchant-side UCP agent, a live-stream co-host), with a lower failure surface and a better fit to your team's edge (e-commerce ops and CRM). The winner is still decided by execution: a working live URL, a real number, and a rehearsed demo. [Guessing on all probabilities]
-
-**Alternatives considered and parked** (details in §16): Dwaar, a seller-side agent that makes any JAPAC merchant buyable by AI shopping agents over UCP/AP2 (higher innovation ceiling, weaker "who pays now" story, protocol risk); Seedha, a Gemini Live co-host for live-stream selling (highest ceiling, highest live-demo risk, poor fit to team skills). Both live on the roadmap slide.
-
-### What changed from v2 (the seven improvisations)
-1. **The deadline is legal, not printed.** FSSAI requires food delivered online to have at least 30% of shelf life or 45 days remaining at delivery [Certain: FSSAI advisory to e-commerce FBOs, Nov/Dec 2024]. A pack that "expires in 20 days" is unsellable online in 6. That "online sell-by" date is invisible in every forecasting tool and is the opening 10 seconds of the video. It also reads as compliance + revenue, the register of past cross-theme winners. [Likely on the register mattering]
-2. **The wow is physical and merchant-side.** The store or node manager photographs a pallet; Gemini reads best-before dates and counts facings; she asks by voice what to do; the gap card and the play appear, spoken back. The planner inbox is the second screen.
-3. **The live beat is "approve → the forecast moves."** An approved play becomes a known-future covariate; the forecast chart and the write-off number change on screen. Demand shaping made literal, with no simulated customers. (`ARIMA_PLUS_XREG` now; TimesFM-3 multivariate the day it lands in BigQuery, which Google says is imminent [Likely].)
-4. **Impact is a real pilot, not a simulator.** ≥30 consented real people on web chat for one week, real holdout, real (small) orders. The homemade responder module is gone. Agent Simulation (Agent Platform) is used only to pre-flight the customer agent's behaviour across simulated shopper personas, never to estimate lift.
-5. **One pipe.** `AI.FORECAST` + `ARIMA_PLUS_XREG` (needed for beat 3), estimator, gate, Planner loop, Play Desk, minimal chat, Measure, Looker Studio. Cut now, not later: WhatsApp, Memory Bank, contribution analysis, separate outlet app, Pro toggle, Croston path, second text language, UCP hook, Conversational Analytics.
-6. **The customer chat is a cameo.** Minimal web chat with six tools, used for the pilot and 20 seconds of the video. Gemini Enterprise for CX and Meta Business Agent are named as delivery channels on the roadmap slide, not competed with.
-7. **The CEO's number is on the last card:** net margin recovered per rupee of discount given, versus holdout, on the target lot.
-8. **Cross-theme framing without changing theme.** The theme stays Retail & Commerce (your expertise, and the speaker's retail examples match Taal directly). But the top-50 shortlist is cross-theme, so the impact slide carries two lines that other themes' judges recognise: a demand-and-supply line (the speaker's manufacturing framing) and a **food-waste line in kilograms and CO2-equivalent** computed from units of the target lot saved from write-off (the speaker's sustainability enthusiasm, and the "Most Impactful" award). Measured in the Measure job from `units_target_lot × pack weight × a cited emissions factor`, labelled as an estimate.
-
----
-
-## 0.1 Scoring to the top (v3.1): what 95 would take, and what is actually reachable
-
-Two more reviews were run on v3: a rubric-maximiser that scored v3 as three judge archetypes, and a simulation of the async shortlisting reviewer's twelve minutes. Their answer to "how do we score 95 and get to ~95% shortlist probability" is the same as mine, and it is not what you asked for.
-
-**The honest ceiling.** v3 as written scores ≈ 78–79 expected (spread 74–84 across plausible panels). With every change below executed, the expected score is **84–88**, a favourable panel reaches **~90–92**, an unfavourable one ~80. **95 is not a plannable target**: it needs every archetype to give 9+/10 on Innovation and Impact to a B2B operations tool judged asynchronously, and Technical Merit has a soft ceiling around 36–38/40 for anything without production traffic. **A 95% shortlist probability is not plannable either**: panel composition, whether a given judge opens the live URL at all, product timing (TimesFM-3, Kannada voice quality, model retirements) and the 4 Oct vs 18 Oct deadline conflict are outside your control. What is plannable: an entry that no archetype can score below ~80, that is impossible to reject on requirements, and that a reviewer retells at the end of the day. [Guessing on all numbers, calibrated across five independent reviews]
-
-**Where v3 loses points (audit, summed against a ~90 entry)**
-| # | Loss | Points | Fix |
-|---|---|---|---|
-| 1 | Scalability & sustainability sub-criterion is a README paragraph, not evidence | −3 to −4 (Tech) | `docs/scale.md` with measured Sense/Planner throughput, Gemini tokens per play from the billing export, extrapolation to a 20,000-SKU retailer, tenant model, the three-CSV ingestion contract; one deck slide; one 8-second video card |
-| 2 | Evaluation table is a list of intentions | −2 to −3 (Tech) | Commit the evalset (~50 gaps), raw `adk eval` output, Agent Simulation report, vision accuracy table on 30 staged photos, guardrail test count; filled table on one slide and in the README, run at freeze |
-| 3 | The FSSAI rule is stated more confidently than its "30 percent or 45 days" wording supports | −1 to −2 (Impact, credibility) | `sellby_rule` is a versioned policy parameter shown on the gap card; README and deck say "we implement the stricter reading; retailers set their own"; cite the advisory date and URL |
-| 4 | The pilot (≥30 people, small holdout) cannot produce a defensible number | −2 to −3 (Impact) | 50–60 participants, 40–50% holdout, one pre-registered metric (response rate on the target lot), `docs/pilot.md` with recruitment method and consent text, a concrete mechanism for real orders (a friend's shop's real near-expiry stock, or a micro-lot bought and resold at cost, named); frame the pilot as proof the measurement loop runs on real humans, and let the economics come from the counterfactual card on the seeded tenant, labelled |
-| 5 | Video: eight beats in 170 s; the strongest Gen AI proof sits at 125 s where skimmers have left | −2 to −3 (Innovation/UX/Impact for the skimmer) | The shot list in §9: ≤ 2:40, five beats, burned-in text that carries the meaning muted at 1.5x, chart beat by 1:04–1:22, policy beat by 2:00 |
-| 6 | Three headline claims, therefore none | −1 to −2 (Innovation) | One sentence said twice: "an invisible legal deadline becomes a forecast covariate the merchant approves by voice"; the estimator and the domain-agnostic schema become supporting lines |
-| 7 | Gen AI reads as one agent plus vision | −1 to −2 (Tech) | The "what Gemini decides / what it is not allowed to decide" slide with one trace screenshot per row; README table mapping each Gemini call to the problem and what breaks without it |
-| 8 | Judge-mode concurrency: judges approve the same play and reset each other | −1 to −2 (UX/Tech) | Per-visitor sandbox (Firestore namespace keyed by session cookie, cloned from the snapshot on first load), or idempotent approve with an "already approved at HH:MM" banner and a reset scoped to the visitor |
-| 9 | The root URL's first 60 seconds are unspecified | −1 to −2 (everything, if the judge bounces) | The landing spec in §5.6 |
-| 10 | Vision beat is fragile on a judge's own photo | −1 | Three preloaded pallet photos; own upload labelled experimental |
-| 11 | Unverified model IDs on slides | 0 to −2 | Never print a model ID that is not in the running config; verify in Model Garden day 1 |
-| 12 | TimesFM-3 temptation | 0 if resisted, −2 if it eats week 3 | Build the live beat on `ARIMA_PLUS_XREG`; add TimesFM-3 only as a baseline line if it lands before freeze |
-| 13 | Impact numbers are top-down extrapolations | −1 | A bottom-up per-node number from the seeded tenant in the first 20 s, labelled; ask interviewees for a real per-store rupee figure |
-| 14 | Deadline was ambiguous in third-party listings | resolved | The organiser stated 18 Oct in the explainer session. Plan a complete submission by 9–11 Oct; use the last week for hardening and the five changes above; re-verify the portal weekly anyway |
-| 15 | "Documentation" may be a separate upload field | 0 to −1 | Export a 6–10 page PDF from README + docs |
-| 16 | Antigravity evidence thin | 0 to −1 (and the "Best use of Google Cloud AI tools" special) | Three walkthrough artifacts linked with captions; one screenshot on the architecture slide |
-| 17 | Consent and privacy is one section | 0 to −1 | Add a half-page threat model: what leaves the tenant, where photos live and for how long, what the Customer Agent can and cannot see |
-
-**Five highest points-per-hour changes, in order**
-1. Judge-mode first 60 seconds (root page with guided tour, "Run the 60-second beat" button, "Chat as Meena" pre-filled, health strip, preloaded photos, per-visitor sandbox; README quick-start card as the first 15 lines): 8–12 h, +3 to +5 across all criteria.
-2. Scalability evidence (`docs/scale.md`, slide, video card): 6–8 h, +3 to +4.
-3. Video re-cut to five beats with burned-in text and state labels: 8–10 h, +3 to +4.
-4. Evaluation evidence committed with numbers: 8–10 h, +2 to +3.
-5. Pilot redesign and framing: 10–15 h, +2 to +3.
-Runner-up: the "what Gemini decides / is not allowed to decide" slide with trace screenshots: 3–4 h, +1 to +2.
-
-**Shortlist insurance (make rejection impossible)**
-Live URL: **min-instances=0 (scale-to-zero), accepting cold starts** on all three services through the judging window (team decision, overriding the min-instances=1 plan below: idle cost is not worth paying for the whole window) -- weekly smoke test with an alert, `/health` page, first paint under 4 s tested from a second machine on mobile data, golden-run fallbacks with visible badges. Video: ≤ 2:45 by the platform counter, public/unlisted on YouTube plus a Drive backup, tested in an incognito window, "Retail & Commerce" and the retailer persona in the first 10 s. Repo: public from day 1, Apache-2.0, `DATA_LICENSES.md`, no third-party raw data, no employer code, CI green, commit history that looks like four weeks of work by several people, no 200 MB clone. Deck: PDF and Slides link, ≤ 12 slides, rubric order, a final rubric-map slide with weights. Documentation PDF never empty. Eligibility: written confirmation per member (non-student, 21+, JAPAC), team locked on the portal by 11 Oct. Google stack: architecture slide names each product; Gemini only via Vertex in a fresh project. Deadline: complete by 3 Oct.
-
-**The three things a reviewer must be able to retell at dinner**, delivered in this order on the first 10 s of video, slide 2, the judge-mode landing and the README top fold, with the same rupee figure on all four: a fact they did not know ("food sold online in India must have 30% of shelf life left, so a 20-day pack is unsellable online in 6, and no forecasting tool knows that"); a picture ("she photographed the pallet, asked in Kannada, the manager clicked approve and the forecast line bent on screen"); a number with integrity ("real people, a holdout, the CI shown, and one play they refused to measure").
+This is the technical design record for Taal: schemas, tool contracts, wire protocols, screens,
+evaluation design, deployment, the demo script, the deck outline and the submission checklist. No
+implementation code. Every factual claim is tagged [Certain], [Likely] or [Guessing]. Internal
+planning notes (team capacity, scope cuts, competitive positioning, self-scored drafts) are kept
+outside this repository.
 
 ---
 
@@ -290,9 +226,9 @@ Join `orders` to `play_assignments` within `window`; per arm compute customers, 
 Public embed with owner's credentials, "anyone with the link", embed enabled, data freshness 12 h [Certain]. Cards: plays by status; treated vs holdout per play; waste avoided; margin preserved vs blanket markdown; **net margin recovered per ₹ discounted**; stockouts prevented; MAPE by tier; consent coverage; unmeasured count. The Outcomes screen reads a `play_outcomes` snapshot from Firestore and links to the full report.
 
 ### 5.9 Stylist specialist (owner B; chat UI owner C)
-A second specialist on the same chat runtime, not a second headline: §0.1's warning about "three
-headline claims, therefore none" applies here too, so this is framed as a second application of
-chat-as-demand-signal (§2.3's `unmet_demand` gap type), not a new pillar of the entry.
+A second specialist on the same chat runtime, not a second headline: too many headline claims
+compete for attention, so this is framed as a second application of chat-as-demand-signal (§2.3's
+`unmet_demand` gap type), not a new pillar of the entry.
 
 **Why a second specialist.** Kutumb Mart's chat already turns an unanswered ask into a structured
 demand signal (`customer_requests` → `unmet_demand`). A styling ask ("what goes with this kurta?")
@@ -386,7 +322,7 @@ taal/
                          # setup, one-command demo/deploy, data disclosure + what-is-simulated box, consent/privacy + threat model, how-Gen-AI-is-used table,
                          # Antigravity/AI Studio/Vertex evidence, cost sheet (demo scale and 100k customers), scale story (Cloud Tasks fan-out)
   LICENSE (Apache-2.0)   DATA_LICENSES.md
-  docs/                  # DECISIONS.md (this guide, incl. parked alternatives and "what we tried that did not work"), schemas/play.schema.json, openapi.yaml (approve, rerun, chat SSE, reset, capture),
+  docs/                  # DECISIONS.md (design decisions and "what we tried that did not work"), schemas/play.schema.json, openapi.yaml (approve, rerun, chat SSE, reset, capture),
                          # architecture.png (+ Mermaid source collapsed), scale.md (measured throughput, tokens/play, extrapolation, tenant model, three-CSV contract, "what breaks first"),
                          # pilot.md (pre-registered metric, holdout, recruitment, consent text, anonymised outcomes), screenshots/, demo-script.md, deck outline, interview notes,
                          # documentation.pdf (6-10 pages exported from README + docs for the portal's documentation field), 60-second repo walkthrough video link
@@ -412,47 +348,6 @@ taal/
 ---
 
 **Commit and authorship conventions.** Commits are authored under team members' own git identities with plain engineering messages (imperative subject ≤ 72 characters, what and why, a body when the change needs one). No assistant attribution trailers, session links, tool names or model identifiers appear in commit messages, PR descriptions, code comments, docs or the deck; AI-assisted building is expected by the organiser (Antigravity is named as an approved harness) and is described once, factually, in the README's tooling section. No backdating, history rewriting to hide work, or synthetic activity: the history must be a truthful record of work inside the hackathon window, because that is what the public-repo requirement exists to show.
-
-## 7a. Competitor scan (12 Sept 2026)
-No team has published a concept, repo or "we are building" post for this hackathon that search engines have indexed yet [Certain for today]. Proxy: retail entries that placed in the last three Google-judged hackathons. Buyer-facing personalisation suites (V-Commerce Studio, Cartmate), a delightful small end-to-end agent (cart-to-kitchen, GKE grand prize), a seller-side generative listing tool (ArtisanGully, Gen AI Exchange 2025 grand winner), an ops analytics briefing with rupee impact that stops at "recommend" ("How Did I?", Rapid Agent 2026), a hierarchical fraud agent behind a human gate (Vigil AI), and a sustainability-flavoured shopping assistant (CO2-Aware) [Certain on the entries]. Expected field this year: 30–50 shopping assistants, 20–40 analytics-plus-forecast dashboards, 10–20 inventory or waste agents [Guessing]. Taal beats the first two groups on the speaker's own criteria; inside the third group it is decided by the legal-deadline gap, the approve-to-forecast beat and the measured pilot. Name "How Did I?" and Gemini Enterprise for CX on the competitor slide as the nearest cousins and state the exceedance in one line each. Re-run this scan on 1 Oct and 15 Oct (LinkedIn, X, GitHub, Hack2skill community) and adjust the competitor slide.
-
-## 8. Team plan (4 people, near full-time; full v3.1 scope; hard gate at end of week 2)
-
-**Capacity and budget (your decision: 35–45 productive hours per person per week).** 4 × 40 × 4 = **640 hours**, with Antigravity-assisted coding at a realistic 1.2–1.4x giving **770–900 effective hours** [Guessing on the multiplier]. Full v3.1 scope is estimated at **750–800 hours**, so it fits with little slack; the week-2 gate is the checkpoint that tells you whether the estimate is holding. Hour estimates per component (from the outside engineer's v2 figures, adjusted for v3.1):
-
-| Block | Hours | Owner |
-|---|---|---|
-| Harness (§17): schemas, DDL, generator determinism, CI, `make verify`, builder/reviewer prompts and checklists, `spec-review` job, `STATUS.md`, Playwright suite, golden path | 50–60 | D (build), B (prompts, checklists) |
-| Data: synthetic layer, public-data transform, BigQuery load, `DATA_LICENSES.md` | 40 | D, A |
-| Sense: `AI.FORECAST` + `ARIMA_PLUS_XREG` + `future_regressors`, roll-down, gaps with ₹ and sell-by rule, segments, substitutes, copy, mirror, backtest | 70 | D |
-| Estimator + gate + Play JSON Schema + types | 50 | B |
-| Planner Agent + tools + revise loop + evalset | 60 | B |
-| Approve, assignment, re-forecast beat | 20 | B, D |
-| Customer Agent (six tools, MCP mock, sessions) + Agent Simulation pre-flight | 60 | B |
-| Capture: vision intake (two-pass), voice session, on-device first pass | 45 | B |
-| Web: phone view, Play Desk, chat UI + envelope, Outcomes, judge-mode landing with per-visitor sandbox, replay, Looker embed | 110 | C |
-| Measure + priors + Looker Studio report + cost metrics + Cost Governor (§18) | 45 | D |
-| Infra: Cloud Run ×3, Scheduler, Secret Manager, IAM matrix, budgets, deploy scripts, smoke tests | 30 | D |
-| Pilot (recruit 50–60, consent, run, write-up) and interviews (4–6) | 40 | A |
-| Video (shot list), deck (12 slides), README top fold, documentation PDF, `docs/scale.md`, `docs/pilot.md` | 50 | A, C |
-| Integration, hotel-wifi rehearsal, bug budget | 40 | all |
-| **Total** | **~710–760** | |
-
-Rules that make the budget hold: the harness is built in week 1 before any feature (it is what removes the back-and-forth); every component lands through the builder/reviewer loop; the week-2 gate is binary; if the gate is missed by more than two days, apply the cut order in §15 immediately rather than compressing week 3.
-
-Roles: **A (you)** domain, policy text, planted situations, priors, pilot recruitment and consent, interviews (4–6, quotes on slide 2), deck, video, demo narration. **B** ADK agents, tools, capture (vision + voice), approve/assignment, sessions, evalsets, simulation. **C** Next.js phone view, Play Desk, chat, Outcomes, judge mode, replay, Looker embed. **D** BigQuery Sense/Measure, forecasts and backtests, segments, copy generation, Firestore mirror, Looker Studio, infra, CI, cost.
-
-| Week | Hard milestone | Notes |
-|---|---|---|
-| 1 (12–18 Sept) | Register; recruit to 4; written employer clearance; pilot retailer or friend network committed; Dunnhumby permission requested; region and model IDs pinned; Agent Engine instance; **harness first (§17): schemas, DDL, generator determinism, CI with `make verify`, Builder/Reviewer prompts and checklists, `spec-review` job, `STATUS.md`**; repo with diagram; synthetic layer loaded; `AI.FORECAST` and `ARIMA_PLUS_XREG` running; vision-read and Kannada-voice feasibility tests in AI Studio **before any video script is written** | If TimesFM-3 appears in BigQuery, switch the baseline and headline it. From here on, every component lands through the builder/reviewer loop and is done only when `make verify` is green |
-| 2 (19–25 Sept) | **Gate:** one planted gap → Planner proposes → approve on the Play Desk → forecast chart moves → Meena's chat delivers the offer and places an order → order visible, all on the live URL | Nothing outside the one pipe starts before this passes |
-| 3 (26 Sept–2 Oct) | Vision + voice capture on the phone view; policy-change beat; Measure job; Looker; evalsets; simulation pre-flight; **pilot runs all week** (≥30 people); **feature freeze 2 Oct** | Golden runs recorded at freeze |
-| 4 (3–9 Oct) | Video from hybrid mode, deck, README, documentation PDF (with the longevity section), live URL in judge mode; the five points-per-hour changes from §0.1 in order (judge-mode landing, `docs/scale.md`, video re-cut to the §9 shot list, eval numbers committed, pilot write-up); **complete submission on the portal by 9–11 Oct** | Deadline is 18 Oct (organiser-confirmed); 11–18 Oct is hardening, the write-up, and a resubmission if the portal allows edits |
-| After | Weekly live-URL smoke test to 4 Dec; **min-instances stays 0 (scale-to-zero decision, §4.5); `infra/min_instances.sh on` available if a specific demo day ever wants it**; finale rehearsal on replay, then live, then replay | |
-
-Full scope is committed at 35–45 h/week. If capacity drops (a teammate leaves, hours fall to evenings-and-weekends), apply this day-one drop list: voice (keep vision), TimesFM baseline (keep XREG), Kannada beyond copy, gate to six rules, interviews to 4, Agent Simulation to a manual test script, Playwright breadth to the golden path only.
-
----
 
 ## 9. Demo (video under 3 minutes) and finale
 
@@ -565,12 +460,6 @@ Forecast backtest MAPE and bias by tier and model (public series if licensed, el
 8. Looker Studio embed with owner's credentials.
 9. Hack2skill portal: registration close date, submission deadline, finale demo format and duration.
 10. Explainer video: reviewed from the transcript; nothing in it contradicts this guide. It confirms the 18 Oct deadline, the top-50 shortlist, batched registration approval, English-only submissions, the documentation contents including a longevity section, Gemini 3.8 Flash as the recommended model, evals as expected practice, and IP staying with the team.
-
----
-
-## 15. Cut list (4-person) and never-cut
-Cut in order if time runs out: voice live on stage (keep recorded) → domain-agnostic beat slide → policy-change beat (only if the Planner cannot be made to change reliably; otherwise keep) → vision two-pass refinement → Looker embed (native chart instead) → interviews beyond 4.
-Never cut: the legal-deadline gap, vision intake, forecast with XREG and the approve → chart-moves beat, Play object with estimator and gate, Play Desk with trace and replay, minimal chat with stock-grounded substitution and STOP, holdout assignment and Measure with "unmeasured" enforced, the real pilot, the what-is-simulated box.
 
 ---
 
@@ -692,11 +581,7 @@ Most of the 2026 lists are irrelevant here (defence, space manufacturing, infere
 
 Not adopted: Dynamic Software Interfaces (users rebuilding the UI; out of scope), Multiplayer AI (Fall 2026; the approval loop already has humans and agents collaborating, say so in one line, build nothing).
 
-Scope note: the two build items add ~18 h to a plan that already has thin slack (§8). The physical-guidance beat is worth it; the MCP surface is conditional on the week-2 gate.
+Scope note: the two build items add ~18 h to an already-tight schedule. The physical-guidance beat is worth it; the MCP surface is conditional on the week-2 gate.
 
 ---
 
-## 16. Alternatives considered (from the contrarian review; parked, on the roadmap slide)
-- **Dwaar** (merchant-side agentic commerce): an ADK merchant agent exposing catalogue, stock, substitutions and checkout over UCP with AP2 mandates, bridged toward ONDC, negotiating with shopper agents. Projected ≈ 74/77; highest innovation ceiling against Google's own protocol push; weakest "who pays now"; protocol and ONDC-sandbox risk. [Guessing on scores]
-- **Seedha** (Gemini Live co-host for live-stream selling on Shopee/TikTok/Meesho Live): projected ≈ 72 at shortlist, 78 if the live beat works, ~68 if not; no Google product touches it; highest stage risk; poor fit to an ops/data team. [Guessing on scores]
-- Taal v3 (this guide): projected ≈ 74–77 by the same reviewer, lowest failure surface, best fit to your edge. The three sit in the same band; the choice is variance and fit, and it is yours.
