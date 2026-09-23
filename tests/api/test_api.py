@@ -73,6 +73,16 @@ def test_two_visitors_are_isolated_and_reset_is_scoped(client):
     assert not client.post("/reset").json()["ok"], "no visitor id: base tenant never reset"
 
 
+def test_headerless_mutating_request_is_rejected_not_written_to_base_tenant(client):
+    """A headerless mutating request used to silently write to the shared base tenant -- every
+    visitor's judge-mode session reads that state, and the service has no auth. Now rejected.
+    /reset is exempt (see services/api/sandbox.py) because it already no-ops safely on its own.
+    """
+    r = client.post("/approve", json={"play_id": "play_chips_ds07_v1"})
+    assert r.status_code == 400
+    assert client.get("/plays/play_chips_ds07_v1", headers=_h("v-after-headerless")).json()["status"] != "approved"
+
+
 def test_chat_sse_and_json(client):
     client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-chat"))
     r = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Any offers today?"}, headers=_h("v-chat"))
