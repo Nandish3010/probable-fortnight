@@ -1,0 +1,318 @@
+{
+  "measured_at": "2026-09-23T17:20:51Z",
+  "project": "amru-509214",
+  "window_days": 30,
+  "blocked": true,
+  "reason": "No BigQuery billing export table (gcp_billing_export_v1_* or gcp_billing_export_resource_v1_*) exists in any dataset of project 'amru-509214'. Billing export is configured at the Cloud Billing account level, not the project level; the credentials used here could not be checked for that permission without attempting it, so the Cloud Billing API diagnostics below record what was actually tried. A tier-2 modeled estimate (real measured usage x public list rates) is attempted below instead of leaving this row blank.",
+  "billing_api_diagnostics": {
+    "caller": "taal-deploy@amru-509214.iam.gserviceaccount.com",
+    "projects.getBillingInfo": {
+      "status": 200,
+      "body": {
+        "name": "projects/amru-509214/billingInfo",
+        "projectId": "amru-509214",
+        "billingAccountName": "billingAccounts/01AFA8-481EFC-C09462",
+        "billingEnabled": true
+      }
+    },
+    "billingAccounts.get": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": 403,
+          "message": "The caller does not have permission",
+          "status": "PERMISSION_DENIED"
+        }
+      }
+    },
+    "billingbudgets.list": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": 403,
+          "message": "The caller does not have permission",
+          "status": "PERMISSION_DENIED"
+        }
+      }
+    }
+  },
+  "modeled": {
+    "methodology": "modeled_from_measured_usage",
+    "methodology_note": "Every quantity above is real and measured for this project over the trailing 30 days (or, for storage, a real point-in-time snapshot). Priced at Google's public list rates, not an actual billing-dollar figure -- excludes any discount, free-tier allowance, or negotiated rate. See PUBLIC_RATES for sources.",
+    "window_days": 30,
+    "rates_used": {
+      "vertex_gemini_2_5_flash_input_usd_per_million_tokens": 0.3,
+      "vertex_gemini_2_5_flash_output_usd_per_million_tokens": 2.5,
+      "bigquery_on_demand_usd_per_tib_scanned": 6.25,
+      "bigquery_active_storage_usd_per_gb_month": 0.02,
+      "cloud_run_usd_per_vcpu_second": 2.4e-05,
+      "cloud_run_usd_per_gib_second": 2.5e-06,
+      "firestore_usd_per_100k_reads": 0.06,
+      "firestore_usd_per_100k_writes": 0.18,
+      "firestore_usd_per_100k_deletes": 0.02,
+      "usd_to_inr": 83.0,
+      "checked_at": "2026-09-23",
+      "source_note": "cloud.google.com/vertex-ai/generative-ai/pricing, cloud.google.com/bigquery/pricing, cloud.google.com/run/pricing, cloud.google.com/firestore/pricing -- fetched via web search on 2026-09-23 since this session's direct page fetch returned truncated HTML; cross-checked against multiple independent 2026 pricing summaries agreeing on the same figures rather than taken from one uncorroborated source."
+    },
+    "lines": {
+      "vertex_ai_gemini": {
+        "input_tokens": 9301418.0,
+        "output_tokens": 667947.0,
+        "usd": 4.4603,
+        "detail": {
+          "input": {
+            "available": true,
+            "total": 9301418.0,
+            "n_series": 6,
+            "series": [
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "shared_request_type": "standard",
+                  "source": "asia-south1",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "asia-south1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-flash",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 143,
+                "sum": 9292519.0
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "global",
+                  "shared_request_type": "standard",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "global",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-flash",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 4009
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "global",
+                  "shared_request_type": "standard",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "global",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-flash-image",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 10
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "shared_request_type": "standard",
+                  "source": "us-central1",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-flash-image",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 27,
+                "sum": 4878.0
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "us-central1",
+                  "shared_request_type": "standard",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-flash-lite",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 1
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "shared_request_type": "standard",
+                  "source": "us-central1",
+                  "type": "input"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-pro",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 1
+              }
+            ]
+          },
+          "output": {
+            "available": true,
+            "total": 667947.0,
+            "n_series": 6,
+            "series": [
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "shared_request_type": "standard",
+                  "source": "asia-south1",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "asia-south1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-flash",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 141,
+                "sum": 612916.0
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "global",
+                  "shared_request_type": "standard",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "global",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-flash",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 60
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "shared_request_type": "standard",
+                  "source": "global",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "global",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-flash-image",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 1305
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "us-central1",
+                  "shared_request_type": "standard",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-flash-image",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 25,
+                "sum": 52974
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "us-central1",
+                  "shared_request_type": "standard",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "model_user_id": "gemini-2.5-flash-lite",
+                  "publisher": "google",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 10
+              },
+              {
+                "metric_labels": {
+                  "request_type": "shared",
+                  "source": "us-central1",
+                  "shared_request_type": "standard",
+                  "type": "output"
+                },
+                "resource_labels": {
+                  "location": "us-central1",
+                  "project_id": "amru-509214",
+                  "publisher": "google",
+                  "model_user_id": "gemini-2.5-pro",
+                  "model_version_id": ""
+                },
+                "n_points": 1,
+                "sum": 682
+              }
+            ]
+          }
+        }
+      },
+      "bigquery_query": {
+        "n_jobs": 752,
+        "bytes_billed": 734003200,
+        "tib_billed": 0.00066757,
+        "usd": 0.004172
+      },
+      "bigquery_storage": {
+        "n_tables": 35,
+        "bytes": 46744,
+        "gb": 4.4e-05,
+        "usd_per_month_at_current_size": 1e-06,
+        "note": "point-in-time snapshot, not usage over the window"
+      },
+      "cloud_run": {
+        "vcpu_seconds": 55326.24385209633,
+        "gib_seconds": 27480.484073795775,
+        "usd": 1.3965,
+        "n_revisions": 41
+      },
+      "firestore": {
+        "read_units": 0.0,
+        "write_units": 0.0,
+        "delete_units": 0.0,
+        "usd": 0.0
+      }
+    },
+    "total_usd": 5.861,
+    "total_inr": 486.46,
+    "unavailable_lines": [],
+    "plays_in_window": 0,
+    "gaps_in_window": 0,
+    "avg_rupees_at_stake": null,
+    "cost_per_play_inr": null,
+    "cost_per_play_reason": "`taal.plays` has 0 rows with status in (approved, running, measured, unmeasured) in the window, so cost_per_play has no real denominator. Total modeled spend is still reported above."
+  }
+}
