@@ -43,14 +43,40 @@ sell-by in 6 days. The planner's first draft (a 15% coupon) fails the margin flo
 bundle; approval assigns 287 treated and 26 holdout customers by hash, writes the play into
 `future_regressors`, re-forecasts the series in about 1.5 s, and Meena's chat delivers the offer.
 
+## Why this generalizes: one decision loop, not a promo bot
+
+The mechanism behind the hook is not specific to food. A `Play` (`docs/schemas/play.schema.json`)
+is a single object -- target, mechanic, audience, guardrails, holdout, expected outcome -- and
+`agents/gate/guardrails.py` and `agents/gate/estimator.py` never look at what kind of gap produced
+it. The same loop runs today on two different problems with zero domain-specific code in the gate
+layer:
+
+- **Grocery**: `online_sellby_breach`, `expiry_writeoff`, `stockout_risk`, `rebalance`,
+  `slow_mover` -- a forecast says a lot will go unsold before a deadline.
+- **Apparel**: `unmet_demand` and `assortment_gap` -- customers ask the Stylist Agent for a style
+  or colour the node does not stock; those real asks become a gap the same Planner, the same eight
+  guardrails and the same holdout-measured Play loop can act on
+  (`agents/stylist/tools.py`, `jobs/sense/gaps.py`).
+
+Two more things close the loop rather than leaving it open-ended:
+
+1. **Approve doesn't just log a decision, it feeds the forecast.** An approved play is written
+   into `future_regressors` and the affected series is re-forecast immediately (the chart moving
+   on screen in the 60-second beat *is* this) -- the agent's action becomes the model's next input,
+   not a side effect the next Sense run has to catch up to.
+2. **The estimator updates from evidence, not just once.** Every Measure run calls
+   `update_prior()` (`agents/gate/estimator.py`, `jobs/measure/run.py`) and writes the new
+   `alpha`/`beta` back to `estimator_priors`, keyed by mechanic, category and segment -- the next
+   play of that shape starts from what was actually measured, not a static assumption.
+
 ## What it does
 
 1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
-2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; five gap types (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) with rupees at stake; segments; substitutes.
+2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; seven gap types across two domains -- grocery write-off risk (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) and apparel demand signal (unmet demand, assortment gap) -- with rupees at stake; segments; substitutes.
 3. **Plan**: an ADK Planner Agent (LlmAgent inside a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator; eight guardrails gate it; the Cost Governor decides which gaps are worth a model call.
 4. **Approve**: assignment with a holdout, vernacular copy with the best-before line, offers for treated customers only, the play as a known future regressor, the chart moves.
 5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
-6. **Measure**: treated vs holdout inside the play window, 95% CI, `unmeasured` when the treated arm is too small, priors updated by exact counts, a food-waste line in kg and CO2e labelled as an estimate.
+6. **Measure**: treated vs holdout inside the play window, 95% CI, `unmeasured` when the treated arm is too small, estimator priors updated from the exact treated/responder counts so the next play of that shape starts from real evidence, a food-waste line in kg and CO2e labelled as an estimate.
 
 ## How Gen AI is used
 
