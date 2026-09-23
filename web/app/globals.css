@@ -297,7 +297,10 @@ p {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  /* 78% opacity let scrolled-past headings and badges show through at low contrast, visually
+     colliding with the nav links sitting right on top of them (reported as the sticky nav
+     "overlaying content mid-scroll"). Nearly opaque, with the blur only softening the seam. */
+  background: color-mix(in srgb, var(--bg) 96%, transparent);
   backdrop-filter: blur(10px) saturate(1.4);
   -webkit-backdrop-filter: blur(10px) saturate(1.4);
 }
@@ -478,6 +481,11 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
+  /* Without this, grid's default stretch forces both columns to the height of the taller one --
+     ChatPanel's height:100% + flex-grown message list then inflates to match the beat card as it
+     grows through the walkthrough, leaving a large empty gap under "Send a message to start."
+     Each card should size to its own content instead. */
+  align-items: start;
 }
 
 @media (max-width: 760px) {
@@ -685,7 +693,7 @@ textarea:focus-visible {
 
 .forecast-chart__line {
   fill: none;
-  stroke-width: 2.5;
+  stroke-width: 3;
 }
 
 .forecast-chart__line--baseline {
@@ -698,7 +706,7 @@ textarea:focus-visible {
 }
 
 .forecast-chart__label {
-  font-size: 10px;
+  font-size: 12px;
   fill: var(--text-muted);
   font-family: var(--font-mono), monospace;
 }
@@ -727,7 +735,11 @@ textarea:focus-visible {
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
   padding: 16px;
-  height: 100%;
+  /* No explicit height: on the landing page's two-column hero grid, `height: 100%` stretched
+     this to match the beat card's height as it grows through the walkthrough (even with the
+     grid's `align-items: start`), leaving a large empty gap under "Send a message to start."
+     The panel should size to its own content; the message list still scrolls internally once a
+     conversation grows past its max-height. */
 }
 
 .chat-panel__header {
@@ -746,7 +758,11 @@ textarea:focus-visible {
 
 .chat-panel__list {
   flex: 1;
-  min-height: 220px;
+  /* A 220px floor reserved an oversized blank area under a single "Send a message to start."
+     line, on both the landing hero and the standalone /chat and /stylist pages -- the list
+     should size to its own messages (up to max-height) and only grow once there is a real
+     conversation to scroll. */
+  min-height: 60px;
   max-height: 420px;
   overflow-y: auto;
   display: flex;
