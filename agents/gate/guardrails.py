@@ -219,12 +219,17 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
     acc: list[float] = []
     for c in draft.get("citations") or []:
         _walk_numbers(c.get("ref", ""), acc)
-    # `guardrails` (the check_guardrails result block) is deliberately excluded: it is prose
-    # ABOUT the draft, generated after the fact, not evidence the draft can cite. Walking it made
-    # any number the guardrail checker happened to print (e.g. "margin 42.0% >= floor 15.0%")
-    # count as a citation for that same number in the rationale -- the rationale would then be
-    # "citing" the guardrail engine's restatement of itself, not a real evidence source.
-    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout"):
+    # `guardrails` (the check_guardrails result block) IS walked, deliberately (commit ccc5107,
+    # "stop looping on cite_or_drop"): it is tool-computed, never LLM-authored, so a rationale
+    # restating a number from a passed rule's own detail (a margin percent, an audience count) is
+    # citing a verified fact, not inventing one. ccc5107's commit message records a live run that
+    # failed cite_or_drop five times in a row and exhausted its iterations before this field was
+    # added -- dropping it re-risks exactly the retry pathology item 1 of this work is trying to
+    # reduce, not reintroduce (verified: dropping it did NOT change iteration counts for the
+    # current seeded demo plays specifically, but that is testing eight fixed drafts, not the
+    # open-ended case ccc5107 was written for). The over-matching this rule actually had is the
+    # duplicate unfiltered digit extraction below (fixed) -- not this field.
+    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout", "guardrails"):
         _walk_numbers(draft.get(key) or {}, acc)
     # Percent forms of fractions (holdout 0.1 -> 10) and rupee values expressed in whole rupees.
     acc.extend(v * 100.0 for v in list(acc) if 0 < v < 1)
