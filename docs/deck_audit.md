@@ -28,9 +28,34 @@ rather than a specific factual claim, both raised directly rather than found by 
   this audit (the legal deadline as a forecast covariate, the domain-agnostic Play schema, the
   estimator that learns from measurement) — nothing asserted about any other product.
 
+## Second revision: clarity fixes and a new architecture slide
+
+After review, three more things were fixed, none of them factual-claim errors:
+
+- **Slide `loop`** tried to cover both "one schema, two domains" and "two closed feedback loops"
+  in one dense stack of cards with no actual visual loop -- unclear which claim it was making.
+  Split: `loop` now covers only the domain-agnostic claim (its one truly distinct point), and the
+  feedback-loop mechanics moved to the new `architecture` slide below, where they're shown as an
+  explicit step-6-feeds-back-into-step-3 flow instead of two disconnected boxes.
+- **Slide `impact`** repeated the exact same before/after number already shown on `summary`,
+  adding little beyond restating it. Replaced with the real three-way comparison the estimator
+  and the live sweep actually produced for this lot: do nothing (₹9,200, estimator projection),
+  blanket 20% markdown (₹8,189, estimator counterfactual), and this play live-approved (₹9,194 ->
+  ₹8,068, the real re-forecast) -- three different real numbers from two different real sources
+  (`fixtures/golden_runs/run_chips_ds07_v1_bd0a8253.jsonl` for the first two, the same live sweep
+  as before for the third), clearly labelled as such rather than presented as directly comparable
+  on the same footing.
+- **New slide `architecture`**, inserted after `technical`: a genuinely detailed walk through the
+  six-step loop naming exactly which agent or model runs each step, its real tool-call sequence
+  (`get_gap` -> `get_candidate_audiences` -> `estimate_outcomes` -> `check_guardrails` ->
+  `propose_play`, with `get_past_plays` for prior evidence), where data lives (BigQuery vs
+  Firestore vs the 3-file ingestion contract), and where the ML actually runs today vs what's
+  been verified but isn't in production yet (same local-model-vs-BigQuery distinction as the
+  Phase 2 fix above, stated once more here for a reader who only reads this slide).
+
 ## Summary
 
-- 3 OVERCLAIM, 1 STALE found and fixed in the deck (Phase 2), plus the 2 credibility redesigns above.
+- 3 OVERCLAIM, 1 STALE found and fixed in the deck (Phase 2), plus the 2 credibility redesigns and 3 clarity fixes above.
 - 1 of the OVERCLAIMs (BigQuery forecasting) was also partly closed by fixing and actually running
   the SQL against real BigQuery for one series (Phase 3) — see `eval/evaluation.md`'s new
   "Real BigQuery `ARIMA_PLUS_XREG` forecast" section and
