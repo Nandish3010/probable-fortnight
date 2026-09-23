@@ -129,7 +129,15 @@ def _guardrail_context(ctx: PlannerContext, draft: dict[str, Any]) -> gr.Guardra
     recent = _recent_play_counts(ctx)
     cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
     subscribers = frozenset(c["customer_id"] for c in ctx.store.read("customers") if sku in (c.get("subscription_skus") or []))
-    # audience after the consent, frequency-cap and subscription filters is what the gate sees
+    # audience after the consent, frequency-cap and subscription filters is what the gate sees.
+    # Consequence, stated plainly rather than left implicit: on this runtime path,
+    # rule_consent_required / rule_frequency_cap / rule_subscription_protect verify that this
+    # filter step ran correctly (a real, catchable bug there would fail them) -- they do not
+    # screen a raw, unfiltered candidate audience, since one never reaches check_guardrails here.
+    # "8 of 8 passed" on a Play card means these three passed *that* check, not that an
+    # arbitrary audience was tested and found clean. See
+    # tests/unit/test_guardrails.py::test_consent_frequency_subscription_rules_can_genuinely_fail
+    # for proof each rule's own logic can reject a violating audience when one is given.
     filtered = gr.filter_audience_by_consent(ids, consented)
     filtered = gr.filter_audience_by_frequency_cap(filtered, recent, cap)
     if draft.get("mechanic") in DISCOUNT_MECHANICS:

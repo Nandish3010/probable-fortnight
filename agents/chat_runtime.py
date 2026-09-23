@@ -103,13 +103,24 @@ def _strip_internal_leak(text: str) -> str:
 
 
 def clamp(env: dict[str, Any]) -> dict[str, Any]:
+    # A model turn can emit these keys as an explicit JSON `null` rather than omitting them.
+    # The schema declares buttons/list as optional but typed array/object with no null variant
+    # (docs/schemas/chat_envelope.schema.json), so a literal null passes this function unchanged
+    # and then fails _VALIDATOR.validate() uncaught -- the documented live-chat 500. Pop the key
+    # outright for any falsy value (None, [], {}) instead of leaving it in the envelope.
     if env.get("buttons"):
         env["buttons"] = [{"id": str(b["id"])[:64], "label": str(b["label"])[:20]} for b in env["buttons"][:3]]
+    else:
+        env.pop("buttons", None)
     if env.get("list"):
         rows = env["list"].get("rows") or []
         env["list"] = {"title": str(env["list"].get("title", ""))[:60], "rows": [{"id": str(r["id"])[:64], "title": str(r["title"])[:24], **({"desc": str(r["desc"])[:72]} if r.get("desc") else {})} for r in rows[:10]]}
+    else:
+        env.pop("list", None)
     if env.get("citations"):
         env["citations"] = [c for c in env["citations"] if c.get("type") in ("stock", "play", "forecast") and c.get("ref")]
+    else:
+        env.pop("citations", None)
     env["text"] = _strip_internal_leak(str(env.get("text", "")))[:4096]
     return env
 
