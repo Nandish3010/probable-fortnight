@@ -1209,10 +1209,9 @@ textarea:focus-visible {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 320px;
+  gap: 6px;
+  max-height: 420px;
   overflow-y: auto;
-  font-family: var(--font-mono), monospace;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
@@ -1226,12 +1225,17 @@ textarea:focus-visible {
   border-radius: 999px;
 }
 
+/* One timeline entry: a compact head line (offset, author, markers) then a plain-English
+   sentence of what happened. Monospace is reserved for the offset, the invocation id and actual
+   code/data tokens (tool names, the raw JSON) -- prose stays in the sans body font so the
+   timeline reads like a narrative, not a log dump. */
 .trace-panel__event {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  padding: 5px 6px;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  padding: 7px 9px;
+  border-left: 3px solid transparent;
   border-bottom: 1px solid var(--border);
   border-radius: 4px;
   transition: background 0.12s ease;
@@ -1241,18 +1245,80 @@ textarea:focus-visible {
   background: var(--surface-alt);
 }
 
+.trace-panel__row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
 .trace-panel__offset {
   color: var(--text-muted);
-  min-width: 60px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  min-width: 54px;
 }
 
 .trace-panel__author {
   font-weight: 700;
 }
 
+.trace-panel__body {
+  line-height: 1.4;
+}
+
+.trace-panel__code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.82em;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.trace-panel__event--error { border-left-color: var(--danger); }
+.trace-panel__event--ok { border-left-color: var(--live-text); }
+.trace-panel__event--warn { border-left-color: var(--warn); }
+
 .trace-panel__event--error .trace-panel__body { color: var(--danger); }
 .trace-panel__event--ok .trace-panel__body { color: var(--live-text); }
 .trace-panel__event--warn .trace-panel__body { color: var(--warn); }
+
+/* The guardrail-failure / revision markers are the single most important visual cue in the
+   panel -- a judge scanning the timeline must be able to spot "this failed, and here is the fix
+   that followed" without reading a line of JSON. */
+.trace-panel__event--guardrail-fail {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+.trace-panel__marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.trace-panel__marker--fail {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.trace-panel__marker--revision {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.trace-panel__invocation {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+}
 
 .trace-panel__raw {
   flex-basis: 100%;
@@ -1271,6 +1337,7 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 0.72rem;
+  font-family: var(--font-mono), monospace;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 220px;
