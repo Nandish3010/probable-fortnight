@@ -627,3 +627,48 @@ first, so a real Cohen's-kappa-style agreement number can be computed against
 human-labelled subset" item is left unticked. The Gemini-as-judge half of DECISIONS §12 is now
 real and measured (5.0/5, 15/15 clear the bar); the human-labelled agreement half genuinely needs
 a person and cannot be checked off by this session.
+
+## Real BigQuery `ARIMA_PLUS_XREG` forecast, one series (2026-09-23)
+
+**Why this exists.** The deck audit (`docs/deck_audit.md`) found the deck claiming BigQuery
+`AI.FORECAST`/`ARIMA_PLUS_XREG` power Sense, when in fact `jobs/sense/forecast.py` runs a local
+Python seasonal model (`model: "local_seasonal_xreg"`) and the SQL under `data/bigquery/sense/`
+had never been executed -- exactly what README.md already discloses. Rather than only soften the
+deck's wording, the minimum credible version from that audit's Phase 3 was attempted: load one
+real series into BigQuery and actually run the existing SQL.
+
+**Two real bugs found and fixed by running it, not by reading it.** `data/bigquery/sense/
+03_forecast_arima_xreg.sql` had never executed before this session and had two genuine BigQuery
+scripting errors, both now fixed in place (see the file's own inline comments):
+1. `LIMIT 1 OFFSET i` inside the per-series `WHILE` loop -- BigQuery scripting rejects a variable
+   in the `OFFSET` position ("OFFSET expects an integer literal or parameter"). Fixed with a
+   `ROW_NUMBER()`-indexed lookup instead.
+2. `ML.FORECAST`'s third argument used a bare `TABLE (SELECT ...)`, which BigQuery rejected
+   ("Each function argument is an expression, not a query"); and the downstream
+   `ML.EXPLAIN_FORECAST` call was missing the same third (data) argument entirely, and named its
+   per-regressor output columns `xreg_<name>_coefficient` -- guessed, per the file's own original
+   comment ("VERIFY: exact ... column names"). The real column names, discovered by running
+   `SELECT * FROM ML.EXPLAIN_FORECAST(...)` directly, are `attribution_on_promo` /
+   `attribution_is_festival`. Both fixed.
+
+**What was loaded and run.** `nodes` (16 rows), `sales_daily` (350 rows: 70 days of history for
+SKU-MASALA-CHIPS-200G across the 5 nodes in the "south" cluster -- DS-05, DS-06, DS-07, OUT-03,
+OUT-04), and `future_regressors` (28 rows, the forecast horizon) were loaded into the `taal`
+dataset (`amru-509214`, `asia-south1`, already provisioned from earlier infra work, previously
+empty) via `bigquery.Client.load_table_from_json`. `03_forecast_arima_xreg.sql` was then run for
+real with `@tenant_id='kutumb-mart'`, `@as_of=2026-09-12`, `@run_id='bq_forecast_demo_2026-09-23'`.
+
+**Result: a real `CREATE MODEL ... OPTIONS(MODEL_TYPE='ARIMA_PLUS_XREG', ...)` trained, and real
+`ML.FORECAST`/`ML.EXPLAIN_FORECAST` output.** Job `9f4015c6-4c94-437d-9ae4-12e1f13d50fc`,
+146,800,640 bytes billed, ~22s wall time. 28 forecast rows written to `taal.forecasts`
+(`model='arima_xreg'`, `method='arima_plus_xreg'`) and 98 rows to `taal.forecast_explain`. Raw
+output (all 28 forecast rows plus job metadata): `eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`.
+
+**Honest scope of this claim.** This is one SKU, one cluster, one BigQuery job -- not the
+production Sense path, which still runs the local model for every series on every nightly run.
+The deck states exactly this: BigQuery ML forecasting demonstrated end-to-end on the demo series;
+the local forecaster still serves the rest, with the same-shape SQL written, reviewed, and now
+verified runnable rather than merely written. Making BigQuery the forecasting path for the whole
+tenant (all ~4,800 series) is a materially larger job -- loading the full `sales_daily`/
+`future_regressors` tables and re-running Sense's nightly orchestration against BigQuery instead
+of `LocalStore` -- and was scoped out of this session as the Phase 3 "Full version" option.
