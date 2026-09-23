@@ -70,7 +70,36 @@ def test_two_visitors_are_isolated_and_reset_is_scoped(client):
     r = client.post("/reset", headers=_h("visitor-a")).json()
     assert r["ok"] and r["namespace"] == "visitor-a"
     assert client.get("/plays/play_chips_ds07_v1", headers=_h("visitor-a")).json()["status"] == "proposed"
-    assert not client.post("/reset").json()["ok"], "no visitor id: base tenant never reset"
+    # A headerless mutating request used to fall through to the base tenant (services/api/sandbox.py
+    # store_for): store_for now mints a fresh, one-off visitor sandbox for it instead, so this
+    # POST succeeds (there is always a sandbox to reset) but it is a brand-new, never-before-seen
+    # namespace -- it must not be "base", and it must not be able to touch visitor-a's state.
+    r0 = client.post("/reset")
+    assert r0.json()["ok"] and r0.json()["namespace"] not in ("base", None)
+    assert client.get("/plays/play_chips_ds07_v1", headers=_h("visitor-a")).json()["status"] == "proposed"
+
+
+def test_headerless_mutation_never_writes_the_base_tenant(client, data_dir):
+    """services/api/sandbox.py used to fall through to LocalStore(base_dir()) for any mutating
+    request with no visitor header/cookie -- on an unauthenticated public service, that meant a
+    single headerless POST /approve permanently wrote the shared base tenant for every future
+    visitor. store_for now mints a one-off sandbox for a headerless mutating request instead."""
+    before = (data_dir / "plays.jsonl").read_text()
+    r = client.post("/approve", json={"play_id": "play_chips_ds07_v1"})
+    assert r.status_code == 200
+    assert "taal_visitor" in r.cookies
+    after = (data_dir / "plays.jsonl").read_text()
+    assert after == before, "a headerless mutating request wrote the base tenant's own file on disk"
+
+
+def test_headerless_chat_still_gets_a_visitor_cookie(client):
+    """/chat returns its own JSONResponse/StreamingResponse rather than a plain dict, and FastAPI
+    does not merge a dependency-injected Response's headers into an endpoint-returned Response --
+    so the visitor cookie store_for sets on a headerless first call was silently dropped here
+    specifically, even though it worked on every other endpoint. See the comment in the handler."""
+    r = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Any offers today?"})
+    assert r.status_code == 200
+    assert "taal_visitor" in r.cookies
 
 
 def test_chat_sse_and_json(client):

@@ -41,6 +41,30 @@ def _rate(responders: int, customers: int) -> float:
     return responders / customers if customers else 0.0
 
 
+def wilson_interval(responders: int, customers: int, z: float = Z95) -> tuple[float, float]:
+    """Wilson score interval for a binomial proportion. Unlike the normal approximation, this
+    stays inside [0, 1] and is not degenerate at p=0 or p=1 -- at zero responders the normal
+    approximation collapses to exactly [0.0, 0.0], which reads as "measured, zero effect,
+    certainty" when it is really "not enough signal yet"."""
+    if customers <= 0:
+        return (0.0, 0.0)
+    p = responders / customers
+    denom = 1 + z * z / customers
+    centre = p + z * z / (2 * customers)
+    half = z * math.sqrt(p * (1 - p) / customers + z * z / (4 * customers * customers))
+    return ((centre - half) / denom, (centre + half) / denom)
+
+
+def lift_wilson_interval(r_t: int, n_t: int, r_h: int, n_h: int, z: float = Z95) -> tuple[float, float]:
+    """CI for the difference of two proportions, each bounded by its own Wilson interval rather
+    than a shared normal approximation on the difference (which is what produced the [0.0, 0.0]
+    interval at zero responders)."""
+    lo_t, hi_t = wilson_interval(r_t, n_t, z)
+    lo_h, hi_h = wilson_interval(r_h, n_h, z)
+    point = (r_t / n_t if n_t else 0.0) - (r_h / n_h if n_h else 0.0)
+    return (lo_t - hi_h, hi_t - lo_h), point
+
+
 def measure_play(play: dict[str, Any], assignments: list[dict[str, Any]], lines: list[dict[str, Any]], product: dict[str, Any], computed_at: str) -> list[dict[str, Any]]:
     """Two play_outcomes rows (treated, holdout) for one play."""
     arms: dict[str, set[str]] = {"treated": set(), "holdout": set()}
@@ -73,13 +97,16 @@ def measure_play(play: dict[str, Any], assignments: list[dict[str, Any]], lines:
     n_t, n_h = len(arms["treated"]), len(arms["holdout"])
     r_t, r_h = len(per_arm["treated"]["responders"]), len(per_arm["holdout"]["responders"])
     min_treated = int(play["holdout"]["min_treated_n"])
-    measurable = n_t >= min_treated and n_h >= 1
+    # At zero responders in both arms, the normal-approximation se was exactly 0, producing a
+    # [0.0, 0.0] interval that reads as "measured, zero effect, dead certain" instead of "no
+    # evidence yet". Wilson stays non-degenerate at n=1 responder (the interval is just wide, as
+    # it honestly should be), so the only case that must be refused outright is zero evidence.
+    measurable = n_t >= min_treated and n_h >= 1 and (r_t + r_h) >= 1
     p_t, p_h = _rate(r_t, n_t), _rate(r_h, n_h)
     lift = ci_low = ci_high = None
     if measurable:
         lift = p_t - p_h
-        se = math.sqrt(p_t * (1 - p_t) / n_t + p_h * (1 - p_h) / n_h)
-        ci_low, ci_high = lift - Z95 * se, lift + Z95 * se
+        (ci_low, ci_high), _ = lift_wilson_interval(r_t, n_t, r_h, n_h)
     units_at_risk = int(play["target"]["units"])
     rows = []
     for arm in ("treated", "holdout"):

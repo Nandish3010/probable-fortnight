@@ -187,13 +187,26 @@ def numbers_in_text(text: str) -> list[float]:
 
 
 def _walk_numbers(obj: Any, acc: list[float]) -> None:
+    # Previously this also ran a raw `re.finditer(r"\d+\.\d+|\d+", obj)` on every string IN
+    # ADDITION to the filtered `numbers_in_text` -- that duplicate pass applied none of
+    # numbers_in_text's filtering, so an ISO date's own digits (e.g. "2026", "09", "18" out of
+    # "2026-09-18") or an id's serial (e.g. "07" out of "DS-07") were silently added to the cited
+    # set on top of the legitimate ones, widening what counts as "cited" well past what the field
+    # actually asserts.
+    #
+    # A real fact can still live INSIDE an identifier though -- SKU-MASALA-CHIPS-200G literally
+    # encodes a 200g pack size, and `target`/`mechanic_params` legitimately cite that SKU string.
+    # So: extract filtered numbers as normal, then separately pull digit runs only out of the
+    # ID-like substrings themselves (not the whole string, so a neighbouring date is still
+    # excluded) -- narrower than the old duplicate pass, but still lets a SKU-embedded quantity
+    # count as cited.
     if isinstance(obj, bool):
         return
     if isinstance(obj, int | float):
         acc.append(float(obj))
     elif isinstance(obj, str):
         acc.extend(numbers_in_text(obj))
-        acc.extend(float(m.group(0)) for m in re.finditer(r"\d+\.\d+|\d+", obj))
+        acc.extend(float(m.group(0)) for ident in _ID_LIKE.finditer(obj) for m in re.finditer(r"\d+", ident.group(0)))
     elif isinstance(obj, Mapping):
         for v in obj.values():
             _walk_numbers(v, acc)
@@ -206,10 +219,12 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
     acc: list[float] = []
     for c in draft.get("citations") or []:
         _walk_numbers(c.get("ref", ""), acc)
-    # guardrails is tool-computed (check_guardrails), never LLM-authored: a rationale restating a
-    # number from a passed rule's own detail (a margin percent, an audience count) is citing a
-    # verified fact, not inventing one, even though that number lives outside expected_outcome.
-    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout", "guardrails"):
+    # `guardrails` (the check_guardrails result block) is deliberately excluded: it is prose
+    # ABOUT the draft, generated after the fact, not evidence the draft can cite. Walking it made
+    # any number the guardrail checker happened to print (e.g. "margin 42.0% >= floor 15.0%")
+    # count as a citation for that same number in the rationale -- the rationale would then be
+    # "citing" the guardrail engine's restatement of itself, not a real evidence source.
+    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout"):
         _walk_numbers(draft.get(key) or {}, acc)
     # Percent forms of fractions (holdout 0.1 -> 10) and rupee values expressed in whole rupees.
     acc.extend(v * 100.0 for v in list(acc) if 0 < v < 1)
@@ -217,6 +232,11 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
 
 
 def _matches(value: float, cited: Iterable[float]) -> bool:
+    # +-0.5 absolute (or 0.5% relative, whichever is larger) is deliberately sized for "rationale
+    # rounds a float citation to the nearest whole number" (21.67 units cited -> "22 units" in
+    # prose), not loosened further: the actual over-matching bug was cited_numbers() walking
+    # guardrail-check prose (fixed above) and _walk_numbers() double-counting via an unfiltered
+    # regex that also picked up date/id digits (fixed above), not this tolerance.
     for c in cited:
         if abs(value - c) <= max(0.5, 0.005 * abs(c)):
             return True

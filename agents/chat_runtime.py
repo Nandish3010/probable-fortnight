@@ -103,13 +103,26 @@ def _strip_internal_leak(text: str) -> str:
 
 
 def clamp(env: dict[str, Any]) -> dict[str, Any]:
+    # A model-authored envelope can carry an explicit `"list": null` or `"buttons": null` (valid
+    # JSON, and Gemini emits it when it considers the field "not applicable" rather than omitting
+    # the key). `env.get(...)` treats that the same as absent and skips the transform below, but
+    # the key is still `None` in `env` and gets spread into the outgoing envelope, where the
+    # schema expects an object/array or no key at all -- not null. That reached _VALIDATOR.validate
+    # below and threw, a 500 on ~2% of live chat turns. Drop the key outright instead of leaving a
+    # null behind.
     if env.get("buttons"):
         env["buttons"] = [{"id": str(b["id"])[:64], "label": str(b["label"])[:20]} for b in env["buttons"][:3]]
+    else:
+        env.pop("buttons", None)
     if env.get("list"):
         rows = env["list"].get("rows") or []
         env["list"] = {"title": str(env["list"].get("title", ""))[:60], "rows": [{"id": str(r["id"])[:64], "title": str(r["title"])[:24], **({"desc": str(r["desc"])[:72]} if r.get("desc") else {})} for r in rows[:10]]}
+    else:
+        env.pop("list", None)
     if env.get("citations"):
         env["citations"] = [c for c in env["citations"] if c.get("type") in ("stock", "play", "forecast") and c.get("ref")]
+    else:
+        env.pop("citations", None)
     env["text"] = _strip_internal_leak(str(env.get("text", "")))[:4096]
     return env
 

@@ -316,7 +316,18 @@ def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
 
 def check_guardrails(play_draft: dict) -> dict:
     """Run the eight guardrails on a draft; returns every rule with pass/fail and detail, plus
-    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}."""
+    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}.
+
+    What "8 of 8 passed" means on THIS path: `consent_required`, `frequency_cap` and
+    `subscription_protect` are checked here against an audience already filtered by those same
+    three properties (see `_guardrail_context` below) -- so on the runtime path they can only ever
+    report a pass; the filter, not the guardrail check, is what stops an ineligible customer from
+    reaching a real play. That filtering is itself the enforcement (a violation genuinely cannot
+    reach approval), and it is re-applied a second time in services/api/approve.py before a play
+    goes live -- but a live "8/8" badge should not be read as "all eight rules were exercised
+    against a case that could fail". The rule LOGIC for these three (would it correctly reject a
+    consent/frequency/subscription violation if handed one) is proven separately, against
+    deliberately violating audiences, in tests/unit/test_guardrails.py."""
     ctx = current()
     problems = _draft_problems(play_draft)
     if problems:

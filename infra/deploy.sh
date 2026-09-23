@@ -125,6 +125,13 @@ gcloud run deploy taal-web \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-web" \
   --allow-unauthenticated
 
+WEB_URL="$(gcloud run services describe taal-web --project "${PROJECT}" --region "${REGION}" --format='value(status.url)')"
+echo "   taal-web URL: ${WEB_URL}"
+echo "-- restricting taal-agents CORS to taal-web's URL --"
+gcloud run services update taal-agents \
+  --project "${PROJECT}" --region "${REGION}" \
+  --update-env-vars "TAAL_ALLOWED_ORIGINS=${WEB_URL}"
+
 echo "-- building taal-sense image and deploying the Cloud Run Job --"
 gcloud builds submit "${ROOT_DIR}" \
   --project "${PROJECT}" \

@@ -14,7 +14,7 @@ from collections import defaultdict
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -33,7 +33,15 @@ from .sandbox import store_for, visitor_id
 
 VERSION = "0.1.0"
 app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
-app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# `allow_origin_regex=r"https?://.*"` used to reflect ANY origin while `allow_credentials=True`
+# (the visitor sandbox cookie set in sandbox.py IS a credential) -- that lets any website read a
+# visitor's sandbox by riding their cookie. TAAL_ALLOWED_ORIGINS (comma-separated) is set to the
+# deployed taal-web URL by infra/deploy.sh once that URL is known; the localhost defaults cover
+# `make demo` / `make web`.
+_default_origins = "http://localhost:3000,http://127.0.0.1:3000"
+_allowed_origins = [o.strip() for o in os.environ.get("TAAL_ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 def _now() -> datetime:
@@ -375,7 +383,7 @@ def events_stream(run_id: str, speed: float = Query(4.0, ge=0.1, le=100), store:
 
 
 @app.post("/chat")
-async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
+async def chat(req: ChatRequest, request: Request, response: Response, store: LocalStore = Depends(store_for)) -> StreamingResponse:
     # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
     # messages); wide enough that no legitimate judge session is at risk of tripping it. Shared
     # by both specialists since they're the same endpoint.
@@ -386,22 +394,37 @@ async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(s
         if req.image_data_url or req.photo_ref:
             raise HTTPException(422, "photo input is a stylist feature; set specialist=stylist")
         envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
+    # `store_for` (a dependency, injecting its own `response: Response`) may have just set the
+    # visitor cookie on THIS endpoint's headerless first call -- but this handler returns its own
+    # JSONResponse/StreamingResponse instance rather than a plain dict, and FastAPI does not merge
+    # an injected Response's headers into an endpoint-returned Response (verified directly: a
+    # cookie set on the dependency's `response` is silently dropped when the endpoint returns its
+    # own Response object). Copy it across explicitly so a visitor's very first call, if it
+    # happens to be /chat, still gets a session cookie back.
     if "application/json" in (request.headers.get("accept") or ""):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(envelopes)
+        out = JSONResponse(envelopes)
+        out.raw_headers.extend(response.raw_headers)
+        return out
 
     async def gen():
         for env in envelopes:
             yield f"data: {json.dumps(env, ensure_ascii=False)}\n\n"
 
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    out = StreamingResponse(gen(), media_type="text/event-stream")
+    out.raw_headers.extend(response.raw_headers)
+    return out
 
 
 @app.post("/reset")
 def reset(request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
-    vid = visitor_id(request)
     if isinstance(store, OverlayStore):
+        # `store` may be a sandbox `store_for` just minted for this headerless request (a cookie
+        # it does not carry itself -- that cookie is on the outgoing response). Read the visitor
+        # id back off the store's own overlay directory rather than re-parsing the request, so
+        # this reports the sandbox that was actually reset instead of silently reporting None.
+        vid = store.root.name
         store.reset()
         from agents.customer.chat import reset_sessions
         from agents.stylist.chat import reset_sessions as reset_stylist_sessions
