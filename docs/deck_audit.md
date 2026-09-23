@@ -53,9 +53,19 @@ After review, three more things were fixed, none of them factual-claim errors:
   been verified but isn't in production yet (same local-model-vs-BigQuery distinction as the
   Phase 2 fix above, stated once more here for a reader who only reads this slide).
 
+## Third revision: one real diagram instead of two thin ones
+
+The two flowchart slides added in the second revision were dropped and replaced with a single
+denser diagram (`system-diagram.html`) after review: subgraph boundaries (Sense, Planner Loop,
+Engage), a real decision-diamond shape for `check_guardrails`, each of the Planner's six tools as
+its own node, and three distinct edge treatments (solid teal = the live request path, dashed
+amber = the estimator-priors feedback into the next Planner run, dashed red = a failed guardrail
+sending a draft back to revise). Same underlying facts as the second revision's two slides,
+denser and closer to how a real system diagram reads.
+
 ## Summary
 
-- 3 OVERCLAIM, 1 STALE found and fixed in the deck (Phase 2), plus the 2 credibility redesigns and 3 clarity fixes above.
+- 3 OVERCLAIM, 1 STALE found and fixed in the deck (Phase 2), plus the 2 credibility redesigns, 3 clarity fixes, and the diagram consolidation above.
 - 1 of the OVERCLAIMs (BigQuery forecasting) was also partly closed by fixing and actually running
   the SQL against real BigQuery for one series (Phase 3) — see `eval/evaluation.md`'s new
   "Real BigQuery `ARIMA_PLUS_XREG` forecast" section and
