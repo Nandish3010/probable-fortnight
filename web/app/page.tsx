@@ -8,11 +8,13 @@ import { ChatPanel } from "../components/ChatPanel";
 import { GapCard } from "../components/GapCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
 import { getGaps, getPlays, resetDemoData } from "../lib/api";
+import { useServerNow } from "../lib/useServerNow";
 import type { Gap, Play } from "../lib/types";
 
 const CHIPS_GAP_ID = "gap_chips_ds07";
 
 export default function LandingPage() {
+  const serverNow = useServerNow();
   const [beatStarted, setBeatStarted] = useState(false);
   const [gap, setGap] = useState<Gap | null>(null);
   const [play, setPlay] = useState<Play | null>(null);
@@ -69,7 +71,7 @@ export default function LandingPage() {
             <p className="muted">Loading gap and play…</p>
           ) : (
             <div data-testid="beat-panel">
-              <GapCard gap={gap} />
+              <GapCard gap={gap} now={serverNow} />
               <div className="card" data-testid="play-card">
                 <div className="card__header">
                   <h3>Pre-proposed play: {play.mechanic}</h3>

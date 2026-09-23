@@ -313,6 +313,9 @@ export interface HealthResponse {
   tenant?: { tenant_id: string; name: string; skus: number; nodes: number; customers: number };
   last_sense_run_at?: string;
   last_sense_run_minutes?: number;
+  /** The server's own clock (ISO datetime; pinned to TAAL_NOW for the demo tenant). Use this,
+   * never the browser's local clock, for any day-countdown math against seeded deadline dates. */
+  server_now?: string;
 }
 
 export interface ForecastPoint {
