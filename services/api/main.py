@@ -253,6 +253,10 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         "tenant": {"tenant_id": tenant.tenant_id, "name": "Kutumb Mart", "skus": len(store.read("products")), "nodes": len(store.read("nodes")), "customers": len(store.read("customers"))},
         "last_sense_run_at": last and last["as_of"], "last_sense_run_minutes": last and round(last["timing_ms"]["total"] / 60000, 2), "last_sense_run_id": last and last["run_id"],
         "sellby_rule": tenant.sellby_rule.version,
+        # The server's own clock (wall clock, or TAAL_NOW when pinned for the demo tenant). The
+        # web app uses this -- never the browser's local clock -- for any day-countdown math
+        # (GapCard's daysUntil) so it matches the pinned dates baked into the seeded tenant.
+        "server_now": t,
     }
 
 
