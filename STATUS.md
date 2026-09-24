@@ -11,7 +11,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 | [Sense: forecasts](harness/checklists/sense_forecasts.md) | D | §5.2, §4.2 | 8 of 8 | green: 10 passed, 0 failed, 0 skipped |
 | [Sense: gaps](harness/checklists/sense_gaps.md) | D | §2.3, §3.4, §5.2 | 10 of 10 | green: 13 passed, 0 failed, 0 skipped |
 | [Segments and substitutes](harness/checklists/segments_substitutes.md) | D | §5.2 | 6 of 6 | green: 4 passed, 0 failed, 0 skipped |
-| [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 9 of 9 | green: 101 passed, 0 failed, 0 skipped |
+| [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 9 of 9 | green: 130 passed, 0 failed, 0 skipped |
 | [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 9 | green: 12 passed, 0 failed, 0 skipped; via `make eval` |
 | [Approve and assignment](harness/checklists/approve_assignment.md) | B | §5.4, §5.6 | 7 of 7 | green: 17 passed, 0 failed, 0 skipped |
 | [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 13 of 14 | green: 34 passed, 0 failed, 0 skipped |
