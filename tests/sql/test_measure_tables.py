@@ -36,6 +36,28 @@ def test_measure_counts_a_treated_responder_and_updates_priors(sandbox):
     assert run_assertion(con, ASSERTIONS_DIR / "no_lift_without_holdout.sql") == []
 
 
+def test_accepting_an_offer_with_a_bare_yes_places_a_real_order(sandbox):
+    """The persona simulation (harness/agent_simulation.py, Group H) drives a purchase with
+    ["Any offers today?", "yes"] rather than the explicit "add:SKU..." form used above -- this is
+    what actually closes the "no post-approval order lines were ever generated" gap for the
+    190-persona sim and the live demo alike, so it needs its own coverage rather than relying on
+    the add:SKU test to stand in for it."""
+    approve(sandbox, load_tenant(), "play_chips_ds07_v1", datetime(2026, 9, 12, 9, 0, tzinfo=UTC))
+    reset_sessions()
+    assigns = sandbox.read("play_assignments")
+    treated_cid = next(a["customer_id"] for a in assigns if a["play_id"] == "play_chips_ds07_v1" and a["arm"] == "treated")
+    session = f"{treated_cid}:web"
+    asyncio.run(run_chat_async(sandbox, session, "Any offers today?", now_iso="2026-09-12T09:05:00Z"))
+    env = asyncio.run(run_chat_async(sandbox, session, "yes", now_iso="2026-09-12T09:06:00Z"))[0]
+    assert "ORD-" in env["text"]
+    lines = [ln for ln in sandbox.read("order_lines") if ln.get("customer_id") == treated_cid and ln.get("play_id") == "play_chips_ds07_v1"]
+    assert len(lines) >= 1 and float(lines[0]["discount"]) > 0
+    for t in ("plays", "play_assignments", "order_lines", "play_outcomes", "estimator_priors", "products"):
+        sandbox._materialise(t)
+    out = run_measure(sandbox.root, computed_at="2026-09-19T00:00:00Z")
+    assert out["measured"] == 1
+
+
 def test_measure_places_an_apparel_order_without_crashing_on_a_grocery_only_lookup(sandbox):
     """The apparel analogue of the test above, sized to prove two things: (1) the unified
     catalogue (agents/gate/store.py::load_catalogue) resolves an apparel sku in the same
