@@ -1,0 +1,23 @@
+{
+  "measured_at": "2026-09-24T03:20:00Z",
+  "project": "amru-509214",
+  "region": "asia-south1",
+  "agent_engine": {
+    "created": true,
+    "resource_name": "projects/458548122298/locations/asia-south1/reasoningEngines/5616208637656563712",
+    "display_name": "taal-sessions",
+    "note": "No Agent Engine (Reasoning Engine) instance existed in this project before this session -- confirmed via a real reasoningEngines.list call returning an empty result. Created for real via the Vertex AI REST API; this is a new, additive GCP resource, not a change to the already-deployed judged Cloud Run service."
+  },
+  "real_bugs_found_and_fixed_by_running_this": [
+    "Every session id in this codebase is customer_id:web / customer_id:whatsapp, and VertexAiSessionService's real server-side validation (found from the actual 400 response, stricter than the client library's own pre-check regex) is 'session_id can only contain lowercase letters, digits and hyphens' -- a colon is rejected outright, and so is any uppercase letter (every customer_id in this tenant is uppercase, e.g. CUST-MEENA). Fixed with agents/vertex_sessions.py::vertex_safe_id() plus a translating VertexSafeSessionService wrapper, so every other call site keeps using the original ids untouched.",
+    "ADK's InvocationContext (used internally by Runner.run_async) is a pydantic model whose session_service field is validated with isinstance(value, BaseSessionService) -- a plain duck-typed wrapper class implementing the same methods was rejected outright ('Input should be an instance of BaseSessionService'), even though every method signature matched. Fixed by making VertexSafeSessionService actually subclass BaseSessionService."
+  ],
+  "verification_steps": [
+    {"step": "Real Agent Engine creation via the Vertex AI REST API (reasoningEngines.create), polled to completion", "result": "success"},
+    {"step": "VertexAiSessionService.create_session + get_session called directly (bypassing this codebase), with the id-translation fix, using two INDEPENDENT VertexAiSessionService instances (simulating a container restart)", "result": "the session created by instance A was correctly read back by a fresh instance B"},
+    {"step": "A REAL customer chat turn through the actual code path (agents.customer.chat.run_chat_async -> agents.chat_runtime.ChatRuntime.run_turn -> ADK Runner.run_async), with TAAL_SESSION_BACKEND=vertex and TAAL_MODEL_BACKEND=vertex both set, session_id CUST-MEENA:web, real Gemini model", "result": "turn 1 ('Any offers today?') got a real, correct Gemini reply in Kannada"},
+    {"step": "A SECOND real chat turn in a COMPLETELY FRESH Python process (never ran turn 1, no in-process state whatsoever) against the same session_id, asking 'What did I just ask you?'", "result": "REAL cross-process persistence proven: the model correctly answered (in Kannada) 'You asked whether any offers are available today' -- genuine conversational memory recovered from Vertex, not from any in-process cache. This is the literal proof of item 4's stated goal: sessions survive a container restart."}
+  ],
+  "not_done_in_this_session": "The live, judged Cloud Run deployment was NOT redeployed with TAAL_SESSION_BACKEND=vertex set -- that is a live-service behavior change (the deployed service already runs TAAL_MODEL_BACKEND=vertex, so this is a genuinely separate, additive config flag, not bundled into the same flag) and needs its own explicit go-ahead, per this session's established posture on live redeploys.",
+  "cost_note": "The created Agent Engine instance is a standing GCP resource; whether it incurs idle cost while unused was not separately measured in this pass -- flagged as a real open question for whoever redeploys with this enabled, not asserted either way."
+}
