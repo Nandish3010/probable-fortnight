@@ -712,11 +712,46 @@ real with `@tenant_id='kutumb-mart'`, `@as_of=2026-09-12`, `@run_id='bq_forecast
 (`model='arima_xreg'`, `method='arima_plus_xreg'`) and 98 rows to `taal.forecast_explain`. Raw
 output (all 28 forecast rows plus job metadata): `eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`.
 
-**Honest scope of this claim.** This is one SKU, one cluster, one BigQuery job -- not the
-production Sense path, which still runs the local model for every series on every nightly run.
-The deck states exactly this: BigQuery ML forecasting demonstrated end-to-end on the demo series;
-the local forecaster still serves the rest, with the same-shape SQL written, reviewed, and now
-verified runnable rather than merely written. Making BigQuery the forecasting path for the whole
-tenant (all ~4,800 series) is a materially larger job -- loading the full `sales_daily`/
+**Honest scope of this claim (as of 23 Sep).** This is one SKU, one cluster, one BigQuery job --
+not the production Sense path, which still runs the local model for every series on every nightly
+run. The deck states exactly this: BigQuery ML forecasting demonstrated end-to-end on the demo
+series; the local forecaster still serves the rest, with the same-shape SQL written, reviewed, and
+now verified runnable rather than merely written. Making BigQuery the forecasting path for the
+whole tenant (all ~4,800 series) is a materially larger job -- loading the full `sales_daily`/
 `future_regressors` tables and re-running Sense's nightly orchestration against BigQuery instead
 of `LocalStore` -- and was scoped out of this session as the Phase 3 "Full version" option.
+
+### Follow-up, 24 Sep: the full tables are loaded and the SQL is verified at 20-series scale, not one
+
+Item 2 of the "make the architecture true" review named this the highest-value gap: "what is
+missing is loading `sales_daily` and `future_regressors` into BigQuery." That's now done for
+real, not sampled: the full `.local/data/sales_daily.jsonl` (324,271 rows) and
+`future_regressors.jsonl` (25,200 rows) were loaded via `bigquery.Client.load_table_from_file`
+with `WRITE_TRUNCATE`, replacing the one-series data above.
+
+With the full tables loaded, `03_forecast_arima_xreg.sql`'s own `series_pairs` query (no change
+needed) finds **895 real sku x cluster series** with >=28 days of history -- the actual
+production-scale number, not a guess. Running the script unmodified against all 895 would mean
+895 sequential `CREATE OR REPLACE MODEL` + `ML.FORECAST` calls inside one `WHILE` loop; that is
+not something to run blind in an interactive session, so a scratch copy (never committed) added a
+`QUALIFY ROW_NUMBER() ... <= 20` to the series_pairs CTE -- everything else byte-for-byte
+identical to the committed SQL -- and was run for real: job (visible via `bq show`, not
+separately named since it ran via the Python client directly), 379.4s wall time, 0 errors,
+1,939,865,600 bytes billed, **560 real forecast rows written to the shared `taal.forecasts` table**
+(20 series x 28 horizon days each), verified by querying `taal.forecasts` directly afterward, not
+assumed from the job succeeding. Raw job metadata and a sample of the written rows:
+`eval/raw/bigquery_full_load_2026-09-24/summary.json`.
+
+**What this does and does not prove, stated plainly.** It proves the exact committed SQL
+(`03_forecast_arima_xreg.sql`, unmodified) trains and forecasts correctly against the full,
+real dataset at 20x the previously-verified scale, and writes into the real shared `forecasts`
+table other code already reads from -- not a toy. It does **not** prove BigQuery can serve as
+Sense's nightly production forecasting path yet: extrapolating this run's own timing (379s for 20
+series, strictly sequential), all 895 series would take **approximately 4.7 hours** run this way
+-- not viable as a nightly job without either parallelizing model training across concurrent
+BigQuery jobs or an incremental design that skips series whose data hasn't changed, neither of
+which is built or tested here. `jobs/sense/run.py` still calls only the local Python forecaster
+(`jobs/sense/forecast.py`) unconditionally -- there is no BigQuery/local backend switch wired into
+Sense's entrypoint, so **the deployed demo's nightly Sense job is completely unaffected by this
+work**, deliberately: writing an untested opt-in switch and calling it done would be exactly the
+kind of unverified claim this file exists to avoid.
