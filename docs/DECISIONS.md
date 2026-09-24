@@ -300,6 +300,27 @@ never forced into a gap. This is the whole point of the second specialist made c
 gap → guardrail-gated play → holdout → measured-outcome loop this project built for food waste,
 proven on a second, unrelated retail vertical without a second pipeline.
 
+**Simulated demand, not hand-placed.** `style_requests` on the demo tenant is not just the eight
+planted DS-07 blazer asks (`seed_style_requests`, still the fixed demo anchor). A third RNG stream,
+`data/generator/apparel.py::generate_style_requests`, simulates ordinary stylist asks across the
+same 70-day window and 4,000-customer base the grocery generator uses: tier-weighted asking
+frequency (gold customers ask ~5x as often as new ones), one "hot" dark store per node cluster,
+two trending (garment_type, colour_family) pairs seeded per cluster so real trends emerge from
+aggregation instead of uniform noise, and a festival-window lift on festive/wedding occasion asks
+from the same calendar the grocery side already discloses. Fulfilled/unfulfilled and `matched_sku`
+are computed the same way `find_apparel` computes them live, against the same seeded
+`apparel_stock`. A fresh `make generate` produces on the order of 450-500 `style_requests`, two to
+three dozen `style_trends` clearing the threshold honestly, and several well-evidenced
+`assortment_gap` rows -- not one hand-placed gap standing alone. See the function's docstring for
+the exact rule.
+
+**Not built here: real, self-shot photo fixtures.** The rendering (colour swatches, vector garment
+glyphs) is real and stays; the six garment/selfie fixtures under `fixtures/photos/` are still
+generated swatches, not photographs. Producing eight to twelve self-shot garment photos (including
+two deliberately hard cases) and a live-Vertex accuracy/latency run under `eval/raw/` needs a
+physical camera, physical garments and live Google Cloud credentials, none of which this build had
+available. This is the honest state of that gap, not a claim that it is done.
+
 **Phase 2, not built here:** feeding `style_trends` into `future_regressors` as a per-category
 covariate, once real ask volume exists to justify it; a `specialist` column on `conversations`.
 

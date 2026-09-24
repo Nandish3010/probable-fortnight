@@ -104,9 +104,18 @@ generator (`data/generator`) whose rule is stated in its docstring. No pilot has
 Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise. The local forecaster
 stands in for BigQuery `AI.FORECAST` and `ARIMA_PLUS_XREG` (SQL under `data/bigquery/sense`). The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
-from the same seeded generator on its own RNG stream; the style-trends panel aggregates synthetic
-chat asks, not a forecast, and is labelled SYNTHETIC; garment and selfie photo fixtures are
-generated colour swatches, never real photos.
+from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
+across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,
+by a stated rule (`data/generator/apparel.py::generate_style_requests`) -- tier-weighted asking
+frequency, one "hot" dark store per cluster, a couple of trending (garment, colour) pairs per
+cluster so real trends emerge from aggregation, and a festival-window lift on festive/wedding
+occasions from the same calendar the grocery side uses. `jobs/sense/trends.py` aggregates these
+into `style_trends`, and `jobs/sense/gaps.py` resolves unfulfilled clusters of them into
+`assortment_gap` rows the same way `rebalance` gaps work for grocery. None of this is a forecast or
+hand-placed to hit a target count; the trends and assortment-gap panels are labelled SYNTHETIC the
+same way the Outcomes screen is. Garment and selfie photo fixtures remain generated colour
+swatches, never real photos -- turning them into real, self-shot photographs needs a physical
+camera and staged garments this build does not have; see `docs/DECISIONS.md` §5.9 for that gap.
 
 ## Related work
 
