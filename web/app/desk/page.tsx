@@ -169,7 +169,6 @@ export default function PlayDeskPage() {
                 <CounterfactualBars
                   counterfactuals={selected.counterfactuals}
                   expectedOutcome={selected.expected_outcome}
-                  holdout={selected.holdout}
                 />
               </section>
 

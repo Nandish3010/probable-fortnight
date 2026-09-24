@@ -507,3 +507,37 @@ export interface TrendsRecomputeResponse {
   window_days: number;
   computed_at: string;
 }
+
+export interface PortfolioTypeTotal {
+  count: number;
+  exposure_inr: number;
+}
+
+export interface PortfolioSummary {
+  sense_run_id: string;
+  as_of: string;
+  computed_at: string;
+  tenant_id: string;
+  totals: {
+    gaps: number;
+    exposure_inr: number;
+    by_type: Record<string, PortfolioTypeTotal>;
+    do_nothing_inr: number;
+    blanket_markdown_inr: number;
+  };
+  governor: {
+    planner_threshold_inr: number;
+    eligible: number;
+    triaged_out: number;
+    triaged_out_exposure_inr: number;
+    triaged_out_reason: string | null;
+  };
+  planned: {
+    count: number;
+    eligible_no_play: number;
+    eligible_no_play_exposure_inr: number;
+    expected_units: number;
+    expected_margin_inr: number;
+    expected_waste_avoided_inr: number;
+  };
+}

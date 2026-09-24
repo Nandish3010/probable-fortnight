@@ -2,9 +2,138 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
-import { getOutcomes, postMeasure } from "../../lib/api";
-import { inr, pct, formatDateTime } from "../../lib/format";
-import type { MeasureResponse, Outcome } from "../../lib/types";
+import { CounterfactualBars } from "../../components/CounterfactualBars";
+import { getOutcomes, getPlays, postMeasure } from "../../lib/api";
+import { inr, formatDateTime, pct } from "../../lib/format";
+import type { MeasureResponse, Outcome, Play, PortfolioSummary } from "../../lib/types";
+import portfolio from "../../mocks/portfolio_summary.json";
+
+const PORTFOLIO: PortfolioSummary = portfolio as PortfolioSummary;
+
+const GAP_TYPE_LABEL: Record<string, string> = {
+  online_sellby_breach: "online sell-by breaches",
+  expiry_writeoff: "expiry write-offs",
+  stockout_risk: "stockout risk",
+  slow_mover: "slow movers",
+  rebalance: "rebalance",
+  assortment_gap: "assortment gaps",
+  unmet_demand: "unmet demand",
+};
+
+// docs/impact_math.md, Part 1.2: the margin blanket_markdown_inr already destroys on the
+// baseline volume that was projected to sell at full price with no intervention at all. Only
+// known ahead of time for the featured play -- computing it for every play needs the same
+// baseline-forecast lookup jobs/portfolio does, which this screen does not run live.
+const BLANKET_MARKDOWN_GIVEAWAY_INR: Record<string, number> = {
+  play_chips_ds07_v1: 433.38,
+};
+
+const FEATURED_PLAY_ID = "play_chips_ds07_v1";
+
+function PortfolioCard() {
+  const { totals, governor, planned } = PORTFOLIO;
+  const byType = Object.entries(totals.by_type).sort((a, b) => b[1].exposure_inr - a[1].exposure_inr);
+  return (
+    <div className="card portfolio-card">
+      <div className="card__header">
+        <h3>Nightly portfolio</h3>
+        <Badge kind="synthetic" detail="batch job, not a live measurement" />
+      </div>
+      <p className="muted">
+        Every planner-eligible gap from one Sense run ({PORTFOLIO.sense_run_id}, as of{" "}
+        {PORTFOLIO.as_of}), planned by the same deterministic drafter and estimator behind every
+        play on this screen -- no model calls, run with{" "}
+        <code>python -m jobs.portfolio</code>. This is a projection across the portfolio, not a
+        measurement.
+      </p>
+      <div className="portfolio-card__stats">
+        <div className="portfolio-card__stat">
+          <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
+          <span className="muted">total exposure across {totals.gaps} gaps</span>
+        </div>
+        <div className="portfolio-card__stat">
+          <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
+          <span className="muted">expected margin across {planned.count} planned plays</span>
+        </div>
+        <div className="portfolio-card__stat">
+          <span className="portfolio-card__number">{inr(planned.expected_waste_avoided_inr)}</span>
+          <span className="muted">expected waste avoided, {planned.expected_units.toLocaleString("en-IN")} units</span>
+        </div>
+      </div>
+      <table className="portfolio-card__table">
+        <thead>
+          <tr>
+            <th>Gap type</th>
+            <th>Count</th>
+            <th>Exposure</th>
+          </tr>
+        </thead>
+        <tbody>
+          {byType.map(([type, v]) => (
+            <tr key={type}>
+              <td>{GAP_TYPE_LABEL[type] ?? type}</td>
+              <td>{v.count}</td>
+              <td>{inr(v.exposure_inr)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="muted portfolio-card__counterfactual-line">
+        Under do-nothing this exposure is a {inr(totals.do_nothing_inr)} write-off; a blanket 20%
+        markdown across every gap brings that to {inr(totals.blanket_markdown_inr)}. Planned plays
+        are projected to recover {inr(planned.expected_margin_inr)} of margin without discounting
+        volume that was not at risk.
+      </p>
+      <p className="muted portfolio-card__governor-line">
+        The Cost Governor triaged {governor.triaged_out} of {totals.gaps} gaps out before a play
+        was attempted ({inr(governor.triaged_out_exposure_inr)} of exposure, each below the ₹
+        {governor.planner_threshold_inr.toLocaleString("en-IN")} planner threshold -- a templated
+        suggestion only, no model or estimator cost spent). {planned.eligible_no_play} more were
+        eligible but produced no valid play (guardrails rejected every candidate).
+      </p>
+    </div>
+  );
+}
+
+function FeaturedCounterfactualCard({ play }: { play: Play | null }) {
+  if (!play) return null;
+  return (
+    <div className="card">
+      <div className="card__header">
+        <h3>Worked example: {play.target.sku}</h3>
+        <Badge kind="synthetic" />
+      </div>
+      <p className="muted">
+        {play.target.units} units at {play.target.node_ids.join(", ")}, {inr(play.counterfactuals.do_nothing_inr)}{" "}
+        written off if nothing is done. See <code>docs/impact_math.md</code> for the full derivation.
+      </p>
+      <CounterfactualBars
+        counterfactuals={play.counterfactuals}
+        expectedOutcome={play.expected_outcome}
+        blanketMarkdownGiveawayInr={BLANKET_MARKDOWN_GIVEAWAY_INR[play.play_id]}
+      />
+    </div>
+  );
+}
+
+function ExpectedVsMeasured({ play, outcome }: { play: Play | null; outcome: Outcome | undefined }) {
+  if (!play || !outcome || outcome.status !== "measured" || outcome.lift == null) return null;
+  const crossesZero = (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0;
+  return (
+    <p className="expected-vs-measured">
+      <strong>Expected vs. measured, same play:</strong> the estimator projected{" "}
+      {play.expected_outcome.units} units; the holdout test measured {outcome.treated.units} units
+      in the treated arm, a lift of {pct(outcome.lift)}
+      {outcome.ci_low != null && outcome.ci_high != null ? (
+        <> (95% CI {pct(outcome.ci_low)}-{pct(outcome.ci_high)})</>
+      ) : null}
+      {crossesZero ? ", an interval that crosses zero" : ""} -- {outcome.treated.customers + outcome.holdout.customers}{" "}
+      customers is too small a sample to resolve a real effect from noise. This is why the play
+      above is labelled a projection and the row below is labelled measured: most tools stop at
+      "recommend"; this one measures and reports when the answer is null.
+    </p>
+  );
+}
 
 function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
   return (
@@ -44,6 +173,7 @@ function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
 
 export default function OutcomesPage() {
   const [outcomes, setOutcomes] = useState<Outcome[] | null>(null);
+  const [featuredPlay, setFeaturedPlay] = useState<Play | null>(null);
   const [measuring, setMeasuring] = useState(false);
   const [measureResult, setMeasureResult] = useState<MeasureResponse | null>(null);
   const [measureError, setMeasureError] = useState<string | null>(null);
@@ -54,6 +184,9 @@ export default function OutcomesPage() {
 
   useEffect(() => {
     refresh();
+    getPlays({ gap_id: "gap_chips_ds07" }).then((plays) => {
+      setFeaturedPlay(plays.find((p) => p.play_id === FEATURED_PLAY_ID) ?? plays[0] ?? null);
+    });
   }, []);
 
   async function runMeasure() {
@@ -70,6 +203,8 @@ export default function OutcomesPage() {
     }
   }
 
+  const featuredOutcome = outcomes?.find((o) => o.play_id === FEATURED_PLAY_ID);
+
   return (
     <main className="page">
       <h1 className="visually-hidden">Taal</h1>
@@ -77,7 +212,18 @@ export default function OutcomesPage() {
         <h2>Outcomes</h2>
         <Badge kind="live" detail="/outcomes" />
       </div>
-      <p className="muted">Per play: treated vs holdout, lift with CI when measured, the CEO number.</p>
+      <p className="muted">
+        Three views, in order: what the portfolio projects, what one play projects, and what one
+        week of holdout measurement actually found.
+      </p>
+
+      <PortfolioCard />
+      <FeaturedCounterfactualCard play={featuredPlay} />
+      <ExpectedVsMeasured play={featuredPlay} outcome={featuredOutcome} />
+
+      <div className="card__header">
+        <h3>Measured</h3>
+      </div>
       <p className="holdout-explainer">
         <strong>Holdout</strong> is a randomly assigned control group -- customers who see no offer for this
         play at all, chosen the same way as everyone in "Treated" except for a coin flip. Every lift number
