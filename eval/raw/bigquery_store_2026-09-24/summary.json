@@ -1,0 +1,19 @@
+{
+  "measured_at": "2026-09-24T03:15:00Z",
+  "project": "amru-509214",
+  "region": "asia-south1",
+  "tenant_used": "kutumb-mart-TEST",
+  "method": "Real read/write/append/upsert round trips against the live amru-509214 project via a throwaway script (not committed as a test -- this repo's unit tests never touch real credentials, see tests/unit/test_bigquery_store.py for the mocked-client suite that IS committed).",
+  "results": {
+    "gaps_write_then_find": {"passed": true, "detail": "write() (full tenant-scoped replace) then find(gap_id=...) round-tripped a real gap row with a nested STRUCT (evidence) intact"},
+    "play_assignments_append_then_find": {"passed": true, "detail": "append() (streaming insert) landed and was immediately visible to a plain find() -- no wait needed for this low-QPS demo tenant, though BigQuery's own docs do not guarantee that for a high-volume table"},
+    "plays_upsert_insert": {"passed": true, "detail": "First upsert() on a new play_id correctly took the MERGE's INSERT branch"},
+    "plays_upsert_update": {"passed": true, "detail": "Second upsert() on the same play_id (status proposed -> approved) correctly took the MERGE's UPDATE branch -- one row, not two"}
+  },
+  "real_bugs_found_and_fixed_by_running_this": [
+    "Initial upsert() inferred BigQuery parameter types from the Python value alone (list -> JSON). Real BigQuery rejection: 'Value of type JSON cannot be assigned to target_node_ids, which has type ARRAY<STRING>' -- target_node_ids/target_batch_ids are real ARRAY<STRING> columns (15_plays.sql), not JSON, and a Python list is genuinely ambiguous between the two. Fixed by fetching the table's REAL schema via client.get_table() and deriving each parameter's BigQuery type (including ARRAY mode) from it, instead of guessing from the Python value.",
+    "A DELETE immediately after an append() (streaming insert) to the same table fails: 'UPDATE or DELETE statement over table taal.play_assignments would affect rows in the streaming buffer, which is not supported' -- a real BigQuery limitation (rows can sit in the streaming buffer for up to ~90 minutes). Not a live bug for this codebase's actual call patterns (grepped every call site: no table is ever both append()'d and write()'d/upsert()'d -- play_assignments is append-only, gaps/forecasts/play_outcomes are write()-only, plays is find+upsert+write only), but documented in bigquery_store.py's append() docstring so a future caller does not hit it blind."
+  ],
+  "known_test_artifact": "The play_assignments find() above returns 2 rows, not 1, on the final combined run: the first attempt's append() succeeded before that run's later upsert() crashed on the ARRAY/JSON bug, and the streaming-buffer limitation above meant the leftover test row could not be DELETEd before re-running. This is test-script hygiene, not a BigQueryStore defect -- confirmed by the fact both rows are byte-identical (the same real insert, re-run twice), not divergent data.",
+  "not_verified_in_this_pass": "forecasts and play_outcomes write() were not separately re-tested: they call the exact same write() method already proven correct on gaps in this run, so a second identical-code-path test would confirm the same mechanism again, not surface new information, given real time constraints on this session."
+}
