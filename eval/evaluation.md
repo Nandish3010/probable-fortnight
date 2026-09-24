@@ -755,3 +755,60 @@ which is built or tested here. `jobs/sense/run.py` still calls only the local Py
 Sense's entrypoint, so **the deployed demo's nightly Sense job is completely unaffected by this
 work**, deliberately: writing an untested opt-in switch and calling it done would be exactly the
 kind of unverified claim this file exists to avoid.
+
+## Real Vertex AI Sessions (Agent Engine), 2026-09-24
+
+Item 4 of the "make the architecture true" review: `agents/customer/chat.py` and
+`agents/planner/run.py` construct `InMemoryRunner` unconditionally, which hardcodes an in-process
+`InMemorySessionService` -- sessions die with the container.
+
+**No Agent Engine (Reasoning Engine) instance existed in this project before this session** --
+confirmed via a real `reasoningEngines.list` call returning an empty result. Created one for real
+via the Vertex AI REST API (`reasoningEngines.create`, polled to completion):
+`projects/458548122298/locations/asia-south1/reasoningEngines/5616208637656563712`. This is a new,
+additive GCP resource, not a change to the already-deployed judged Cloud Run service.
+
+**Two real, load-bearing bugs found by actually calling the real service, not guessed from
+docs** (full detail in `agents/vertex_sessions.py`'s own module docstring):
+1. Every session id in this codebase is `customer_id:web`/`customer_id:whatsapp`
+   (`services/api/main.py`'s own validation pattern). `VertexAiSessionService`'s real
+   server-side validation -- found from the actual 400 response, stricter than the client
+   library's own pre-check -- is "session_id can only contain lowercase letters, digits and
+   hyphens": a colon is rejected, and so is any uppercase letter (every customer_id in this
+   tenant is uppercase, e.g. `CUST-MEENA`).
+2. ADK's `InvocationContext` is a pydantic model whose `session_service` field is validated with
+   `isinstance(value, BaseSessionService)`. A plain duck-typed wrapper implementing the same
+   methods was rejected outright even though every signature matched.
+
+Both fixed in `agents/vertex_sessions.py`: `vertex_safe_id()` translates ids to a Vertex-legal
+form, and `VertexSafeSessionService` (a real `BaseSessionService` subclass) wraps
+`VertexAiSessionService`, translating on the way in and restoring the original ids on every
+`Session` object returned -- every other call site in this codebase keeps using the original,
+unmodified ids. `tests/unit/test_vertex_sessions.py` covers this against a fake inner service
+(this repo's unit tests never touch real credentials).
+
+**Wired into `agents/chat_runtime.py::ChatRuntime.runner()` and `agents/planner/run.py` behind a
+NEW, separate opt-in flag (`TAAL_SESSION_BACKEND=vertex`), deliberately never tied to
+`TAAL_MODEL_BACKEND`**: the deployed judged Cloud Run service already runs
+`TAAL_MODEL_BACKEND=vertex` (real Gemini), so gating the session backend on that same flag would
+have silently changed live production session behaviour the moment this merged. With the new flag
+unset (every deployment today), `build_session_service()` returns `None` and behaviour is
+byte-identical to before -- confirmed by the full existing test suite passing unchanged.
+
+**Real end-to-end proof, not a standalone SessionService call**: with `TAAL_SESSION_BACKEND=vertex`
+and `TAAL_MODEL_BACKEND=vertex` both set, a real customer chat turn ran through the actual code
+path (`agents.customer.chat.run_chat_async` -> `ChatRuntime.run_turn` -> ADK `Runner.run_async`,
+real Gemini model, session id `CUST-MEENA:web`): turn 1 ("Any offers today?") got a real, correct
+Gemini reply. **A second turn, run in a completely fresh Python process that never executed turn
+1 and holds no in-process state whatsoever**, asked "What did I just ask you?" and the model
+correctly answered (in Kannada) "You asked whether any offers are available today" -- genuine
+conversational memory recovered from Vertex, not an in-process cache. This is the literal proof of
+this item's stated goal: sessions survive a container restart. Raw evidence, including the exact
+HTTP calls made: `eval/raw/vertex_sessions_2026-09-24/summary.json`.
+
+**Not done, stated plainly**: the live, judged Cloud Run deployment was not redeployed with
+`TAAL_SESSION_BACKEND=vertex` set. That is a live-service behaviour change and needs its own
+explicit go-ahead, per this session's established posture on live redeploys -- the mechanism is
+built, verified end-to-end for real, and off by default; flipping it live is a separate decision.
+Whether the created Agent Engine instance incurs idle cost while unused was not measured in this
+pass -- a real open question for whoever redeploys with this enabled, not asserted either way.

@@ -19,11 +19,12 @@ from typing import Any
 
 import jsonschema
 from google.adk.agents import LlmAgent
-from google.adk.runners import InMemoryRunner
+from google.adk.runners import InMemoryRunner, Runner
 from google.genai import types
 
 from agents.gate.config import ROOT, TenantConfig
 from agents.gate.store import LocalStore
+from agents.vertex_sessions import build_session_service
 
 ENVELOPE_SCHEMA = json.loads((ROOT / "docs" / "schemas" / "chat_envelope.schema.json").read_text(encoding="utf-8"))
 _VALIDATOR = jsonschema.Draft202012Validator(ENVELOPE_SCHEMA, format_checker=jsonschema.FormatChecker())
@@ -132,13 +133,25 @@ class ChatRuntime:
         self.app_name = app_name
         self.agent_name = agent_name
         self._build_agent = build_agent
-        self._runners: dict[str, InMemoryRunner] = {}
+        self._runners: dict[str, InMemoryRunner | Runner] = {}
         self._lock = asyncio.Lock()
 
-    def runner(self, store: LocalStore, backend: str | None) -> InMemoryRunner:
+    def runner(self, store: LocalStore, backend: str | None) -> InMemoryRunner | Runner:
         key = f"{store.root}|{backend or ''}"
         if key not in self._runners:
-            self._runners[key] = InMemoryRunner(agent=self._build_agent(store, backend), app_name=self.app_name)
+            agent = self._build_agent(store, backend)
+            # build_session_service() returns None (TAAL_SESSION_BACKEND unset, the default for
+            # every deployment today) unless a Vertex AI Sessions backend was explicitly opted
+            # into -- see agents/vertex_sessions.py for why this is a separate flag from
+            # TAAL_MODEL_BACKEND, not the same one.
+            session_service = build_session_service()
+            if session_service is None:
+                self._runners[key] = InMemoryRunner(agent=agent, app_name=self.app_name)
+            else:
+                from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
+                from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
+
+                self._runners[key] = Runner(app_name=self.app_name, agent=agent, artifact_service=InMemoryArtifactService(), session_service=session_service, memory_service=InMemoryMemoryService())
         return self._runners[key]
 
     def reset(self) -> None:
