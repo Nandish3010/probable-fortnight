@@ -24,7 +24,7 @@
      ratio that only works against a plain surface, not against their own 14% tint. */
   --live-text: #096f66;
   --replay-text: #595b92;
-  --muted-badge-text: #5c6370;
+  --muted-badge-text: #454a55;
   --focus: #4f46e5;
   --radius: 12px;
   --radius-sm: 8px;
@@ -1155,6 +1155,81 @@ textarea:focus-visible {
   font-family: var(--font-mono), monospace;
 }
 
+.counterfactuals__axis-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.counterfactuals__row--diverging {
+  grid-template-columns: 160px 1fr 100px;
+}
+
+@media (max-width: 500px) {
+  .counterfactuals__row--diverging {
+    grid-template-columns: 100px 1fr 80px;
+  }
+}
+
+.counterfactuals__diverging-track {
+  position: relative;
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 14px;
+  border: 1px solid var(--border);
+}
+
+.counterfactuals__zero-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-strong, var(--border));
+  z-index: 1;
+}
+
+.counterfactuals__segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.counterfactuals__segment--left { right: 50%; }
+.counterfactuals__segment--right { left: 50%; }
+
+.seg--writeoff { background: var(--danger); }
+.seg--destroyed { background: var(--warn); }
+.seg--earned { background: var(--good); }
+
+.counterfactuals__value--neg { color: var(--danger); }
+.counterfactuals__value--pos { color: var(--good); }
+
+.counterfactuals__legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.counterfactuals__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.counterfactuals__swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
 /* ---------- guardrails ---------- */
 
 .guardrails {
@@ -1619,6 +1694,66 @@ textarea:focus-visible {
   font-weight: 700;
   font-family: var(--font-mono), monospace;
   color: var(--accent-strong);
+}
+
+/* ---------- portfolio card (Outcomes) ---------- */
+
+.portfolio-card {
+  margin-bottom: 16px;
+}
+
+.portfolio-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 12px 0 16px;
+}
+
+.portfolio-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 240px;
+}
+
+.portfolio-card__number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono), monospace;
+  color: var(--accent-strong);
+}
+
+.portfolio-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.portfolio-card__table th,
+.portfolio-card__table td {
+  text-align: left;
+  padding: 4px 10px 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.portfolio-card__counterfactual-line,
+.portfolio-card__governor-line {
+  max-width: 72ch;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.expected-vs-measured {
+  max-width: 72ch;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 16px;
 }
 
 input, textarea, select {
