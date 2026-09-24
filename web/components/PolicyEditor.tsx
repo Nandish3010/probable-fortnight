@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { getPolicy, rerun } from "../lib/api";
 import { Badge } from "./Badge";
-import type { Play } from "../lib/types";
+import type { RerunResponse } from "../lib/types";
 
-export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (play: Play) => void }) {
+export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (res: RerunResponse) => void }) {
   const [text, setText] = useState("");
   const [version, setVersion] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (pl
       // The API assigns the next policy version; re-sending the current one would overwrite the current play.
       const res = await rerun({ gap_id: gapId, policy_text: text });
       setVersion(res.policy_version);
-      onReplan(res.play);
+      onReplan(res);
     } catch {
       setError("Re-plan failed. Showing last recorded result would be safer here.");
     } finally {
