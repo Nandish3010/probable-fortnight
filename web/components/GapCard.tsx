@@ -17,8 +17,11 @@ export const GAP_TYPE_LABEL: Record<string, string> = {
   unmet_demand: "Unmet demand (from chat)",
 };
 
-export function GapCard({ gap }: { gap: Gap }) {
-  const days = daysUntil(gap.deadline_date);
+export function GapCard({ gap, now }: { gap: Gap; now?: Date }) {
+  // `now` must come from the server's pinned clock (see lib/useServerNow.ts), never the
+  // browser's -- the demo tenant's deadlines are frozen relative to TAAL_NOW, and the browser
+  // clock drifting past that snapshot silently floors every countdown to 0 forever.
+  const days = daysUntil(gap.deadline_date, now);
   const deadlineLabel = DEADLINE_LABEL[gap.deadline_type] ?? gap.deadline_type;
   const { requests_count: requestsCount, distinct_customers: distinctCustomers } = gap.evidence;
   return (

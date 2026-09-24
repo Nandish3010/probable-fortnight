@@ -108,7 +108,7 @@ export default function OutcomesPage() {
           this joins orders against treated/holdout assignments and is never run automatically.
         </p>
       ) : (
-        <div className="outcomes-table-wrap">
+        <div className="outcomes-table-wrap" tabIndex={0} role="region" aria-label="Measured and unmeasured plays">
           <table className="outcomes-table">
             <thead>
               <tr>
