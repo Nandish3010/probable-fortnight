@@ -13,7 +13,12 @@ under `eval/raw/`; see `eval/evaluation.md` for the full table and the commands 
 | Planner Agent fan-out, 50 gaps, Batch API | not measured | the Batch API fan-out in DECISIONS §18.3 is a documented design, not built -- nothing in this repo submits a Batch job |
 | Customer Agent, one turn, live Vertex | 4.5-6.9s across 3 live calls | measured: same sweep run |
 | Vision intake, one photo, live Vertex | 3.9s | measured: same sweep run (`POST /capture` with an uploaded image) |
-| BigQuery bytes scanned, one Sense run | not measured | Sense reads/writes LocalStore, not BigQuery, in this codebase (confirmed: no `bigquery.Client` construction anywhere under `agents/`, `services/`, `jobs/`, `data/`, `harness/`) -- there is no BigQuery job to have a bytes-scanned figure for |
+| BigQuery bytes scanned, one Sense run | not measured | Sense's forecasting still reads and writes LocalStore, not BigQuery -- `jobs/sense/forecast.py` (the path `jobs/sense/run.py` actually calls) has no `bigquery.Client` construction, so there is no bytes-scanned figure for the Sense job itself |
+
+**Correction: `bigquery.Client` construction exists in three places**, none of them in Sense's forecasting path above. Naming each and the runtime path that reaches it:
+- `jobs/sense/copy.py::generate_copy_bigquery` -- reachable from a running server: `POST /approve` calls it when `TAAL_MODEL_BACKEND=vertex`, to run `AI.GENERATE_TABLE` for offer copy, with a 6s timeout and a templated-copy fallback on any failure. No bytes-scanned figure was captured for this call (the query is small and parameterized, no temp table); `eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json` and `tests/unit/test_copy.py`'s own header cover the real bugs found running it live, not a bytes/cost number.
+- `jobs/measure/cost.py` -- a standalone CLI (`python -m jobs.measure`), not called by any running server path or by Sense; `eval/raw/cost_measurement_2026-09-23.json` has bytes-billed figures for the runs that were made.
+- `agents/gate/bigquery_store.py::BigQueryStore` -- verified against real BigQuery (`eval/raw/bigquery_store_2026-09-24/summary.json`, `eval/raw/bigquery_full_load_2026-09-24/summary.json`) but **not wired into any runtime path**: `services/api/sandbox.py::store_for()` still returns `LocalStore`/`OverlayStore` unconditionally, so no bytes-scanned figure applies to a live request.
 
 These are single-run numbers against the seeded demo tenant, not a load test; see
 `eval/evaluation.md` for caveats (a live planner run is 1-2 samples, not a distribution).

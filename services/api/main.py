@@ -240,12 +240,22 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         # fired from POST /approve (vertex backend only) to run AI.GENERATE_TABLE over the
         # `taal.<flash id>_remote` model for offer copy; this endpoint does not call it itself
         # (a health check that bills tokens and takes seconds is worse than one that under-claims).
+        # A BigQueryStore class exists (agents/gate/bigquery_store.py, verified against real
+        # BigQuery) but is not wired into store_for() below -- LocalStore/OverlayStore remains
+        # the system of record for every read/write this endpoint makes. The one real
+        # bigquery.Client call reachable from a running server is generate_copy_bigquery
+        # (jobs/sense/copy.py), fired from POST /approve (vertex backend only) for offer copy.
         "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store is the system of record here; the one real BigQuery call is AI.GENERATE_TABLE for copy generation on POST /approve (vertex backend), not checked by this endpoint"},
-        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store is the system of record here; Firestore is provisioned in production but this process never queries it"},
+        # Firestore: a real serving-cache module exists (agents/gate/firestore_cache.py, verified
+        # against a real Firestore Native database) but is only used when TAAL_SERVING_CACHE=firestore
+        # is set -- unset by default, so this process never queries it in the deployed service today.
+        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store is the system of record here; Firestore is provisioned and a serving cache module exists, but this process queries it only when TAAL_SERVING_CACHE=firestore is set (unset in this deployment)"},
         "vertex": {"ok": vertex_check["ok"], "checked_at": t, "detail": vertex_check["detail"]},
-        # Both agents/customer/chat.py and agents/planner/run.py construct InMemoryRunner
-        # unconditionally -- VertexAiSessionService is not wired up in either backend.
-        "sessions": {"ok": True, "checked_at": t, "detail": "InMemorySessionService (process-local; not persisted across restarts, in either backend)"},
+        # A real VertexAiSessionService wrapper exists (agents/vertex_sessions.py, verified against
+        # a real Agent Engine instance) but agents/customer/chat_runtime.py and
+        # agents/planner/run.py only use it when TAAL_SESSION_BACKEND=vertex is set; unset, both
+        # fall back to InMemoryRunner's process-local InMemorySessionService, as below.
+        "sessions": {"ok": True, "checked_at": t, "detail": f"session backend: {'VertexAiSessionService (persisted across restarts)' if os.environ.get('TAAL_SESSION_BACKEND') == 'vertex' else 'InMemorySessionService (process-local; not persisted across restarts)'}"},
     }
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
     return {

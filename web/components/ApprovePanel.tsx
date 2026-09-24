@@ -53,7 +53,7 @@ export function ApprovePanel({
               kind={result.source === "live" ? "live" : "replay"}
               detail={
                 result.source === "live"
-                  ? `ML.FORECAST · live · ${(result.forecast.latency_ms / 1000).toFixed(1)} s · ${result.forecast.run_id}`
+                  ? `${result.forecast.model} · live · ${(result.forecast.latency_ms / 1000).toFixed(1)} s · ${result.forecast.run_id}`
                   : `showing recorded result · ${result.forecast.run_id}`
               }
             />
