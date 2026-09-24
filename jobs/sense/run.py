@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.gate.config import load_tenant
+from agents.gate.firestore_cache import build_cache
 from agents.gate.store import LocalStore
 
 from .forecast import forecast, run_id_for
@@ -54,6 +55,14 @@ def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]
         "model": rows[0]["model"] if rows else None,
     }
     store.append("sense_runs", [record])
+    cache = build_cache(tenant.tenant_id)
+    if cache is not None:
+        products = {p["sku"]: p for p in store.read("products")}
+        record["firestore_mirror"] = {
+            "stock_docs": cache.mirror_stock(store.read("inventory_batches"), products, as_of),
+            "customer_docs": cache.mirror_customers(store.read("customers"), store.read("consent")),
+            "offer_docs": cache.mirror_offers(store.read("offers")),
+        }
     return record
 
 

@@ -812,3 +812,41 @@ explicit go-ahead, per this session's established posture on live redeploys -- t
 built, verified end-to-end for real, and off by default; flipping it live is a separate decision.
 Whether the created Agent Engine instance incurs idle cost while unused was not measured in this
 pass -- a real open question for whoever redeploys with this enabled, not asserted either way.
+
+## Firestore serving cache for chat-time reads, 2026-09-24
+
+Item 5 of the "make the architecture true" review: `get_stock`, `find_substitutes` and
+`get_customer_context` (`agents/customer/tools.py`) scan the full `inventory_batches`/`consent`/
+`offers` tables on every single chat turn -- Firestore is provisioned (a real Firestore Native
+database exists in `asia-south1`) but `services/api/main.py`'s own health check already admits
+"this process never queries it".
+
+`agents/gate/firestore_cache.py` adds `FirestoreCache`: a nightly mirror step (`mirror_stock`,
+`mirror_customers`, `mirror_offers`) that pre-aggregates the same computation `_stock_info` did
+per-call into one doc per `(sku, node)`/customer/customer-with-pending-offers, and a chat-time read
+path (`get_stock`, `get_customer`, `get_consent`, `get_offers`) that `agents/customer/tools.py`'s
+`_stock_info`, `_consent_ok` and `get_customer_context` now try first, falling through to the
+existing store scan on any cache miss (doc absent, or no cache configured at all) -- a miss is
+never treated as "out of stock" or "consent withdrawn".
+
+**Deliberately behind its own opt-in (`TAAL_SERVING_CACHE=firestore`)**, never tied to
+`TAAL_MODEL_BACKEND` or `TAAL_SESSION_BACKEND`: with the flag unset (every deployment today),
+`build_cache()` returns `None` and every chat-time read is byte-identical to before -- confirmed by
+the full existing test suite passing unchanged. `jobs/sense/run.py` calls the same `build_cache()`
+gate at the end of its nightly run, so the mirror only ever writes when a real deployment opts in.
+
+**Real verification against the real Firestore Native database** (`amru-509214`, `asia-south1`;
+confirmed via a real `collections()` call that no collection existed there before this work): a
+real mirror write of one stock doc, one customer doc and one offer doc, followed by a real read
+back through this module -- not assumed from the write succeeding. Raw evidence, including the
+exact documents read back and the two cache-miss checks (`get_stock` on an unknown SKU, `get_consent`
+on an unknown customer both correctly return `None`, not a false negative):
+`eval/raw/firestore_cache_2026-09-24/summary.json`. The verification documents were deleted after
+the run so no fake data lingers in the real project.
+
+**Not done, stated plainly**: the live, judged Cloud Run deployment was not redeployed with
+`TAAL_SERVING_CACHE=firestore` set, and the nightly Sense job was not run against real Firestore
+end-to-end (only the cache module itself, directly) -- both are live-service changes needing their
+own explicit go-ahead. Read latency at chat-scale (many customers, many SKUs) was not benchmarked
+against the store-scan baseline it is meant to replace; the win is architectural (a bounded doc
+read instead of an unbounded table scan) but has no measured number attached yet.

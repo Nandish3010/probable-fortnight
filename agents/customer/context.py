@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.gate.config import TenantConfig, load_tenant
+from agents.gate.firestore_cache import FirestoreCache, build_cache
 from agents.gate.store import LocalStore
 
 
@@ -21,6 +22,7 @@ class CustomerContext:
     channel: str = "web_chat"
     now_iso: str = ""
     products: dict[str, dict[str, Any]] = field(default_factory=dict)
+    cache: FirestoreCache | None = None
 
     @classmethod
     def build(cls, store: LocalStore, customer_id: str, now_iso: str, tenant: TenantConfig | None = None, channel: str = "web_chat") -> CustomerContext:
@@ -29,7 +31,7 @@ class CustomerContext:
         if not mp.exists() and hasattr(store, "base"):
             mp = store.base.root / "manifest.json"
         as_of = date.fromisoformat(json.loads(mp.read_text(encoding="utf-8"))["as_of"]) if mp.exists() else date.today()
-        ctx = cls(store=store, tenant=tenant, as_of=as_of, customer_id=customer_id, channel=channel, now_iso=now_iso)
+        ctx = cls(store=store, tenant=tenant, as_of=as_of, customer_id=customer_id, channel=channel, now_iso=now_iso, cache=build_cache(tenant.tenant_id))
         ctx.products = {p["sku"]: p for p in store.read("products")}
         return ctx
 

@@ -52,6 +52,10 @@ def _play(ctx, play_id: str) -> dict[str, Any] | None:
 
 
 def _consent_ok(ctx, customer_id: str) -> bool:
+    if ctx.cache is not None:
+        cached = ctx.cache.get_consent(customer_id, ctx.channel)
+        if cached is not None:
+            return cached
     rows = [r for r in ctx.store.read("consent") if r["customer_id"] == customer_id and r["purpose"] == "marketing" and r["channel"] == ctx.channel]
     return bool(rows) and not rows[-1].get("withdrawn_at")
 
@@ -100,9 +104,8 @@ def get_customer_context(customer_id: str) -> dict:
     consent = _consent_ok(ctx, customer_id)
     offers = []
     if consent:
-        for o in ctx.store.read("offers"):
-            if o["customer_id"] != customer_id or o.get("redeemed_at"):
-                continue
+        raw_offers = ctx.cache.get_offers(customer_id) if ctx.cache is not None else [o for o in ctx.store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at")]
+        for o in raw_offers:
             play = _play(ctx, o["play_id"])
             if not play or play.get("status") not in ("approved", "running"):
                 continue
@@ -142,7 +145,14 @@ def context_summary(context: dict) -> str:
 def _stock_info(ctx, sku: str, node_id: str) -> dict:
     """Pure lookup, no side effects. Shared by get_stock (which records the demand signal on top),
     find_substitutes and _customer_memory, so checking on a customer's behalf internally never
-    itself counts as a customer asking."""
+    itself counts as a customer asking. Tries the Firestore serving cache first (a pre-aggregated
+    doc, not a per-turn scan of every inventory_batches row); a cache miss (doc absent, or no
+    cache configured) falls through to the store scan below, so a customer's SKU never silently
+    reads as out-of-stock just because the nightly mirror hasn't caught up yet."""
+    if ctx.cache is not None:
+        cached = ctx.cache.get_stock(sku, node_id)
+        if cached is not None:
+            return cached
     qty, sellby, expiry, batch = 0, None, None, None
     today = ctx.as_of.isoformat()
     for b in ctx.store.read("inventory_batches"):
