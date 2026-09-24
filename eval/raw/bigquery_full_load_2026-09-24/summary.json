@@ -1,0 +1,119 @@
+{
+  "measured_at": "2026-09-24T02:53:41Z",
+  "project": "amru-509214",
+  "region": "asia-south1",
+  "job_id": "16fb420e-3189-4bae-b1a6-0f1fc6dc9371",
+  "bytes_billed": 1939865600,
+  "elapsed_s": 379.365,
+  "full_data_load": {
+    "sales_daily_rows": 324271,
+    "future_regressors_rows": 25200,
+    "source": "full .local/data JSONL, WRITE_TRUNCATE"
+  },
+  "qualifying_series_pairs_full_dataset": 895,
+  "series_pairs_run_this_job": 20,
+  "forecast_rows_written": 560,
+  "sample_forecast_rows": [
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-12",
+      "p10": 7.8266328960142655,
+      "p50": 9.14663407633293,
+      "p90": 10.466635256651594,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-13",
+      "p10": 8.110524120831789,
+      "p50": 9.430525301150453,
+      "p90": 10.750526481469118,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-14",
+      "p10": 6.073689932786435,
+      "p50": 7.393691113105099,
+      "p90": 8.713692293423764,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-15",
+      "p10": 5.227201725580839,
+      "p50": 6.547202905899503,
+      "p90": 7.867204086218168,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-16",
+      "p10": 5.457737931976274,
+      "p50": 6.777739112294938,
+      "p90": 8.097740292613603,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-17",
+      "p10": 6.3598044502260205,
+      "p50": 7.679805630544685,
+      "p90": 8.99980681086335,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-18",
+      "p10": 7.834575566076145,
+      "p50": 9.15457674639481,
+      "p90": 10.474577926713474,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-19",
+      "p10": 7.744619950741237,
+      "p50": 9.064621131059901,
+      "p90": 10.384622311378566,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-20",
+      "p10": 8.224631475981722,
+      "p50": 9.544632656300386,
+      "p90": 10.864633836619051,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    },
+    {
+      "sku": "SKU-AIR-FRESHENER-1KG",
+      "cluster_id": "east",
+      "date": "2026-09-21",
+      "p10": 6.018607140989657,
+      "p50": 7.338608321308321,
+      "p90": 8.658609501626986,
+      "model": "arima_xreg",
+      "method": "arima_plus_xreg"
+    }
+  ],
+  "honest_scope_note": "This run trained and forecasted 20 of 895 real qualifying sku x cluster series -- a genuine, verified demonstration that data/bigquery/sense/03_forecast_arima_xreg.sql works correctly at more-than-one-series scale against the full loaded dataset, not just the single-series proof from 2026-09-23. Extrapolated from this run (379s for 20 series, sequential CREATE MODEL + ML.FORECAST per series), all 895 series would take approximately 4.7 hours run sequentially as this script currently loops -- not viable as a nightly production job without either parallelizing model training across concurrent BigQuery jobs or an incremental design that only retrains series whose data actually changed. That engineering is NOT done in this session. jobs/sense/run.py still calls only the local Python forecaster (jobs/sense/forecast.py) unconditionally -- there is no BigQuery/local backend switch wired into Sense, so the deployed demo is completely unaffected by this work. Building an untested opt-in switch was deliberately not done rather than claim an unverified production path."
+}
