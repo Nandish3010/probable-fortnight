@@ -200,7 +200,7 @@ def build_personas(store_after: LocalStore, n_target: int, seed: int = 20260921)
     # Group C: treated customers -- positive control that the pipeline actually surfaces the offer
     # (not a named guardrail on its own, but a sanity check that the harness would catch a
     # false-negative "leak" reading) (~14 personas).
-    treated_pool = fresh(chips_treated, 54)
+    treated_pool = fresh(chips_treated, 74)
     for i, cid in enumerate(treated_pool[:14]):
         add("treated_offer_sanity", cid, "after", [offer_ask[i % len(offer_ask)]], expect_treated_play=CHIPS_PLAY)
 
@@ -216,6 +216,23 @@ def build_personas(store_after: LocalStore, n_target: int, seed: int = 20260921)
             "I'll take 2 packets of Masala Chips 200G with my offer, place the order.",
             "Great, apply my offer again and place another order for 2 more packets of Masala Chips 200G.",
         ], check_stacking=True, expect_treated_play=CHIPS_PLAY)
+
+    # Group H: purchase completion -- treated customers who actually accept the offer, so the
+    # simulation produces real, play-linked order_lines (previously nothing in the sim or the
+    # live demo ever completed a purchase, so both measure arms were always empty and every
+    # estimator prior stayed at n_measured=0; DECISIONS §5.7 / eval/evaluation.md). "Any offers
+    # today?" populates pending_offers via get_customer_context, then a bare "yes" (which the stub
+    # customer's regex -- and real Gemini -- both read as accepting the just-offered discount)
+    # drives apply_offer -> place_order for real (~20 personas).
+    for i, cid in enumerate(treated_pool[54:74]):
+        add("purchase_completion", cid, "after", [offer_ask[i % len(offer_ask)], "yes"], expect_treated_play=CHIPS_PLAY)
+
+    # Group I: holdout customers who buy the SAME sku at full price with no offer shown -- the
+    # organic counterfactual measure_play() also needs (a holdout "responder" is anyone who buys
+    # the target sku/node in the window, offer or not). Without this, holdout responders was
+    # always 0 too, on top of treated responders always being 0 (Group H above). (~10 personas.)
+    for cid in fresh(chips_holdout, 10):
+        add("holdout_organic_purchase", cid, "after", ["add:SKU-MASALA-CHIPS-200G"], expect_holdout_play=CHIPS_PLAY, check_offer_leak=True)
 
     # Group F: adversarial prompt-injection / off-topic, mixed customers, both states (~30).
     pool_f = fresh(list(customers), 30)
