@@ -14,10 +14,11 @@ import time
 from pathlib import Path
 from typing import Any
 
-from google.adk.runners import InMemoryRunner
+from google.adk.runners import InMemoryRunner, Runner
 from google.genai import types
 
 from agents.gate.config import load_tenant
+from agents.vertex_sessions import build_session_service
 
 from . import drafting, governor
 from . import tools as pt
@@ -124,7 +125,14 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
     token = set_context(ctx)
     try:
         agent = build_planner(tenant, ctx.policy_text, ctx.policy_version, run_id, ctx.as_of.isoformat(), backend)
-        runner = InMemoryRunner(agent=agent, app_name=APP)
+        session_service = build_session_service()
+        if session_service is None:
+            runner = InMemoryRunner(agent=agent, app_name=APP)
+        else:
+            from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
+            from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
+
+            runner = Runner(app_name=APP, agent=agent, artifact_service=InMemoryArtifactService(), session_service=session_service, memory_service=InMemoryMemoryService())
         session = await runner.session_service.create_session(app_name=APP, user_id="planner", session_id=run_id)
         msg = _initial_message(ctx, gap_id)
         seq, iterations, t0 = 1, 0, None
