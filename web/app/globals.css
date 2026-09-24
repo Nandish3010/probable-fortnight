@@ -297,7 +297,10 @@ p {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  /* 78% opacity let scrolled-past headings and badges show through at low contrast, visually
+     colliding with the nav links sitting right on top of them (reported as the sticky nav
+     "overlaying content mid-scroll"). Nearly opaque, with the blur only softening the seam. */
+  background: color-mix(in srgb, var(--bg) 96%, transparent);
   backdrop-filter: blur(10px) saturate(1.4);
   -webkit-backdrop-filter: blur(10px) saturate(1.4);
 }
@@ -449,6 +452,12 @@ p {
   color: var(--text-muted);
 }
 
+.guardrails__code {
+  font-size: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  color: var(--text-muted);
+}
+
 /* ---------- top band / judge mode ---------- */
 
 .judge-band {
@@ -472,6 +481,11 @@ p {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
+  /* Without this, grid's default stretch forces both columns to the height of the taller one --
+     ChatPanel's height:100% + flex-grown message list then inflates to match the beat card as it
+     grows through the walkthrough, leaving a large empty gap under "Send a message to start."
+     Each card should size to its own content instead. */
+  align-items: start;
 }
 
 @media (max-width: 760px) {
@@ -679,7 +693,7 @@ textarea:focus-visible {
 
 .forecast-chart__line {
   fill: none;
-  stroke-width: 2.5;
+  stroke-width: 3;
 }
 
 .forecast-chart__line--baseline {
@@ -692,7 +706,7 @@ textarea:focus-visible {
 }
 
 .forecast-chart__label {
-  font-size: 10px;
+  font-size: 12px;
   fill: var(--text-muted);
   font-family: var(--font-mono), monospace;
 }
@@ -721,7 +735,11 @@ textarea:focus-visible {
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
   padding: 16px;
-  height: 100%;
+  /* No explicit height: on the landing page's two-column hero grid, `height: 100%` stretched
+     this to match the beat card's height as it grows through the walkthrough (even with the
+     grid's `align-items: start`), leaving a large empty gap under "Send a message to start."
+     The panel should size to its own content; the message list still scrolls internally once a
+     conversation grows past its max-height. */
 }
 
 .chat-panel__header {
@@ -740,7 +758,11 @@ textarea:focus-visible {
 
 .chat-panel__list {
   flex: 1;
-  min-height: 220px;
+  /* A 220px floor reserved an oversized blank area under a single "Send a message to start."
+     line, on both the landing hero and the standalone /chat and /stylist pages -- the list
+     should size to its own messages (up to max-height) and only grow once there is a real
+     conversation to scroll. */
+  min-height: 60px;
   max-height: 420px;
   overflow-y: auto;
   display: flex;
@@ -1203,10 +1225,9 @@ textarea:focus-visible {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 320px;
+  gap: 6px;
+  max-height: 420px;
   overflow-y: auto;
-  font-family: var(--font-mono), monospace;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
@@ -1220,12 +1241,17 @@ textarea:focus-visible {
   border-radius: 999px;
 }
 
+/* One timeline entry: a compact head line (offset, author, markers) then a plain-English
+   sentence of what happened. Monospace is reserved for the offset, the invocation id and actual
+   code/data tokens (tool names, the raw JSON) -- prose stays in the sans body font so the
+   timeline reads like a narrative, not a log dump. */
 .trace-panel__event {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  padding: 5px 6px;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  padding: 7px 9px;
+  border-left: 3px solid transparent;
   border-bottom: 1px solid var(--border);
   border-radius: 4px;
   transition: background 0.12s ease;
@@ -1235,18 +1261,90 @@ textarea:focus-visible {
   background: var(--surface-alt);
 }
 
+.trace-panel__row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
 .trace-panel__offset {
   color: var(--text-muted);
-  min-width: 60px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  min-width: 54px;
 }
 
 .trace-panel__author {
   font-weight: 700;
 }
 
+.trace-panel__body {
+  line-height: 1.4;
+}
+
+.trace-panel__code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.82em;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.trace-panel__event--error { border-left-color: var(--danger); }
+.trace-panel__event--ok { border-left-color: var(--live-text); }
+.trace-panel__event--warn { border-left-color: var(--warn); }
+
 .trace-panel__event--error .trace-panel__body { color: var(--danger); }
 .trace-panel__event--ok .trace-panel__body { color: var(--live-text); }
 .trace-panel__event--warn .trace-panel__body { color: var(--warn); }
+
+/* The guardrail-failure / revision markers are the single most important visual cue in the
+   panel -- a judge scanning the timeline must be able to spot "this failed, and here is the fix
+   that followed" without reading a line of JSON. */
+.trace-panel__event--guardrail-fail {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+/* The --warn/--error body-text colors are tuned for a plain surface background; combined with
+   this row's own red tint they fall under AA contrast (axe: 3.25:1 for the warn text). The
+   marker badge and left border already carry the "this failed" signal, so the body text can stay
+   the normal, always-readable text color here. */
+.trace-panel__event--guardrail-fail .trace-panel__body {
+  color: var(--text);
+}
+
+.trace-panel__marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.trace-panel__marker--fail {
+  color: var(--danger);
+  /* A lighter tint than the row background above -- axe measured the previous 16% mix at
+     4.33:1 against --danger, just under the 4.5:1 AA threshold. */
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.trace-panel__marker--revision {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.trace-panel__invocation {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+}
 
 .trace-panel__raw {
   flex-basis: 100%;
@@ -1265,6 +1363,7 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 0.72rem;
+  font-family: var(--font-mono), monospace;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 220px;
@@ -1337,6 +1436,11 @@ textarea:focus-visible {
 
 .intake-table {
   width: 100%;
+  /* Auto layout let long cell content (SKU guesses, the "sku N% · date N% · count N%"
+     confidence string) grow the table past its 100% width instead of wrapping within it; on the
+     phone view's narrow card (clipped by overflow: hidden, no scrollbar) that silently cut the
+     right column off entirely. Fixed layout keeps every column within the card's own width. */
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.84rem;
@@ -1351,6 +1455,7 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--border);
   padding: 8px 10px;
   text-align: left;
+  word-break: break-word;
 }
 
 .intake-table tbody tr:hover td {
@@ -1456,7 +1561,10 @@ textarea:focus-visible {
 }
 
 .outcomes-table th {
-  color: var(--text-muted);
+  /* --text-muted fails AA contrast at this small, uppercase weight (axe: 4.03:1, needs 4.5:1);
+     --muted-badge-text is the darker (light mode) / equally-light (dark mode) token already
+     built for exactly this problem on badges (b0565d1). */
+  color: var(--muted-badge-text);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;

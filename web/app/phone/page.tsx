@@ -5,6 +5,7 @@ import { ApprovePanel } from "../../components/ApprovePanel";
 import { Badge } from "../../components/Badge";
 import { GapCard } from "../../components/GapCard";
 import { capture, captureConfirm, execution, getGaps, getPlays, type CaptureConfirmSkip } from "../../lib/api";
+import { useServerNow } from "../../lib/useServerNow";
 import type { ApproveResponse, ExecutionStep, Gap, Mechanic, Play, VisionRow } from "../../lib/types";
 
 const NODES = ["DS-07", "DS-04", "DS-01"];
@@ -29,6 +30,7 @@ function stepsForMechanic(mechanic: Mechanic): ExecutionStep[] {
 }
 
 export default function PhoneViewPage() {
+  const serverNow = useServerNow();
   const [nodeId, setNodeId] = useState("DS-07");
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [capturedPhotoRef, setCapturedPhotoRef] = useState<string | null>(null);
@@ -262,7 +264,7 @@ export default function PhoneViewPage() {
 
       {gap ? (
         <section>
-          <GapCard gap={gap} />
+          <GapCard gap={gap} now={serverNow} />
           {play ? (
             <div className="card">
               <div className="card__header">

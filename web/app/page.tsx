@@ -8,11 +8,13 @@ import { ChatPanel } from "../components/ChatPanel";
 import { GapCard } from "../components/GapCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
 import { getGaps, getPlays, resetDemoData } from "../lib/api";
+import { useServerNow } from "../lib/useServerNow";
 import type { Gap, Play } from "../lib/types";
 
 const CHIPS_GAP_ID = "gap_chips_ds07";
 
 export default function LandingPage() {
+  const serverNow = useServerNow();
   const [beatStarted, setBeatStarted] = useState(false);
   const [gap, setGap] = useState<Gap | null>(null);
   const [play, setPlay] = useState<Play | null>(null);
@@ -69,7 +71,7 @@ export default function LandingPage() {
             <p className="muted">Loading gap and play…</p>
           ) : (
             <div data-testid="beat-panel">
-              <GapCard gap={gap} />
+              <GapCard gap={gap} now={serverNow} />
               <div className="card" data-testid="play-card">
                 <div className="card__header">
                   <h3>Pre-proposed play: {play.mechanic}</h3>
@@ -117,9 +119,12 @@ export default function LandingPage() {
 
       <footer className="footer">
         <div className="footer__links">
-          <a href="#">Video (pending)</a>
-          <a href="#">Deck</a>
-          <a href="#">Repo</a>
+          <a href="/deck.pdf" target="_blank" rel="noreferrer">
+            Deck
+          </a>
+          <a href="https://github.com/Nandish3010/probable-fortnight" target="_blank" rel="noreferrer">
+            Repo
+          </a>
         </div>
         <div className="sim-box">
           <strong>What is simulated:</strong> catalogue, sales history, stock and customers are a seeded

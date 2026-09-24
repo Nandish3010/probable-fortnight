@@ -63,7 +63,7 @@ export default function TrendsPage() {
           click Recompute trends above.
         </p>
       ) : (
-        <div className="outcomes-table-wrap">
+        <div className="outcomes-table-wrap" tabIndex={0} role="region" aria-label="Style trends by store, garment and colour family">
           <table className="outcomes-table">
             <thead>
               <tr>

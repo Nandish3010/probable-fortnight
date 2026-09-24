@@ -2,12 +2,16 @@ import type { Forecast } from "../lib/types";
 
 // Inline SVG line chart: baseline_p50 vs play_p50 (no chart library, per spec).
 export function ForecastChart({ forecast }: { forecast: Forecast }) {
+  // The forecast chart is the hero visual of the 60-second beat (README: "watch the forecast
+  // line move") -- a squat 220px-tall canvas with 10px labels read as an afterthought squeezed
+  // into half a card. Taller canvas and larger padding/labels give the line room to be legible
+  // at the widths it actually renders at (a hero half-card or a play-detail sidebar).
   const width = 640;
-  const height = 220;
-  const padTop = 16;
-  const padBottom = 28;
-  const padLeft = 16;
-  const padRight = 16;
+  const height = 300;
+  const padTop = 24;
+  const padBottom = 34;
+  const padLeft = 20;
+  const padRight = 20;
   const series = forecast.series;
 
   if (series.length === 0) {
