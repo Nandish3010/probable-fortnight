@@ -328,7 +328,7 @@ export interface ForecastPoint {
 
 export interface Forecast {
   run_id: string;
-  model: string; // e.g. "ML.FORECAST"
+  model: string; // the model that actually ran, e.g. "local_seasonal_xreg" -- never a BigQuery function name unless BigQuery ran
   latency_ms: number;
   series: ForecastPoint[];
   writeoff_before_inr: number;

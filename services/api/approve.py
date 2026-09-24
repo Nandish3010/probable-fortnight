@@ -161,7 +161,11 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
         "play_id": play_id, "status": play["status"],
         "assignment": {"treated_n": len(treated), "holdout_n": len(holdout), "seed": play["holdout"]["seed"], "fraction": play["holdout"]["fraction"], "eligible_n": len(eligible), "excluded_subscribers": len([c for c in ids if c in subscribers]) if play["mechanic"] in ("coupon", "outlet_markdown", "bundle") else 0},
         "offers_written": len(offers), "regressor_rows_touched": touched, "copy": {"variants": len(accepted), "rejected": reasons},
-        "forecast": {"run_id": run_id, "model": "ML.FORECAST (local_seasonal_xreg)", "latency_ms": fc_ms, "series": series, "writeoff_before_inr": _writeoff(base_series, on_hand, deadline, unit_cost), "writeoff_after_inr": _writeoff(play_series, on_hand, deadline, unit_cost), "play_window": play["window"]},
+        # The model that actually ran: jobs/sense/forecast.py's local seasonal-xreg forecaster,
+        # not the BigQuery ML.FORECAST/ARIMA_PLUS_XREG function -- that function was verified
+        # separately against real BigQuery (eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json)
+        # but is not wired into this re-forecast path. Name only what ran here.
+        "forecast": {"run_id": run_id, "model": new_rows[0]["model"] if new_rows else "local_seasonal_xreg", "latency_ms": fc_ms, "series": series, "writeoff_before_inr": _writeoff(base_series, on_hand, deadline, unit_cost), "writeoff_after_inr": _writeoff(play_series, on_hand, deadline, unit_cost), "play_window": play["window"]},
         "source": "live", "elapsed_ms": int((time.perf_counter() - t_start) * 1000),
     }
     _save_play(store, row, play)

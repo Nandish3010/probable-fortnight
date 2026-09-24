@@ -145,7 +145,7 @@ export function ChatPanel({
       <div className="chat-panel__header">
         <h3>{title} {displayName}</h3>
         <div className="chat-panel__badges">
-          <Badge kind={isMockMode() ? "live" : "live"} title={`Chat as ${displayName}`} />
+          <Badge kind={isMockMode() ? "replay" : "live"} title={`Chat as ${displayName}`} />
           {latency !== null ? <span className="chip">{latency} ms</span> : null}
         </div>
       </div>
