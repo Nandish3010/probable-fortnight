@@ -382,6 +382,54 @@ would read as model output. **UI labelling for this (a visible badge on the Play
 session** -- both are frontend work this session did not reach; the backend field is there for
 whichever frontend change does it.
 
+### Correction, 24 Sep: UI labelling done; real live sweep run; 8 more real contract bugs found and fixed; the `no_play` root cause re-observed live
+
+The "not wired up" gap above is now closed: `harness/sweep_live.py`'s `/plan` line prints
+`planner_source`, `fallback_reason` and `elapsed_ms`; the Play Desk's re-plan result now shows a
+`Badge` distinguishing a genuine Gemini-authored play from a labelled deterministic fallback
+(`web/components/PolicyEditor.tsx`, `web/app/desk/page.tsx`, `web/lib/types.ts`). Also: this
+session *did* have real Vertex credentials (`/root/.gcp/taal-deploy-key.json`, project
+`amru-509214`), so the live sweep this section said couldn't be reproduced was reproduced -- but
+against a local server wired to the real GCP backend, not the deployed `*.a.run.app` URL, which
+this sandbox's egress policy still cannot reach.
+
+Re-running all 5 gaps from `eval/raw/rationale_judge_planner_runs_2026-09-21/` live found 8 more
+real schema-contract mismatches between the prompt's instructions and `docs/schemas/play.schema.json`
+(full detail: `agents/planner/prompts/CHANGELOG.md` v6, raw traces and a before/after summary:
+`eval/raw/planner_prompt_v6_2026-09-24/`): `copy_status` sent at the top level instead of nested
+in `copy`; `audience.filters` sent as `[]` instead of `{}`; a locale-tagged language code
+(`en-IN`) instead of a bare 2-letter code; `citations[]` sent as strings or a `type`/`value` shape
+instead of `{type, ref}`; `channel` sent as `"app"` instead of the enum's `"app_push"`; the play's
+own required top-level `guardrails` field omitted; `mechanic` sent as the English word `"markdown"`
+instead of the enum's `"outlet_markdown"`; `mechanic_params` sent as `discount_percentage` instead
+of `discount_pct`; `window` sent as a duration instead of explicit `start`/`end`; `holdout.seed`
+sent as a 1-character string, failing the 4-character minimum. All fixed with a concrete
+worked-example JSON block added to the prompt (not a code/schema change). Result: 4 of 5 gaps
+that previously needed the deterministic fallback (or took many iterations) now reliably produce
+`planner_source: "model"` in 1-2 iterations.
+
+The 5th gap (`gap_f6c4f8c850`) surfaced a genuinely different, still-open problem on retest, after
+its schema-contract errors stopped recurring: 3 consecutive empty model turns (no function call,
+no text) over ~16s, ending the loop with `no_play after 1 iteration(s)` -- not a schema bug. This
+looks like a live recurrence of the *exact* failure this section already diagnosed above
+(`_has_estimates()` in `agents/planner/agent.py` switches every turn after the first
+`estimate_outcomes` response to `planner_final`'s medium (1024) thinking budget, and a model can
+spend that budget on invisible reasoning and emit nothing actionable). This session's own prompt
+changes made the instruction text longer, which plausibly makes this more likely to recur, not
+less -- flagged honestly rather than claimed fixed. Not chased further with more live Gemini
+calls this session; the next concrete thing to try is lowering `planner_final` from `medium` to
+`low` in `config/models.toml` and re-testing live, weighed against whatever rationale-quality
+reason `medium` was chosen for that step in the first place.
+
+**Still true after all of the above: no gap completed a real model-authored play under the 10s
+target.** Observed single real Gemini round-trip latency on this task alone is 20-43s per
+iteration; the schema-contract fixes reduced iteration *counts*, which helped, but cannot close a
+10s target when even one iteration exceeds it. Closing that gap needs either materially fewer
+round trips per plan or a different latency budget for this task, which is a separate, harder
+problem than the one this session's fixes address. `DEFAULT_DEADLINE_S` in `agents/planner/run.py`
+remains 8.0, unchanged -- re-tuning it without first closing the latency gap would just change
+which fallback message a judge sees, not the demo's honesty.
+
 **Customer and stylist chat:** `agents/chat_runtime.py` gained `chat_generate_config`, which both
 `agents/customer/agent.py` and `agents/stylist/agent.py` now call on the vertex backend, wiring
 `thinking.customer` / `thinking.stylist` (both "low", budget 0) the same way the planner does.

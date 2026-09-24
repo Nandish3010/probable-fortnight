@@ -361,6 +361,9 @@ export interface RerunResponse {
   play: Play;
   policy_version: string;
   source: Source;
+  planner_source?: "model" | "deterministic_fallback" | null;
+  fallback_reason?: string | null;
+  iterations?: number;
 }
 
 export interface TraceEvent {

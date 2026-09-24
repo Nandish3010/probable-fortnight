@@ -60,7 +60,7 @@ show("GET /customers/demo", r, lambda b: ", ".join(f"{c['customer_id']}({c['role
 holdout_id = next((c["customer_id"] for c in (demo if isinstance(demo, list) else []) if c.get("role") == "holdout"), "CUST-00316")
 show("GET /outcomes (before)", call("GET", "/outcomes"), lambda b: f"{len(b)} rows")
 st, planned, _ = r = call("POST", "/plan", {"gap_id": gap_id}, timeout=300)
-show("POST /plan (LIVE Gemini planner)", r, lambda b: f"status={b.get('status')} iterations={b.get('iterations')} play={(b.get('play') or {}).get('play_id')} mechanic={(b.get('play') or {}).get('mechanic')} run={b.get('run_id')}")
+show("POST /plan (LIVE Gemini planner)", r, lambda b: f"status={b.get('status')} iterations={b.get('iterations')} play={(b.get('play') or {}).get('play_id')} mechanic={(b.get('play') or {}).get('mechanic')} run={b.get('run_id')} planner_source={b.get('planner_source')} fallback_reason={b.get('fallback_reason')} elapsed_ms={b.get('elapsed_ms')}")
 plan_run_id = planned.get("run_id") if isinstance(planned, dict) else None
 # the live plan replaces the seeded play (new holdout seed): re-read who the holdout customer is now
 st, demo, _ = call("GET", f"/customers/demo?play_id={play_id}")
