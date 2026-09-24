@@ -39,6 +39,16 @@ def main() -> int:
     # attribution trailer that ever lands in history, permanently red regardless of who pushes
     # next. On a PR this is exactly the new commits; on a push to main after merge, HEAD already
     # equals the base so there is nothing left to re-check -- the gate already ran at PR time.
+    #
+    # KNOWN GAP (found 2026-09-24, not fixed here): this only catches a trailer if it lands via a
+    # PR whose CI actually ran as a required check. A commit pushed straight to `main` (no PR, no
+    # CI) is never scanned by this script at all -- there is no merge-base diff to compute it
+    # against, since it IS main. That is exactly how several attribution-trailer commits ended up
+    # on this repo's main history: pushed directly, never through a PR this check gated. Enforcing
+    # this for real needs either GitHub branch protection (require PRs into main, require this
+    # check to pass) or a server-side pre-receive hook -- neither is set up. Until one is, treat a
+    # clean run of this script as "no trailer in the commits I'm about to merge", not "main has
+    # none anywhere in its history".
     base_ref = None
     for ref in ("origin/main", "main"):
         if subprocess.run(["git", "rev-parse", "--verify", "--quiet", ref], capture_output=True).returncode == 0:

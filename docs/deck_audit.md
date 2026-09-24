@@ -197,3 +197,42 @@ diagram, same claims, now rendering. `docs/deck.pdf` regenerated (still 14 pages
 | "Real: Forecasts, gaps, estimator, guardrails, the Planner loop, holdout assignment, live re-forecast, chat, orders, measurement" | `README.md` itself lists "forecasts" as a real *code path* without qualification (it is real, running code — the caveat is about which product powers it, covered separately in README's "What is real, what is simulated"). But read alongside this deck's own `summary`/`technical` slides naming specific BigQuery products, an unqualified "Forecasts" here reads as endorsing that overclaim too. | **OVERCLAIM** (by adjacency, not in isolation) | Qualified to "Forecasts (local model; BigQuery SQL written and now verified against real data for one series)" |
 | "Simulated, disclosed: the tenant Kutumb Mart ... no pilot has run yet" | Matches README exactly | TRUE | none |
 | Live URL / repo link | Matches README | TRUE | none |
+
+## Round 3 sweep, 2026-09-24: stale claims beyond the deck (API, UI, docstrings, scale.md)
+
+This audit file covers the deck. This round swept the rest of the repo for the same pattern --
+a label or a document asserting something the code does not do -- prompted directly by a review
+that named three specific instances. All three were real; the sweep below found two more of the
+same shape while looking, neither previously flagged.
+
+| Claim as written | Where | What the code does | Verdict | Fix |
+|---|---|---|---|---|
+| `"model": "ML.FORECAST (local_seasonal_xreg)"` | `services/api/approve.py` (API field) and `web/components/ApprovePanel.tsx` (hardcoded badge string, never read the field at all) | The re-forecast at approve time calls `jobs/sense/forecast.py::forecast()`, the local seasonal-xreg model -- confirmed by reading `approve.py:144`. `ML.FORECAST`/`ARIMA_PLUS_XREG` was verified separately against real BigQuery (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) but is not wired into this path. | **OVERCLAIM** | API now returns the model that actually ran (`new_rows[0]["model"]`, i.e. `local_seasonal_xreg`); `ApprovePanel` renders `result.forecast.model` instead of a hardcoded BigQuery function name. LIVE badge kept -- the ~2s re-forecast call genuinely is live. `web/mocks/approve.json` and `fixtures/golden_runs/approve_chips.json` updated to match. |
+| `agents/gate/sellby.py` docstring: default takes "the stricter reading (the later of the two cut-offs before expiry)" | Module docstring | `config/tenant.demo.toml` sets `combine = "min"`, the MORE LENIENT reading, and `README.md` already agrees with the config | **STALE / inverted** | Docstring rewritten to state which reading `min` and `max` each select, and that there is no fixed "default" -- it's a per-tenant policy parameter |
+| `docs/scale.md:16`: "no `bigquery.Client` construction anywhere under `agents/`, `services/`, `jobs/`, `data/`, `harness/`" | `docs/scale.md` | Three real constructions exist: `jobs/sense/copy.py::generate_copy_bigquery` (reachable from a running server -- `POST /approve` calls it when `TAAL_MODEL_BACKEND=vertex`), `jobs/measure/cost.py` (standalone CLI, not called by any server path), `agents/gate/bigquery_store.py::BigQueryStore` (verified against real BigQuery, not wired into any runtime path) | **STALE (doubly false)** | Row rewritten to name all three, which runtime path (if any) reaches each, and that Sense's own forecasting still reads/writes the local store, not BigQuery |
+| `services/api/main.py`'s `/health` endpoint: `"sessions"` check hardcoded `"Both agents/customer/chat.py and agents/planner/run.py construct InMemoryRunner unconditionally -- VertexAiSessionService is not wired up in either backend"` | `services/api/main.py` (a comment AND the served detail string) | Found while doing this sweep, not named in the brief. `agents/vertex_sessions.py` + `agents/chat_runtime.py`/`agents/planner/run.py` wire in a real `VertexAiSessionService` behind `TAAL_SESSION_BACKEND=vertex` (merged since this comment was written). The `"firestore"` check's detail string had the same staleness for the Firestore serving cache. | **STALE** (a real architecture change landed after this comment was written, and nobody updated the health check that describes it) | Both `"sessions"` and `"firestore"` checks now read the actual env flag and report which backend is live, rather than a fixed string written before either capability existed |
+| `web/components/ChatPanel.tsx`: `<Badge kind={isMockMode() ? "live" : "live"} .../>` | Chat header badge | The ternary always evaluates to `"live"` regardless of mock mode -- in mock mode every reply comes from `web/mocks/chat.json`, not a real backend call, yet the badge claims LIVE | **OVERCLAIM (bug, not just stale prose)** | Fixed to `isMockMode() ? "replay" : "live"` |
+| `web/app/outcomes/page.tsx`: `<Badge kind="live" detail="/outcomes" />` | Outcomes page header badge | Unconditional, but `getOutcomes()` itself branches on `isMockMode()` and returns a static fixture in mock mode -- the same shape of bug as the chat badge, just not yet a broken ternary since nobody had wired the mock-mode check in at all | **OVERCLAIM** | Fixed to `isMockMode() ? "replay" : "live"`, matching the pattern already used correctly in `ApprovePanel.tsx` and `desk/page.tsx` |
+
+**What was checked and found TRUE (no fix needed):** `README.md`'s BigQuery/Vertex references
+(the copy-generation row, the "stands in for BigQuery AI.FORECAST" framing, the TiDE-paper
+citation) are all already correctly scoped -- none claim something the code doesn't do. The
+`web/app/desk/page.tsx` "Gemini-authored play" LIVE badge is already correctly conditioned on
+`rerunResult.planner_source === "model"`.
+
+**Naming regression (separate from the claims above, same review).** Two vendor-prefixed remote
+branches existed at the start of this round (names deliberately not repeated here -- this file is
+tracked, and `harness/checks/secrets.py` correctly flags the vendor name on sight; see the PR
+description for the exact branch names). One was already merged into main as pull request #37;
+the other was superseded -- its content is already on main under a different commit, from pull
+request #31, via squash merge. Both are safe to delete; `git push origin --delete` for both
+returned an HTTP 403 from this session's git proxy, so they were **not** deleted here and need
+deleting by whoever has push-delete access. At least eight commits already on `main`
+(`3c6bd354`, `061e2a9d`, `76c8b778`, `39644d2f`, `5955701a`, `1c3c9973`, `20eeaedf`, `6284e391`)
+carry an attribution trailer naming the vendor; per this round's explicit instruction these were
+**not** rewritten (that would change every hash after them and break existing clones/PR
+references) -- flagged here for the repo owner to decide. `harness/checks/secrets.py` only scans
+commits since the merge-base with `main`; a commit pushed straight to `main` outside any PR is
+never scanned by it at all, which is how these eight got in uncaught. A comment documenting this
+gap (and that fixing it needs GitHub branch protection or a pre-receive hook, neither configured)
+was added to the script itself rather than building the enforcement in this pass.

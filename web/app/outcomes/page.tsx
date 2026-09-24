@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
-import { getOutcomes, getPlays, postMeasure } from "../../lib/api";
+import { getOutcomes, getPlays, isMockMode, postMeasure } from "../../lib/api";
 import { inr, formatDateTime, pct } from "../../lib/format";
 import type { MeasureResponse, Outcome, Play, PortfolioSummary } from "../../lib/types";
 import portfolio from "../../mocks/portfolio_summary.json";
@@ -210,7 +210,7 @@ export default function OutcomesPage() {
       <h1 className="visually-hidden">Taal</h1>
       <div className="card__header">
         <h2>Outcomes</h2>
-        <Badge kind="live" detail="/outcomes" />
+        <Badge kind={isMockMode() ? "replay" : "live"} detail="/outcomes" />
       </div>
       <p className="muted">
         Three views, in order: what the portfolio projects, what one play projects, and what one
