@@ -39,7 +39,7 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /phone\.spec\.ts/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(phone|feedback)\.spec\.ts/ },
   ],
   webServer: {
     command: useStart ? `npm run build && npx next start -p ${port}` : `npx next dev -p ${port}`,

@@ -80,3 +80,50 @@ for this channel and purpose." Withdrawal is a first-class, immediate action, no
 afterthought. This is the DPDP-aligned shape (purpose limitation, consent as a revocable record,
 no dark-pattern re-consent), stated here as a design commitment, not a legal opinion -- a real
 tenant deployment needs its own DPDP compliance review before launch.
+
+## Practitioner feedback
+
+A separate, real dataset: answers from retail practitioners (store managers, planners,
+quick-commerce operators, owners) to the questionnaire at `/feedback`. It is never seeded,
+generated or simulated, and it is not part of the synthetic demo tenant. The questions are in
+`config/feedback_form.json`; the stored shape is `docs/schemas/feedback_response.schema.json`.
+
+**What is collected.** Answers to the questions (role, business type and size, how near-expiry
+stock is handled today, opinions of Taal), optional free text, whether the respondent may be
+quoted, and a consent tick. Server-assigned: a random `response_id`, `submitted_at`, the
+`form_version`, and `mode` (`self`, or `interview` when a team member filled it in during a
+call). No IP address, device identifier, cookie or visitor id is stored with a response. The
+rate limiter keeps a per-device/IP counter in memory for an hour; it is never written anywhere.
+
+**Contact details are optional**, and the form only asks for them (name, and email or phone)
+from someone who answered Yes or Maybe to a one-week pilot. They are stored in a separate
+collection (`feedback_contacts`) keyed by the same `response_id`, used only to arrange a pilot,
+and never read by the summary command or the results page, so no report or export contains them.
+
+**Why.** To understand how retailers handle near-expiry stock today and to support, with real
+evidence, the impact claims in the project submission. Quotes are used only where the respondent
+answered Yes to being quoted, verbatim, attributed only by role and business type.
+
+**Where it is stored.** In production, Firestore in the project's own Google Cloud project
+(`feedback_responses` and `feedback_contacts`), selected by `TAAL_FEEDBACK_STORE=firestore`.
+Never on the Cloud Run container's disk, and never in the demo tenant or a visitor sandbox, so
+"Reset demo data" cannot touch it. Aggregates are visible only through `/feedback/results`, behind
+an admin token held in Secret Manager.
+
+**How long.** Up to 12 months from submission, then deleted; contact details are deleted as soon
+as the pilot conversation they were given for is over, if that is sooner. [Retention period is
+the team's decision to confirm before the form is shared -- this document states 12 months and
+the consent text on the form says the same; change both together.]
+
+**Deletion on request.** After submitting, the respondent is shown their `response_id` as a
+reference. Anyone who quotes it (by email to the team) has the response and any contact details
+deleted with:
+
+    curl -X DELETE -H "Authorization: Bearer $TAAL_FEEDBACK_ADMIN_TOKEN" \
+      https://<taal-agents URL>/feedback/<response_id>
+
+The team then re-runs `python -m harness.feedback_summary` so the next summary no longer counts
+it. A summary file already committed to git keeps its aggregate counts in history; it never
+contains a `response_id` or contact detail, and a quote from a respondent who later asks for
+deletion is removed from the next summary. A respondent who has lost the reference can ask by
+role, business and approximate date, and the team matches it by hand.

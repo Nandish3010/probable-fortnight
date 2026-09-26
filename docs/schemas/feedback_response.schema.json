@@ -1,0 +1,539 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taal.example/schemas/feedback_response.schema.json",
+  "title": "FeedbackSubmission",
+  "description": "One practitioner feedback response as POSTed to /feedback. Question ids, option values and show-if rules mirror config/feedback_form.json (tests/contract/test_feedback_schema.py fails on drift). A question hidden by its show-if rule must be absent, not empty. response_id and submitted_at are assigned by the server, never the client; e3_contact is split off and stored apart from the answers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "form_version",
+    "mode",
+    "source",
+    "answers"
+  ],
+  "properties": {
+    "form_version": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.[0-9]+$",
+      "description": "config/feedback_form.json form_version the respondent saw."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "self",
+        "interview"
+      ],
+      "description": "self: the practitioner filled it in alone. interview: a team member filled it in during a call."
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "real",
+        "test"
+      ],
+      "description": "test rows are excluded from every analysis."
+    },
+    "website": {
+      "type": "string",
+      "description": "Honeypot. Hidden from people; any non-empty value marks the submission as automated and it is discarded without being stored."
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "a1_role",
+        "a2_business",
+        "e4_consent"
+      ],
+      "properties": {
+        "a1_role": {
+          "description": "Which best describes your role?",
+          "type": "string",
+          "enum": [
+            "store_manager",
+            "category",
+            "supply_chain",
+            "ecom_qcom_ops",
+            "owner",
+            "other"
+          ]
+        },
+        "a1_role_other": {
+          "description": "Free text for the 'Other' option of a1_role.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "a2_business": {
+          "description": "What kind of business do you work in?",
+          "type": "string",
+          "enum": [
+            "kirana",
+            "supermarket_chain",
+            "quick_commerce",
+            "ecom_marketplace",
+            "distributor",
+            "fmcg_brand",
+            "other"
+          ]
+        },
+        "a2_business_other": {
+          "description": "Free text for the 'Other' option of a2_business.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "a3_scale": {
+          "description": "How many locations does the business have?",
+          "type": "string",
+          "enum": [
+            "1",
+            "2_10",
+            "11_50",
+            "51_200",
+            "over_200"
+          ]
+        },
+        "a4_online_food": {
+          "description": "Does the business sell food online?",
+          "type": "string",
+          "enum": [
+            "yes",
+            "planning",
+            "no"
+          ]
+        },
+        "b1_frequency": {
+          "description": "How often does stock go unsold before its date?",
+          "type": "string",
+          "enum": [
+            "rarely",
+            "monthly",
+            "weekly",
+            "daily"
+          ]
+        },
+        "b2_writeoff_share": {
+          "description": "Roughly what share of perishable stock is written off?",
+          "type": "string",
+          "enum": [
+            "under_1",
+            "1_3",
+            "3_5",
+            "5_10",
+            "over_10",
+            "dont_know"
+          ]
+        },
+        "b3_writeoff_value": {
+          "description": "Roughly how much is written off per month?",
+          "type": "string",
+          "enum": [
+            "under_10k",
+            "10k_1l",
+            "1l_10l",
+            "10l_1cr",
+            "over_1cr",
+            "dont_know",
+            "prefer_not"
+          ]
+        },
+        "b4_current_actions": {
+          "description": "What do you usually do with near-expiry stock?",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "blanket_markdown",
+              "transfer",
+              "return_supplier",
+              "bundle",
+              "staff_sale",
+              "donate",
+              "write_off",
+              "nothing_systematic"
+            ]
+          }
+        },
+        "b5_fssai": {
+          "description": "Were you aware of this?",
+          "type": "string",
+          "enum": [
+            "yes_limits",
+            "yes_no_effect",
+            "no",
+            "not_sure"
+          ]
+        },
+        "b6_measurement": {
+          "description": "How do you judge whether a discount actually worked?",
+          "type": "string",
+          "enum": [
+            "control_group",
+            "before_after",
+            "judgement",
+            "dont_check"
+          ]
+        },
+        "c0_seen_demo": {
+          "description": "Have you seen Taal working?",
+          "type": "string",
+          "enum": [
+            "yes_live",
+            "yes_video",
+            "no"
+          ]
+        },
+        "c1_usefulness": {
+          "description": "How useful would lot-level offers with a stated expected margin be for your business?",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "c2_most_valuable": {
+          "description": "Which parts would be most valuable?",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "sellby_deadline",
+              "targeted_offers",
+              "human_approval",
+              "holdout_measurement",
+              "own_language"
+            ]
+          },
+          "maxItems": 2
+        },
+        "c3_blockers": {
+          "description": "What would stop you using something like this?",
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "data_integration",
+              "trust_ai",
+              "cost",
+              "privacy_consent",
+              "existing_tools",
+              "staff_training",
+              "other"
+            ]
+          }
+        },
+        "c3_blockers_other": {
+          "description": "Free text for the 'Other' option of c3_blockers.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "c4_pay_model": {
+          "description": "How would you prefer to pay for something like this?",
+          "type": "string",
+          "enum": [
+            "would_not_pay",
+            "share_of_waste_avoided",
+            "monthly_per_store",
+            "one_time",
+            "not_sure"
+          ]
+        },
+        "c5_pay_amount": {
+          "description": "Roughly how much per store per month?",
+          "type": "string",
+          "enum": [
+            "under_1k",
+            "1k_5k",
+            "5k_20k",
+            "over_20k"
+          ]
+        },
+        "d1_biggest_pain": {
+          "description": "What is the single biggest problem with near-expiry stock in your business?",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "d2_suggestion": {
+          "description": "What would make something like this more useful to you?",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "e1_pilot": {
+          "description": "Would you consider a one-week pilot?",
+          "type": "string",
+          "enum": [
+            "yes",
+            "maybe",
+            "no"
+          ]
+        },
+        "e2_quote_ok": {
+          "description": "May we quote your answers anonymously, showing only your role and business type?",
+          "type": "string",
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "e3_contact": {
+          "description": "How can we reach you about a pilot? Split off at write time and stored apart from the answers.",
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "reach": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        "e4_consent": {
+          "description": "I have read the statement above and agree to my answers being stored as described.",
+          "const": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "a1_role"
+            ],
+            "properties": {
+              "a1_role": {
+                "const": "other"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "a1_role_other": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "a2_business"
+            ],
+            "properties": {
+              "a2_business": {
+                "const": "other"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "a2_business_other": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c0_seen_demo"
+            ],
+            "properties": {
+              "c0_seen_demo": {
+                "enum": [
+                  "yes_live",
+                  "yes_video"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c1_usefulness": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c0_seen_demo"
+            ],
+            "properties": {
+              "c0_seen_demo": {
+                "enum": [
+                  "yes_live",
+                  "yes_video"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c2_most_valuable": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c3_blockers"
+            ],
+            "properties": {
+              "c3_blockers": {
+                "contains": {
+                  "const": "other"
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c3_blockers_other": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c0_seen_demo"
+            ],
+            "properties": {
+              "c0_seen_demo": {
+                "enum": [
+                  "yes_live",
+                  "yes_video"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c3_blockers": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c0_seen_demo"
+            ],
+            "properties": {
+              "c0_seen_demo": {
+                "enum": [
+                  "yes_live",
+                  "yes_video"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c4_pay_model": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "c4_pay_model"
+            ],
+            "properties": {
+              "c4_pay_model": {
+                "enum": [
+                  "monthly_per_store"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "c5_pay_amount": false
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "e1_pilot"
+            ],
+            "properties": {
+              "e1_pilot": {
+                "enum": [
+                  "yes",
+                  "maybe"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "e3_contact": false
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "stored_response": {
+      "description": "What is written to the feedback store: the submission without the honeypot and without e3_contact, plus server-assigned fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response_id",
+        "submitted_at",
+        "form_version",
+        "mode",
+        "source",
+        "answers",
+        "has_contact"
+      ],
+      "properties": {
+        "response_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "form_version": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "self",
+            "interview"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "real",
+            "test"
+          ]
+        },
+        "has_contact": {
+          "type": "boolean"
+        },
+        "answers": {
+          "type": "object",
+          "not": {
+            "required": [
+              "e3_contact"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

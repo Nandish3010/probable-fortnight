@@ -10,6 +10,10 @@ import type {
   ChatRequest,
   EventsResponse,
   ExecutionRequest,
+  FeedbackForm,
+  FeedbackSubmission,
+  FeedbackSubmitResponse,
+  FeedbackSummary,
   ExecutionResponse,
   Gap,
   HealthResponse,
@@ -40,6 +44,10 @@ import mockCustomersDemo from "../mocks/customers_demo.json";
 import mockChat from "../mocks/chat.json";
 import mockStylistChat from "../mocks/stylist_chat.json";
 import mockTrends from "../mocks/trends.json";
+import mockFeedbackForm from "../mocks/feedback_form.json";
+// The summary a zero-response store produces (summarize([]) output): mock mode never shows
+// simulated feedback numbers, not even to a demo viewer.
+import mockFeedbackSummary from "../mocks/feedback_summary.json";
 
 export function isMockMode(): boolean {
   return process.env.NEXT_PUBLIC_TAAL_MOCK === "1";
@@ -359,4 +367,73 @@ export async function postTrendsRecompute(): Promise<TrendsRecomputeResponse> {
     return { rows: rows.length, window_days: rows[0]?.window_days ?? 30, computed_at: new Date().toISOString() };
   }
   return request<TrendsRecomputeResponse>("/trends/recompute", { method: "POST" });
+}
+
+// ---------- practitioner feedback ----------
+// The one real dataset, stored apart from the demo tenant. POST /feedback carries the per-device
+// visitor id only as the rate-limit key: without it every phone behind Cloud Run's front end
+// would share one bucket, and a link shared to a group could lock real respondents out. The id
+// is never stored with a response.
+
+export class FeedbackError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+
+export async function getFeedbackForm(): Promise<FeedbackForm> {
+  if (isMockMode()) {
+    await delay(80);
+    return mockFeedbackForm as unknown as FeedbackForm;
+  }
+  const res = await fetch(`${apiBase()}/feedback/form`);
+  if (!res.ok) throw new FeedbackError("The form could not be loaded. Please refresh the page.", res.status);
+  return (await res.json()) as FeedbackForm;
+}
+
+function randomHex(bytes: number): string {
+  const a = new Uint8Array(bytes);
+  crypto.getRandomValues(a);
+  return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function submitFeedback(body: FeedbackSubmission): Promise<FeedbackSubmitResponse> {
+  if (isMockMode()) {
+    // Mock mode stores nothing anywhere.
+    await delay(400);
+    return { ok: true, response_id: randomHex(16) };
+  }
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase()}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Taal-Visitor": getVisitorId() },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new FeedbackError("No connection. Your answers are still here; please try again.", 0);
+  }
+  if (res.ok) return (await res.json()) as FeedbackSubmitResponse;
+  const message =
+    res.status === 429
+      ? "Too many submissions from this device. Please wait a while and try again."
+      : res.status === 422
+        ? "Some answers could not be accepted. Please check the form and try again."
+        : "Your response could not be saved. Your answers are still here; please try again in a minute.";
+  throw new FeedbackError(message, res.status);
+}
+
+export async function getFeedbackSummary(token: string): Promise<FeedbackSummary> {
+  if (isMockMode()) {
+    await delay(150);
+    return mockFeedbackSummary as unknown as FeedbackSummary;
+  }
+  const res = await fetch(`${apiBase()}/feedback/summary`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 401) throw new FeedbackError("That token was not accepted.", 401);
+  if (res.status === 503) throw new FeedbackError("Results are not enabled on this server.", 503);
+  if (!res.ok) throw new FeedbackError(`Could not load results (${res.status}).`, res.status);
+  return (await res.json()) as FeedbackSummary;
 }

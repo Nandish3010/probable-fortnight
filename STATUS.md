@@ -6,12 +6,12 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 
 | Component | Owner | Spec | Checklist | Last test result |
 |---|---|---|---|---|
-| [Schemas and DDL](harness/checklists/schemas_ddl.md) | D | §2.4, §3.3, §17.1 | 8 of 8 | green: 61 passed, 0 failed, 0 skipped |
+| [Schemas and DDL](harness/checklists/schemas_ddl.md) | D | §2.4, §3.3, §17.1 | 8 of 8 | green: 79 passed, 0 failed, 0 skipped |
 | [Synthetic generator](harness/checklists/generator.md) | D | §3.2, §3.3 | 8 of 9 | green: 41 passed, 0 failed, 0 skipped |
 | [Sense: forecasts](harness/checklists/sense_forecasts.md) | D | §5.2, §4.2 | 8 of 8 | green: 10 passed, 0 failed, 0 skipped |
 | [Sense: gaps](harness/checklists/sense_gaps.md) | D | §2.3, §3.4, §5.2 | 10 of 10 | green: 13 passed, 0 failed, 0 skipped |
 | [Segments and substitutes](harness/checklists/segments_substitutes.md) | D | §5.2 | 6 of 6 | green: 4 passed, 0 failed, 0 skipped |
-| [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 9 of 9 | green: 130 passed, 0 failed, 0 skipped |
+| [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 9 of 9 | green: 147 passed, 0 failed, 0 skipped |
 | [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 9 | green: 12 passed, 0 failed, 0 skipped; via `make eval` |
 | [Approve and assignment](harness/checklists/approve_assignment.md) | B | §5.4, §5.6 | 7 of 7 | green: 17 passed, 0 failed, 0 skipped |
 | [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 13 of 14 | green: 34 passed, 0 failed, 0 skipped |

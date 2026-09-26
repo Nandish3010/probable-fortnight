@@ -125,6 +125,7 @@ export default function LandingPage() {
           <a href="https://github.com/Nandish3010/probable-fortnight" target="_blank" rel="noreferrer">
             Repo
           </a>
+          <a href="/feedback">Practitioner feedback</a>
         </div>
         <div className="sim-box">
           <strong>What is simulated:</strong> catalogue, sales history, stock and customers are a seeded
