@@ -576,6 +576,443 @@ paths:
                 additionalProperties: true
                 type: object
                 title: Response Sense Last Sense Last Get
+  /feedback/form:
+    get:
+      summary: Feedback Form
+      description: The questionnaire (config/feedback_form.json), so wording changes
+        need no web rebuild.
+      operationId: feedback_form_feedback_form_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Feedback Form Feedback Form Get
+  /feedback:
+    post:
+      summary: Submit Feedback
+      operationId: submit_feedback_feedback_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                form_version:
+                  type: string
+                  pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+$
+                  description: config/feedback_form.json form_version the respondent
+                    saw.
+                mode:
+                  type: string
+                  enum:
+                  - self
+                  - interview
+                  description: 'self: the practitioner filled it in alone. interview:
+                    a team member filled it in during a call.'
+                source:
+                  type: string
+                  enum:
+                  - real
+                  - test
+                  description: test rows are excluded from every analysis.
+                website:
+                  type: string
+                  description: Honeypot. Hidden from people; any non-empty value marks
+                    the submission as automated and it is discarded without being
+                    stored.
+                answers:
+                  allOf:
+                  - if:
+                      properties:
+                        a1_role:
+                          const: other
+                      required:
+                      - a1_role
+                    else:
+                      properties:
+                        a1_role_other: false
+                  - if:
+                      properties:
+                        a2_business:
+                          const: other
+                      required:
+                      - a2_business
+                    else:
+                      properties:
+                        a2_business_other: false
+                  - if:
+                      properties:
+                        c0_seen_demo:
+                          enum:
+                          - yes_live
+                          - yes_video
+                      required:
+                      - c0_seen_demo
+                    else:
+                      properties:
+                        c1_usefulness: false
+                  - if:
+                      properties:
+                        c0_seen_demo:
+                          enum:
+                          - yes_live
+                          - yes_video
+                      required:
+                      - c0_seen_demo
+                    else:
+                      properties:
+                        c2_most_valuable: false
+                  - if:
+                      properties:
+                        c3_blockers:
+                          contains:
+                            const: other
+                      required:
+                      - c3_blockers
+                    else:
+                      properties:
+                        c3_blockers_other: false
+                  - if:
+                      properties:
+                        c0_seen_demo:
+                          enum:
+                          - yes_live
+                          - yes_video
+                      required:
+                      - c0_seen_demo
+                    else:
+                      properties:
+                        c3_blockers: false
+                  - if:
+                      properties:
+                        c0_seen_demo:
+                          enum:
+                          - yes_live
+                          - yes_video
+                      required:
+                      - c0_seen_demo
+                    else:
+                      properties:
+                        c4_pay_model: false
+                  - if:
+                      properties:
+                        c4_pay_model:
+                          enum:
+                          - monthly_per_store
+                      required:
+                      - c4_pay_model
+                    else:
+                      properties:
+                        c5_pay_amount: false
+                  - if:
+                      properties:
+                        e1_pilot:
+                          enum:
+                          - 'yes'
+                          - maybe
+                      required:
+                      - e1_pilot
+                    else:
+                      properties:
+                        e3_contact: false
+                  properties:
+                    a1_role:
+                      type: string
+                      enum:
+                      - store_manager
+                      - category
+                      - supply_chain
+                      - ecom_qcom_ops
+                      - owner
+                      - other
+                      description: Which best describes your role?
+                    a1_role_other:
+                      type: string
+                      maxLength: 200
+                      minLength: 1
+                      description: Free text for the 'Other' option of a1_role.
+                    a2_business:
+                      type: string
+                      enum:
+                      - kirana
+                      - supermarket_chain
+                      - quick_commerce
+                      - ecom_marketplace
+                      - distributor
+                      - fmcg_brand
+                      - other
+                      description: What kind of business do you work in?
+                    a2_business_other:
+                      type: string
+                      maxLength: 200
+                      minLength: 1
+                      description: Free text for the 'Other' option of a2_business.
+                    a3_scale:
+                      type: string
+                      enum:
+                      - '1'
+                      - '2_10'
+                      - '11_50'
+                      - '51_200'
+                      - over_200
+                      description: How many locations does the business have?
+                    a4_online_food:
+                      type: string
+                      enum:
+                      - 'yes'
+                      - planning
+                      - 'no'
+                      description: Does the business sell food online?
+                    b1_frequency:
+                      type: string
+                      enum:
+                      - rarely
+                      - monthly
+                      - weekly
+                      - daily
+                      description: How often does stock go unsold before its date?
+                    b2_writeoff_share:
+                      type: string
+                      enum:
+                      - under_1
+                      - '1_3'
+                      - '3_5'
+                      - '5_10'
+                      - over_10
+                      - dont_know
+                      description: Roughly what share of perishable stock is written
+                        off?
+                    b3_writeoff_value:
+                      type: string
+                      enum:
+                      - under_10k
+                      - 10k_1l
+                      - 1l_10l
+                      - 10l_1cr
+                      - over_1cr
+                      - dont_know
+                      - prefer_not
+                      description: Roughly how much is written off per month?
+                    b4_current_actions:
+                      items:
+                        type: string
+                        enum:
+                        - blanket_markdown
+                        - transfer
+                        - return_supplier
+                        - bundle
+                        - staff_sale
+                        - donate
+                        - write_off
+                        - nothing_systematic
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      description: What do you usually do with near-expiry stock?
+                    b5_fssai:
+                      type: string
+                      enum:
+                      - yes_limits
+                      - yes_no_effect
+                      - 'no'
+                      - not_sure
+                      description: Were you aware of this?
+                    b6_measurement:
+                      type: string
+                      enum:
+                      - control_group
+                      - before_after
+                      - judgement
+                      - dont_check
+                      description: How do you judge whether a discount actually worked?
+                    c0_seen_demo:
+                      type: string
+                      enum:
+                      - yes_live
+                      - yes_video
+                      - 'no'
+                      description: Have you seen Taal working?
+                    c1_usefulness:
+                      type: integer
+                      maximum: 5.0
+                      minimum: 1.0
+                      description: How useful would lot-level offers with a stated
+                        expected margin be for your business?
+                    c2_most_valuable:
+                      items:
+                        type: string
+                        enum:
+                        - sellby_deadline
+                        - targeted_offers
+                        - human_approval
+                        - holdout_measurement
+                        - own_language
+                      type: array
+                      maxItems: 2
+                      minItems: 1
+                      uniqueItems: true
+                      description: Which parts would be most valuable?
+                    c3_blockers:
+                      items:
+                        type: string
+                        enum:
+                        - data_integration
+                        - trust_ai
+                        - cost
+                        - privacy_consent
+                        - existing_tools
+                        - staff_training
+                        - other
+                      type: array
+                      minItems: 1
+                      uniqueItems: true
+                      description: What would stop you using something like this?
+                    c3_blockers_other:
+                      type: string
+                      maxLength: 200
+                      minLength: 1
+                      description: Free text for the 'Other' option of c3_blockers.
+                    c4_pay_model:
+                      type: string
+                      enum:
+                      - would_not_pay
+                      - share_of_waste_avoided
+                      - monthly_per_store
+                      - one_time
+                      - not_sure
+                      description: How would you prefer to pay for something like
+                        this?
+                    c5_pay_amount:
+                      type: string
+                      enum:
+                      - under_1k
+                      - 1k_5k
+                      - 5k_20k
+                      - over_20k
+                      description: Roughly how much per store per month?
+                    d1_biggest_pain:
+                      type: string
+                      maxLength: 1000
+                      minLength: 1
+                      description: What is the single biggest problem with near-expiry
+                        stock in your business?
+                    d2_suggestion:
+                      type: string
+                      maxLength: 1000
+                      minLength: 1
+                      description: What would make something like this more useful
+                        to you?
+                    e1_pilot:
+                      type: string
+                      enum:
+                      - 'yes'
+                      - maybe
+                      - 'no'
+                      description: Would you consider a one-week pilot?
+                    e2_quote_ok:
+                      type: string
+                      enum:
+                      - 'yes'
+                      - 'no'
+                      description: May we quote your answers anonymously, showing
+                        only your role and business type?
+                    e3_contact:
+                      properties:
+                        name:
+                          type: string
+                          maxLength: 120
+                          minLength: 1
+                        reach:
+                          type: string
+                          maxLength: 200
+                          minLength: 1
+                      additionalProperties: false
+                      type: object
+                      minProperties: 1
+                      description: How can we reach you about a pilot? Split off at
+                        write time and stored apart from the answers.
+                    e4_consent:
+                      const: true
+                      description: I have read the statement above and agree to my
+                        answers being stored as described.
+                  additionalProperties: false
+                  type: object
+                  required:
+                  - a1_role
+                  - a2_business
+                  - e4_consent
+              additionalProperties: false
+              type: object
+              required:
+              - form_version
+              - mode
+              - source
+              - answers
+              title: FeedbackSubmission
+              description: One practitioner feedback response as POSTed to /feedback.
+                Question ids, option values and show-if rules mirror config/feedback_form.json
+                (tests/contract/test_feedback_schema.py fails on drift). A question
+                hidden by its show-if rule must be absent, not empty. response_id
+                and submitted_at are assigned by the server, never the client; e3_contact
+                is split off and stored apart from the answers.
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Submit Feedback Feedback Post
+  /feedback/summary:
+    get:
+      summary: Feedback Summary
+      description: 'Aggregates only -- the same summarize() the committed harness
+        command runs. Never reads
+
+        the contacts collection.'
+      operationId: feedback_summary_feedback_summary_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Feedback Summary Feedback Summary Get
+  /feedback/{response_id}:
+    delete:
+      summary: Delete Feedback
+      description: 'Deletion on request (docs/privacy.md): removes the answers and
+        any contact details.'
+      operationId: delete_feedback_feedback__response_id__delete
+      parameters:
+      - name: response_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Response Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Delete Feedback Feedback  Response Id  Delete
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     ApproveRequest:

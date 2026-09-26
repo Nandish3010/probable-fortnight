@@ -155,3 +155,21 @@ all invisible in stub mode, all fixed:**
   `08_copy.sql` (`taal.text_embedding_model`, `taal.{{FLASH_LITE_MODEL}}_remote`) -- these are
   BigQuery objects created once against a `CREATE CONNECTION` alongside `deploy.sh`'s dataset
   creation step; add that connection step here once the connection id is decided.
+
+## Practitioner feedback (`/feedback`)
+
+Real answers from practitioner interviews are stored in Firestore (`feedback_responses`, and
+`feedback_contacts` for optional pilot contact details), never on the container disk. `deploy.sh`:
+
+- creates the Firestore `(default)` database in `REGION` if the project has none;
+- creates the `taal-feedback-admin-token` secret from random bytes if missing, grants the
+  taal-agents runtime identity access, and mounts it as `TAAL_FEEDBACK_ADMIN_TOKEN` (best effort:
+  without it, submissions still work and only `/feedback/results` and deletion answer 503);
+- sets `TAAL_FEEDBACK_STORE=firestore` and, after taal-web is deployed, `TAAL_ALLOWED_ORIGINS` to
+  every taal-web URL so the browser form passes CORS;
+- runs **`feedback_smoke.sh`**, which fails the deploy unless `/health` reports
+  `feedback_store: firestore`, the taal-web origin passes a CORS preflight, a `source=test` probe is
+  accepted, and (when the token is readable) the same probe is found and deleted by a second request.
+
+Read the admin token for the results page with
+`gcloud secrets versions access latest --secret taal-feedback-admin-token --project <project>`.

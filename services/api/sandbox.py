@@ -21,9 +21,12 @@ VISITOR_RE = re.compile(r"^[A-Za-z0-9_-]{4,64}$")
 # guards this correctly (isinstance(store, OverlayStore)) and returns a safe no-op {"ok": False}
 # for the base tenant rather than mutating anything, which is a real, already-tested contract
 # (tests/api/test_api.py::test_two_visitors_are_isolated_and_reset_is_scoped) -- rejecting it
-# here too would just turn that documented no-op into a 400.
+# here too would just turn that documented no-op into a 400. /feedback is exempt because it never
+# touches a tenant store at all (services/feedback/store.py); its route does not even take
+# store_for today, so this entry only matters if someone later adds the dependency by habit --
+# a practitioner opening a shared link has no visitor id and must not be turned away.
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-_EXEMPT_PATHS = {"/reset"}
+_EXEMPT_PATHS = {"/reset", "/feedback"}
 
 
 def base_dir() -> Path:
