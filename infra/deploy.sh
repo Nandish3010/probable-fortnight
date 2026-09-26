@@ -98,10 +98,25 @@ steps:
 images: ['${_IMAGE}']
 EOF
 
+# Practitioner feedback: its own Firestore collections (never the container disk), and the
+# admin token for /feedback/summary and DELETE /feedback/{id} from Secret Manager, never from
+# this script or the repo. Create it once, out of band:
+#   openssl rand -hex 32 | gcloud secrets create taal-feedback-admin-token --data-file=- --project "${PROJECT}"
+#   gcloud secrets add-iam-policy-binding taal-feedback-admin-token --project "${PROJECT}" \
+#     --member "serviceAccount:taal-agents@${PROJECT}.iam.gserviceaccount.com" --role roles/secretmanager.secretAccessor
+# Without the secret the results and delete routes answer 503; submissions still work.
+FEEDBACK_SECRET_FLAG=()
+if gcloud secrets describe taal-feedback-admin-token --project "${PROJECT}" >/dev/null 2>&1; then
+  FEEDBACK_SECRET_FLAG=(--update-secrets "TAAL_FEEDBACK_ADMIN_TOKEN=taal-feedback-admin-token:latest")
+else
+  echo "   (secret taal-feedback-admin-token not found: /feedback/results will be disabled)"
+fi
+
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
-  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT}" \
+  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore" \
+  ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
   --allow-unauthenticated
 # TODO: services/api/main.py now restricts CORS to TAAL_ALLOWED_ORIGINS (default localhost
 # only) instead of reflecting any origin -- a real credentialed-CORS fix. This script deploys

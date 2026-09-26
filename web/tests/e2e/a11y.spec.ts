@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
 // viewport width -- per the WCAG-violations fix in b0565d1, re-run whenever the UI changes rather
 // than assumed to still hold. Mock mode gives every route real, stable content without needing a
 // running API.
-const ROUTES = ["/", "/desk", "/phone", "/chat", "/stylist", "/trends", "/outcomes"];
+const ROUTES = ["/", "/desk", "/phone", "/chat", "/stylist", "/trends", "/outcomes", "/feedback", "/feedback/results"];
 
 // Scan the settled page, not a frame of the fadeInUp entrance: mid-fade, text is blended toward the
 // background and axe reads a lower contrast than the page actually has (a 0.61s animation vs the

@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
+.PHONY: feedback-summary live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -68,6 +68,9 @@ docs:             ## README/docs lint: links, quick-start card first, required s
 
 status:           ## regenerate STATUS.md from checklists + test results
 	uv run python -m harness.status
+
+feedback-summary: ## real practitioner feedback -> eval/raw/feedback_summary_<date>.{json,md} (TAAL_FEEDBACK_STORE picks the store)
+	uv run python -m harness.feedback_summary
 
 eval-table:       ## regenerate eval/evaluation_table.md from eval/evaluation.md + eval/raw/ (never typed by hand)
 	uv run python -m harness.build_eval_table
