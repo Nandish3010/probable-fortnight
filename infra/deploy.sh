@@ -98,18 +98,42 @@ steps:
 images: ['${_IMAGE}']
 EOF
 
-# Practitioner feedback: its own Firestore collections (never the container disk), and the
-# admin token for /feedback/summary and DELETE /feedback/{id} from Secret Manager, never from
-# this script or the repo. Create it once, out of band:
-#   openssl rand -hex 32 | gcloud secrets create taal-feedback-admin-token --data-file=- --project "${PROJECT}"
-#   gcloud secrets add-iam-policy-binding taal-feedback-admin-token --project "${PROJECT}" \
-#     --member "serviceAccount:taal-agents@${PROJECT}.iam.gserviceaccount.com" --role roles/secretmanager.secretAccessor
-# Without the secret the results and delete routes answer 503; submissions still work.
+# Practitioner feedback: real answers go to their own Firestore collections (never the container
+# disk), so the database has to exist before taal-agents takes traffic. No-op when it already does.
+echo "-- ensuring the Firestore (default) database exists for practitioner feedback --"
+if ! gcloud firestore databases describe --database="(default)" --project "${PROJECT}" >/dev/null 2>&1; then
+  gcloud firestore databases create --database="(default)" --location="${REGION}" --type=firestore-native --project "${PROJECT}" \
+    || echo "   WARNING: could not create or see the Firestore database; feedback_smoke.sh at the end will say whether writes work"
+fi
+
+# The admin token for /feedback/summary and DELETE /feedback/{id} lives only in Secret Manager.
+# Created here once, from random bytes that never touch the log or the repo; read it back with
+#   gcloud secrets versions access latest --secret taal-feedback-admin-token --project <project>
+# Best effort: if this identity may not create or read secrets, submissions still work and only
+# the results page and deletion answer 503 until someone creates it by hand.
+FEEDBACK_SECRET="taal-feedback-admin-token"
+if ! gcloud secrets describe "${FEEDBACK_SECRET}" --project "${PROJECT}" >/dev/null 2>&1; then
+  echo "   creating secret ${FEEDBACK_SECRET}"
+  python3 -c "import secrets; print(secrets.token_hex(32), end='')" \
+    | gcloud secrets create "${FEEDBACK_SECRET}" --data-file=- --replication-policy=automatic --project "${PROJECT}" \
+    || echo "   WARNING: could not create ${FEEDBACK_SECRET}; /feedback/results will be disabled"
+fi
 FEEDBACK_SECRET_FLAG=()
-if gcloud secrets describe taal-feedback-admin-token --project "${PROJECT}" >/dev/null 2>&1; then
-  FEEDBACK_SECRET_FLAG=(--update-secrets "TAAL_FEEDBACK_ADMIN_TOKEN=taal-feedback-admin-token:latest")
+if gcloud secrets describe "${FEEDBACK_SECRET}" --project "${PROJECT}" >/dev/null 2>&1; then
+  # The runtime identity of taal-agents (the Compute default service account unless a
+  # --service-account was set on the service) must be able to read the secret at startup.
+  RUNTIME_SA="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null || true)"
+  if [ -z "${RUNTIME_SA}" ]; then
+    RUNTIME_SA="$(gcloud projects describe "${PROJECT}" --format='value(projectNumber)' || true)-compute@developer.gserviceaccount.com"
+  fi
+  if gcloud secrets add-iam-policy-binding "${FEEDBACK_SECRET}" --project "${PROJECT}" \
+      --member "serviceAccount:${RUNTIME_SA}" --role roles/secretmanager.secretAccessor >/dev/null; then
+    FEEDBACK_SECRET_FLAG=(--update-secrets "TAAL_FEEDBACK_ADMIN_TOKEN=${FEEDBACK_SECRET}:latest")
+  else
+    echo "   WARNING: could not grant ${RUNTIME_SA} access to ${FEEDBACK_SECRET}; /feedback/results will be disabled"
+  fi
 else
-  echo "   (secret taal-feedback-admin-token not found: /feedback/results will be disabled)"
+  echo "   (secret ${FEEDBACK_SECRET} not found: /feedback/results will be disabled)"
 fi
 
 gcloud run deploy taal-agents \
@@ -118,13 +142,8 @@ gcloud run deploy taal-agents \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
   --allow-unauthenticated
-# TODO: services/api/main.py now restricts CORS to TAAL_ALLOWED_ORIGINS (default localhost
-# only) instead of reflecting any origin -- a real credentialed-CORS fix. This script deploys
-# taal-agents before taal-web's URL is known, so TAAL_ALLOWED_ORIGINS is not yet set here. Add a
-# second `gcloud run services update taal-agents --update-env-vars TAAL_ALLOWED_ORIGINS=<taal-web
-# URL>` after taal-web is deployed below, the same way NEXT_PUBLIC_TAAL_API_URL is threaded
-# through in the other direction -- otherwise the deployed web app's own requests will be
-# rejected by CORS once this fix ships.
+# CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
+# (--set-env-vars above replaces every env var, so the origins must be re-applied on each deploy.)
 
 AGENTS_URL="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format='value(status.url)')"
 echo "   taal-agents URL: ${AGENTS_URL}"
@@ -146,6 +165,17 @@ gcloud run deploy taal-web \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-web" \
   --allow-unauthenticated
+
+# Let the deployed web app call the API from the browser. Cloud Run serves a service at more than
+# one URL (the hash form and the project-number form); allow every one it lists. Without this the
+# API only accepts localhost origins, and every browser POST -- the feedback form included -- fails.
+WEB_ORIGINS="$(gcloud run services describe taal-web --project "${PROJECT}" --region "${REGION}" --format=json \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); urls=json.loads(d['metadata'].get('annotations',{}).get('run.googleapis.com/urls','[]')); urls.append(d['status']['url']); print(','.join(sorted(set(u.rstrip('/') for u in urls))))")"
+echo "   taal-web origins: ${WEB_ORIGINS}"
+gcloud run services update taal-agents \
+  --project "${PROJECT}" --region "${REGION}" \
+  --update-env-vars "^@^TAAL_ALLOWED_ORIGINS=${WEB_ORIGINS}"
+
 
 echo "-- building taal-sense image and deploying the Cloud Run Job --"
 gcloud builds submit "${ROOT_DIR}" \
@@ -173,5 +203,10 @@ gcloud scheduler jobs create http taal-sense-nightly \
   --http-method POST \
   --oauth-service-account-email "taal-sense@${PROJECT}.iam.gserviceaccount.com" \
   || echo "   (scheduler job already exists; run 'gcloud scheduler jobs update' to change it)"
+
+# Last, so a failure here never skips another service's deploy; it still fails the job.
+echo "-- practitioner feedback: prove a submission is stored in Firestore (fails the deploy if not) --"
+TAAL_AGENTS_URL="${AGENTS_URL}" TAAL_WEB_ORIGIN="${WEB_ORIGINS%%,*}" GOOGLE_CLOUD_PROJECT="${PROJECT}" \
+  bash "${ROOT_DIR}/infra/feedback_smoke.sh"
 
 echo "== deploy complete. Run infra/iam.sh next if service accounts are not yet bound. =="

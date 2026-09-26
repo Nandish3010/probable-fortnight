@@ -166,3 +166,11 @@ def test_summary_and_delete_require_the_admin_token(fb, monkeypatch):
     assert client.delete(f"/feedback/{rid}", headers=auth).status_code == 404
     monkeypatch.delenv("TAAL_FEEDBACK_ADMIN_TOKEN")
     assert client.get("/feedback/summary", headers=auth).status_code == 503, "never open when unconfigured"
+
+
+def test_health_reports_the_feedback_store(fb, monkeypatch):
+    client, _ = fb
+    assert client.get("/health", headers={"X-Taal-Visitor": "v-health-fb"}).json()["feedback_store"] == "local"
+    monkeypatch.delenv("TAAL_FEEDBACK_STORE")
+    monkeypatch.setenv("K_SERVICE", "taal-agents")
+    assert client.get("/health", headers={"X-Taal-Visitor": "v-health-fb"}).json()["feedback_store"] == "firestore"
