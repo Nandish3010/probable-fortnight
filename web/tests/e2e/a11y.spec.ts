@@ -7,6 +7,14 @@ import { test, expect } from "@playwright/test";
 // running API.
 const ROUTES = ["/", "/desk", "/phone", "/chat", "/stylist", "/trends", "/outcomes"];
 
+// Scan the settled page, not a frame of the fadeInUp entrance: mid-fade, text is blended toward the
+// background and axe reads a lower contrast than the page actually has (a 0.61s animation vs the
+// 300ms wait below raced on slower CI runners). globals.css already collapses every animation
+// under prefers-reduced-motion, so emulating it gives the final colours immediately.
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
+
 for (const route of ROUTES) {
   test(`axe: ${route} (desktop) has no violations`, async ({ page }) => {
     await page.goto(route);

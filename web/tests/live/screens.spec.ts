@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { asVisitor, shot } from "./helpers";
+import { SHOTS, asVisitor, shot } from "./helpers";
 
 // Screenshot-only capture for docs/screenshots/, against the real stack (see `make live-test`).
 // The gap card's "days remaining" is computed client-side against the browser's wall clock, while
@@ -29,6 +29,14 @@ async function freezeClock(page: import("@playwright/test").Page) {
     // @ts-expect-error overriding the global on purpose, screenshot capture only
     window.Date = FixedDate;
   }, TAAL_NOW_MS);
+  // hide the Next dev-server badge so it never lands in a committed screenshot
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = "nextjs-portal { display: none !important; }";
+      document.head.appendChild(style);
+    });
+  });
 }
 
 test.describe("Screenshots: judge landing, approve, chat, reset", () => {
@@ -112,5 +120,25 @@ test.describe("Screenshots: Priya phone intake, gap card, approve, execution", (
     await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByText(/exec_play_chips_ds07_v1|Recorded|recorded/)).toBeVisible();
     await shot(page, "priya-05-execution");
+  });
+});
+
+test.describe("Screenshots: Meena's customer chat, Kannada offer", () => {
+  test.use({ viewport: { width: 760, height: 640 }, deviceScaleFactor: 2 });
+  test("capture meena-offer-kannada", async ({ page }) => {
+    await freezeClock(page);
+    const vid = "shots-meena";
+    await asVisitor(page, vid);
+    const API = process.env.TAAL_API_URL || "http://localhost:8080";
+    await page.request.post(`${API}/approve`, {
+      headers: { "X-Taal-Visitor": vid, "Content-Type": "application/json" },
+      data: { play_id: "play_chips_ds07_v1" },
+    });
+    await page.goto("/chat");
+    const log = page.getByTestId("chat-log");
+    await page.getByRole("button", { name: "Send" }).click(); // pre-filled "Any offers today?"
+    await expect(log.getByText(/ಬಳಕೆಗೆ ಉತ್ತಮ/)).toBeVisible({ timeout: 15_000 });
+    // the chat panel alone, so the deck's UX card shows the offer rather than page chrome
+    await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/meena-offer-kannada.png` });
   });
 });
