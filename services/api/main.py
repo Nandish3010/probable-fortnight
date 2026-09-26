@@ -30,6 +30,7 @@ from jobs.measure.run import run_measure
 from jobs.sense.trends import build_style_trends
 from services.feedback import intake as feedback_intake
 from services.feedback.store import build_store as build_feedback_store
+from services.feedback.store import feedback_backend
 from services.feedback.summary import summarize as summarize_feedback
 
 from .approve import approve as do_approve
@@ -273,6 +274,9 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         # web app uses this -- never the browser's local clock -- for any day-countdown math
         # (GapCard's daysUntil) so it matches the pinned dates baked into the seeded tenant.
         "server_now": t,
+        # Where practitioner feedback is written (services/feedback/store.py). infra/feedback_smoke.sh
+        # fails a deploy unless this reads "firestore": the container disk does not survive a restart.
+        "feedback_store": feedback_backend(),
     }
 
 
