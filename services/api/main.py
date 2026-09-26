@@ -6,6 +6,7 @@ rerun, chat, capture, execution. Recorded fallbacks carry `source: recorded`.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import threading
@@ -27,6 +28,9 @@ from agents.planner.run import run_planner_async
 from agents.stylist.chat import run_stylist_chat_async
 from jobs.measure.run import run_measure
 from jobs.sense.trends import build_style_trends
+from services.feedback import intake as feedback_intake
+from services.feedback.store import build_store as build_feedback_store
+from services.feedback.summary import summarize as summarize_feedback
 
 from .approve import approve as do_approve
 from .sandbox import store_for, visitor_id
@@ -191,8 +195,10 @@ _RATE_LIMITS: dict[str, list[float]] = defaultdict(list)
 _RATE_LIMIT_LOCK = threading.Lock()
 
 
-def _rate_limit(request: Request, bucket: str, max_calls: int, window_s: float) -> None:
-    key = f"{bucket}:{visitor_id(request) or request.client.host if request.client else 'unknown'}"
+def _rate_limit(request: Request, bucket: str, max_calls: int, window_s: float, who: str | None = None) -> None:
+    """`who` overrides the per-visitor key, e.g. a fixed "all" for a process-wide cap that a
+    client cannot dodge by rotating its X-Taal-Visitor header."""
+    key = f"{bucket}:{who or visitor_id(request) or (request.client.host if request.client else 'unknown')}"
     now = time.time()
     with _RATE_LIMIT_LOCK:
         calls = _RATE_LIMITS[key]
@@ -573,3 +579,85 @@ def sense_last(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     if not runs:
         raise HTTPException(404, "no sense run yet")
     return runs[-1]
+
+
+# ----------------------------------------------------------------------------- practitioner feedback
+#
+# The one real dataset in this service (services/feedback/__init__.py). None of these routes take
+# store_for: feedback never reads or writes the demo tenant or a visitor sandbox, so "Reset demo
+# data" cannot reach it. POST /feedback is public and unauthenticated (practitioners open a shared
+# link on their phones); reading aggregates and deleting a response need the admin token, which
+# lives in Secret Manager and reaches the container only as TAAL_FEEDBACK_ADMIN_TOKEN.
+
+def _feedback_openapi_body() -> dict[str, Any]:
+    body = {k: v for k, v in feedback_intake.schema().items() if k not in ("$schema", "$id", "$defs")}
+    return {"requestBody": {"required": True, "content": {"application/json": {"schema": body}}}}
+
+
+def _require_feedback_admin(request: Request) -> None:
+    _rate_limit(request, "feedback_admin", max_calls=30, window_s=900)
+    token = os.environ.get("TAAL_FEEDBACK_ADMIN_TOKEN")
+    if not token:
+        raise HTTPException(503, "feedback results are not enabled on this server (TAAL_FEEDBACK_ADMIN_TOKEN is unset)")
+    auth = request.headers.get("authorization") or ""
+    given = auth[7:].strip() if auth[:7].lower() == "bearer " else ""
+    if not given or not hmac.compare_digest(given.encode(), token.encode()):
+        raise HTTPException(401, "a valid admin token is required", headers={"WWW-Authenticate": "Bearer"})
+
+
+@app.get("/feedback/form")
+def feedback_form() -> dict[str, Any]:
+    """The questionnaire (config/feedback_form.json), so wording changes need no web rebuild."""
+    return feedback_intake.form()
+
+
+@app.post("/feedback", openapi_extra=_feedback_openapi_body())
+async def submit_feedback(request: Request) -> dict[str, Any]:
+    # Per visitor, then process-wide: the per-visitor key is a client-chosen header, so the second
+    # cap is what actually bounds a scripted flood. In-memory and per Cloud Run instance, like the
+    # other limits in this file.
+    _rate_limit(request, "feedback", max_calls=20, window_s=3600)
+    _rate_limit(request, "feedback", max_calls=300, window_s=3600, who="all")
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > feedback_intake.MAX_BODY_BYTES:
+        raise HTTPException(413, f"request body over {feedback_intake.MAX_BODY_BYTES} bytes")
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw += chunk
+        if len(raw) > feedback_intake.MAX_BODY_BYTES:
+            raise HTTPException(413, f"request body over {feedback_intake.MAX_BODY_BYTES} bytes")
+    try:
+        doc = feedback_intake.parse(bytes(raw))
+    except feedback_intake.Rejected as e:
+        raise HTTPException(e.status, e.detail) from e
+    response_id = feedback_intake.new_response_id()
+    if doc is None:
+        # Honeypot filled: answer exactly as for a real submission and store nothing.
+        return {"ok": True, "response_id": response_id}
+    # Real wall clock, never the TAAL_NOW pin the demo tenant runs under.
+    record, contact = feedback_intake.to_record(doc, response_id, datetime.now(UTC))
+    try:
+        build_feedback_store().add(record, contact)
+    except Exception as e:
+        raise HTTPException(503, "your response could not be saved; please try again in a minute") from e
+    return {"ok": True, "response_id": response_id}
+
+
+@app.get("/feedback/summary")
+def feedback_summary(request: Request) -> dict[str, Any]:
+    """Aggregates only -- the same summarize() the committed harness command runs. Never reads
+    the contacts collection."""
+    _require_feedback_admin(request)
+    now = datetime.now(UTC)
+    return summarize_feedback(build_feedback_store().responses(), feedback_intake.form(), _iso(now))
+
+
+@app.delete("/feedback/{response_id}")
+def delete_feedback(response_id: str, request: Request) -> dict[str, Any]:
+    """Deletion on request (docs/privacy.md): removes the answers and any contact details."""
+    _require_feedback_admin(request)
+    if not feedback_intake.RESPONSE_ID_RE.match(response_id):
+        raise HTTPException(422, "response_id is 32 lowercase hex characters")
+    if not build_feedback_store().delete(response_id):
+        raise HTTPException(404, "no response with that id")
+    return {"deleted": True, "response_id": response_id}

@@ -541,3 +541,127 @@ export interface PortfolioSummary {
     expected_waste_avoided_inr: number;
   };
 }
+
+// ---------- practitioner feedback (docs/schemas/feedback_response.schema.json) ----------
+// The questionnaire itself is data (config/feedback_form.json, served at GET /feedback/form);
+// these types describe its shape and the submission. tests/contract/test_feedback_schema.py
+// fails if the field names below drift from the schema.
+
+export interface FeedbackOption {
+  value: string;
+  label: string;
+}
+
+export interface FeedbackShowIf {
+  question: string;
+  in: string[];
+}
+
+export interface FeedbackQuestion {
+  id: string;
+  type: "single" | "multi" | "scale" | "text" | "contact" | "consent";
+  label: string;
+  required?: boolean;
+  hint?: string;
+  preamble?: string;
+  options?: FeedbackOption[];
+  other_id?: string;
+  max_select?: number;
+  max_length?: number;
+  show_if?: FeedbackShowIf;
+  scale?: { min: number; max: number; min_label: string; max_label: string };
+  fields?: { id: "name" | "reach"; label: string; max_length: number; autocomplete: string }[];
+}
+
+export interface FeedbackSection {
+  id: string;
+  title: string;
+  intro?: string;
+  show_description?: boolean;
+  questions: FeedbackQuestion[];
+}
+
+export interface FeedbackForm {
+  form_version: string;
+  title: string;
+  intro: string;
+  estimated_minutes: number;
+  taal_description: string[];
+  landing_url: string;
+  consent_statement: string;
+  thank_you: string;
+  sections: FeedbackSection[];
+}
+
+export interface FeedbackContact {
+  name?: string;
+  reach?: string;
+}
+
+export interface FeedbackAnswers {
+  a1_role: string;
+  a1_role_other?: string;
+  a2_business: string;
+  a2_business_other?: string;
+  a3_scale?: string;
+  a4_online_food?: string;
+  b1_frequency?: string;
+  b2_writeoff_share?: string;
+  b3_writeoff_value?: string;
+  b4_current_actions?: string[];
+  b5_fssai?: string;
+  b6_measurement?: string;
+  c0_seen_demo?: string;
+  c1_usefulness?: number;
+  c2_most_valuable?: string[];
+  c3_blockers?: string[];
+  c3_blockers_other?: string;
+  c4_pay_model?: string;
+  c5_pay_amount?: string;
+  d1_biggest_pain?: string;
+  d2_suggestion?: string;
+  e1_pilot?: string;
+  e2_quote_ok?: string;
+  e3_contact?: FeedbackContact;
+  e4_consent: true;
+}
+
+export interface FeedbackSubmission {
+  form_version: string;
+  mode: "self" | "interview";
+  source: "real" | "test";
+  website?: string;
+  answers: FeedbackAnswers;
+}
+
+export interface FeedbackSubmitResponse {
+  ok: boolean;
+  response_id: string;
+}
+
+export type FeedbackModeSplit = { total: number; self: number; interview: number };
+export type FeedbackPctSplit = { total: number | null; self: number | null; interview: number | null };
+
+export interface FeedbackQuestionSummary {
+  id: string;
+  type: FeedbackQuestion["type"];
+  label: string;
+  shown: FeedbackModeSplit;
+  answered: FeedbackModeSplit;
+  pct_base: string;
+  options?: { value: string | number; label: string; count: FeedbackModeSplit; pct: FeedbackPctSplit }[];
+  median?: number | null;
+}
+
+export interface FeedbackSummary {
+  generated_at: string;
+  current_form_version: string;
+  min_n_for_percentages: number;
+  responses: FeedbackModeSplit;
+  excluded_non_real: number;
+  form_versions: Record<string, FeedbackModeSplit>;
+  questions: Record<string, FeedbackQuestionSummary>;
+  crosstabs: Record<string, { value: string; label: string; n: FeedbackModeSplit; questions: Record<string, FeedbackQuestionSummary> }[]>;
+  quotes: { question: string; text: string; role: string; business: string; mode: "self" | "interview" }[];
+  themes: null;
+}
