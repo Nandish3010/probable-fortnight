@@ -10,12 +10,10 @@ from google.cloud import bigquery
 
 from agents.gate.bigquery_store import BigQueryStore
 
-
-class _FakeField:
-    def __init__(self, name, field_type, mode="NULLABLE"):
-        self.name = name
-        self.field_type = field_type
-        self.mode = mode
+# write() now passes a fetched schema straight into a real bigquery.LoadJobConfig(schema=...),
+# which validates its contents -- a plain shim object no longer satisfies it, so tests use the
+# real SchemaField class directly instead of a custom fake.
+_FakeField = bigquery.SchemaField
 
 
 class _FakeTable:
@@ -42,6 +40,7 @@ class _FakeClient:
         self.query_params: list[list] = []
         self.loaded_rows: list[list[dict]] = []
         self.loaded_tables: list[str] = []
+        self.load_job_configs: list = []
         self.inserted_rows: list[list[dict]] = []
         self.dropped_tables: list[str] = []
 
@@ -60,6 +59,7 @@ class _FakeClient:
             raise RuntimeError("simulated load failure")
         self.loaded_rows.append(list(rows))
         self.loaded_tables.append(table_ref)
+        self.load_job_configs.append(job_config)
         return _FakeJob()
 
     def insert_rows_json(self, table_ref, rows):
@@ -205,6 +205,20 @@ def test_write_insert_uses_named_columns_not_positional_star(tmp_path):
     assert "INSERT INTO" in script and "SELECT" in script
     assert "tenant_id, gap_id, deadline_date" in script, "column list must be explicit and name-matched, never a positional SELECT *"
     assert "SELECT *" not in script
+
+
+def test_write_load_passes_explicit_schema_not_left_to_inference(tmp_path):
+    # Found live (2026-09-27): load_table_from_json with WRITE_TRUNCATE into an EXISTING table,
+    # given no explicit schema=, infers a schema from the batch of rows instead of respecting the
+    # table's declared one -- silently reordering a nested RECORD's subfields and dropping any
+    # subfield absent from every row in the batch. The fix is to always pass the real, unmodified
+    # schema fetched from get_table() to the load's own job_config.
+    schema = [_FakeField("tenant_id", "STRING"), _FakeField("gap_id", "STRING")]
+    client = _FakeClient(schema=schema)
+    s = _store(tmp_path, client)
+    s.write("gaps", [{"gap_id": "g1", "tenant_id": "kutumb-mart"}])
+    assert len(client.load_job_configs) == 1
+    assert client.load_job_configs[0].schema == schema
 
 
 def test_write_load_failure_leaves_existing_rows_untouched(tmp_path):

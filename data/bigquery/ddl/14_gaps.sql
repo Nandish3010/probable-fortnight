@@ -24,7 +24,26 @@ CREATE TABLE IF NOT EXISTS `taal.gaps` (
     counterpart_gap_id STRING,  -- rebalance gaps only (jobs/sense/gaps.py); missing here until 2026-09-27,
                                 -- found live the first time a rebalance gap was ever written to real BigQuery
     requests_count INT64,      -- real out_of_stock chat requests corroborating this gap (stockout_risk, unmet_demand)
-    distinct_customers INT64
+    distinct_customers INT64,
+    -- The fields below are real evidence keys jobs/sense/gaps.py has always emitted for other gap
+    -- types (online_sellby_breach/expiry_writeoff, stockout_risk, slow_mover, unmet_demand,
+    -- assortment_gap) that this STRUCT never declared -- found live 2026-09-27, the first time a
+    -- write of each of those gap types was ever attempted against real BigQuery. All additive,
+    -- nullable fields; no existing field changed.
+    expiry_date STRING,             -- online_sellby_breach / expiry_writeoff
+    online_sellby_date STRING,      -- online_sellby_breach / expiry_writeoff
+    sellby_passed BOOL,             -- online_sellby_breach / expiry_writeoff
+    sku_name STRING,                -- most gap types
+    category STRING,                -- most gap types
+    node_type STRING,               -- most gap types
+    lead_time_days INT64,           -- stockout_risk
+    velocity_per_day FLOAT64,       -- slow_mover
+    category_median_velocity FLOAT64, -- slow_mover
+    slow_mover_days INT64,          -- slow_mover
+    requesting_customer_ids ARRAY<STRING>, -- assortment_gap
+    supply_node_id STRING,          -- assortment_gap
+    garment_type STRING,            -- assortment_gap
+    colour_family STRING            -- assortment_gap
   >,
   created_at DATE
 )

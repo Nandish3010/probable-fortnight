@@ -38,6 +38,63 @@ for f in "${ROOT_DIR}"/data/bigquery/ddl/*.sql; do
   bq query --project_id="${PROJECT}" --use_legacy_sql=false < "${f}"
 done
 
+# `CREATE TABLE IF NOT EXISTS` above never alters an existing table's schema -- an already-live
+# `taal.gaps` keeps whatever `evidence` fields it had the day it was first created, however far
+# 14_gaps.sql's own STRUCT has moved on since. Found live 2026-09-27: jobs/sense/gaps.py emits
+# evidence keys for online_sellby_breach/expiry_writeoff, stockout_risk, slow_mover, unmet_demand
+# and assortment_gap gaps that 14_gaps.sql's STRUCT had never declared, so writing any of those
+# gap types to BigQuery failed the moment it was first tried for real. This is the additive
+# migration step for exactly that: it never drops, renames or retypes a field, only adds ones
+# that are missing. CI has `bq` but no Python packages, so the patch is stdlib-only.
+echo "-- migrating taal.gaps.evidence (additive nested fields only) --"
+bq show --schema --format=prettyjson "${PROJECT}:${DATASET}.gaps" > /tmp/gaps_schema.json
+python3 - "${PROJECT}" "${DATASET}" <<'PYEOF'
+import json, subprocess, sys
+
+project, dataset = sys.argv[1], sys.argv[2]
+# Keep this in sync with data/bigquery/ddl/14_gaps.sql's evidence STRUCT -- any field added there
+# for a new gap-evidence key must be added here too, or a fresh `CREATE TABLE IF NOT EXISTS` and
+# this migration step will disagree with each other on what "the schema" is.
+REQUIRED = [
+    ("expiry_date", "STRING", "NULLABLE"),
+    ("online_sellby_date", "STRING", "NULLABLE"),
+    ("sellby_passed", "BOOLEAN", "NULLABLE"),
+    ("sku_name", "STRING", "NULLABLE"),
+    ("category", "STRING", "NULLABLE"),
+    ("node_type", "STRING", "NULLABLE"),
+    ("lead_time_days", "INTEGER", "NULLABLE"),
+    ("velocity_per_day", "FLOAT", "NULLABLE"),
+    ("category_median_velocity", "FLOAT", "NULLABLE"),
+    ("slow_mover_days", "INTEGER", "NULLABLE"),
+    ("requesting_customer_ids", "STRING", "REPEATED"),
+    ("supply_node_id", "STRING", "NULLABLE"),
+    ("garment_type", "STRING", "NULLABLE"),
+    ("colour_family", "STRING", "NULLABLE"),
+    ("counterpart_gap_id", "STRING", "NULLABLE"),
+]
+
+with open("/tmp/gaps_schema.json") as f:
+    schema = json.load(f)
+
+evidence = next(f for f in schema if f["name"] == "evidence")
+existing = {f["name"] for f in evidence["fields"]}
+added = []
+for name, field_type, mode in REQUIRED:
+    if name not in existing:
+        entry = {"name": name, "type": field_type, "mode": mode}
+        evidence["fields"].append(entry)
+        added.append(name)
+
+if added:
+    print(f"   adding evidence fields: {added}")
+    with open("/tmp/gaps_schema_patched.json", "w") as f:
+        json.dump(schema, f, indent=2)
+    subprocess.run(["bq", "update", f"{project}:{dataset}.gaps", "/tmp/gaps_schema_patched.json"], check=True)
+    print("   taal.gaps schema updated")
+else:
+    print("   taal.gaps.evidence already has every required field; no-op")
+PYEOF
+
 # The model id lives only in config/models.toml -- resolved here with Python's stdlib TOML
 # parser (3.11+) so it is never hardcoded into a script or a .sql file. Copy generation uses
 # `ids.flash`, not `ids.flash_lite`: flash_lite 404s in asia-south1 (verified 20 Sep 2026; see
