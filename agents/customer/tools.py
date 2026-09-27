@@ -34,8 +34,20 @@ def _resolve_node(ctx, node_id: str | None) -> str:
     it, so a live call can fabricate a plausible-looking but nonexistent id instead."""
     if node_id and ctx.store.find("nodes", node_id=node_id):
         return node_id
-    cust = ctx.store.find("customers", customer_id=ctx.customer_id)
-    return cust[-1]["home_node_id"] if cust else "DS-01"
+    cust = _customer_profile(ctx, ctx.customer_id)
+    return cust["home_node_id"] if cust else "DS-01"
+
+
+def _customer_profile(ctx, customer_id: str) -> dict[str, Any] | None:
+    """Home node, language, display name. From the serving cache when it is safe for this
+    visitor (ServingReads: no overlay rows in `customers`, doc as_of/snapshot current), else
+    the visitor's own store."""
+    if ctx.cache is not None:
+        cached = ctx.cache.customer(customer_id)
+        if cached is not None:
+            return cached
+    rows = ctx.store.find("customers", customer_id=customer_id)
+    return rows[-1] if rows else None
 
 
 def _arms(ctx, customer_id: str) -> dict[str, str]:
@@ -52,10 +64,7 @@ def _play(ctx, play_id: str) -> dict[str, Any] | None:
 
 
 def _consent_ok(ctx, customer_id: str) -> bool:
-    if ctx.cache is not None:
-        cached = ctx.cache.get_consent(customer_id, ctx.channel)
-        if cached is not None:
-            return cached
+    """Always the visitor's own store, never the serving cache: STOP changes it per visitor."""
     rows = [r for r in ctx.store.read("consent") if r["customer_id"] == customer_id and r["purpose"] == "marketing" and r["channel"] == ctx.channel]
     return bool(rows) and not rows[-1].get("withdrawn_at")
 
@@ -96,15 +105,15 @@ def _customer_memory(ctx, customer_id: str, limit: int = 5) -> list[dict[str, An
 def get_customer_context(customer_id: str) -> dict:
     """Home node, language, pending offers (treated arm only), arms per play and marketing consent."""
     ctx = current()
-    cust = ctx.store.find("customers", customer_id=customer_id)
-    if not cust:
+    c = _customer_profile(ctx, customer_id)
+    if not c:
         return {"customer_id": customer_id, "home_node_id": "DS-01", "language": "en", "pending_offers": [], "arms": {}, "consent_marketing": False}
-    c = cust[-1]
     arms = _arms(ctx, customer_id)
     consent = _consent_ok(ctx, customer_id)
     offers = []
     if consent:
-        raw_offers = ctx.cache.get_offers(customer_id) if ctx.cache is not None else [o for o in ctx.store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at")]
+        # Always the visitor's own store: Approve writes offers into their sandbox only.
+        raw_offers = [o for o in ctx.store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at")]
         for o in raw_offers:
             play = _play(ctx, o["play_id"])
             if not play or play.get("status") not in ("approved", "running"):
@@ -146,11 +155,11 @@ def _stock_info(ctx, sku: str, node_id: str) -> dict:
     """Pure lookup, no side effects. Shared by get_stock (which records the demand signal on top),
     find_substitutes and _customer_memory, so checking on a customer's behalf internally never
     itself counts as a customer asking. Tries the Firestore serving cache first (a pre-aggregated
-    doc, not a per-turn scan of every inventory_batches row); a cache miss (doc absent, or no
-    cache configured) falls through to the store scan below, so a customer's SKU never silently
-    reads as out-of-stock just because the nightly mirror hasn't caught up yet."""
+    doc, not a per-turn scan of every inventory_batches row) when ServingReads says it is safe for
+    this visitor; anything else (no cache, an overlaid inventory_batches/order_lines, a doc from
+    another date or snapshot, a miss) falls through to the store scan below."""
     if ctx.cache is not None:
-        cached = ctx.cache.get_stock(sku, node_id)
+        cached = ctx.cache.stock(sku, node_id)
         if cached is not None:
             return cached
     qty, sellby, expiry, batch = 0, None, None, None

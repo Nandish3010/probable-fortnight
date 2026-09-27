@@ -31,11 +31,16 @@ container restart, which is the entire point of this item).
 """
 from __future__ import annotations
 
+import contextvars
+import hashlib
 import os
 import re
+import time
 from typing import Any
 
 from google.adk.sessions import BaseSessionService
+
+_MAX_SAFE_LEN = 63
 
 
 def vertex_safe_id(raw_id: str) -> str:
@@ -47,7 +52,26 @@ def vertex_safe_id(raw_id: str) -> str:
     s = re.sub(r"-+", "-", s).strip("-")
     if not s:
         raise ValueError(f"id {raw_id!r} has no valid characters left for a Vertex session/user id")
+    # Visitor-scoped ids (`<visitor>:<customer>:web`, visitor up to 64 chars) can run past 63
+    # characters. Vertex's documented maximum was not verified live; 63 is the conservative
+    # resource-name bound, so anything longer keeps a readable prefix plus a hash of the whole
+    # raw id instead of being truncated into a collision.
+    if len(s) > _MAX_SAFE_LEN:
+        digest = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:12]
+        s = f"{s[:_MAX_SAFE_LEN - 13].rstrip('-')}-{digest}"
     return s
+
+
+# Per-turn accounting of time spent in session-service calls (create/get/append_event), so a chat
+# turn's latency can be split into "session I/O" vs "everything else (mostly the model)". The
+# runtime sets a fresh list per turn; ADK's child tasks copy the context, so they append to it.
+SESSION_IO_MS: contextvars.ContextVar[list[float] | None] = contextvars.ContextVar("taal_session_io_ms", default=None)
+
+
+def _account(t0: float) -> None:
+    acc = SESSION_IO_MS.get()
+    if acc is not None:
+        acc.append((time.perf_counter() - t0) * 1000.0)
 
 
 def _retranslated(session: Any, user_id: str, session_id: str) -> Any:
@@ -71,11 +95,15 @@ class VertexSafeSessionService(BaseSessionService):
         self._inner = inner
 
     async def create_session(self, *, app_name: str, user_id: str, state: dict | None = None, session_id: str | None = None) -> Any:
+        t0 = time.perf_counter()
         session = await self._inner.create_session(app_name=app_name, user_id=vertex_safe_id(user_id), state=state, session_id=(vertex_safe_id(session_id) if session_id else None))
+        _account(t0)
         return _retranslated(session, user_id, session_id or session.id)
 
     async def get_session(self, *, app_name: str, user_id: str, session_id: str, config: Any = None) -> Any:
+        t0 = time.perf_counter()
         session = await self._inner.get_session(app_name=app_name, user_id=vertex_safe_id(user_id), session_id=vertex_safe_id(session_id), config=config)
+        _account(t0)
         return _retranslated(session, user_id, session_id)
 
     async def delete_session(self, *, app_name: str, user_id: str, session_id: str) -> None:
@@ -98,15 +126,26 @@ class VertexSafeSessionService(BaseSessionService):
 
         safe_session = copy.copy(session)
         safe_session.user_id, safe_session.id = vertex_safe_id(session.user_id), vertex_safe_id(session.id)
-        return await self._inner.append_event(safe_session, event)
+        t0 = time.perf_counter()
+        try:
+            return await self._inner.append_event(safe_session, event)
+        finally:
+            _account(t0)
 
 
-def build_session_service(agent_engine_id: str | None = None, project: str | None = None, location: str | None = None) -> Any:
+def build_session_service(agent_engine_id: str | None = None, project: str | None = None, location: str | None = None, scope: str = "chat") -> Any:
     """The one entry point agents/chat_runtime.py and agents/planner/run.py call. Returns None
     (meaning: use the caller's existing InMemorySessionService-backed InMemoryRunner, unchanged)
-    unless TAAL_SESSION_BACKEND=vertex is explicitly set -- so importing this module and calling
-    this function has zero effect on any existing deployment until that new env var is set."""
-    if os.environ.get("TAAL_SESSION_BACKEND") != "vertex":
+    unless the flag for `scope` is explicitly set to "vertex" -- so importing this module and
+    calling this function has zero effect on any existing deployment until that env var is set.
+
+    `scope="chat"` reads TAAL_SESSION_BACKEND. `scope="planner"` reads its own
+    TAAL_PLANNER_SESSION_BACKEND, so turning Vertex sessions on for chat does not also move the
+    planner onto them: a planner session is one-shot (nothing to resume after a restart), and its
+    session id is `make_run_id(gap, policy, salt)` -- deterministic, so two visitors planning the
+    same gap under the same policy would ask one shared Agent Engine for the same session id."""
+    flag = "TAAL_PLANNER_SESSION_BACKEND" if scope == "planner" else "TAAL_SESSION_BACKEND"
+    if os.environ.get(flag) != "vertex":
         return None
     from google.adk.sessions import VertexAiSessionService
 

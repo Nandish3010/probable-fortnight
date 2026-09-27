@@ -35,6 +35,7 @@ from services.feedback.summary import exclusion_config as feedback_exclusion_con
 from services.feedback.summary import summarize as summarize_feedback
 
 from .approve import approve as do_approve
+from .health_probes import firestore_check, sessions_check
 from .sandbox import base_dir, store_for, visitor_id
 
 VERSION = "0.1.0"
@@ -254,16 +255,14 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         # bigquery.Client call reachable from a running server is generate_copy_bigquery
         # (jobs/sense/copy.py), fired from POST /approve (vertex backend only) for offer copy.
         "bigquery": {"ok": bool(runs), "checked_at": t, "detail": "local store is the system of record here; the one real BigQuery call is AI.GENERATE_TABLE for copy generation on POST /approve (vertex backend), not checked by this endpoint"},
-        # Firestore: a real serving-cache module exists (agents/gate/firestore_cache.py, verified
-        # against a real Firestore Native database) but is only used when TAAL_SERVING_CACHE=firestore
-        # is set -- unset by default, so this process never queries it in the deployed service today.
-        "firestore": {"ok": (store.root / "manifest.json").exists() or isinstance(store, OverlayStore), "checked_at": t, "detail": "local store is the system of record here; Firestore is provisioned and a serving cache module exists, but this process queries it only when TAAL_SERVING_CACHE=firestore is set (unset in this deployment)"},
+        # Firestore serving cache (agents/gate/firestore_cache.py): flag off -> no probe, honest
+        # "off" wording; flag on -> a 1 s probe of the mirror's serving_meta doc (cached 60 s),
+        # whether that mirror matches this image's snapshot and clock, and read/hit counters.
+        "firestore": {"checked_at": t, **firestore_check(store.base.root if isinstance(store, OverlayStore) else store.root, _now().date(), (store.root / "manifest.json").exists() or isinstance(store, OverlayStore))},
         "vertex": {"ok": vertex_check["ok"], "checked_at": t, "detail": vertex_check["detail"]},
-        # A real VertexAiSessionService wrapper exists (agents/vertex_sessions.py, verified against
-        # a real Agent Engine instance) but agents/customer/chat_runtime.py and
-        # agents/planner/run.py only use it when TAAL_SESSION_BACKEND=vertex is set; unset, both
-        # fall back to InMemoryRunner's process-local InMemorySessionService, as below.
-        "sessions": {"ok": True, "checked_at": t, "detail": f"session backend: {'VertexAiSessionService (persisted across restarts)' if os.environ.get('TAAL_SESSION_BACKEND') == 'vertex' else 'InMemorySessionService (process-local; not persisted across restarts)'}"},
+        # Session backend (agents/vertex_sessions.py): flag off -> in-memory, no probe; flag on ->
+        # a 1 s Agent Engine session lookup (cached 60 s).
+        "sessions": {"checked_at": t, **sessions_check()},
     }
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
     return {
@@ -414,11 +413,11 @@ async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(s
     # by both specialists since they're the same endpoint.
     _rate_limit(request, "chat", max_calls=60, window_s=900)
     if req.specialist == "stylist":
-        envelopes = await run_stylist_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), image_data_url=req.image_data_url, photo_ref=req.photo_ref, image_kind=req.image_kind)
+        envelopes = await run_stylist_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), image_data_url=req.image_data_url, photo_ref=req.photo_ref, image_kind=req.image_kind, visitor_id=visitor_id(request))
     else:
         if req.image_data_url or req.photo_ref:
             raise HTTPException(422, "photo input is a stylist feature; set specialist=stylist")
-        envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()))
+        envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), visitor_id=visitor_id(request))
     if "application/json" in (request.headers.get("accept") or ""):
         from fastapi.responses import JSONResponse
 
@@ -432,15 +431,21 @@ async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(s
 
 
 @app.post("/reset")
-def reset(request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+async def reset(request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     vid = visitor_id(request)
     if isinstance(store, OverlayStore):
-        store.reset()
+        from agents.chat_runtime import forget_persisted_sessions
+        from agents.customer.chat import APP as CUSTOMER_APP
         from agents.customer.chat import reset_sessions
+        from agents.stylist.chat import APP as STYLIST_APP
         from agents.stylist.chat import reset_sessions as reset_stylist_sessions
 
-        reset_sessions()
-        reset_stylist_sessions()
+        # Before store.reset(): the visitor's conversations rows name the persisted (Vertex)
+        # sessions to delete. Only this visitor's runners are dropped, not every visitor's.
+        await forget_persisted_sessions(store, vid, [CUSTOMER_APP, STYLIST_APP])
+        store.reset()
+        reset_sessions(store)
+        reset_stylist_sessions(store)
         return {"ok": True, "namespace": vid, "restored_from": "base tenant snapshot"}
     return {"ok": False, "namespace": "base", "restored_from": None, "detail": "no visitor id: the base tenant is never reset through the API"}
 

@@ -125,7 +125,7 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
     token = set_context(ctx)
     try:
         agent = build_planner(tenant, ctx.policy_text, ctx.policy_version, run_id, ctx.as_of.isoformat(), backend)
-        session_service = build_session_service()
+        session_service = build_session_service(scope="planner")
         if session_service is None:
             runner = InMemoryRunner(agent=agent, app_name=APP)
         else:

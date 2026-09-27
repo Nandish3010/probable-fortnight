@@ -1,8 +1,15 @@
 """Run one customer turn and return chat envelopes (docs/schemas/chat_envelope.schema.json).
 
-Sessions: one ADK session per `customer_id:web`, kept in an InMemorySessionService per store root
-(VertexAiSessionService in production). Messages are persisted to conversations / messages by the
-shared runtime in agents/chat_runtime.py.
+Sessions: one ADK session per visitor and customer -- session id `<visitor>:<customer_id>:web`,
+user id `<visitor>:<customer_id>` (agents/chat_runtime.py::adk_ids), where the visitor is the
+X-Taal-Visitor sandbox id. The API-facing session id stays `customer_id:web`. Backend: an
+InMemorySessionService per visitor sandbox (lost on restart) unless TAAL_SESSION_BACKEND=vertex,
+which keeps sessions on a Vertex AI Agent Engine across restarts; that flag is off in the deployed
+service until its live acceptance run is committed (infra/deploy.sh, ENABLE_VERTEX_SESSIONS).
+Stock and customer-profile reads may come from the Firestore serving cache
+(TAAL_SERVING_CACHE=firestore, also off in the deployed service) only when safe for this visitor;
+offers and consent always come from the visitor's own store. Messages are persisted to
+conversations / messages by the shared runtime in agents/chat_runtime.py.
 """
 from __future__ import annotations
 
@@ -25,7 +32,7 @@ _parse_envelope = parse_envelope
 _clamp = clamp
 
 
-async def run_chat_async(store: LocalStore, session_id: str, text: str, customer_id: str | None = None, backend: str | None = None, now_iso: str | None = None) -> list[dict[str, Any]]:
+async def run_chat_async(store: LocalStore, session_id: str, text: str, customer_id: str | None = None, backend: str | None = None, now_iso: str | None = None, visitor_id: str | None = None) -> list[dict[str, Any]]:
     customer_id = customer_id or session_id.split(":", 1)[0]
     channel = "web_chat" if session_id.endswith(":web") else "whatsapp"
     now = now_iso or _now()
@@ -63,7 +70,7 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
             customer_context = get_customer_context(customer_id)
             turn_text = f"{text}\n\n(known: {context_summary(customer_context)})"
             extra_tool_calls = [{"name": "get_customer_context", "args": {"customer_id": customer_id}}]
-        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls)
+        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id)
         return [envelope]
     finally:
         reset_context(token)
@@ -74,8 +81,9 @@ def run_chat(data_dir: str | Path | LocalStore, session_id: str, text: str, cust
     return asyncio.run(run_chat_async(store, session_id, text, customer_id, **kw))
 
 
-def reset_sessions() -> None:
-    RUNTIME.reset()
+def reset_sessions(store: LocalStore | None = None) -> None:
+    """Drop every visitor's runners, or only `store`'s."""
+    RUNTIME.reset(store)
 
 
 __all__ = ["APP", "ENVELOPE_SCHEMA", "RUNTIME", "reset_sessions", "run_chat", "run_chat_async"]
