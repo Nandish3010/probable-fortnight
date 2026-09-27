@@ -1,8 +1,14 @@
 # Staged pallet photos
 
 Seven preloaded pallet photos back the phone view's "use a sample pallet photo" choice (an eighth,
-`pallet_07.jpg`, is committed but not wired into the picker -- see below). `pallet_01`-`03.jpg` are
-real staged photos, hand-checked; their `pallet_0N.json` rows are recorded from a Vertex run. In
+`pallet_07.jpg`, is committed but not wired into the picker -- see below). `pallet_01`-`03.jpg` were
+previously described here as "real staged photos"; that is not supported by the files. They are
+1024x1024 with no camera EXIF, and their printed pack text is garbled in the way image generators
+garble text ("DARJESIIG TEA", "1DBG", "22 MPR 2027" on pallet_02; "20lps", "Bartene Gllna" on
+pallet_01; "25G6" on pallet_03), so treat them as AI-generated renders, not photographs. Their
+`pallet_0N.json` rows are recorded from a Vertex run. No image in this directory is a real
+phone-camera photo; the real-photo evaluation lives under `eval/raw/vision_real_*/`
+(`harness/vision_real_prep.py`, `harness/vision_real_eval.py`) once the photos exist. In
 `vertex` mode the same photo refs are sent to Gemini and the JSON files are the accuracy baseline
 (`harness/checklists/vision_intake.md`: 30 staged photos, >= 90% date read accuracy at confidence
 >= 0.7).
