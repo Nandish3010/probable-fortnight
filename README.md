@@ -22,6 +22,11 @@ Captured with Playwright against the real local stack (`make api` + `make web`, 
 `TAAL_MODEL_BACKEND=stub`) -- real seeded data, not mocks. `web/tests/live/screens.spec.ts`
 reproduces them.
 
+No image in these screenshots, and none of the phone view's sample pallet photos
+(`web/public/samples/pallet_0N.jpg`), is a real camera photo: all eight samples are AI-generated
+renders (`fixtures/photos/README.md` says how that was determined). Vision accuracy on real phone
+photos has not been measured yet.
+
 | | |
 |---|---|
 | ![Judge mode landing page](docs/screenshots/judge-mode-landing.png) Judge mode landing | ![The 60-second beat's gap card, approve pending](docs/screenshots/60-second-beat-gap-card.png) 60-second beat: gap card |
