@@ -1,0 +1,55 @@
+{
+  "step1_drift": {
+    "method": "Applied every data/bigquery/ddl/*.sql file (34 files, taal. rewritten to taal_staging.) into a fresh taal_staging dataset, then diffed INFORMATION_SCHEMA.COLUMN_FIELD_PATHS between taal and taal_staging.",
+    "result": "Exactly one drift: gaps/evidence.counterpart_gap_id present in DDL, missing live. Other only-in-live entries (arima_train_sku_* tables, forecasts_snapshot_20260927) are ephemeral experiment/snapshot artifacts, not DDL-managed tables -- not migrated.",
+    "tag": "Certain"
+  },
+  "step2_migration_counterpart_gap_id": {
+    "method_A_dotted_alter_table": "FAILED: 400 Syntax error: Unexpected \".\" at [1:70] -- BigQuery in this project does not accept ALTER TABLE ... ADD COLUMN evidence.field STRING syntax for a nested field.",
+    "method_B_schema_patch": "SUCCEEDED: fetched real schema via get_table(), appended counterpart_gap_id STRING NULLABLE to evidence.fields, client.update_table(t, [\"schema\"]).",
+    "verified": "SELECT field_path, data_type FROM taal.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS WHERE table_name=\"gaps\" AND field_path LIKE \"evidence.%\" confirmed the field live; row count 0 before and after (table was empty).",
+    "tag": "Certain"
+  },
+  "step2b_second_migration_found_during_step3": {
+    "finding": "The first staging dry run (jobs.sense against taal_staging with the full bigquery_timesfm/bigquery backend) failed on write(\"gaps\", ...) with \"No such field: evidence.expiry_date\". jobs/sense/gaps.py evidence dicts for online_sellby_breach/expiry_writeoff, stockout_risk, slow_mover, unmet_demand and assortment_gap gaps have ALWAYS emitted 14 real keys (expiry_date, online_sellby_date, sellby_passed, sku_name, category, node_type, lead_time_days, velocity_per_day, category_median_velocity, slow_mover_days, requesting_customer_ids, supply_node_id, garment_type, colour_family) that 14_gaps.sql never declared -- unrelated to the counterpart_gap_id fix, and much bigger in scope (affects the two largest gap types, ~80% of all gaps by volume). Found because this was the first time any of those gap types was ever written to real BigQuery.",
+    "fix": "Same Method B, applied live: appended all 14 missing fields (all additive, nullable) to taal.gaps.evidence. 14_gaps.sql updated to match. infra/deploy.sh gained a permanent, idempotent migration step (bq show --schema | python3 stdlib patch | bq update) since CI has bq but no Python packages.",
+    "verified": "Re-checked live: 0 missing fields against the full required list (26 total evidence subfields).",
+    "tag": "Certain"
+  },
+  "step2c_a_third_bug_found_in_bigquery_store_write_itself": {
+    "finding": "Separately, agents/gate/bigquery_store.py::write() was found to have its own bug: load_table_from_json with WRITE_TRUNCATE into an EXISTING table, given no explicit schema=, does not respect that table declared schema -- it infers a schema from the batch of rows being loaded, silently reordering a nested RECORD (STRUCT) column's subfields and DROPPING any subfield absent from every row in the batch. Reproduced directly against a real throwaway table: a 10-subfield STRUCT with only 10 of its 12 declared subfields present in the loaded row came back with those 2 missing subfields gone and the rest reordered.",
+    "fix": "write() now passes schema=<the real, unmodified schema fetched via get_table()> explicitly to LoadJobConfig. Verified the reordering/dropping stops when this is passed.",
+    "tag": "Certain"
+  },
+  "step3_staging_dry_run": {
+    "command": "TAAL_MODEL_BACKEND=vertex TAAL_TENANT_CONFIG=config/tenant.demo.toml GOOGLE_CLOUD_PROJECT=amru-509214 TAAL_BATCH_STORE=bigquery TAAL_FORECAST_BACKEND=bigquery_timesfm TAAL_BQ_DATASET=taal_staging uv run python -m jobs.sense",
+    "result": {
+      "exit_code": 0,
+      "run_id": "sense_20260912_baseline_2aaad73c",
+      "as_of": "2026-09-12",
+      "gaps": 533,
+      "gaps_by_type": {
+        "online_sellby_breach": 328,
+        "expiry_writeoff": 111,
+        "stockout_risk": 13,
+        "rebalance": 7,
+        "slow_mover": 69,
+        "unmet_demand": 0,
+        "assortment_gap": 5
+      }
+    },
+    "forecasts_before_after": "old runs unchanged: ai_forecast_timesfm_verify_committed_file (25060), ai_forecast_timesfm_20260927T144308Z (25060), sense_bq_full_load_bounded_2026-09-24 (560), bq_forecast_demo_2026-09-23 (28); new run sense_20260912_baseline_2aaad73c added with 317464 rows.",
+    "gaps_counterpart_gap_id_check": {
+      "online_sellby_breach": "0/328 (correct, not a rebalance field)",
+      "expiry_writeoff": "0/111 (correct)",
+      "slow_mover": "0/69 (correct)",
+      "stockout_risk": "0/13 (correct)",
+      "rebalance": "7/7 (correct -- every rebalance gap carries it)",
+      "assortment_gap": "0/5 (correct)"
+    },
+    "as_of_vs_data_gap": "as_of=2026-09-12 (from .local/data manifest.json); MAX(date) in taal_staging.sales_daily = 2026-09-11 -- a 1-day lag, not a meaningful gap. Reported per instruction, no fix applied; this is expected (as_of uses history through the prior day) not a defect.",
+    "tag": "Certain"
+  },
+  "step4_deploy_sh": "Added an idempotent migration step to infra/deploy.sh right after the DDL loop: bq show --schema, a stdlib-only python3 patch appending any of the 15 required evidence fields missing from live (all additive/nullable), bq update only if something changed. Verified idempotent: re-checking live now finds 0 missing fields.",
+  "known_not_done": "Step 6 (executing taal-sense for real, or observing the 20:00 UTC scheduled run) was left to the owner per the task's own instruction -- not executed."
+}
