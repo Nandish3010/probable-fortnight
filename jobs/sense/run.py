@@ -53,12 +53,17 @@ def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]
     if forecast_backend == "bigquery_timesfm":
         from .forecast_bigquery import forecast_bigquery
 
+        # 02_forecast_timesfm.sql and 04_rolldown.sql already INSERTed this run's rows into
+        # taal.forecasts for real -- forecast_bigquery() is a readback for detect() below, not a
+        # pending write. Writing it again through store.write() would re-run BigQueryStore's own
+        # replace logic on a table that already has these exact rows, and (before the 2026-09-27
+        # fix) was a tenant-wide DELETE that wiped every other run's history in the process.
         rows = forecast_bigquery(as_of, run_id, tenant.tenant_id)
     elif forecast_backend == "local":
         rows = forecast(store, as_of, run_id)
+        store.write("forecasts", rows)
     else:
         raise ValueError(f"TAAL_FORECAST_BACKEND must be 'local' or 'bigquery_timesfm', got {forecast_backend!r}")
-    store.write("forecasts", rows)
     t1 = time.perf_counter()
     gaps = detect(store, rows, as_of, tenant, run_id)
     store.write("gaps", gaps)
