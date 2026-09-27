@@ -95,10 +95,12 @@ has run for a full billing cycle.
 1. **The Planner fan-out queue**, past a few thousand gaps a night, if the Cost Governor's
    triage threshold is set too low for the tenant's SKU count -- the nightly job window (hours,
    not minutes) becomes the binding constraint before BigQuery compute does.
-2. **`ML.FORECAST` at the single-series re-forecast path**, if the number of concurrent Approve
-   actions during a demo or a promotion launch exceeds what a single pre-trained model call can
-   serve inside the 15 s budget -- this is a per-series call, so it scales with concurrent
-   approvals, not tenant size.
+2. **The local seasonal-xreg re-forecast** (`jobs/sense/forecast.py`, called in process from
+   `services/api/approve.py`), if the number of concurrent Approve actions during a demo or a
+   promotion launch exceeds what this call can serve inside the 15 s budget -- this is a
+   per-series call, so it scales with concurrent approvals, not tenant size. BigQuery `ML.FORECAST`
+   on `ARIMA_PLUS_XREG` was verified separately (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`)
+   and is not on this path.
 3. **Conversation volume**, since it is the only per-customer LLM cost with no batch discount
    (chat is live, not nightly); the per-play conversation budget the Cost Governor sets exists
    specifically to cap this before it becomes the dominant cost line.
@@ -106,6 +108,8 @@ has run for a full billing cycle.
    on a column other than the partition/cluster key (e.g. scanning all of `sales_daily` by
    `node_id` instead of `date`+`sku`) -- the assertions and Sense scripts in this repo always
    filter on `tenant_id` plus the partition column first for this reason.
-5. **Firestore document contention** on a single `stock/{node}/{sku}` document during a demo
-   with many concurrent judge-mode visitors reading the same seeded tenant -- mitigated by the
-   per-visitor namespace clone in DECISIONS §5.6, not by this layer.
+5. **Firestore document contention** on a single `stock/{node}/{sku}` document -- a risk only if
+   the optional Firestore serving cache is turned on (`TAAL_SERVING_CACHE=firestore`; `infra/deploy.sh`
+   never sets it, so it is off in the deployed service); many concurrent judge-mode visitors
+   reading the same seeded tenant are isolated today by the per-visitor namespace clone in
+   DECISIONS §5.6 instead.

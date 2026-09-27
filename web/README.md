@@ -74,7 +74,8 @@ where a failed live call falls back to the recorded result with a visible
 
 `lib/visitor.ts` keeps a random id in `localStorage` (`taal_visitor`); `lib/api.ts` sends it
 as the `X-Taal-Visitor` header on every request (with `credentials: "include"`) so the
-backend can scope Firestore state per visitor. "Reset demo data" on the landing page only
+backend can scope state per visitor in its local/overlay store (Firestore in the deployed
+service holds practitioner feedback only). "Reset demo data" on the landing page only
 touches that visitor's namespace.
 
 ## Files
