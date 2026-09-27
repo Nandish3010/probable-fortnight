@@ -17,6 +17,10 @@ const SAMPLE_PHOTOS = [
   { ref: "fixtures/photos/pallet_01.jpg", src: "/samples/pallet_01.jpg", label: "Pallet 1 · snacks" },
   { ref: "fixtures/photos/pallet_02.jpg", src: "/samples/pallet_02.jpg", label: "Pallet 2 · tea" },
   { ref: "fixtures/photos/pallet_03.jpg", src: "/samples/pallet_03.jpg", label: "Pallet 3 · sweets" },
+  { ref: "fixtures/photos/pallet_04.jpg", src: "/samples/pallet_04.jpg", label: "Pallet 4 · rice & dal" },
+  { ref: "fixtures/photos/pallet_05.jpg", src: "/samples/pallet_05.jpg", label: "Pallet 5 · oil" },
+  { ref: "fixtures/photos/pallet_06.jpg", src: "/samples/pallet_06.jpg", label: "Pallet 6 · atta & poha" },
+  { ref: "fixtures/photos/pallet_08.jpg", src: "/samples/pallet_08.jpg", label: "Pallet 7 · milk & paneer" },
 ];
 
 function stepsForMechanic(mechanic: Mechanic): ExecutionStep[] {
@@ -94,6 +98,27 @@ export default function PhoneViewPage() {
       runCapture(undefined, dataUrl);
     };
     reader.readAsDataURL(file);
+  }
+
+  // In-place reset for a live demo: clears the photo/read/gap state on this page without a full
+  // navigation, so a fresh "own photo" can be uploaded right away. This is local UI state only --
+  // it does not call the server-side /reset (landing page's "Reset demo data"), which clears the
+  // per-visitor sandbox's written batches/gaps/plays, a separate and heavier operation.
+  function clearPhoto() {
+    setSelectedPhoto(null);
+    setCapturedPhotoRef(null);
+    setOwnFileName(null);
+    setPreviewSrc(null);
+    setRows(null);
+    setConfirmed({});
+    setDateOverrides({});
+    setConfirmSkipped([]);
+    setConfirmWritten(null);
+    setGap(null);
+    setPlay(null);
+    setApproveResult(null);
+    setStepsDone({});
+    setExecutionSaved(false);
   }
 
   async function loadGapForNode() {
@@ -209,6 +234,9 @@ export default function PhoneViewPage() {
                 blob/data URL, which next/image cannot optimise; a plain img handles both cases */}
             <img src={previewSrc} alt="Photographed pallet" />
             {capturing ? <span className="captured-photo__badge">Reading pallet…</span> : null}
+            <button type="button" className="captured-photo__clear" onClick={clearPhoto}>
+              Clear photo
+            </button>
           </div>
         ) : null}
 
