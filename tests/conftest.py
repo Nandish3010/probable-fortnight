@@ -28,6 +28,9 @@ def data_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     generate(out)
     run_sense(out)
     asyncio.run(seed_plays(str(out)))
+    from harness.prior_update_demo import main as prior_update_demo
+
+    prior_update_demo(["--data", str(out)])
     return out
 
 

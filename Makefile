@@ -25,10 +25,11 @@ lint:
 schemas:          ## schema validity, golden/mutated plays, model<->schema sync
 	uv run pytest tests/contract -q
 
-generate:         ## seeded tenant -> Sense -> demo plays into $(TAAL_DATA_DIR); determinism checked in tests
+generate:         ## seeded tenant -> Sense -> demo plays -> flagship prior update (SYNTHETIC) into $(TAAL_DATA_DIR); determinism checked in tests
 	uv run python -m data.generator --out $(TAAL_DATA_DIR) --seed 20260912
 	uv run python -m jobs.sense
 	uv run python -m harness.seed_plays
+	uv run python -m harness.prior_update_demo
 
 fixtures:         ## rebuild committed fixtures (golden plays, mutations, golden runs, evalsets) from the tenant
 	uv run python -m harness.build_fixtures
@@ -75,8 +76,8 @@ docs:             ## README/docs lint: links, quick-start card first, required s
 status:           ## regenerate STATUS.md from checklists + test results
 	uv run python -m harness.status
 
-feedback-summary: ## real practitioner feedback -> eval/raw/feedback_summary_<date>.{json,md} (TAAL_FEEDBACK_STORE picks the store)
-	uv run python -m harness.feedback_summary
+feedback-summary: ## real practitioner feedback -> eval/raw/feedback_summary_<date>/summary.{json,md}; exclusions in config/feedback_exclusions.json (TAAL_FEEDBACK_STORE picks the store, or pass ARGS="--export file")
+	uv run python -m harness.feedback_summary $(ARGS)
 
 vision-real-prep: ## real phone photos in .local/photos -> EXIF-stripped, downscaled copies under VISION_REAL_DIR (EXCLUDE=a.jpg,b.jpg)
 	uv run python -m harness.vision_real_prep --src .local/photos --out $(VISION_REAL_DIR) --exclude "$(EXCLUDE)"
