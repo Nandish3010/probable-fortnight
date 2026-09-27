@@ -31,7 +31,8 @@ flowchart LR
     Judge[Judge mode]
   end
 
-  Firestore[(Firestore serving cache: stock / customer profiles\nflag TAAL_SERVING_CACHE, off by default)]
+  LocalSnap[(Per-visitor local store:\nLocalStore / OverlayStore over the\nfrozen, pinned-clock snapshot)]
+  Firestore[(Firestore: practitioner feedback, deployed.\nServing cache for stock / customer profiles behind\nflag TAAL_SERVING_CACHE, off by default)]
   Sessions[(Vertex AI Sessions on Agent Engine\nflag TAAL_SESSION_BACKEND, off by default)]
 
   Phone -- "1 photo/voice" --> AgentsSvc
@@ -41,12 +42,13 @@ flowchart LR
   Planner -- "propose_play" --> Plays
   Plays -- "3 Approve" --> Approve
   Approve -- "assignment + re-forecast" --> Forecasts
-  AgentsSvc -- "deploy-time mirror of the served snapshot" --> Firestore
-  Firestore -- "4 stock/profile (only when the visitor has not changed them)" --> Customer
-  Customer -- "sessions keyed visitor:customer" --> Sessions
-  Customer -- "orders" --> BigQuery
+  AgentsSvc -. "deploy-time mirror of the served snapshot, off in deployed service" .-> Firestore
+  LocalSnap -- "4 stock/offers" --> Customer
+  Firestore -. "stock/profile cache (only when the visitor has not changed them), off in deployed service" .-> Customer
+  Customer -. "sessions keyed visitor:customer, off in deployed service" .-> Sessions
+  Customer -- "orders" --> LocalSnap
   BigQuery -- "5 nightly Measure" --> Outcomes
-  Outcomes -- "Looker embed" --> PlayDesk
+  Outcomes -. "Looker Studio: designed (DECISIONS 5.8), not wired in this repo" .-> PlayDesk
   PlayDesk --- Web
   Chat --- Web
   Judge --- Web
@@ -82,14 +84,20 @@ flowchart LR
    run: 533 gaps across all 6 real gap types, all rebalance gaps carrying `counterpart_gap_id`,
    prior forecast runs untouched); it has not yet been run for real against `taal` itself.
 3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
-   `play_assignments`, inserts the play into `future_regressors`, and triggers a single-series
-   `ML.FORECAST` re-run whose new p50 path the chart shows moving.
+   `play_assignments`, then sets a promo flag (`on_promo=True`) on the play's SKU/clusters inside
+   the play window in `future_regressors` (`services/api/approve.py:128-138`). Approve re-runs the
+   local seasonal-xreg forecaster (`jobs/sense/forecast.py`) for the play's SKU, in process; the
+   re-forecast applies the fitted promo lift (a projection; Measure tests it against the holdout).
+   BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately
+   (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path.
 4. **Engage.** The Customer Agent reads `pending_offers` and marketing consent from the
    visitor's own sandbox store (never a shared cache: Approve and STOP change them per visitor)
-   and delivers the play; a customer's order goes to `order_lines` with `play_id` set. Two Google
-   Cloud integrations exist for this path, each behind its own flag and **both off in the
-   deployed service** until their live acceptance runs are committed (`infra/deploy.sh`,
-   `ENABLE_VERTEX_SESSIONS` / `ENABLE_SERVING_CACHE`):
+   and delivers the play. A customer's order is written by `place_order`
+   (`agents/customer/tools.py`) through the in-process MCP order mock
+   (`agents/mcp_orders/server.py`) to that same local store's `orders` / `order_lines` tables with
+   `play_id` set, not directly to BigQuery. Two Google Cloud integrations exist for this path,
+   each behind its own flag and **both off in the deployed service** until their live acceptance
+   runs are committed (`infra/deploy.sh`, `ENABLE_VERTEX_SESSIONS` / `ENABLE_SERVING_CACHE`):
    - **Vertex AI Sessions** (`TAAL_SESSION_BACKEND=vertex`, `agents/vertex_sessions.py`): chat
      history kept on an Agent Engine across container restarts. Every ADK session is keyed
      `<visitor>:<customer_id>:web` (user `<visitor>:<customer_id>`), so two judges chatting as the
@@ -101,28 +109,36 @@ flowchart LR
      tables and the doc's `as_of`/`snapshot_id` match the serving clock and image; otherwise, and
      on any Firestore error, the turn reads the store. Off: every read goes to the store.
 5. **Measure.** The nightly Measure job joins `orders` to `play_assignments` inside the play
-   window, writes `play_outcomes` (treated vs holdout), and updates `estimator_priors`; Looker
-   Studio reads the same table. With `TAAL_BATCH_STORE=bigquery` (the `taal-measure` job) it
-   reads `plays`/`play_assignments` from BigQuery but `order_lines`/`estimator_priors` from the
-   job image's local snapshot. When BigQuery holds no plays it logs exactly one line and exits 0
-   without writing anything: "0 plays to measure: judge-mode approvals are per-visitor sandboxes
-   and are never written to BigQuery by design". `make nightly-report` records whether each
-   execution logged it (`eval/raw/nightly_runs/`).
+   window, writes `play_outcomes` (treated vs holdout), and updates `estimator_priors`. With
+   `TAAL_BATCH_STORE=bigquery` (the `taal-measure` job) it reads `plays`/`play_assignments` from
+   BigQuery but `order_lines`/`estimator_priors` from the job image's local snapshot. When
+   BigQuery holds no plays it logs exactly one line and exits 0 without writing anything: "0
+   plays to measure: judge-mode approvals are per-visitor sandboxes and are never written to
+   BigQuery by design". `make nightly-report` records whether each execution logged it
+   (`eval/raw/nightly_runs/`). A Looker Studio report over `play_outcomes` is designed
+   (DECISIONS §5.8) but not wired into this repo: the Outcomes page shows a Looker link only
+   when a `looker_url` is present (`services/api/main.py`, `os.environ.get("TAAL_LOOKER_URL")`),
+   and nothing in this repo -- `infra/deploy.sh` included -- sets that variable, so the link
+   never renders today.
 
 ## Latency budget (DECISIONS §4.3)
 
 | Path | Budget | Notes |
 |---|---|---|
-| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash; stock from the visitor's store (or the Firestore serving cache when that flag is on); substitutes precomputed; no per-turn memory calls |
+| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash, streaming; stock from the visitor's local store (`LocalStore`/`OverlayStore`), or the Firestore serving cache when `TAAL_SERVING_CACHE=firestore` (`infra/deploy.sh` sets it only when `ENABLE_SERVING_CACHE=1`, hard-coded to 0 at `infra/deploy.sh:22`, so it is off in the deployed service); substitutes precomputed; no per-turn memory calls |
 | Vision intake (one photo) | < 8 s | Gemini image understanding, strict output schema |
 | Voice turn, first audio | < 2 s | Gemini Live API; recorded for the video regardless of live status at the finale |
 | Planner, one gap | 20-60 s | nightly batch, or streamed on an on-demand re-run |
-| Approve → re-forecast | < 15 s | single-series `ML.FORECAST` on a nightly pre-trained `ARIMA_PLUS_XREG` model; approve only updates `future_regressors` and re-runs `ML.FORECAST`, never retrains |
+| Approve → re-forecast | < 15 s | Approve re-runs the local seasonal-xreg forecaster (`jobs/sense/forecast.py`) for the play's SKU, in process; BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path |
 | Sense job (full nightly run) | minutes | never a live request path |
 
-All figures in this table are **estimated** budgets from DECISIONS §4.3, not measurements; the
-build replaces them with measured p50/p95 from Cloud Trace once services are deployed, and the
-judge-mode footer's latency chips show the measured number for that run.
+All figures in this table are **estimated** budgets from DECISIONS §4.3, not measurements. No
+Cloud Trace wiring exists in this repo; real measured latency numbers instead live in
+`eval/raw/` (e.g. `eval/raw/customer_latency_fix_2026-09-21.json`,
+`eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`),
+and the judge-mode footer's latency chips show the measured number for that specific request
+(`envelope.latency_ms`/`elapsed_ms` returned by the API call itself, per `web/lib/api.ts`,
+`services/api/approve.py`), not a Cloud Trace query.
 
 ## What Gemini decides / what it is never allowed to decide
 
@@ -143,7 +159,7 @@ tests prove what the model's output must pass through, not how good the model is
 | Guardrail pass/fail: the eight rules | `agents/gate/guardrails.py:266` asserts the rule table equals `GUARDRAIL_RULES` in `agents/gate/models.py:42-45`; `check` at `:269` | `tests/unit/test_guardrails.py:28` (all eight run, in order); `:155` (consent_required ignores any model-written rationale) |
 | Who is in the holdout: arm by hash of (customer, seed) | `services/api/approve.py:113` calls `agents/gate/assignment.py:23` (`assign_arm`, SHA-256 bucket) | `tests/unit/test_assignment.py:15` (arm is a pure function of seed and id); `:34` (model-written play fields cannot change an arm) |
 | Consent: whether any offer may reach a customer; what STOP does | `agents/customer/tools.py:54` (`_consent_ok`), checked at `:104`, `:218`, `:260`; `record_stop` at `:354` withdraws consent and drops pending offers | `tests/agents/test_customer_gates.py:15`: after `record_stop`, context, `apply_offer` and `negotiate_offer` all refuse with no model turn |
-| Forecast numbers, including the re-forecast on approve | `jobs/sense/forecast.py:127` (statistical model, no LLM); approve re-runs it at `services/api/approve.py:144` | `tests/sql/test_forecast.py:23`: an approved play changes p50 inside its window and nowhere else |
+| Forecast numbers, including the re-forecast on approve | `jobs/sense/forecast.py:127` (statistical model, no LLM; the deployed tenant's default backend, `TAAL_FORECAST_BACKEND` unset per `jobs/sense/run.py`); approve re-runs it at `services/api/approve.py:144`. The nightly `taal-sense` job instead runs with `TAAL_FORECAST_BACKEND=bigquery_timesfm` (BigQuery `AI.FORECAST`/TimesFM, verified live, `eval/raw/bigquery_ai_forecast_2026-09-27/`) -- either way a statistical model, not agent reasoning | `tests/sql/test_forecast.py:23`: an approved play changes p50 inside its window and nowhere else |
 | Discount bounds: the category margin floor on every play; the ad-hoc chat discount ceiling | `agents/gate/guardrails.py:76` (`rule_margin_floor`); `agents/customer/tools.py:274` (`min(ad_hoc_max_discount_pct, margin headroom)`) | `tests/unit/test_guardrails.py:53`; `tests/unit/test_estimator.py:82` (property test: margin never below the floor when the gate passes); `tests/agents/test_customer_gates.py:36` (every catalogue sku) |
 
 Two limits, stated rather than hidden. **STOP recognition is the model's call.** The prompt tells
