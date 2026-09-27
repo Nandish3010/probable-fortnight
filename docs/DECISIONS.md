@@ -2,6 +2,32 @@
 
 **Positioning line:** "Every forecast tells a retailer what will be thrown away. Taal is the agent that sells it first: legally, to the right people, at the right margin, with a holdout to prove it."
 
+**As built, 27 Sep 2026.** The design text below is kept exactly as written, as the historical
+record of what was decided and when; where it differs from what the deployed code does, this note
+wins.
+
+- The 30%-of-shelf-life-or-45-days rule is FSSAI's advisory to e-commerce food business operators
+  [CITATION: owner to paste primary URL], not a statute. Read "legal deadline", "legally", "by
+  law" and "legal online sell-by" below as the regulator's advisory, applied as a tenant-set,
+  versioned rule. The demo tenant uses the lenient reading (`config/tenant.demo.toml`, `combine =
+  "min"`); retailers set their own.
+- Approve re-forecasts in process with the local seasonal-xreg forecaster
+  (`services/api/approve.py`). BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately
+  (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path or in
+  any job.
+- Chat sessions are `InMemorySessionService` per store root; `VertexAiSessionService` only when
+  `TAAL_SESSION_BACKEND=vertex` (verified in `eval/raw/vertex_sessions_2026-09-24`), which
+  `infra/deploy.sh` does not set, so it is off in the deployed service.
+- Stock and offers are served from the per-visitor local store; the Firestore serving cache runs
+  only when `TAAL_SERVING_CACHE` is set (verified in `eval/raw/firestore_cache_2026-09-24`), which
+  `infra/deploy.sh` does not set. In the deployed service Firestore stores practitioner feedback
+  only.
+- The Play Desk's plan and planner trace in the deployed app are the replayed nightly plan
+  (scripted planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
+- Claims that no forecasting tool or competitor sees the online sell-by date read as: "Forecasting
+  tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap
+  type."
+
 This is the technical design record for Taal: schemas, tool contracts, wire protocols, screens,
 evaluation design, deployment, the demo script, the deck outline and the submission checklist. No
 implementation code. Every factual claim is tagged [Certain], [Likely] or [Guessing]. Internal
@@ -49,6 +75,10 @@ Users: **Priya, node manager** (phone, voice, camera; the hero of the video); **
 
 ### 2.3 Gap types and the legal deadline
 - `online_sellby_breach`: units projected unsold by the **online sell-by date**. The FSSAI advisory wording is "30 percent or 45 days before expiry at the time of delivery" [Certain on the wording], which is ambiguous; Taal implements `sellby_rule` as a **versioned policy parameter** (default: the stricter reading, expiry − max(30% of shelf life, 45 days)), shows the rule on the gap card, and states in the README and deck that retailers set their own reading. After that date the lot can only move through physical outlets or be written off.
+  **Superseded 27 Sep 2026:** the demo tenant uses the lenient reading (expiry minus min(30% of
+  shelf life, 45 days); config/tenant.demo.toml, rule version v1-either). Retailers set their own
+  reading. The rule is the regulator's advisory, applied as a tenant-set, versioned rule, not a
+  statute; source [CITATION: owner to paste primary URL].
 - `expiry_writeoff`: units projected unsold by physical expiry.
 - `stockout_risk`: forecast over lead time exceeds on-hand + inbound.
 - `rebalance`: at risk at node A, short at node B.
@@ -133,6 +163,8 @@ Raw third-party data never enters the repo; only download and transform scripts.
 
 Firestore (serving reads; never the system of record): `stock/{node}/{sku}` (qty, nearest online_sellby, nearest expiry), `customers/{id}` (language, home node, arm per play, pending offers), `offers/{customer_id}` (pending proactive deliveries), `plays/{id}` (status snapshot), `events/{run_id}/{seq}` (agent trace, see §10), `demo/` (golden runs and reset snapshot).
 
+**Superseded 27 Sep 2026:** see the as-built note at the top.
+
 ### 3.4 Estimator (deterministic; owns every expected number)
 Response rate per (mechanic, category, segment) ~ Beta(alpha, beta). Prior from public coupon-redemption rates by category and household segment if licensed, otherwise a weak, disclosed prior (low pseudo-count). Each measured play updates alpha/beta with treated responders and non-responders. `expected units = size_after_consent × E[rate] × avg_qty_per_responder` (avg_qty from `order_lines` history for the SKU); `margin_inr = units × (price − discount − unit_cost)`; `discount_cost_inr = units × discount`; `waste_avoided_inr = min(units, units_at_risk) × unit_cost`; bundles priced as (bundle_price − sum of unit costs); transfers as (avoided write-off − transfer cost per unit × units). CI from the Beta quantiles. Counterfactuals: do-nothing = units_at_risk × unit_cost; blanket markdown = (baseline forecast units × markdown × price) + remaining write-off, using the planner-set markdown_pct. The Play card shows prior n / measured n. Never India-calibrated claims; the prior is weak and overwritten by measurement.
 
@@ -153,11 +185,15 @@ Response rate per (mechanic, category, segment) ~ Beta(alpha, beta). Prior from 
 | Observability | ADK OpenTelemetry → Cloud Trace; Cloud Logging | |
 | Eval | `adk eval` evalsets; Agent Simulation for the Customer Agent pre-flight; BigQuery eval tables | |
 
+**Superseded 27 Sep 2026:** see the as-built note at the top.
+
 ### 4.2 Data flow
 Photo/voice capture → `inventory_batches` (source=photo) → Sense: `AI.FORECAST` (TimesFM 2.5, `id_cols` = [sku, cluster_id]; no holiday argument exists on this function [Likely]; festival effects come from `ARIMA_PLUS_XREG`) and `ML.FORECAST` on `ARIMA_PLUS_XREG` with `future_regressors` (holiday_region 'IN', `on_promo`, `is_festival`) → node roll-down by trailing 28-day share → `gaps` with ₹ and deadline → Planner (tools) → `plays` proposed → Approve (voice or Play Desk) → assignments (Firestore sync, BigQuery async) → **forecast re-run for the affected series with the play in `future_regressors`** → chart updates → Customer Agent delivers and answers → `orders` with `play_id` → Measure → `play_outcomes`, priors → Looker Studio.
 
 ### 4.3 Latency budget
 Customer Agent turn under 3 s p50 / 6 s p95 (Flash streaming; stock from Firestore; substitutes precomputed; no per-turn memory calls). Vision intake under 8 s per photo. Voice turn under 2 s to first audio (Live API; record the beat for the video regardless). Planner per gap 20–60 s, nightly or streamed on re-run. Approve → forecast re-run for one series under 15 s (single-series `ML.FORECAST` on a pre-trained model; pre-train models nightly so approve only calls `ML.FORECAST` with the updated regressor table). Sense job: minutes, never live.
+
+**Superseded 27 Sep 2026:** see the as-built note at the top.
 
 ### 4.4 Pinning and environment (week 1, owner B)
 `google-adk` pinned to an exact 2.x release (2.0 broke 1.x APIs; tutorials are mostly 1.x [Certain]); model IDs pinned in config, never defaults (ADK changed its default model and `gemini-2.5-flash` shuts down 16 Oct 2026 [Certain]); candidate IDs: `gemini-3.8-flash` for text/vision/planner [Certain that it launched 2 Sept 2026 per one reviewer; verify in Model Garden], `gemini-3.1-flash-live-preview` for voice [Likely]; a fallback text model ID in config; Agent Engine instance created and its ID in env; region decision recorded; Vertex quota increases requested; Secret Manager for all keys; budget alerts at $50/$100/$200; `uv.lock` committed.
@@ -200,8 +236,11 @@ Gemini only via Vertex. Flash everywhere. No Vertex AI Vector Search endpoints, 
 ### 5.4 Approve and assignment (owner B)
 Approve is an HTTP action on `taal-agents` (from the Play Desk or the voice tool). It: sets status; writes `play_assignments` with arm = treated if `FARM_FINGERPRINT(customer_id || seed) % 100 ≥ holdout × 100` else holdout, to Firestore synchronously and BigQuery asynchronously; writes `offers/{customer_id}` for treated customers; inserts the play into `future_regressors`; triggers the single-series forecast re-run and returns the new p50 path and updated write-off for the chart. Holdout customers receive nothing, including when they ask "any offers?" (`apply_offer` and proactive delivery both check arm).
 
+**Superseded 27 Sep 2026:** see the as-built note at the top.
+
 ### 5.5 Customer Agent, minimal (owner B; chat UI owner C)
 - `LlmAgent`, Flash, streaming; session key `customer_id:web`; `VertexAiSessionService`.
+  **Superseded 27 Sep 2026:** see the as-built note at the top.
 - Six tools: `get_customer_context(customer_id) → { home_node, language, pending_offers[], arms{} }`, `get_stock(sku, node_id) → { qty, online_sellby, expiry }` (Firestore), `find_substitutes(sku, node_id) → [{ sku, name, qty }]` (precomputed candidates filtered by stock now), `apply_offer(play_id, customer_id) → ok | refused(reason)` (arm, consent, frequency cap, margin floor), `place_order(lines[]) → order_id` (in-process FastMCP mock via `McpToolset`; writes `orders` with `play_id`), `record_stop(customer_id)`.
 - Proactive delivery: the first turn of a session reads `pending_offers` and delivers the play in the customer's language with the best-before disclosure.
 - Wire protocol (one envelope for chat, used by web now and WhatsApp later): `{ session_id, role, text, buttons?: [{id,label}] (≤3), list?: { title, rows: [{id,title,desc}] } (≤10), citations: [{type: stock|play|forecast, ref}], latency_ms }` over one SSE endpoint.
@@ -213,6 +252,7 @@ Phone view (Priya): camera capture → confirmation questions → gap card (sku,
 **Judge-mode landing (root URL), the first 60 seconds:**
 - Top band, one line: "Taal judge mode: seeded tenant Kutumb Mart. Nothing you do here persists beyond your session." with a **Reset demo data** button scoped to the visitor.
 - Hero left: **"Run the 60-second beat"**. One click opens the chips gap card pre-filled (DS-07, 340 units, ₹9,200, online sell-by in 6 days, rule shown), shows the pre-proposed play with a replay badge ("Planner run recorded 2 Oct 22:14 IST"), and stops at a large **Approve**. Approve is live: assignment, re-forecast, the chart moves, the write-off counts down, a chip reads "ML.FORECAST · live · 11.3 s · run id …". Nothing else is needed to score the entry.
+  **Superseded 27 Sep 2026:** see the as-built note at the top.
 - Hero right: **"Chat as Meena"**, pre-filled first message ("Any offers today?") and a suggested chip ("Do you have Cola Zero?"); live badge with latency chip; STOP works.
 - Below the fold, three cards with LIVE / REPLAY badges: Play Desk (live reads), Phone view (with "use a sample pallet photo": three preloaded photos; own upload labelled experimental), Outcomes ("REAL PILOT DATA, computed 3 Oct").
 - Footer: video, deck, repo, the what-is-simulated box, tenant size ("300 SKUs, 10 nodes, 4,000 customers; last Sense run N min at HH:MM"), and a health strip from `/health` (BigQuery, Firestore, Vertex, Sessions, with timestamps).
@@ -389,6 +429,8 @@ taal/
 | 11 | 2:12–2:28 | Architecture card: clean logo grid with numbered arrows matching the beats | "BigQuery AI (AI.FORECAST, ARIMA_PLUS_XREG, VECTOR_SEARCH, AI.GENERATE_TABLE) · ADK agents on Cloud Run · Gemini on Vertex · Agent Platform Sessions + Simulation · Looker Studio · built with Antigravity + AI Studio" | "Everything on Google Cloud. The rules decide what's allowed; Gemini decides what to do; the estimator owns the numbers." |
 | 12 | 2:28–2:40 | Closing card | "We do not claim: India-calibrated lift, WhatsApp, or a rules-free agent." "Same play schema works for any perishable decision. Retail first because the customer has to say yes." URL, repo, team | "Try it at the link. Judge mode, no login, one button." |
 
+**Superseded 27 Sep 2026:** see the as-built note at the top.
+
 Cut from v3: the BFSI/manufacturing side-by-side (one line on the closing card keeps it), the extended trace walkthrough, the roadmap list. Persistent LIVE / REPLAY / REAL PILOT / SYNTHETIC labels on every UI shot.
 
 **Finale (assume 5 min demo + 5 min Q&A; confirm)**: A narrates and takes business questions, B drives and takes technical questions. Live: approve, the chart, chat via a QR code on screen so a judge can open Kutumb Mart chat on their own phone, one policy re-run. Cached with a visible timestamp: Sense, Plan, Measure. Replay bound to one key. Warm-up script 5 minutes before: health checks, one session turn, stock rows for the three demo SKUs, offers doc for Meena, reset. The one visual: the counterfactual bars with a fourth thinner "holdout" bar that the live refresh moves.
@@ -440,6 +482,9 @@ stock (seeded generator, disclosed).  Evaluation numbers: slide 9.
 
 Full order:
 1. Title (as above). 2. Executive summary (as above). 3. The legal deadline (advisory date and URL; "we implement the stricter reading, retailers set their own"), a bottom-up per-node number from the seeded tenant (labelled), quick-commerce shelf-life gates and take rates [Likely], 4–6 interview quotes with role and retailer type, each tied to a feature. 4. The loop and the play object: one diagram showing the same Play schema (target, mechanic, audience, guardrails, holdout) instantiated twice -- a grocery `online_sellby_breach` gap and an apparel `assortment_gap` gap -- through the identical gate/estimator code path, plus the two closed loops that make this a decision engine rather than a recommender: approve writes the play into `future_regressors` and re-forecasts immediately, and every Measure run updates the estimator's priors from real treated/responder counts so the next play of that shape starts from evidence, not a static assumption. 5. Technical Merit: architecture diagram with request paths numbered to match the video beats; a latency table from logs (p50/p95 per path). 6. **"What Gemini decides / what it is not allowed to decide"**: two columns with one trace screenshot per left-column item (`estimate_outcome`, `check_guardrails` returning `passed:false`, `propose_play`). 7. Innovation: competitor table with one row per real product (a markdown-optimisation vendor, a planning suite, Gemini Enterprise for CX, Meta Business Agent, a partner demand-sensing agent) and one column "sees the online sell-by date?" that is No for all but Taal; the three objections in one line each. 8. Impact: counterfactual economics; "who pays and why now" (advisory date, quick-commerce growth, buyer persona = category or supply-chain head, price anchor = share of waste avoided); adoption path (decision layer that emits plays to the existing CRM; three-CSV ingestion contract); consent slide with the STOP flow. 9. Evaluation: "numbers we can defend", ≤ 8 rows from §12, filled at freeze. 10. **Scalability & sustainability**: four boxes (throughput measured and extrapolated; unit economics with tokens per play from the billing export; onboarding in a day; sustainability: Flash-only, no idle endpoints, nightly batch, consent-native), plus the multi-tenant line (tenant_id on every table, per-tenant policy, IAM per service account). 11. UX: one slide per persona with the single job and the single action; judge-mode URL. 12. Last slide (as above). A final rubric-map footer with the weights on each section slide.
+
+**Superseded 27 Sep 2026:** see the as-built note at the top. The demo tenant uses the lenient
+reading.
 
 ---
 
@@ -560,6 +605,9 @@ The expensive things in agent systems are idle infrastructure and conversations.
 2. **Batch, don't stream, at night.** Planner fan-out and copy generation run through the Batch API (half price, up to 24 h; the nightly window tolerates it) [Certain on the 50% discount].
 3. **Cache what repeats.** Policy text, product context and the segment catalogue are cached inputs; per-turn tenant context for the Customer Agent is cached at conversation start.
 4. **Serve from Firestore, compute in BigQuery.** No LLM reads BigQuery at chat time; stock, offers and substitutes are precomputed nightly. BigQuery bytes scanned stay small with partitioning and clustering.
+
+**Superseded 27 Sep 2026:** see the as-built note at the top.
+
 5. **Scale to zero.** Cloud Run `min-instances=0` in production -- **this is the actual deployed decision for the whole judging window (§4.5), not just demo days**; measured cold start is materially over the ~3s estimate here (see eval/evaluation.md). Cloud Run Jobs for nightly work (1-minute minimum billing). No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on those cost traps].
 6. **Tier the models by task, never by habit.** Flash-Lite for classification and copy; Flash for reasoning and vision; Live only during a voice session; Pro only behind an explicit "deep look" the merchant pays for.
 7. **Cap conversations.** Turns per session, sessions per customer per play, and a per-play conversation budget the Cost Governor sets from the ₹ at stake.
