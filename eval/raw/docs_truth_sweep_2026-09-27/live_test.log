@@ -1,0 +1,49 @@
+=== make generate ===
+uv run python -m data.generator --out .local/data --seed 20260912
+{"out": ".local/data", "seed": 20260912, "counts": {"products": 300, "nodes": 16, "sales_daily": 324271, "inventory_batches": 4800, "inbound": 1643, "customers": 4000, "consent": 4000, "affinity": 55404, "orders": 16936, "order_lines": 42051, "future_regressors": 25200, "estimator_priors": 72, "apparel_products": 350, "apparel_stock": 11383, "style_requests": 485}}
+uv run python -m jobs.sense
+{"run_id": "sense_20260912_baseline_2aaad73c", "as_of": "2026-09-12", "tenant_id": "kutumb-mart", "forecast_rows": 134400, "series": 4800, "gaps": 555, "planner_eligible": 428, "planner_threshold_inr": 500.0, "segments": 6, "substitute_rows": 300, "style_trends": 28, "timing_ms": {"forecast": 2672, "gaps": 180, "segments_substitutes": 1127, "trends": 2, "total": 3983}, "model": "local_seasonal_xreg", "executed_at": "2026-09-27T20:14:36Z", "execution_name": "local", "gaps_by_type": {"online_sellby_breach": 330, "expiry_writeoff": 114, "stockout_risk": 55, "rebalance": 4, "slow_mover": 47, "unmet_demand": 0, "assortment_gap": 5}}
+uv run python -m harness.seed_plays
+/home/user/probable-fortnight/.venv/lib/python3.11/site-packages/google/adk/models/llm_request.py:298: UserWarning: [EXPERIMENTAL] feature FeatureName.JSON_SCHEMA_FOR_FUNC_DECL is enabled.
+  declaration = tool._get_declaration()
+seed: gap_chips_ds07 -> proposed play_chips_ds07_v1 (2 iteration(s))
+seed: gap_tea_ds04 -> proposed play_tea_ds04_v1 (1 iteration(s))
+seed: gap_cola_ds07 -> proposed play_cola_ds07_v1 (1 iteration(s))
+seed: gap_cola_ds02 -> proposed play_cola_ds02_v1 (1 iteration(s))
+seed: gap_kaju_ds01 -> proposed play_kaju_ds01_v1 (1 iteration(s))
+seed: gap_kaju_ds03 -> proposed play_kaju_ds03_v1 (1 iteration(s))
+seed: gap_quinoa_out02 -> proposed play_quinoa_out02_v1 (1 iteration(s))
+seed: gap_blazer_ds07 -> proposed play_blazer_ds07_v1 (1 iteration(s))
+=== starting make api (bg), log -> /tmp/sweep_api.log ===
+api pid: 11587
+=== waiting for API health (cap ~180s) ===
+API healthy after ~4s
+=== starting make web (bg), log -> /tmp/sweep_web.log ===
+web pid: 11610
+=== waiting for web root (cap ~180s) ===
+Web healthy after ~4s
+=== make live-test ===
+cd web && npx playwright test -c playwright.live.config.ts
+
+Running 15 tests using 1 worker
+
+  ✓   1 [desktop] › tests/live/arjun.spec.ts:5:7 › Arjun: Play Desk › inbox, play card, trace, why, edit, approve, policy re-plan (17.3s)
+  ✓   2 [desktop] › tests/live/demand_signal.spec.ts:8:7 › Demand signal: chat -> gap evidence -> Play Desk › two customers asking for Cola Zero at DS-07 enrich the gap with real request counts (3.5s)
+  ✓   3 [desktop] › tests/live/judge.spec.ts:5:7 › judge: landing › 60-second beat, idempotent approve, chat, reset, isolation (8.4s)
+  ✓   4 [desktop] › tests/live/judge.spec.ts:58:7 › judge: landing › first paint under 4s from a cold hit (1.2s)
+  ✓   5 [desktop] › tests/live/judge.spec.ts:74:7 › judge: landing › health strip turns amber when a dependency check fails (1.7s)
+  ✓   6 [desktop] › tests/live/management.spec.ts:5:7 › Management: outcomes › empty state, then measured and unmeasured rows (13.0s)
+  ✓   7 [desktop] › tests/live/meena.spec.ts:10:7 › Meena: chat › no offer before approval; offer, browse, substitution, order, stacking, STOP after (11.8s)
+  ✓   8 [desktop] › tests/live/meena.spec.ts:61:7 › customer picker: differentiation › switching to the holdout customer shows no offer where Meena gets one (6.6s)
+  ✓   9 [desktop] › tests/live/priya.spec.ts:5:7 › Priya: phone view › pallet photo, confirmation, gap card, approve, execution (11.7s)
+  ✓  10 [desktop] › tests/live/screens.spec.ts:43:7 › Screenshots: judge landing, approve, chat, reset › capture judge-02..05 (10.0s)
+  ✓  11 [desktop] › tests/live/screens.spec.ts:71:7 › Screenshots: Outcomes, settled › capture mgmt-02-measured without the fade-in animation mid-flight (13.2s)
+  ✓  12 [desktop] › tests/live/screens.spec.ts:92:7 › Screenshots: Priya phone intake, gap card, approve, execution › capture priya-02..05 (9.8s)
+  ✓  13 [desktop] › tests/live/screens.spec.ts:128:7 › Screenshots: Meena's customer chat, Kannada offer › capture meena-offer-kannada (6.4s)
+  ✓  14 [desktop] › tests/live/stylist.spec.ts:7:7 › Stylist: chat › sample garment pick returns a real pairing, picker stays visible (2.9s)
+  ✓  15 [mobile] › tests/live/priya.spec.ts:5:7 › Priya: phone view › pallet photo, confirmation, gap card, approve, execution (11.8s)
+
+  15 passed (2.2m)
+live-test exit code: 0
+--- cleanup: stopping background servers ---
+ 11595 11597 11643
