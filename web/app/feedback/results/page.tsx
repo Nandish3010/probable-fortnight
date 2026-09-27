@@ -93,10 +93,16 @@ export default function FeedbackResultsPage() {
       ) : (
         <>
           <p className="muted">
-            Real responses only ({summary.excluded_non_real} test row{summary.excluded_non_real === 1 ? "" : "s"} excluded). Every figure reads
-            all · self · interview. <em>Interview</em> means a team member filled the form in during a call, which is weaker evidence than a
-            practitioner filling it in alone. A percentage appears only where its base is at least {summary.min_n_for_percentages}. Quote numbers
-            from the committed <code>harness.feedback_summary</code> output, not from this page.
+            Real responses only ({summary.excluded_non_real} row{summary.excluded_non_real === 1 ? "" : "s"} excluded
+            {summary.excluded_by_reason
+              ? `: ${summary.excluded_by_reason.non_real} test, ${summary.excluded_by_reason.flagged_by_owner} flagged by the owner, ${summary.excluded_by_reason.below_min_substantive} with fewer than ${summary.min_substantive_answers} substantive answers`
+              : ""}
+            ). Every figure reads all · self · interview. <em>Interview</em> means a team member filled the form in during a call, which is
+            weaker evidence than a practitioner filling it in alone.{" "}
+            {summary.counts_only
+              ? "Counts only: no percentages at this sample size."
+              : `A percentage appears only where its base is at least ${summary.min_n_for_percentages}.`}{" "}
+            Quote numbers from the committed <code>harness.feedback_summary</code> output, not from this page.
           </p>
           <div className="results__kpis">
             {(["total", "self", "interview"] as const).map((k) => (

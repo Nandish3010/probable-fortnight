@@ -47,6 +47,7 @@ def main() -> int:
     c.post("/approve", json={"play_id": "play_kaju_ds03_v1"})
     c.post("/measure")
     out["outcomes"] = c.get("/outcomes").json()
+    out["prior_update"] = c.get("/outcomes/prior-update").json()
 
     import base64
 

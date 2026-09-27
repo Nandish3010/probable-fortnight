@@ -9,6 +9,9 @@ test.describe("Management: outcomes", () => {
     await page.goto("/outcomes");
     await expect(page.getByRole("heading", { name: "Outcomes" })).toBeVisible();
     await expect(page.getByText(/No plays measured yet/)).toBeVisible();
+    // Built once with the tenant: present before this visitor measures anything, and unchanged after.
+    const priorLine = page.locator(".prior-update").getByText(/Estimator prior: Beta\(1,19\) → Beta\(15,292\) · SYNTHETIC orders/);
+    await expect(priorLine).toBeVisible();
     await shot(page, "mgmt-01-empty");
 
     const h = visitorHeaders(vid);
@@ -24,6 +27,7 @@ test.describe("Management: outcomes", () => {
     await expect(page.getByText("SKU-MASALA-CHIPS-200G").first()).toBeVisible();
     await expect(page.getByText("SYNTHETIC").first()).toBeVisible();
     await expect(page.getByText(/Looker \(n\/a\)/).first()).toBeVisible();
+    await expect(priorLine).toBeVisible();
     const outs = await (await page.request.get(`${API}/outcomes`, { headers: h })).json();
     const chips = outs.find((o: { play_id: string }) => o.play_id === "play_chips_ds07_v1");
     expect(chips.status).toBe("measured");
