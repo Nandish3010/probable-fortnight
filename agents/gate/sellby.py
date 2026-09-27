@@ -1,9 +1,10 @@
 """Online sell-by date under the tenant's versioned rule.
 
-FSSAI advisory to e-commerce food business operators (Dec 2024): delivered food must have
-"30 percent or 45 days before expiry at the time of delivery". The wording is ambiguous, so
-`SellbyRule.combine` picks which of the two cut-offs (30% of shelf life, or 45 days) actually
-applies:
+FSSAI's advisory to e-commerce food business operators, as reported (Dec 2024)
+[CITATION: owner to paste primary URL], reads: delivered food should have "30 percent or 45 days
+before expiry at the time of delivery" -- the quoted wording is as reported and not yet checked
+against the primary. The wording is ambiguous, so `SellbyRule.combine` picks which of the two
+cut-offs (30% of shelf life, or 45 days) actually applies:
 
 - `combine = "max"` is the STRICTER reading: whichever cut-off subtracts MORE time from expiry
   wins, so the online sell-by date lands EARLIER -- less time to sell online.
