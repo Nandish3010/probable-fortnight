@@ -112,10 +112,15 @@ def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, r
 
 def _default_root_agent() -> LoopAgent:
     """Agent for `adk eval agents/planner` and `adk web`: tenant policy v1, stub or vertex per config."""
+    import json
     from datetime import date
 
     tenant = load_tenant()
-    return build_planner(tenant, tenant.policy_text, tenant.policy_version, "adk-cli", date.today().isoformat())
+    # same as-of the tools use (context.py reads the tenant manifest): with today's date the stub
+    # drafted windows that start after the seeded gaps' deadlines under `adk eval`
+    manifest = Path(os.environ.get("TAAL_DATA_DIR", ".local/data")) / "manifest.json"
+    as_of = json.loads(manifest.read_text(encoding="utf-8"))["as_of"] if manifest.exists() else date.today().isoformat()
+    return build_planner(tenant, tenant.policy_text, tenant.policy_version, "adk-cli", as_of)
 
 
 root_agent = _default_root_agent()
