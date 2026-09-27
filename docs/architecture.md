@@ -58,7 +58,18 @@ flowchart LR
 1. **Capture.** Phone view uploads a photo (or a spoken confirmation) to `taal-agents`; Vision
    intake writes confirmed rows to `taal.inventory_batches` with `source='photo'`.
 2. **Sense → Plan.** The nightly `taal-sense` job (or an on-demand re-run) computes forecasts and
-   gaps in BigQuery, then fans out gaps to the Planner Agent, which proposes plays.
+   gaps, then fans out gaps to the Planner Agent, which proposes plays. `taal-agents`'s own
+   judge-mode serving path always reads a frozen, pinned-clock local snapshot and never touches
+   BigQuery directly. `jobs/sense`/`jobs/measure` support two backends behind env vars that
+   default to local everywhere except the `taal-sense`/`taal-measure` jobs' own environment:
+   `TAAL_FORECAST_BACKEND=local|bigquery_timesfm` and `TAAL_BATCH_STORE=local|bigquery`.
+   `bigquery_timesfm` (BigQuery `AI.FORECAST`) was verified live for real (25,060 rows across 895
+   series; no covariate parameter; a real SQL bug found and fixed) -- evidence under
+   `eval/raw/bigquery_ai_forecast_2026-09-27/`. `TAAL_BATCH_STORE=bigquery` (writes through
+   `BigQueryStore`) is written and unit-tested but **not verified live end-to-end**: this project
+   has no billing account enabled and BigQuery's free tier rejects the `DELETE` that both
+   `04_rolldown.sql` and every `BigQueryStore.write()` call issue -- see
+   `eval/raw/bigquery_billing_dml_2026-09-27/finding.json`.
 3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
    `play_assignments`, inserts the play into `future_regressors`, and triggers a single-series
    `ML.FORECAST` re-run whose new p50 path the chart shows moving.
