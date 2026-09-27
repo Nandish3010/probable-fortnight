@@ -101,8 +101,49 @@ Real code paths: forecasts, gaps, estimator, guardrails, planner loop, assignmen
 re-forecast, chat, MCP orders, measurement. Simulated and disclosed: the tenant Kutumb Mart
 (300 SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales) comes from a seeded
 generator (`data/generator`) whose rule is stated in its docstring. No pilot has run yet; the
-Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise. The local forecaster
-stands in for BigQuery `AI.FORECAST` and `ARIMA_PLUS_XREG` (SQL under `data/bigquery/sense`). The
+Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise.
+
+**Forecasting and the nightly batch split, stated once here** (the same wording appears in
+`docs/architecture.md`, `docs/scale.md`, `infra/README.md`): the judge-mode serving path
+(`taal-agents`, this app) always reads a frozen, pinned-clock local snapshot and never touches
+BigQuery directly -- what a judge clicks never depends on a nightly job having run. Behind that,
+`jobs/sense` and `jobs/measure` support two backends, selected by env vars that default to the
+local path everywhere except the `taal-sense`/`taal-measure` Cloud Run Jobs' own environment:
+`TAAL_FORECAST_BACKEND=local` (the pure-Python forecaster) or `bigquery_timesfm`, which runs
+BigQuery `AI.FORECAST` (TimesFM) for real; `TAAL_BATCH_STORE=local` (JSONL) or `bigquery`, which
+writes through `agents/gate/bigquery_store.py::BigQueryStore`. `AI.FORECAST` was verified live
+against project `amru-509214` in `asia-south1`: available, no covariate/regressor parameter
+(confirmed by a real rejection), a real SQL bug found and fixed, and a full run across all 895
+qualifying series (25,060 rows, ~23s, ~70MB billed) -- evidence in
+`eval/raw/bigquery_ai_forecast_2026-09-27/`. A head-to-head backtest against the local model, same
+rolling origins as `jobs/sense/backtest.py`, found the local model with lower MAPE in every one of
+45 (origin, tier) comparisons -- expected, since the seeded data was generated with the same form
+the local model fits; see `head_to_head_summary.json` in that directory. **A billing/payment issue
+on the GCP project briefly blocked all BigQuery writes on 2026-09-27** (DML, streaming inserts and
+load jobs all failed with `billingNotEnabled` for roughly the 15:31-15:33 UTC window and after);
+this has since been resolved by the project owner and re-verified live, twice, over an hour apart
+(streaming insert, DML `INSERT`/`DELETE`, `LOAD`, `CREATE TABLE` and `DROP TABLE` all succeeding
+cleanly). No data was lost during the outage. **A separate, real data-loss bug was found and fixed
+the same day** (before it ever ran against a project with billing enabled): `BigQueryStore.write()`
+used a tenant-wide `DELETE` even on `forecasts`, a history table, which would have wiped every
+prior run's rows on the very next nightly write; `run.py` also unconditionally re-wrote `forecasts`
+through that path even when the `bigquery_timesfm` backend had already persisted the same rows via
+real SQL `INSERT`s. Fixed: `run.py` no longer re-writes `forecasts` for the `bigquery_timesfm`
+backend; `BigQueryStore.write()` now scopes `forecasts` deletes to `(tenant_id, run_id)` (never
+tenant-wide), stages new rows in a throwaway table and swaps them in via a single `BEGIN
+TRANSACTION`/`COMMIT TRANSACTION` script, so a failed load or swap always leaves the existing rows
+untouched; date/Decimal values are made JSON-safe before any load. Evidence, tests and the full bug
+chain: `eval/raw/bigquery_forecast_dataloss_2026-09-27/`, `tests/unit/test_bigquery_store.py`,
+`tests/unit/test_sense_bigquery_backend.py`. **A separate, pre-existing, still-open bug was found
+by the same dry run**: `taal.gaps`'s DDL declares `evidence` as a closed `STRUCT` that is missing
+the `counterpart_gap_id` field `jobs/sense/gaps.py`'s rebalance-gap evidence has always emitted --
+this has nothing to do with the fix above and would have broken the original code identically the
+first time it wrote a real rebalance gap; the DDL fix is prepared in
+`data/bigquery/ddl/14_gaps.sql` but not yet applied live (needs a schema-update action outside
+what this session's own tooling permission would allow). Until it is, `TAAL_BATCH_STORE=bigquery`
+correctly writes `forecasts` but still fails writing `gaps` for any run producing a rebalance gap.
+See `eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the billing timeline and
+`eval/raw/bigquery_forecast_dataloss_2026-09-27/` for the data-loss bug and its fix. The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
 from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
 across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,

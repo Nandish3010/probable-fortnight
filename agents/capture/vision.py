@@ -2,7 +2,7 @@
 
 `vertex` backend: one Gemini call with the output schema (docs/schemas/vision_intake.schema.json);
 a second pass on a cropped label region when any date confidence is below the threshold.
-`stub` backend: the recorded rows under fixtures/photos/pallet_0N.json for the three staged photos;
+`stub` backend: the recorded rows under fixtures/photos/pallet_0N.json for each staged photo;
 an uploaded photo (data URL) gets two low-confidence rows so the confirmation flow is exercised.
 Rows below the threshold always carry a confirmation question; nothing is written to inventory
 until `commit_rows` receives the confirmed rows.

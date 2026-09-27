@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Fragment, useMemo, useState } from "react";
 import { ApprovePanel } from "../../components/ApprovePanel";
 import { Badge } from "../../components/Badge";
@@ -9,10 +10,17 @@ import { useServerNow } from "../../lib/useServerNow";
 import type { ApproveResponse, ExecutionStep, Gap, Mechanic, Play, VisionRow } from "../../lib/types";
 
 const NODES = ["DS-07", "DS-04", "DS-01"];
+// The photo_ref sent to the API is the fixture path the vision backend keys its recorded/live
+// read off of (agents/capture/vision.py); the src is this same image copied into web/public/ so
+// the browser can actually show it -- the two must stay in sync, one photo per real jpg.
 const SAMPLE_PHOTOS = [
-  { ref: "fixtures/photos/pallet_01.jpg", label: "Pallet 1" },
-  { ref: "fixtures/photos/pallet_02.jpg", label: "Pallet 2" },
-  { ref: "fixtures/photos/pallet_03.jpg", label: "Pallet 3" },
+  { ref: "fixtures/photos/pallet_01.jpg", src: "/samples/pallet_01.jpg", label: "Pallet 1 · snacks" },
+  { ref: "fixtures/photos/pallet_02.jpg", src: "/samples/pallet_02.jpg", label: "Pallet 2 · tea" },
+  { ref: "fixtures/photos/pallet_03.jpg", src: "/samples/pallet_03.jpg", label: "Pallet 3 · sweets" },
+  { ref: "fixtures/photos/pallet_04.jpg", src: "/samples/pallet_04.jpg", label: "Pallet 4 · rice & dal" },
+  { ref: "fixtures/photos/pallet_05.jpg", src: "/samples/pallet_05.jpg", label: "Pallet 5 · oil" },
+  { ref: "fixtures/photos/pallet_06.jpg", src: "/samples/pallet_06.jpg", label: "Pallet 6 · atta & poha" },
+  { ref: "fixtures/photos/pallet_08.jpg", src: "/samples/pallet_08.jpg", label: "Pallet 7 · milk & paneer" },
 ];
 
 function stepsForMechanic(mechanic: Mechanic): ExecutionStep[] {
@@ -35,6 +43,9 @@ export default function PhoneViewPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [capturedPhotoRef, setCapturedPhotoRef] = useState<string | null>(null);
   const [ownFileName, setOwnFileName] = useState<string | null>(null);
+  // What to actually show above the intake table: the sample's static asset, or the uploaded
+  // file's own data URL. Kept separate from photo_ref/selectedPhoto, which are API-facing values.
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [rows, setRows] = useState<VisionRow[] | null>(null);
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>({});
   const [dateOverrides, setDateOverrides] = useState<Record<number, string>>({});
@@ -68,9 +79,10 @@ export default function PhoneViewPage() {
     }
   }
 
-  function pickSample(ref: string) {
+  function pickSample(ref: string, src: string) {
     setSelectedPhoto(ref);
     setOwnFileName(null);
+    setPreviewSrc(src);
     runCapture(ref);
   }
 
@@ -81,9 +93,32 @@ export default function PhoneViewPage() {
     setSelectedPhoto(null);
     const reader = new FileReader();
     reader.onload = () => {
-      runCapture(undefined, reader.result as string);
+      const dataUrl = reader.result as string;
+      setPreviewSrc(dataUrl);
+      runCapture(undefined, dataUrl);
     };
     reader.readAsDataURL(file);
+  }
+
+  // In-place reset for a live demo: clears the photo/read/gap state on this page without a full
+  // navigation, so a fresh "own photo" can be uploaded right away. This is local UI state only --
+  // it does not call the server-side /reset (landing page's "Reset demo data"), which clears the
+  // per-visitor sandbox's written batches/gaps/plays, a separate and heavier operation.
+  function clearPhoto() {
+    setSelectedPhoto(null);
+    setCapturedPhotoRef(null);
+    setOwnFileName(null);
+    setPreviewSrc(null);
+    setRows(null);
+    setConfirmed({});
+    setDateOverrides({});
+    setConfirmSkipped([]);
+    setConfirmWritten(null);
+    setGap(null);
+    setPlay(null);
+    setApproveResult(null);
+    setStepsDone({});
+    setExecutionSaved(false);
   }
 
   async function loadGapForNode() {
@@ -167,9 +202,10 @@ export default function PhoneViewPage() {
               type="button"
               className="photo-choice"
               aria-pressed={selectedPhoto === p.ref}
-              onClick={() => pickSample(p.ref)}
+              onClick={() => pickSample(p.ref, p.src)}
             >
-              {p.label}
+              <Image src={p.src} alt={p.label} width={92} height={92} className="photo-choice__thumb" />
+              <span className="photo-choice__label">{p.label}</span>
             </button>
           ))}
         </div>
@@ -192,7 +228,17 @@ export default function PhoneViewPage() {
           🎤
         </button>
 
-        {capturing ? <p className="muted">Reading pallet…</p> : null}
+        {previewSrc ? (
+          <div className="captured-photo">
+            {/* eslint-disable-next-line @next/next/no-img-element -- an uploaded own-photo is a
+                blob/data URL, which next/image cannot optimise; a plain img handles both cases */}
+            <img src={previewSrc} alt="Photographed pallet" />
+            {capturing ? <span className="captured-photo__badge">Reading pallet…</span> : null}
+            <button type="button" className="captured-photo__clear" onClick={clearPhoto}>
+              Clear photo
+            </button>
+          </div>
+        ) : null}
 
         {rows ? (
           <>

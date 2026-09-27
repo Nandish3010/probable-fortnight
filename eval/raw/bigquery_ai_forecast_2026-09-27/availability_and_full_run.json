@@ -1,0 +1,30 @@
+{
+  "availability_check": {
+    "region": "asia-south1",
+    "result": "available",
+    "job_id": "8466bf13-1f50-4afe-bb14-58aec9662f83",
+    "bytes_billed": 20971520
+  },
+  "covariate_support_check": {
+    "result": "no covariate/regressor parameter exists",
+    "evidence": "real 400: Named argument holiday_region not found in signature for call to function AI.FORECAST",
+    "job_id": "c0215e09-564e-44da-8cae-90bb446f8b61",
+    "conclusion": "AI.FORECAST owns the nightly baseline forecast only; the approve-time re-forecast and festival/promo covariates stay on ARIMA_PLUS_XREG (03_forecast_arima_xreg.sql) and the local model."
+  },
+  "full_scale_run": {
+    "run_id": "ai_forecast_timesfm_verify_committed_file",
+    "job_id": "c6b5e3ab-0855-48a7-97b9-952d441c562d",
+    "elapsed_s": 22.74,
+    "bytes_billed": 73400320,
+    "rows_written": 25060,
+    "series_forecast": 895
+  },
+  "sql_bug_found_and_fixed": {
+    "file": "data/bigquery/sense/02_forecast_timesfm.sql",
+    "symptom": "Required field date cannot be null (400 BadRequest)",
+    "cause": "AI.FORECAST called over every (sku,cluster_id) pair with no minimum-history filter; a series too short to forecast returns a null forecast_timestamp, which then fails the INSERT NOT NULL constraint on taal.forecasts.date",
+    "fix": "added a qualifying_series temp table (HAVING COUNT(*) >= 28), same threshold jobs/sense/backtest.py and the ARIMA_PLUS_XREG job use",
+    "reproduced_error_job_id": "d087dbf0-67da-4152-bb49-37daefbc58bd"
+  },
+  "known_leftover": "One earlier duplicate full-scale test run (run_id=ai_forecast_timesfm_20260927T144308Z, 25060 rows) was left in the shared taal.forecasts table, because DELETE FROM taal.forecasts failed with a real 403 (billingNotEnabled). This is NOT transient and NOT unrelated: this project (amru-509214) has no billing account enabled, and BigQuery's free tier rejects every DML statement (DELETE confirmed directly against an unrelated table too; MERGE is also DML and almost certainly blocked the same way) while SELECT and INSERT both work. See eval/raw/bigquery_billing_dml_2026-09-27/finding.json for the full, independently-confirmed writeup -- this is a project-level billing-account gap, not an IAM role gap, and it blocks 04_rolldown.sql's DELETE and every agents/gate/bigquery_store.py write() call, not just this cleanup attempt."
+}
