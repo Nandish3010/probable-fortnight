@@ -178,7 +178,28 @@ with `python -m jobs.portfolio --out eval/raw/portfolio_<date>.json`
 | Portfolio-wide blanket markdown (20%, per gap) | ₹1,369,538.96 |
 | Expected units moved across all 424 planned plays | 9,142.64 |
 | Expected margin across all 424 planned plays | ₹347,355.96 |
+| ...sales margin (333 plays: bundle, coupon, outlet_markdown and other unit-sold mechanics) | ₹206,204.98 |
+| ...write-off avoided, net of transfer cost (91 `transfer_plus_nudge` plays) | ₹141,150.98 |
 | Expected waste avoided across all 424 planned plays | ₹706,183.28 |
+
+Of the 555 gaps, the 28-day horizon (`jobs/sense/forecast.py:31`, gated at `jobs/sense/gaps.py:126`
+and `:177`) directly bounds the deadline for 4 of the 7 gap types (`agents/gate/models.py:34-36`)
+-- `online_sellby_breach`, `expiry_writeoff`, `slow_mover`, `rebalance`. The other 3
+(`stockout_risk`, `unmet_demand`, `assortment_gap`) use each node's own `lead_time_days` instead
+(3 or 5 days in the seeded tenant, `data/generator/generate.py:119`), always inside the 28-day
+window, so "over the 28-day horizon" below describes an upper bound on every gap's deadline in
+this run, not a claim that one code constant gates all seven types identically.
+
+The margin total splits along the estimator's own two margin formulas (`agents/gate/estimator.py`
+module docstring). For every mechanic except `transfer_plus_nudge`, margin is units actually sold
+at a net price -- **sales margin**, ₹206,204.98, projected. For the 91 `transfer_plus_nudge`
+plays, the estimator instead defines margin as waste avoided minus the per-unit transfer cost --
+**write-off avoided, net of transfer cost**, ₹141,150.98, projected. The two sum to the
+₹347,355.96 total within ₹0.01. All three figures are projected (the estimator's expectation under
+the default response prior, not a measured outcome) and are read from
+`eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.json` (`sales_margin`,
+`writeoff_avoided_net_of_transfer`, `margin_sum_check`), computed from the committed
+`eval/raw/portfolio_2026-09-24.json`.
 
 `do_nothing_inr` here (₹1,837,170.32) is not identical to total exposure (₹1,795,463.92) because
 a few gap types (`unmet_demand`, `assortment_gap`) price `rupees_at_stake` off lost margin rather
@@ -188,5 +209,6 @@ other.
 
 This is the number worth putting in front of a category head: not "one bundle saved ₹235," but
 "424 targeted plays, drafted overnight with no model calls, project ₹347,355.96 of margin and
-₹706,183.28 of waste avoided against a ₹1.8M exposure this week alone" -- and it needs no pilot to
-say, because it is arithmetic over data already generated, not a forecast of a forecast.
+₹706,183.28 of waste avoided against a ₹1.8M exposure over the 28-day horizon" -- arithmetic on
+the default 5% response prior (`agents/gate/estimator.py:35-36`) over the 28-day horizon
+(`jobs/sense/forecast.py:31`) on the seeded tenant; the pilot replaces the prior.
