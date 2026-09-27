@@ -101,8 +101,32 @@ Real code paths: forecasts, gaps, estimator, guardrails, planner loop, assignmen
 re-forecast, chat, MCP orders, measurement. Simulated and disclosed: the tenant Kutumb Mart
 (300 SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales) comes from a seeded
 generator (`data/generator`) whose rule is stated in its docstring. No pilot has run yet; the
-Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise. The local forecaster
-stands in for BigQuery `AI.FORECAST` and `ARIMA_PLUS_XREG` (SQL under `data/bigquery/sense`). The
+Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise.
+
+**Forecasting and the nightly batch split, stated once here** (the same wording appears in
+`docs/architecture.md`, `docs/scale.md`, `infra/README.md`): the judge-mode serving path
+(`taal-agents`, this app) always reads a frozen, pinned-clock local snapshot and never touches
+BigQuery directly -- what a judge clicks never depends on a nightly job having run. Behind that,
+`jobs/sense` and `jobs/measure` support two backends, selected by env vars that default to the
+local path everywhere except the `taal-sense`/`taal-measure` Cloud Run Jobs' own environment:
+`TAAL_FORECAST_BACKEND=local` (the pure-Python forecaster) or `bigquery_timesfm`, which runs
+BigQuery `AI.FORECAST` (TimesFM) for real; `TAAL_BATCH_STORE=local` (JSONL) or `bigquery`, which
+writes through `agents/gate/bigquery_store.py::BigQueryStore`. `AI.FORECAST` was verified live
+against project `amru-509214` in `asia-south1`: available, no covariate/regressor parameter
+(confirmed by a real rejection), a real SQL bug found and fixed, and a full run across all 895
+qualifying series (25,060 rows, ~23s, ~70MB billed) -- evidence in
+`eval/raw/bigquery_ai_forecast_2026-09-27/`. A head-to-head backtest against the local model, same
+rolling origins as `jobs/sense/backtest.py`, found the local model with lower MAPE in every one of
+45 (origin, tier) comparisons -- expected, since the seeded data was generated with the same form
+the local model fits; see `head_to_head_summary.json` in that directory. **What is not verified
+live:** this GCP project has no billing account enabled, and BigQuery's free tier rejects every DML
+statement (`DELETE`/`MERGE`/`UPDATE`) while allowing `SELECT` and `INSERT` -- confirmed directly
+against an unrelated table, not inferred. That blocks `04_rolldown.sql`'s node-level rolldown step
+and every `BigQueryStore.write()` call (it issues a `DELETE` before loading), so the
+`TAAL_BATCH_STORE=bigquery` path for both nightly jobs is written and unit-tested (default `local`
+behaviour is unaffected) but has not been exercised end-to-end against real BigQuery. This is a
+project billing-configuration gap, not an IAM role gap; see
+`eval/raw/bigquery_billing_dml_2026-09-27/finding.json`. The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
 from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
 across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,

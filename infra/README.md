@@ -21,8 +21,19 @@ cross-service latency assumptions in §4.3.
    second time after `deploy.sh` if that binding was skipped on the first pass.
 2. **`deploy.sh`** -- enables APIs, creates the `taal` BigQuery dataset in `REGION`, applies every
    file under `data/bigquery/ddl/*.sql` in numeric order, builds and deploys `taal-agents`,
-   `taal-web`, and the `taal-sense` Cloud Run Job with its nightly Cloud Scheduler trigger at
-   01:30 IST (`0 20 * * *` UTC). Requires `GOOGLE_CLOUD_PROJECT`, `REGION`.
+   `taal-web`, the `taal-sense` Cloud Run Job with its nightly Cloud Scheduler trigger at 01:30 IST
+   (`0 20 * * *` UTC), and the `taal-measure` Cloud Run Job with its `taal-measure-nightly` trigger
+   30 minutes later (02:00 IST, `30 20 * * *` UTC). Only `taal-sense`'s own environment sets
+   `TAAL_BATCH_STORE=bigquery`/`TAAL_FORECAST_BACKEND=bigquery_timesfm`; `taal-measure` sets
+   `TAAL_BATCH_STORE=bigquery` only -- both default to `local` everywhere else, including the
+   deployed `taal-agents` judge-mode serving path, which is never switched. A post-deploy check
+   fails the deploy if either job or either trigger is missing; it deliberately does not execute
+   either job (that would bill real BigQuery compute on every deploy). Requires
+   `GOOGLE_CLOUD_PROJECT`, `REGION`. **Known gap, not routed around:** `amru-509214` has no billing
+   account enabled, and BigQuery's free tier rejects the `DELETE` that both `04_rolldown.sql` and
+   `BigQueryStore.write()` issue, confirmed with a real 403 -- so the `bigquery` batch-store path
+   deploys but cannot be verified live end-to-end until billing is enabled; see
+   `eval/raw/bigquery_billing_dml_2026-09-27/finding.json`.
 3. **`budgets.sh`** -- budget alerts at $50/$100/$200. Requires `GOOGLE_CLOUD_PROJECT`,
    `BILLING_ACCOUNT_ID`.
 4. **`min_instances.sh on`** -- before a demo or the judging window; **`min_instances.sh off`**

@@ -1,0 +1,11 @@
+{
+  "finding": "BigQuery DML (DELETE/UPDATE/MERGE) is blocked project-wide: real 403 billingNotEnabled, \"DML queries are not allowed in the free tier\". SELECT and INSERT both work (verified: the 895-series AI.FORECAST INSERT succeeded for real). This blocks: data/bigquery/sense/04_rolldown.sql (contains a DELETE), agents/gate/bigquery_store.py::BigQueryStore.write() (DELETE-then-load, used by every table write), and BigQueryStore.upsert() (MERGE).",
+  "evidence": {
+    "delete_test_job_error": "403 Billing has not been enabled for this project. Enable billing at https://console.cloud.google.com/billing. DML queries are not allowed in the free tier.",
+    "select_on_same_table": "succeeded"
+  },
+  "classification": "project-level billing account setting, not an IAM role gap -- no role grant narrows or fixes this; it needs the billing account owner to enable a paid tier.",
+  "impact_on_A3": "jobs/sense/run.py and jobs/measure/run.py were wired with a TAAL_BATCH_STORE=bigquery selector (code correct, unit-tested with a fake client, local default behaviour unchanged -- verified). End-to-end execution against real BigQuery with TAAL_BATCH_STORE=bigquery could not be verified beyond the SQL/INSERT layer already proven in A2, because every table write goes through BigQueryStore.write(), which is DELETE-gated.",
+  "impact_on_A2": "The AI.FORECAST baseline itself (02_forecast_timesfm.sql, INSERT-only) runs and was verified for real at full scale (895 series, 25060 rows). data/bigquery/sense/04_rolldown.sql (node-level rolldown, needed before the Sense job can hand node-level rows to gaps.detect()) could not be verified end-to-end for the same reason -- its DELETE step is blocked.",
+  "not_attempted": "Enabling billing on amru-509214 was not attempted -- that is a financial/administrative decision for the project owner, not a role grant, and outside what this task authorized."
+}

@@ -188,12 +188,21 @@ steps:
 images: ['${_IMAGE}']
 EOF
 
+# TAAL_BATCH_STORE and TAAL_FORECAST_BACKEND are set on the taal-sense job's own environment
+# only (jobs/sense/run.py::build_batch_store, jobs/measure/run.py::build_batch_store both default
+# to 'local' everywhere else, including taal-agents' judge-mode serving path, which keeps reading
+# the frozen pinned-clock snapshot and is never switched to BigQuery). This is the nightly-batch
+# path from data/bigquery/sense/02_forecast_timesfm.sql -- see eval/raw/bigquery_billing_dml_2026-09-27/
+# for why the write side of this path (any BigQueryStore.write() call, and 04_rolldown.sql's own
+# DELETE) could not be verified end-to-end against amru-509214: that project has no billing
+# account enabled and BigQuery's free tier rejects DML. Deploying this does not depend on billing
+# being enabled -- it will simply fail at run time with the same 403 until it is.
 gcloud run jobs deploy taal-sense \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-sense" \
   --command python \
   --args="-m,jobs.sense" \
-  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT}"
+  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery,TAAL_FORECAST_BACKEND=bigquery_timesfm"
 
 echo "-- creating the nightly Cloud Scheduler trigger (01:30 IST = 20:00 UTC) --"
 gcloud scheduler jobs create http taal-sense-nightly \
@@ -203,6 +212,46 @@ gcloud scheduler jobs create http taal-sense-nightly \
   --http-method POST \
   --oauth-service-account-email "taal-sense@${PROJECT}.iam.gserviceaccount.com" \
   || echo "   (scheduler job already exists; run 'gcloud scheduler jobs update' to change it)"
+
+echo "-- building taal-measure image and deploying the Cloud Run Job (same image as taal-sense) --"
+gcloud builds submit "${ROOT_DIR}" \
+  --project "${PROJECT}" \
+  --config /dev/stdin \
+  --substitutions=_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-measure" <<'EOF'
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-f', 'infra/Dockerfile.api', '-t', '${_IMAGE}', '.']
+images: ['${_IMAGE}']
+EOF
+
+gcloud run jobs deploy taal-measure \
+  --project "${PROJECT}" --region "${REGION}" \
+  --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-measure" \
+  --command python \
+  --args="-m,jobs.measure" \
+  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery"
+
+echo "-- creating the taal-measure-nightly Cloud Scheduler trigger (30 min after Sense: 02:00 IST = 20:30 UTC) --"
+gcloud scheduler jobs create http taal-measure-nightly \
+  --project "${PROJECT}" --location "${REGION}" \
+  --schedule "30 20 * * *" \
+  --uri "https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT}/jobs/taal-measure:run" \
+  --http-method POST \
+  --oauth-service-account-email "taal-sense@${PROJECT}.iam.gserviceaccount.com" \
+  || echo "   (scheduler job already exists; run 'gcloud scheduler jobs update' to change it)"
+
+# Post-deploy check: fails the deploy if either nightly job or trigger is missing (style of
+# infra/feedback_smoke.sh). Deliberately does NOT execute taal-sense or taal-measure -- running
+# the forecasting job on every deploy would bill real BigQuery compute.
+echo "-- verifying the taal-sense/taal-measure jobs and their nightly triggers exist --"
+for job in taal-sense taal-measure; do
+  gcloud run jobs describe "${job}" --project "${PROJECT}" --region "${REGION}" >/dev/null \
+    || { echo "MISSING Cloud Run Job: ${job}" >&2; exit 1; }
+done
+for trig in taal-sense-nightly taal-measure-nightly; do
+  gcloud scheduler jobs describe "${trig}" --project "${PROJECT}" --location "${REGION}" >/dev/null \
+    || { echo "MISSING Cloud Scheduler trigger: ${trig}" >&2; exit 1; }
+done
 
 # Last, so a failure here never skips another service's deploy; it still fails the job.
 echo "-- practitioner feedback: prove a submission is stored in Firestore (fails the deploy if not) --"
