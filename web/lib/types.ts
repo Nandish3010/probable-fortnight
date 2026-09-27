@@ -452,6 +452,28 @@ export interface Outcome {
   data_label: "REAL PILOT" | "SYNTHETIC";
 }
 
+// GET /outcomes/prior-update: the flagship play's estimator prior before -> after one Measure run
+// on SYNTHETIC orders, built once with the tenant (harness/prior_update_demo.py). Not applied to
+// the live estimator.
+export interface PriorUpdate {
+  play_id: string;
+  mechanic: Mechanic;
+  category: string;
+  data_label: "SYNTHETIC";
+  orders_source: "synthetic_demo";
+  rates_used: { treated: number; treated_basis: string; holdout: number; holdout_basis: string };
+  before: { alpha: number; beta: number; n_measured: number };
+  after: { alpha: number; beta: number; n_measured: number };
+  treated_n: number;
+  holdout_n: number;
+  responders: { treated: number; holdout: number };
+  status: "measured" | "unmeasured";
+  lift: number | null;
+  ci: { low: number | null; high: number | null; level: number; method: string };
+  measured_at: string;
+  applied_to_live_estimator: false;
+}
+
 export interface ExecutionStep {
   id: string;
   text: string;
@@ -659,6 +681,10 @@ export interface FeedbackSummary {
   min_n_for_percentages: number;
   responses: FeedbackModeSplit;
   excluded_non_real: number;
+  // Present when summarize() ran with the owner's exclusions (config/feedback_exclusions.json).
+  excluded_by_reason?: { non_real: number; flagged_by_owner: number; below_min_substantive: number };
+  min_substantive_answers?: number;
+  counts_only?: boolean;
   form_versions: Record<string, FeedbackModeSplit>;
   questions: Record<string, FeedbackQuestionSummary>;
   crosstabs: Record<string, { value: string; label: string; n: FeedbackModeSplit; questions: Record<string, FeedbackQuestionSummary> }[]>;

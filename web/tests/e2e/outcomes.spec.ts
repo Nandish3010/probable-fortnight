@@ -15,3 +15,19 @@ test.describe("outcomes: measure button", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("outcomes: estimator prior on the featured play", () => {
+  test("the prior update line shows on the featured card and survives Reset", async ({ page }) => {
+    const line = /Estimator prior: Beta\(1,19\) → Beta\(15,292\) · SYNTHETIC orders/;
+    await page.goto("/outcomes");
+    const card = page.locator(".card", { hasText: "Worked example: SKU-MASALA-CHIPS-200G" });
+    await expect(card.getByText(line)).toBeVisible();
+    await expect(card.locator(".prior-update .badge--synthetic")).toHaveText("SYNTHETIC");
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Reset demo data" }).click();
+    await expect(page.getByRole("button", { name: "Reset demo data" })).toBeEnabled();
+    await page.goto("/outcomes");
+    await expect(page.locator(".card", { hasText: "Worked example: SKU-MASALA-CHIPS-200G" }).getByText(line)).toBeVisible();
+  });
+});

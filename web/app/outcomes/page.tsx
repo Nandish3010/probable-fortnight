@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
-import { getOutcomes, getPlays, isMockMode, postMeasure } from "../../lib/api";
+import { getOutcomes, getPlays, getPriorUpdate, isMockMode, postMeasure } from "../../lib/api";
 import { inr, formatDateTime, pct } from "../../lib/format";
-import type { MeasureResponse, Outcome, Play, PortfolioSummary } from "../../lib/types";
+import type { MeasureResponse, Outcome, Play, PortfolioSummary, PriorUpdate } from "../../lib/types";
 import portfolio from "../../mocks/portfolio_summary.json";
 
 const PORTFOLIO: PortfolioSummary = portfolio as PortfolioSummary;
@@ -95,7 +95,32 @@ function PortfolioCard() {
   );
 }
 
-function FeaturedCounterfactualCard({ play }: { play: Play | null }) {
+// Built once with the tenant (harness/prior_update_demo.py), so identical for every visitor and
+// unchanged by Reset; shown only on the featured play's card.
+function PriorUpdateLine({ update }: { update: PriorUpdate | null }) {
+  if (!update) return null;
+  const { before: b, after: a } = update;
+  return (
+    <div className="prior-update">
+      <p>
+        <strong>Estimator prior:</strong> Beta({b.alpha},{b.beta}) → Beta({a.alpha},{a.beta}) · <Badge kind="synthetic" /> orders
+      </p>
+      <p className="muted">
+        One Measure run on synthetic orders: {update.responders.treated} of {update.treated_n} treated and{" "}
+        {update.responders.holdout} of {update.holdout_n} holdout customers responded
+        {update.lift != null && update.ci.low != null && update.ci.high != null ? (
+          <>
+            , lift {pct(update.lift)} (95% CI {pct(update.ci.low)} to {pct(update.ci.high)})
+          </>
+        ) : null}
+        . The prior moves by exactly those treated counts. A demonstration of the update, not applied to the live
+        estimator: no other play&apos;s estimate changes.
+      </p>
+    </div>
+  );
+}
+
+function FeaturedCounterfactualCard({ play, priorUpdate }: { play: Play | null; priorUpdate: PriorUpdate | null }) {
   if (!play) return null;
   return (
     <div className="card">
@@ -112,6 +137,7 @@ function FeaturedCounterfactualCard({ play }: { play: Play | null }) {
         expectedOutcome={play.expected_outcome}
         blanketMarkdownGiveawayInr={BLANKET_MARKDOWN_GIVEAWAY_INR[play.play_id]}
       />
+      {priorUpdate?.play_id === play.play_id ? <PriorUpdateLine update={priorUpdate} /> : null}
     </div>
   );
 }
@@ -174,6 +200,7 @@ function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
 export default function OutcomesPage() {
   const [outcomes, setOutcomes] = useState<Outcome[] | null>(null);
   const [featuredPlay, setFeaturedPlay] = useState<Play | null>(null);
+  const [priorUpdate, setPriorUpdate] = useState<PriorUpdate | null>(null);
   const [measuring, setMeasuring] = useState(false);
   const [measureResult, setMeasureResult] = useState<MeasureResponse | null>(null);
   const [measureError, setMeasureError] = useState<string | null>(null);
@@ -187,6 +214,9 @@ export default function OutcomesPage() {
     getPlays({ gap_id: "gap_chips_ds07" }).then((plays) => {
       setFeaturedPlay(plays.find((p) => p.play_id === FEATURED_PLAY_ID) ?? plays[0] ?? null);
     });
+    getPriorUpdate()
+      .then(setPriorUpdate)
+      .catch(() => setPriorUpdate(null));
   }, []);
 
   async function runMeasure() {
@@ -218,7 +248,7 @@ export default function OutcomesPage() {
       </p>
 
       <PortfolioCard />
-      <FeaturedCounterfactualCard play={featuredPlay} />
+      <FeaturedCounterfactualCard play={featuredPlay} priorUpdate={priorUpdate} />
       <ExpectedVsMeasured play={featuredPlay} outcome={featuredOutcome} />
 
       <div className="card__header">

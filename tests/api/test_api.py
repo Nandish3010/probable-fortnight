@@ -130,6 +130,19 @@ def test_outcomes_never_show_a_lift_when_unmeasured(client):
         assert o["data_label"] in ("REAL PILOT", "SYNTHETIC")
 
 
+def test_prior_update_is_the_same_for_every_visitor_and_survives_reset(client):
+    a = client.get("/outcomes/prior-update", headers=_h("v-prior-a"))
+    assert a.status_code == 200
+    d = a.json()
+    assert d["play_id"] == "play_chips_ds07_v1" and d["data_label"] == "SYNTHETIC"
+    client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-prior-a"))
+    client.post("/measure", headers=_h("v-prior-a"))
+    client.post("/reset", headers=_h("v-prior-a"))
+    assert client.get("/outcomes/prior-update", headers=_h("v-prior-a")).json() == d
+    assert client.get("/outcomes/prior-update", headers=_h("v-prior-b")).json() == d
+    assert client.get("/outcomes/prior-update").json() == d
+
+
 def test_customers_demo_includes_a_real_holdout_customer(client):
     out = client.get("/customers/demo", params={"play_id": "play_chips_ds07_v1"}, headers=_h("v-cust")).json()
     ids = {c["customer_id"]: c for c in out}

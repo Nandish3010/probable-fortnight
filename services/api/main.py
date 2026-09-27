@@ -31,10 +31,11 @@ from jobs.sense.trends import build_style_trends
 from services.feedback import intake as feedback_intake
 from services.feedback.store import build_store as build_feedback_store
 from services.feedback.store import feedback_backend
+from services.feedback.summary import exclusion_config as feedback_exclusion_config
 from services.feedback.summary import summarize as summarize_feedback
 
 from .approve import approve as do_approve
-from .sandbox import store_for, visitor_id
+from .sandbox import base_dir, store_for, visitor_id
 
 VERSION = "0.1.0"
 app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
@@ -501,6 +502,18 @@ def outcomes(store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
     return out
 
 
+@app.get("/outcomes/prior-update")
+def outcomes_prior_update() -> dict[str, Any]:
+    """The flagship play's estimator prior, before -> after one Measure run on SYNTHETIC orders
+    (harness/prior_update_demo.py, run once when the tenant is built). Read from the base data
+    dir, never a visitor sandbox, so every visitor sees the same result and Reset cannot change
+    it; the base tenant's own estimator_priors are not updated by it."""
+    p = base_dir() / "prior_update_demo.json"
+    if not p.exists():
+        raise HTTPException(404, "no prior update built; run python -m harness.prior_update_demo")
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
 @app.get("/customers/demo")
 def customers_demo(play_id: str = Query("play_chips_ds07_v1"), store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
     """A curated picker for the web app: named personas with visibly different home stores and
@@ -649,11 +662,11 @@ async def submit_feedback(request: Request) -> dict[str, Any]:
 
 @app.get("/feedback/summary")
 def feedback_summary(request: Request) -> dict[str, Any]:
-    """Aggregates only -- the same summarize() the committed harness command runs. Never reads
-    the contacts collection."""
+    """Aggregates only -- the same summarize() and the same config/feedback_exclusions.json the
+    committed harness command uses. Never reads the contacts collection."""
     _require_feedback_admin(request)
     now = datetime.now(UTC)
-    return summarize_feedback(build_feedback_store().responses(), feedback_intake.form(), _iso(now))
+    return summarize_feedback(build_feedback_store().responses(), feedback_intake.form(), _iso(now), **feedback_exclusion_config())
 
 
 @app.delete("/feedback/{response_id}")
