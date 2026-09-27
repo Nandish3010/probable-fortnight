@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "computed_from": "scratch tenant built for this sweep (data.generator --seed 20260912, TAAL_NOW=2026-09-12T03:30:00Z, TAAL_MODEL_BACKEND=stub), see commands.txt",
+    "scratch_dir": "/tmp/sandbox-scratch/sweep_tenant",
+    "manifest_as_of": "2026-09-12",
+    "manifest_seed": 20260912,
+    "manifest_tenant_id": "kutumb-mart"
+  },
+  "grocery_skus": {
+    "value": 300,
+    "unit": "rows",
+    "label": "seeded",
+    "source": "products.jsonl (scratch tenant), row count",
+    "note": "The grocery catalogue table; apparel SKUs live in a separate apparel_products.jsonl table (see apparel_skus below), so there is no overlap between the two counts."
+  },
+  "dark_stores": {
+    "value": 10,
+    "unit": "nodes",
+    "label": "seeded",
+    "source": "nodes.jsonl (scratch tenant), rows where type==\"dark_store\"",
+    "note": "nodes.jsonl has 16 rows total, by type: {'dark_store': 10, 'outlet': 6}."
+  },
+  "outlets": {
+    "value": 6,
+    "unit": "nodes",
+    "label": "seeded",
+    "source": "nodes.jsonl (scratch tenant), rows where type==\"outlet\"",
+    "note": "nodes.jsonl has 16 rows total, by type: {'dark_store': 10, 'outlet': 6}."
+  },
+  "customers": {
+    "value": 4000,
+    "unit": "rows",
+    "label": "seeded",
+    "source": "customers.jsonl (scratch tenant), row count",
+    "note": "One row per seeded customer (grocery + apparel share the same customer table)."
+  },
+  "days_of_sales_history": {
+    "value": 70,
+    "unit": "distinct calendar days",
+    "label": "seeded",
+    "source": "sales_daily.jsonl (scratch tenant), count of distinct date values",
+    "min_date": "2026-07-04",
+    "max_date": "2026-09-11",
+    "note": "324271 sales_daily rows span 2026-07-04 to 2026-09-11 inclusive (70 distinct days); manifest.json records history_days=70, matching this count exactly. as_of (the pinned \"now\") is 2026-09-12, i.e. history runs up to the day before as_of."
+  },
+  "apparel_skus": {
+    "value": 350,
+    "unit": "rows",
+    "label": "seeded",
+    "source": "apparel_products.jsonl (scratch tenant), row count",
+    "note": "Separate catalogue table from grocery products.jsonl."
+  },
+  "style_requests_rows": {
+    "value": 485,
+    "unit": "rows",
+    "label": "seeded",
+    "source": "style_requests.jsonl (scratch tenant), row count",
+    "note": "Apparel demand-signal table (agents/stylist/tools.py::_record_style_ask), feeds assortment_gap and style_trends detection in jobs/sense/gaps.py and jobs/sense/trends.py."
+  },
+  "cross_check_vs_manifest_counts": {
+    "products": [
+      300,
+      300
+    ],
+    "nodes_total": [
+      16,
+      16
+    ],
+    "customers": [
+      4000,
+      4000
+    ],
+    "sales_daily_rows": [
+      324271,
+      324271
+    ],
+    "apparel_products": [
+      350,
+      350
+    ],
+    "style_requests": [
+      485,
+      485
+    ],
+    "all_match": true
+  }
+}
