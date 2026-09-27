@@ -1,0 +1,416 @@
+Docs truth sweep (2026-09-27) -- commands.txt
+Repo: /home/user/probable-fortnight, branch docs-truth-sweep, working dir /home/user/probable-fortnight
+unless a command's own `SC=`/`cd` shows otherwise. Every command below was actually run, in
+order, via the Bash tool. Read/Grep tool calls (structured file reads and ripgrep-style searches
+used throughout for citations and file:line lookups) are a separate tool, not a shell command, so
+they are not transcribed line-by-line here; the files they touched are cited directly in
+impact_numbers.json / hook_numbers.json / tenant_counts.json's own "source" fields instead.
+
+No command below writes to .local/ or changes git state. Scratch tenant dir used throughout:
+  SC=/tmp/sandbox-scratch/sweep_tenant
+
+================================================================================================
+# 1. Orientation: branch, working tree, repo layout
+================================================================================================
+cd /home/user/probable-fortnight && git branch --show-current && git status && echo "---" && find . -maxdepth 2 -type d | grep -v '.git' | sort
+
+cd /home/user/probable-fortnight && ls eval/raw/ | head -50
+
+================================================================================================
+# 2. Task 1 (impact numbers): inspect the committed portfolio file's shape before writing
+#    impact_numbers.py
+================================================================================================
+cd /home/user/probable-fortnight && python3 -c "
+import json
+with open('eval/raw/portfolio_2026-09-24.json') as f:
+    data = json.load(f)
+print(type(data))
+if isinstance(data, dict):
+    print('TOP KEYS:', list(data.keys()))
+elif isinstance(data, list):
+    print('LIST LEN:', len(data))
+    print('FIRST ITEM KEYS:', list(data[0].keys()) if data else None)
+"
+
+cd /home/user/probable-fortnight && grep -rn "portfolio" --include="*.py" jobs/ harness/ | grep -v "test" | head -60
+
+cd /home/user/probable-fortnight && python3 -c "
+import json
+with open('eval/raw/portfolio_2026-09-24.json') as f:
+    data = json.load(f)
+print('sense_run_id:', data['sense_run_id'])
+print('as_of:', data['as_of'])
+print('computed_at:', data['computed_at'])
+print('tenant_id:', data['tenant_id'])
+print()
+print('TOTALS:', json.dumps(data['totals'], indent=2))
+print()
+print('GOVERNOR:', json.dumps(data['governor'], indent=2)[:3000])
+print()
+print('PLANNED:', json.dumps(data['planned'], indent=2)[:3000])
+print()
+print('num plays:', len(data['plays']))
+print('first play keys:', list(data['plays'][0].keys()))
+print(json.dumps(data['plays'][0], indent=2)[:3000])
+"
+
+cd /home/user/probable-fortnight && echo "=== horizon in portfolio json ===" && grep -o '"horizon[^,}]*' eval/raw/portfolio_2026-09-24.json | head -20
+echo "=== horizon in jobs/portfolio ===" && grep -rn "horizon" jobs/portfolio/ agents/gate/ agents/planner/ 2>/dev/null
+echo "=== horizon in docs ===" && grep -rn "horizon" docs/*.md
+echo "=== git tracked? ===" && git ls-files eval/raw/portfolio_2026-09-24.json eval/raw/cost_measurement_2026-09-23.json
+echo "=== wc -l impact_math.md ===" && wc -l docs/impact_math.md docs/scale.md docs/DECISIONS.md
+
+cd /home/user/probable-fortnight && echo "=== jobs/sense dir ===" && ls jobs/sense/
+echo "=== grep horizon/window/days in jobs/sense ===" && grep -rn "horizon\|_days\|window" jobs/sense/*.py | grep -v test | head -60
+
+cd /home/user/probable-fortnight && python3 -c "
+import json
+with open('eval/raw/portfolio_2026-09-24.json') as f:
+    data = json.load(f)
+def find_keys(obj, path=''):
+    if isinstance(obj, dict):
+        for k,v in obj.items():
+            if 'day' in k.lower() or 'horizon' in k.lower() or 'week' in k.lower():
+                print(path+'.'+k, '=', v if not isinstance(v,(dict,list)) else type(v))
+            find_keys(v, path+'.'+k)
+    elif isinstance(obj, list) and obj:
+        find_keys(obj[0], path+'[0]')
+find_keys(data)
+"
+
+cd /home/user/probable-fortnight && echo "=== Makefile generate/sense/seed targets ===" && grep -n "^generate\|^sense\|^seed\|generate:\|sense:\|seed_plays" Makefile | head -30
+echo "=== full generate target ===" && sed -n '/^generate:/,/^[a-z]/p' Makefile | head -20
+echo "=== infra/Dockerfile.api ===" && cat infra/Dockerfile.api 2>/dev/null | head -60
+
+cd /home/user/probable-fortnight && grep -rn "transfer_cost_per_unit" agents/ jobs/ | grep -v estimator.py
+echo "---who pays / buyer persona / price anchor across docs---"
+grep -rn "buyer persona\|price anchor\|category head\|supply-chain head\|supply chain head\|who pays" docs/ README.md 2>/dev/null
+echo "--- python tomllib check ---"
+python3 -c "import tomllib; print('tomllib ok')"
+
+cd /home/user/probable-fortnight && grep -n "buyer persona\|price anchor\|who pays\|category head\|supply-chain head\|supply chain head" docs/*.md README.md 2>/dev/null
+
+cd /home/user/probable-fortnight && sed -n '95,145p' agents/planner/tools.py
+
+================================================================================================
+# 3. Create the evidence output directory (already existed per the job spec; confirmed)
+================================================================================================
+mkdir -p /home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27 && ls -la /home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27/
+
+================================================================================================
+# 4. Write impact_numbers.py (Write tool, not a shell command -- see that file), then run it
+================================================================================================
+cd /home/user/probable-fortnight && python3 eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py > /tmp/impact_run_stdout.txt 2>&1; echo "EXIT: $?"; tail -100 /tmp/impact_run_stdout.txt
+# -> FAILED: SyntaxError (f-string expression part cannot include a backslash). Fixed with Edit
+#    (precomputed the offending _line_of(...) call into a plain variable before the f-string).
+
+cd /home/user/probable-fortnight && python3 eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py > /tmp/impact_run_stdout.txt 2>&1; echo "EXIT: $?"; tail -150 /tmp/impact_run_stdout.txt
+# -> EXIT: 0. Writes eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.json.
+
+head -80 /tmp/impact_run_stdout.txt
+
+ls -la /home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.json && python3 -c "
+import json
+d = json.load(open('/home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.json'))
+print('top keys:', list(d.keys()))
+print()
+print(json.dumps(d['horizon_days'], indent=2))
+"
+
+================================================================================================
+# 5. Task 2 (hook numbers): search committed eval/raw/ for a deployed/live approve latency
+#    BEFORE building the scratch tenant, since this only reads already-committed files
+================================================================================================
+cd /home/user/probable-fortnight && echo "=== grep latency_ms across eval/raw (files, not dirs) ==="
+grep -rl "latency_ms\|refc_\|approve" eval/raw/ --include="*.json" --include="*.txt" --include="*.md" --include="*.jsonl" 2>/dev/null | sort
+echo "=== which of those mention approve + latency together ==="
+grep -rl "approve" eval/raw/ --include="*.json" --include="*.txt" --include="*.md" 2>/dev/null | xargs -I{} sh -c 'echo "--- {} ---"; grep -n "latency\|approve.*forecast\|re-forecast\|refc_" "{}" | head -5' 2>/dev/null
+
+cd /home/user/probable-fortnight && echo "=== sweep_vertex_2026-09-20.txt: approve mentions ===" && grep -n -i "approve" eval/raw/sweep_vertex_2026-09-20.txt | head -20
+echo "=== sweep_vertex_2026-09-21.txt: approve mentions ===" && grep -n -i "approve" eval/raw/sweep_vertex_2026-09-21.txt | head -20
+echo "=== status_2026-09-20.md: approve mentions ===" && grep -n -i "approve" eval/raw/status_2026-09-20.md | head -20
+echo "=== smoke_test: approve mentions ===" && grep -n -i "approve" eval/raw/smoke_test_local_substitute_2026-09-21.txt | head -20
+
+cd /home/user/probable-fortnight && echo "=== sweep_vertex_2026-09-20.txt (first 40 lines) ===" && sed -n '1,40p' eval/raw/sweep_vertex_2026-09-20.txt
+echo
+echo "=== sweep_vertex_2026-09-21.txt (first 40 lines) ===" && sed -n '1,40p' eval/raw/sweep_vertex_2026-09-21.txt
+
+cd /home/user/probable-fortnight && wc -l eval/raw/sweep_vertex_2026-09-20.txt eval/raw/sweep_vertex_2026-09-21.txt
+echo "=== any 'forecast' json body / latency_ms in these files beyond the summary lines? ==="
+grep -n "forecast\|latency_ms\|regressor_rows_touched\|refc_" eval/raw/sweep_vertex_2026-09-20.txt eval/raw/sweep_vertex_2026-09-21.txt
+echo "=== find harness sweep_live script + base URL ==="
+find harness -iname "*sweep*"
+grep -rn "base_url\|BASE_URL\|localhost\|127.0.0.1\|run.app\|CLOUD_RUN\|cloud run\|deployed" harness/*.py 2>/dev/null | grep -i "sweep\|url" | head -30
+
+================================================================================================
+# 6. Task 2/3: build the scratch tenant exactly like `make generate` / infra/Dockerfile.api
+================================================================================================
+cd /home/user/probable-fortnight && which uv python3 && python3 --version && cat pyproject.toml | head -30 && echo "=== scratch dir ===" && mkdir -p /tmp/sandbox-scratch/sweep_tenant && ls -la /tmp/sandbox-scratch/
+
+cd /home/user/probable-fortnight && mkdir -p eval/raw/docs_truth_sweep_2026-09-27 && ls eval/raw/docs_truth_sweep_2026-09-27/ 2>/dev/null; echo "---"; cat Makefile | head -60
+
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && echo "ENV: MODEL_BACKEND=$TAAL_MODEL_BACKEND TENANT_CONFIG=$TAAL_TENANT_CONFIG NOW=$TAAL_NOW DATA_DIR=$TAAL_DATA_DIR" && time uv run python -m data.generator --out "$TAAL_DATA_DIR" --seed 20260912 2>&1 | tail -60
+# -> counts: products=300, nodes=16, sales_daily=324271, inventory_batches=4800, inbound=1643,
+#    customers=4000, consent=4000, affinity=55404, orders=16936, order_lines=42051,
+#    future_regressors=25200, estimator_priors=72, apparel_products=350, apparel_stock=11383,
+#    style_requests=485. real 0m6.057s
+
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && time uv run python -m jobs.sense 2>&1 | tail -60
+# -> run_id=sense_20260912_baseline_2aaad73c, gaps=555, planner_eligible=428, matches the
+#    committed eval/raw/portfolio_2026-09-24.json's own sense_run_id/totals exactly. real 0m5.649s
+
+cd /home/user/probable-fortnight && grep -n "estimator_priors\|def build\b\|class PlannerContext\|priors" agents/planner/context.py | head -40
+
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && time uv run python -m harness.seed_plays 2>&1 | tail -80
+# -> "seed: gap_chips_ds07 -> proposed play_chips_ds07_v1 (2 iteration(s))" among 8 seeded plays.
+#    real 0m10.409s
+
+================================================================================================
+# 7. Confirm the scratch dir was really used (not .local/), and inspect the seeded tenant
+================================================================================================
+SC=/tmp/sandbox-scratch/sweep_tenant && ls -la "$SC" && echo "=== manifest ===" && cat "$SC/manifest.json" 2>/dev/null | head -20
+
+SC=/tmp/sandbox-scratch/sweep_tenant && cat "$SC/manifest.json"
+echo "=== estimator_priors sample ==="
+head -5 "$SC/estimator_priors.jsonl"
+echo "=== events dir ==="
+ls "$SC/events" | head -20
+echo "..."
+ls "$SC/events" | wc -l
+
+SC=/tmp/sandbox-scratch/sweep_tenant && python3 -c "
+import json
+with open('$SC/gaps.jsonl') as f:
+    for line in f:
+        g = json.loads(line)
+        if g['gap_id'] == 'gap_chips_ds07':
+            print(json.dumps(g, indent=2))
+            break
+"
+
+SC=/tmp/sandbox-scratch/sweep_tenant && python3 -c "
+import json
+with open('$SC/products.jsonl') as f:
+    for line in f:
+        p = json.loads(line)
+        if p['sku'] == 'SKU-MASALA-CHIPS-200G':
+            print(json.dumps(p, indent=2))
+            break
+"
+echo "=== batch B-CHIPS-DS07-01 ==="
+python3 -c "
+import json
+with open('$SC/inventory_batches.jsonl') as f:
+    for line in f:
+        b = json.loads(line)
+        if b['batch_id'] == 'B-CHIPS-DS07-01':
+            print(json.dumps(b, indent=2))
+            break
+"
+
+SC=/tmp/sandbox-scratch/sweep_tenant && cat "$SC/events/run_chips_ds07_v1_bd0a8253.jsonl"
+
+cd /home/user/probable-fortnight && grep -n "TAAL_DATA_DIR\|argparse\|add_argument" jobs/sense/__main__.py jobs/sense/run.py harness/seed_plays.py 2>/dev/null | head -40
+
+SC=/tmp/sandbox-scratch/sweep_tenant && python3 -c "
+import json
+with open('$SC/plays.jsonl') as f:
+    lines = [json.loads(l) for l in f]
+rows = [r for r in lines if r.get('play_id')=='play_chips_ds07_v1']
+print('n rows for play_chips_ds07_v1:', len(rows))
+print(json.dumps(rows[-1], indent=2)[:3000])
+"
+
+================================================================================================
+# 8. Read the /approve route + approve() implementation before writing hook_numbers.py, so its
+#    approve(...) call mirrors services/api/main.py's route exactly
+================================================================================================
+cd /home/user/probable-fortnight && grep -n "_as_of\|class ApproveRequest" services/api/main.py | head -20
+
+cd /home/user/probable-fortnight && grep -n "def find\|def read\|def append\|def write\|def upsert\|class LocalStore\|self.root" agents/gate/store.py | head -30
+
+cd /home/user/probable-fortnight && sed -n '1,30p' agents/gate/store.py
+
+================================================================================================
+# 9. Write hook_numbers.py (Write tool; cleaned up with one Edit to drop a dead code path), then
+#    run it against the scratch tenant -- this is the actual services.api.approve.approve(...)
+#    reproduction, and the only step in this sweep that mutates the scratch tenant (plays,
+#    play_assignments, offers, approvals, forecasts, future_regressors, events -- scratch dir
+#    only, never .local/)
+================================================================================================
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && uv run python eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.py > /tmp/hook_run_stdout.txt 2>&1; echo "EXIT: $?"; tail -150 /tmp/hook_run_stdout.txt
+# -> EXIT: 0. Writes eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json.
+#    treated_n=287, holdout_n=26, eligible_n=313, regressor_rows_touched=7,
+#    forecast.model=local_seasonal_xreg, forecast.latency_ms=1842,
+#    writeoff_before_inr=9194.12, writeoff_after_inr=8067.53 (both exactly match the independent,
+#    real-Gemini/BigQuery live-Vertex sweep in eval/raw/sweep_vertex_2026-09-21.txt line 12).
+
+sed -n '1,80p' /tmp/hook_run_stdout.txt
+
+================================================================================================
+# 9b. hook_numbers.py was then extended with an explicit per-value {value, unit, label, source,
+#     note} "labeled_values" block (Edit tool, not a shell command). That requires a fresh,
+#     not-yet-approved play_chips_ds07_v1 (the first run above already approved it, and approve()
+#     is idempotent -- a second call on the same play returns the recorded result rather than a
+#     fresh timing), so the scratch tenant was regenerated from scratch and hook_numbers.py was
+#     run again for a clean, real measurement:
+================================================================================================
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && \
+echo "--- regenerating scratch tenant for a clean (unapproved) play_chips_ds07_v1 ---" && \
+time uv run python -m data.generator --out "$TAAL_DATA_DIR" --seed 20260912 2>&1 | tail -20 && \
+time uv run python -m jobs.sense 2>&1 | tail -20 && \
+time uv run python -m harness.seed_plays 2>&1 | tail -20
+# -> identical run_id/counts/gaps_by_type to the first build (fully deterministic); "seed:
+#    gap_chips_ds07 -> proposed play_chips_ds07_v1 (2 iteration(s))" again.
+
+cd /home/user/probable-fortnight && export TAAL_MODEL_BACKEND=stub TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z TAAL_DATA_DIR=/tmp/sandbox-scratch/sweep_tenant && uv run python eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.py > /tmp/hook_run_stdout2.txt 2>&1; echo "EXIT: $?"; wc -l /tmp/hook_run_stdout2.txt; sed -n '1,60p' /tmp/hook_run_stdout2.txt
+# -> EXIT: 0. Re-writes eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json (this is the final
+#    committed version). treated_n=287, holdout_n=26, eligible_n=313, regressor_rows_touched=7,
+#    forecast.model=local_seasonal_xreg, writeoff_before_inr=9194.12, writeoff_after_inr=8067.53
+#    (all identical to the first run); forecast.latency_ms=1554 this time (vs 1842 the first run --
+#    real wall-clock variance between runs, both "about 1.5s"); elapsed_ms_total_approve_call=4052.
+#    All 5 readme_claims_check entries: match=true.
+
+python3 -c "
+import json
+d = json.load(open('/home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json'))
+lv = d['labeled_values']
+for k in ('treated_n','holdout_n','eligible_n','regressor_rows_touched','forecast_model','forecast_latency_ms','elapsed_ms_total_approve_call','writeoff_before_inr','writeoff_after_inr'):
+    print(k, '=', lv[k]['value'], lv[k]['label'])
+print()
+for c in d['readme_claims_check']:
+    print(c['match'], '-', c['claim'])
+"
+
+rm -f /tmp/hook_run_stdout2.txt  # scratch stdout capture, not part of the deliverables
+
+================================================================================================
+# 10. Task 3 (tenant counts): recount straight from the scratch tenant's raw tables
+================================================================================================
+SC=/tmp/sandbox-scratch/sweep_tenant && python3 -c "
+import json
+from collections import Counter
+nodes = [json.loads(l) for l in open('$SC/nodes.jsonl')]
+print('n nodes:', len(nodes))
+print('type counter:', Counter(n['type'] for n in nodes))
+print(json.dumps(nodes[0], indent=2))
+"
+echo "=== sales_daily date range ==="
+python3 -c "
+import json
+dates = set()
+n=0
+with open('$SC/sales_daily.jsonl') as f:
+    for line in f:
+        r = json.loads(line)
+        dates.add(r['date'])
+        n += 1
+print('n sales_daily rows:', n)
+print('n distinct dates:', len(dates))
+print('min date:', min(dates))
+print('max date:', max(dates))
+"
+echo "=== manifest history_days / as_of ==="
+python3 -c "
+import json
+m = json.load(open('$SC/manifest.json'))
+print('as_of:', m['as_of'])
+print('history_days:', m.get('history_days'))
+print('counts:', json.dumps(m['counts'], indent=2))
+"
+
+SC=/tmp/sandbox-scratch/sweep_tenant && OUT=/home/user/probable-fortnight/eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json && python3 -c "
+import json
+from collections import Counter
+
+SC = '$SC'
+
+def read_jsonl(name):
+    with open(f'{SC}/{name}.jsonl') as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+products = read_jsonl('products')
+nodes = read_jsonl('nodes')
+customers = read_jsonl('customers')
+sales_daily = read_jsonl('sales_daily')
+apparel_products = read_jsonl('apparel_products')
+style_requests = read_jsonl('style_requests')
+
+node_types = Counter(n['type'] for n in nodes)
+sales_dates = sorted({r['date'] for r in sales_daily})
+manifest = json.load(open(f'{SC}/manifest.json'))
+
+result = {
+    '_meta': {
+        'computed_from': 'scratch tenant built for this sweep (data.generator --seed 20260912, TAAL_NOW=2026-09-12T03:30:00Z, TAAL_MODEL_BACKEND=stub), see commands.txt',
+        'scratch_dir': SC,
+        'manifest_as_of': manifest['as_of'],
+        'manifest_seed': manifest['seed'],
+        'manifest_tenant_id': manifest.get('tenant_id'),
+    },
+    'grocery_skus': {
+        'value': len(products), 'unit': 'rows', 'label': 'seeded',
+        'source': 'products.jsonl (scratch tenant), row count',
+        'note': 'The grocery catalogue table; apparel SKUs live in a separate apparel_products.jsonl table (see apparel_skus below), so there is no overlap between the two counts.',
+    },
+    'dark_stores': {
+        'value': node_types.get('dark_store', 0), 'unit': 'nodes', 'label': 'seeded',
+        'source': 'nodes.jsonl (scratch tenant), rows where type==\"dark_store\"',
+        'note': f'nodes.jsonl has {len(nodes)} rows total, by type: {dict(node_types)}.',
+    },
+    'outlets': {
+        'value': node_types.get('outlet', 0), 'unit': 'nodes', 'label': 'seeded',
+        'source': 'nodes.jsonl (scratch tenant), rows where type==\"outlet\"',
+        'note': f'nodes.jsonl has {len(nodes)} rows total, by type: {dict(node_types)}.',
+    },
+    'customers': {
+        'value': len(customers), 'unit': 'rows', 'label': 'seeded',
+        'source': 'customers.jsonl (scratch tenant), row count',
+        'note': 'One row per seeded customer (grocery + apparel share the same customer table).',
+    },
+    'days_of_sales_history': {
+        'value': len(sales_dates), 'unit': 'distinct calendar days', 'label': 'seeded',
+        'source': 'sales_daily.jsonl (scratch tenant), count of distinct date values',
+        'min_date': sales_dates[0], 'max_date': sales_dates[-1],
+        'note': f'{len(sales_daily)} sales_daily rows span {sales_dates[0]} to {sales_dates[-1]} inclusive ({len(sales_dates)} distinct days); manifest.json records history_days={manifest.get(\"history_days\")}, matching this count exactly. as_of (the pinned \"now\") is {manifest[\"as_of\"]}, i.e. history runs up to the day before as_of.',
+    },
+    'apparel_skus': {
+        'value': len(apparel_products), 'unit': 'rows', 'label': 'seeded',
+        'source': 'apparel_products.jsonl (scratch tenant), row count',
+        'note': 'Separate catalogue table from grocery products.jsonl.',
+    },
+    'style_requests_rows': {
+        'value': len(style_requests), 'unit': 'rows', 'label': 'seeded',
+        'source': 'style_requests.jsonl (scratch tenant), row count',
+        'note': 'Apparel demand-signal table (agents/stylist/tools.py::_record_style_ask), feeds assortment_gap and style_trends detection in jobs/sense/gaps.py and jobs/sense/trends.py.',
+    },
+    'cross_check_vs_manifest_counts': {
+        'products': [len(products), manifest['counts'].get('products')],
+        'nodes_total': [len(nodes), manifest['counts'].get('nodes')],
+        'customers': [len(customers), manifest['counts'].get('customers')],
+        'sales_daily_rows': [len(sales_daily), manifest['counts'].get('sales_daily')],
+        'apparel_products': [len(apparel_products), manifest['counts'].get('apparel_products')],
+        'style_requests': [len(style_requests), manifest['counts'].get('style_requests')],
+        'all_match': (
+            len(products) == manifest['counts'].get('products')
+            and len(nodes) == manifest['counts'].get('nodes')
+            and len(customers) == manifest['counts'].get('customers')
+            and len(sales_daily) == manifest['counts'].get('sales_daily')
+            and len(apparel_products) == manifest['counts'].get('apparel_products')
+            and len(style_requests) == manifest['counts'].get('style_requests')
+        ),
+    },
+}
+with open('$OUT', 'w') as f:
+    json.dump(result, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+print(json.dumps(result, indent=2, ensure_ascii=False))
+"
+# -> writes eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json
+#    grocery_skus=300, dark_stores=10, outlets=6, customers=4000,
+#    days_of_sales_history=70 (2026-07-04 .. 2026-09-11), apparel_skus=350,
+#    style_requests_rows=485. all_match vs manifest.json: true.
+
+================================================================================================
+# End of commands.txt
+================================================================================================
