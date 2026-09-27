@@ -40,7 +40,7 @@ def _compose_photo_turn(text: str, image_kind: str, image_data_url: str | None, 
     return f"{base} (photo: {read['description']}{note})", extra
 
 
-async def run_stylist_chat_async(store: LocalStore, session_id: str, text: str, customer_id: str | None = None, backend: str | None = None, now_iso: str | None = None, image_data_url: str | None = None, photo_ref: str | None = None, image_kind: str = "garment") -> list[dict[str, Any]]:
+async def run_stylist_chat_async(store: LocalStore, session_id: str, text: str, customer_id: str | None = None, backend: str | None = None, now_iso: str | None = None, image_data_url: str | None = None, photo_ref: str | None = None, image_kind: str = "garment", visitor_id: str | None = None) -> list[dict[str, Any]]:
     from agents.chat_runtime import now_iso as _now_iso
 
     customer_id = customer_id or session_id.split(":", 1)[0]
@@ -56,7 +56,7 @@ async def run_stylist_chat_async(store: LocalStore, session_id: str, text: str, 
             turn_text, extra_tool_calls = _compose_photo_turn(text, image_kind, image_data_url, photo_ref, backend)
         cust = store.find("customers", customer_id=customer_id)
         language = (cust[-1].get("language", "en") if cust else "en") or "en"
-        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls)
+        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id)
         return [envelope]
     finally:
         reset_context(token)
@@ -67,8 +67,9 @@ def run_stylist_chat(data_dir: str | Path | LocalStore, session_id: str, text: s
     return asyncio.run(run_stylist_chat_async(store, session_id, text, customer_id, **kw))
 
 
-def reset_sessions() -> None:
-    RUNTIME.reset()
+def reset_sessions(store: LocalStore | None = None) -> None:
+    """Drop every visitor's runners, or only `store`'s."""
+    RUNTIME.reset(store)
 
 
 __all__ = ["APP", "RUNTIME", "reset_sessions", "run_stylist_chat", "run_stylist_chat_async"]

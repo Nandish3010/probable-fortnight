@@ -182,7 +182,13 @@ def build_rows() -> list[Row]:
     latency_result = chat_latency
     if approve_line:
         latency_result += f" Approve latency (includes the re-forecast call), same clean live-Vertex sweep: `{approve_line}`."
-    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_fix_2026-09-21.json`, `eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`"))
+    flags_on = _extract(
+        text,
+        r"\*\*Flags-on /chat latency: (.*?)\n\n",
+        "the flags-on /chat latency paragraph",
+    )
+    latency_result += " With `TAAL_SESSION_BACKEND=vertex` + `TAAL_SERVING_CACHE=firestore`: " + flags_on.replace("**", "")
+    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_fix_2026-09-21.json`, `eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`, `eval/raw/sessions_cache_2026-09-27/`"))
 
     # 11. Vision read accuracy on 30 staged photos
     vision = _extract(

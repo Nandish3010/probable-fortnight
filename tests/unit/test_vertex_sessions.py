@@ -7,6 +7,7 @@ raw evidence: eval/raw/vertex_sessions_2026-09-24/summary.json.
 from __future__ import annotations
 
 import asyncio
+import re
 
 import pytest
 
@@ -133,3 +134,25 @@ def test_wrapper_delete_session_translates_ids():
         assert fetched is None
 
     asyncio.run(_run())
+
+
+def test_vertex_safe_id_of_a_visitor_scoped_uuid_id_stays_readable():
+    raw = "0f8fad5b-d9cb-469f-a165-70867728950e:CUST-MEENA:web"
+    assert vertex_safe_id(raw) == "0f8fad5b-d9cb-469f-a165-70867728950e-cust-meena-web"
+
+
+def test_vertex_safe_id_bounds_long_ids_with_a_hash_not_a_truncation():
+    a = "v" * 64 + ":CUST-MEENA:web"
+    b = "v" * 64 + ":CUST-00316:web"  # same first 50 characters as `a`
+    sa, sb = vertex_safe_id(a), vertex_safe_id(b)
+    assert len(sa) <= 63 and len(sb) <= 63
+    assert sa != sb, "two different long ids must not collapse to one session"
+    assert re.fullmatch(r"[a-z0-9][a-z0-9-]*[a-z0-9]", sa)
+
+
+def test_planner_scope_has_its_own_flag(monkeypatch):
+    # Chat on Vertex must not silently move the planner (one-shot sessions with deterministic,
+    # visitor-independent run ids) onto the shared Agent Engine too.
+    monkeypatch.setenv("TAAL_SESSION_BACKEND", "vertex")
+    monkeypatch.delenv("TAAL_PLANNER_SESSION_BACKEND", raising=False)
+    assert build_session_service(scope="planner") is None

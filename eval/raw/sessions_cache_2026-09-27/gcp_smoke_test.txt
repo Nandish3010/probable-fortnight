@@ -1,0 +1,6 @@
+# 2026-09-27: the task's GCP smoke test was run in full in this session (same error); reproduced here with its first client call only.
+# Result: blocked before any Google Cloud call -- the service-account key file is not present.
+$ test -f /root/.gcp/taal-deploy-key.json
+ABSENT
+$ GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json uv run python -c "from google.cloud import bigquery; bigquery.Client(project=..., location=...)"   (last line of output)
+google.auth.exceptions.DefaultCredentialsError: File /root/.gcp/taal-deploy-key.json was not found.

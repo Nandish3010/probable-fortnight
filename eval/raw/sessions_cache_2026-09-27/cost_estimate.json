@@ -1,0 +1,30 @@
+{
+ "label": "PROJECTED estimate. Per-turn counts are measured offline (offline_counts.json: stub model, fake Firestore, in-memory session service); no unit price below was verified against a pricing page in this session.",
+ "firestore": {
+  "reads_per_chat_turn_measured_stub_mean": 1.13,
+  "reads_per_chat_turn_measured_stub_max": 2,
+  "reads_per_chat_turn_upper_bound_by_code": "about 15: 1 profile read before the turn (vertex backend) + 1 per tool call that resolves a node + 1 per get_stock + up to 5 per find_substitutes (substitute lists are 5 long, see substitutes table) + up to 5 per remembered request",
+  "writes_per_deploy_measured": 8801,
+  "health_probe_reads": "at most 1 per 60 s per running instance while the flag is on (probe result cached 60 s); 0 with scale-to-zero idle",
+  "consent_and_offer_reads": 0,
+  "price_note": "Firestore's daily no-cost quota (recalled as 50,000 reads and 20,000 writes per project per day; NOT re-verified in this session) would cover one mirror per day and demo-scale chat; beyond it, cost is proportional to the counts above at the regional list price, which the owner should read off the pricing page before relying on a figure."
+ },
+ "agent_engine_sessions": {
+  "session_service_calls_per_turn_measured_stub": {
+   "create_session": 1,
+   "get_session": 2,
+   "append_event": 5.33
+  },
+  "events_appended_per_turn_measured_stub_max": 6,
+  "sessions_created": "1 per (visitor, customer, channel) conversation; /reset deletes the visitor's sessions",
+  "price_note": "Unknown in this session: Agent Engine Sessions pricing was not looked up or verified. Cost scales with sessions and stored events; the per-turn event count above is the multiplier to apply to whatever the current unit price is.",
+  "latency_note": "Each session-service call is a network round trip on the turn's critical path with the flag on (create + get x2 + append_event x~5 per first turn, measured in stub mode). That is the more binding cost against the 6.0 s p95 bar than money."
+ },
+ "local_store_reads_the_cache_replaces_ms_p50": {
+  "inventory_batches": 25.26,
+  "customers": 17.43
+ },
+ "local_store_read_the_cache_does_not_replace_ms_p50": {
+  "order_lines": 234.06
+ }
+}
