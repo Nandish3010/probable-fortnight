@@ -87,7 +87,12 @@ flowchart LR
    delivers the play; a customer's order goes to `taal.orders` / `order_lines` with `play_id` set.
 5. **Measure.** The nightly Measure job joins `orders` to `play_assignments` inside the play
    window, writes `play_outcomes` (treated vs holdout), and updates `estimator_priors`; Looker
-   Studio reads the same table.
+   Studio reads the same table. With `TAAL_BATCH_STORE=bigquery` (the `taal-measure` job) it
+   reads `plays`/`play_assignments` from BigQuery but `order_lines`/`estimator_priors` from the
+   job image's local snapshot. When BigQuery holds no plays it logs exactly one line and exits 0
+   without writing anything: "0 plays to measure: judge-mode approvals are per-visitor sandboxes
+   and are never written to BigQuery by design". `make nightly-report` records whether each
+   execution logged it (`eval/raw/nightly_runs/`).
 
 ## Latency budget (DECISIONS §4.3)
 

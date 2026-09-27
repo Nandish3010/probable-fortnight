@@ -45,6 +45,9 @@ def build_batch_store(data_dir: str | Path) -> LocalStore:
 # caveats are in docs/DATA_MODEL.md. Replace with a tenant-specific factor when one exists.
 EMISSIONS_FACTOR_KGCO2E_PER_KG = 2.5
 Z95 = 1.959964
+# The one line the nightly job logs when the BigQuery store holds no plays (docs/architecture.md,
+# Measure). harness/nightly_report.py looks for this exact text in the execution's log.
+NO_PLAYS_IN_BIGQUERY = "0 plays to measure: judge-mode approvals are per-visitor sandboxes and are never written to BigQuery by design"
 
 
 class MeasureError(RuntimeError):
@@ -156,6 +159,11 @@ def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[st
     products = load_catalogue(store)
     plays = [json.loads(r["play_json"]) if isinstance(r.get("play_json"), str) else (r.get("play_json") or r) for r in store.read("plays")]
     plays = [p for p in plays if p.get("status") in ("approved", "running", "measured", "unmeasured")]
+    if not plays and isinstance(store, BigQueryStore):
+        # Expected nightly state, not a failure: said once in the job log and exit 0, rather
+        # than a silent no-op rewrite of play_outcomes/estimator_priors/plays.
+        print(NO_PLAYS_IN_BIGQUERY, flush=True)
+        return {"plays": 0, "measured": 0, "unmeasured": 0, "skipped": [], "computed_at": computed_at, "execution_name": execution_name, "note": NO_PLAYS_IN_BIGQUERY}
     assignments: dict[str, list[dict]] = defaultdict(list)
     for a in store.read("play_assignments"):
         assignments[a["play_id"]].append(a)
