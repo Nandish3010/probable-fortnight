@@ -8,9 +8,10 @@ final published rules before any real-tenant deployment].
 
 Nothing by default. BigQuery (system of record), the per-visitor local store that serves chat-time
 reads, and Firestore (practitioner feedback in the deployed service, `TAAL_FEEDBACK_STORE=firestore`
-in `infra/deploy.sh`; an optional stock/customers/offers serving cache also exists, off in the
-deployed service since `infra/deploy.sh` never sets `TAAL_SERVING_CACHE`) all live inside the
-tenant's own Google Cloud project; the only outbound calls are to Vertex AI (Gemini, embeddings)
+in `infra/deploy.sh`; an optional stock/customer-profile serving cache also exists behind
+`TAAL_SERVING_CACHE=firestore`, which `infra/deploy.sh` sets only when a maintainer flips
+`ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so the cache is
+off in the deployed service today) all live inside the tenant's own Google Cloud project; the only outbound calls are to Vertex AI (Gemini, embeddings)
 for model inference, which Google's Vertex AI terms treat as not used to train foundation models
 by default for enterprise customers [likely -- verify the current Vertex AI data-use terms at
 deploy time, they have changed before]. No customer data is sent to any third party beyond
@@ -60,8 +61,9 @@ history in the current session.
 `customer_id`; any BigQuery table directly (chat-time reads go through the per-visitor local store
 -- `LocalStore`/`OverlayStore` over the frozen snapshot -- or ADK session state, never live
 BigQuery, per DECISIONS §18.2 "no LLM reads BigQuery at chat time"; an optional Firestore serving
-cache also exists behind `TAAL_SERVING_CACHE`, which `infra/deploy.sh` never sets, so it is off in
-the deployed service); a holdout customer's arm status framed as
+cache also exists behind `TAAL_SERVING_CACHE`, which `infra/deploy.sh` sets only when a maintainer
+flips `ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so it is off
+in the deployed service today); a holdout customer's arm status framed as
 anything other than "no pending offer" (the agent does not say "you are in the holdout group" --
 it simply has nothing pending to deliver, and `apply_offer` refuses on arm=holdout without
 revealing why); consent-withdrawn customers' pending offers (filtered before they ever reach the
@@ -71,13 +73,15 @@ agent's context).
 
 A customer sending "STOP" (or an equivalent phrase the Customer Agent recognises) calls
 `record_stop(customer_id)`, which sets `consent.withdrawn_at` for that customer's marketing-purpose
-consent row. From that point: the gate's `consent_required` guardrail excludes the customer from
-every future audience; when the optional Firestore serving cache is on (`TAAL_SERVING_CACHE=firestore` --
-`infra/deploy.sh` never sets it, so it is off in the deployed service) the nightly mirror likewise
-stops writing `offers/{customer_id}` for them; and a direct "any offers?" question gets no offer,
-the same as a holdout customer, without
-distinguishing the two reasons in the reply. STOP is honoured immediately, not on the next nightly
-run -- `record_stop` writes `withdrawn_at` synchronously.
+consent row, always in the visitor's own store: consent and offers are never served from the
+Firestore serving cache (`TAAL_SERVING_CACHE=firestore`, off in the deployed service today --
+`infra/deploy.sh` sets it only when a maintainer flips `ENABLE_SERVING_CACHE` from its hard-coded
+default of 0, `infra/deploy.sh:22` -- and even then the cache mirrors stock and customer-profile
+docs only), so turning that flag on cannot delay a STOP. From that point: the gate's
+`consent_required` guardrail excludes the customer from every future audience; and a direct "any
+offers?" question gets no offer, the same as a holdout customer, without distinguishing the two
+reasons in the reply. STOP is honoured immediately, not on the next nightly run --
+`record_stop` writes `withdrawn_at` synchronously.
 
 ## DPDP framing
 

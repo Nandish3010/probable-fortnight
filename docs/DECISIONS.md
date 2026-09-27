@@ -15,13 +15,18 @@ wins.
   (`services/api/approve.py`). BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately
   (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path or in
   any job.
-- Chat sessions are `InMemorySessionService` per store root; `VertexAiSessionService` only when
-  `TAAL_SESSION_BACKEND=vertex` (verified in `eval/raw/vertex_sessions_2026-09-24`), which
-  `infra/deploy.sh` does not set, so it is off in the deployed service.
-- Stock and offers are served from the per-visitor local store; the Firestore serving cache runs
-  only when `TAAL_SERVING_CACHE` is set (verified in `eval/raw/firestore_cache_2026-09-24`), which
-  `infra/deploy.sh` does not set. In the deployed service Firestore stores practitioner feedback
-  only.
+- Chat sessions are per visitor and customer (`<visitor>:<customer_id>:web`); an
+  `InMemorySessionService` per visitor sandbox by default; `VertexAiSessionService` only when
+  `TAAL_SESSION_BACKEND=vertex` (verified in `eval/raw/vertex_sessions_2026-09-24`; visitor-isolation
+  fixes and offline measurements in `eval/raw/sessions_cache_2026-09-27`), which `infra/deploy.sh`
+  sets only when a maintainer flips `ENABLE_VERTEX_SESSIONS` from its hard-coded default of 0
+  (`infra/deploy.sh:16`), so it is off in the deployed service.
+- Stock and customer profiles may be served from the Firestore serving cache; offers and consent
+  always come from the visitor's own store, never the cache. The cache runs only when
+  `TAAL_SERVING_CACHE=firestore` (verified in `eval/raw/firestore_cache_2026-09-24`;
+  `eval/raw/sessions_cache_2026-09-27`), which `infra/deploy.sh` sets only when a maintainer flips
+  `ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so it is off in
+  the deployed service. In the deployed service Firestore stores practitioner feedback only.
 - The Play Desk's plan and planner trace in the deployed app are the replayed nightly plan
   (scripted planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
 - Claims that no forecasting tool or competitor sees the online sell-by date read as: "Forecasting
