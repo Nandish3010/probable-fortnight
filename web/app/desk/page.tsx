@@ -200,12 +200,17 @@ export default function PlayDeskPage() {
                 ) : null}
               </section>
 
-              <section className="play-card__section">
+              <section className="play-card__section rationale-section">
                 <h4>Rationale (editable)</h4>
+                <p className="rationale-section__subtitle">
+                  Every number here is cited back to the gap, the estimator, the policy and the forecast &mdash;
+                  the planner cannot state a figure it cannot resolve.
+                </p>
                 <textarea
+                  className="rationale-section__textarea"
                   value={rationale}
                   onChange={(e) => setRationale(e.target.value)}
-                  rows={4}
+                  rows={7}
                   aria-label="Rationale"
                 />
               </section>

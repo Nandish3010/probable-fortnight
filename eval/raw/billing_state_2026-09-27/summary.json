@@ -1,0 +1,50 @@
+{
+  "billing_info": {
+    "endpoint": "GET https://cloudbilling.googleapis.com/v1/projects/amru-509214/billingInfo",
+    "response": {
+      "projectId": "amru-509214",
+      "billingAccountName": "billingAccounts/01AFA8-481EFC-C09462",
+      "billingEnabled": true
+    }
+  },
+  "billing_account_detail": {
+    "endpoint": "GET https://cloudbilling.googleapis.com/v1/billingAccounts/01AFA8-481EFC-C09462",
+    "response": {"error": {"code": 403, "message": "The caller does not have permission", "status": "PERMISSION_DENIED"}},
+    "note": "taal-deploy has no billing-account-level role; only a user account holds Billing Account Administrator"
+  },
+  "iam_audit_setiampolicy_3d": {
+    "count": 10,
+    "principals": ["taal-deploy@amru-509214.iam.gserviceaccount.com", "service-agent-manager@system.gserviceaccount.com"],
+    "note": "no human account and none in the 2026-09-27 14:49-15:31 UTC flip window"
+  },
+  "billing_audit_cloudbilling_3d": {
+    "count": 1,
+    "event": {"timestamp": "2026-09-20T14:55:14.174031Z", "methodName": "AssignResourceToBillingAccount", "principal": "a user account"},
+    "note": "the original project-to-billing-account link, 7 days before the outage; no re-link/unlink event found in the 3-day window"
+  },
+  "flip_window_from_bigquery_job_history": {
+    "last_successful_write": {"time_utc": "2026-09-27T14:49:32", "job_id": "script_job_06fc63abd4c49a9dea14da09e7ac653e_3", "op": "INSERT", "table": "taal.forecasts"},
+    "first_failed_write": {"time_utc": "2026-09-27T15:31:09", "job_id": "0ac244af-fac5-40a1-acc1-7255792022fa", "op": "LOAD", "table": "taal.gaps", "reason": "billingNotEnabled"}
+  },
+  "recovery_check_live": {
+    "streaming_insert_to_throwaway_table": "SUCCEEDED",
+    "dml_insert_to_throwaway_table": "SUCCEEDED",
+    "create_table": "SUCCEEDED",
+    "drop_table": "SUCCEEDED",
+    "delete_on_streaming_buffer_row": "FAILED, ordinary streaming-buffer restriction, not billingNotEnabled"
+  },
+  "cloud_run_status": {
+    "taal-agents": {"conditions": ["RoutesReady: CONDITION_SUCCEEDED", "ConfigurationsReady: CONDITION_SUCCEEDED"], "latestReadyRevision": "taal-agents-00035-s8c"},
+    "taal-web": {"conditions": ["RoutesReady: CONDITION_SUCCEEDED", "ConfigurationsReady: CONDITION_SUCCEEDED"], "latestReadyRevision": "taal-web-00027-ldq"}
+  },
+  "vertex_check": {"model": "gemini-2.5-flash", "region": "asia-south1", "result": "real call succeeded, returned 'OK'"},
+  "scheduler_and_job_status": {
+    "taal-sense-nightly": {"state": "ENABLED", "lastAttemptTime": "2026-09-26T20:00:04.818456Z"},
+    "taal-sense_last_3_executions": ["2026-09-26 succeeded", "2026-09-25 succeeded", "2026-09-24 succeeded"]
+  },
+  "sandbox_expiration_check": {
+    "taal_dataset": "no default_table_expiration_ms set",
+    "forecasts": "no expires set", "gaps": "no expires set", "plays": "no expires set", "sales_daily": "no expires set",
+    "conclusion": "no retroactive sandbox governance found on existing tables"
+  }
+}

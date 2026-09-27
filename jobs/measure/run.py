@@ -17,15 +17,29 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from agents.gate.bigquery_store import BigQueryStore
 from agents.gate.config import load_tenant
 from agents.gate.estimator import update_prior
 from agents.gate.store import LocalStore, load_catalogue
+
+
+def build_batch_store(data_dir: str | Path) -> LocalStore:
+    """LocalStore (default everywhere) or BigQueryStore, selected by TAAL_BATCH_STORE -- same
+    selector as jobs/sense/run.py::build_batch_store, kept independent so a test importing one
+    job never pulls in the other's env-var default."""
+    backend = os.environ.get("TAAL_BATCH_STORE", "local")
+    if backend == "bigquery":
+        return BigQueryStore(data_dir)
+    if backend != "local":
+        raise ValueError(f"TAAL_BATCH_STORE must be 'local' or 'bigquery', got {backend!r}")
+    return LocalStore(data_dir)
 
 # kg CO2e per kg of food wasted, an estimate for the "Most Impactful" line only; the source and its
 # caveats are in docs/DATA_MODEL.md. Replace with a tenant-specific factor when one exists.
@@ -135,9 +149,10 @@ def measure_play(play: dict[str, Any], assignments: list[dict[str, Any]], lines:
 
 
 def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[str, Any]:
-    store = LocalStore(data_dir)
+    store = build_batch_store(data_dir)
     tenant = load_tenant()
     computed_at = computed_at or datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    execution_name = os.environ.get("CLOUD_RUN_EXECUTION") or os.environ.get("CLOUD_RUN_TASK_INDEX") or "local"
     products = load_catalogue(store)
     plays = [json.loads(r["play_json"]) if isinstance(r.get("play_json"), str) else (r.get("play_json") or r) for r in store.read("plays")]
     plays = [p for p in plays if p.get("status") in ("approved", "running", "measured", "unmeasured")]
@@ -183,11 +198,10 @@ def run_measure(data_dir: str | Path, computed_at: str | None = None) -> dict[st
                 pj["status"] = status_by[r["play_id"]]
                 r["play_json"] = json.dumps(pj, ensure_ascii=False)
     store.write("plays", rows)
-    return {"plays": len(plays), "measured": sum(1 for s in status_by.values() if s == "measured"), "unmeasured": sum(1 for s in status_by.values() if s == "unmeasured"), "skipped": skipped, "computed_at": computed_at}
+    return {"plays": len(plays), "measured": sum(1 for s in status_by.values() if s == "measured"), "unmeasured": sum(1 for s in status_by.values() if s == "unmeasured"), "skipped": skipped, "computed_at": computed_at, "execution_name": execution_name}
 
 
 def main(argv: list[str] | None = None) -> int:
-    import os
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default=None)
     args = ap.parse_args(argv)

@@ -34,12 +34,34 @@ top -- see `append()`'s docstring below.
 from __future__ import annotations
 
 import os
+import uuid
 from collections.abc import Iterable
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from .store import LocalStore
 
 BIGQUERY_TABLES = frozenset({"gaps", "plays", "play_assignments", "forecasts", "play_outcomes"})
+
+# `forecasts` is a history table: every nightly run adds a new run_id, and prior runs' rows are
+# evidence, not stale state -- write() must never delete anything but the run_id being replaced.
+# The other four tables represent the tenant's current full state (a nightly snapshot of open
+# gaps/plays/assignments/outcomes, not a log of every run that ever touched them), so a tenant-wide
+# replace is the intended nightly behaviour there and stays unscoped by run_id.
+RUN_SCOPED_TABLES = frozenset({"forecasts"})
+
+
+def _json_safe_scalar(v: Any) -> Any:
+    if isinstance(v, (date, datetime)):
+        return v.isoformat()
+    if isinstance(v, Decimal):
+        return float(v)
+    return v
+
+
+def _json_safe_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {k: _json_safe_scalar(v) for k, v in row.items()}
 
 # BigQuery has no schema-driven notion of "the row's own id field" the way a JSONL file doesn't
 # either; MERGE needs an explicit key list per table. Only `plays` is ever upserted in this
@@ -55,10 +77,12 @@ class BigQueryStore(LocalStore):
     untouched `LocalStore` behaviour (inherited, not reimplemented).
     """
 
-    def __init__(self, root: str | None = None, project: str | None = None, dataset: str = "taal", tenant_id: str = "kutumb-mart"):
+    def __init__(self, root: str | None = None, project: str | None = None, dataset: str | None = None, tenant_id: str = "kutumb-mart"):
         super().__init__(root)
         self.project = project or os.environ.get("GOOGLE_CLOUD_PROJECT", "amru-509214")
-        self.dataset = dataset
+        # TAAL_BQ_DATASET lets a dry run point at a throwaway dataset (e.g. taal_staging) without
+        # ever changing the default -- unset, this is exactly "taal", as it always was.
+        self.dataset = dataset or os.environ.get("TAAL_BQ_DATASET", "taal")
         self.tenant_id = tenant_id
         self._client = None
         self._cache: dict[str, list[dict[str, Any]]] = {}
@@ -100,22 +124,76 @@ class BigQueryStore(LocalStore):
         return [r for r in self.read(table) if all(r.get(k) == v for k, v in eq.items())]
 
     def write(self, table: str, rows: Iterable[dict[str, Any]]) -> None:
-        """Full-table replace, matching LocalStore's own semantics (Sense already does a full
-        nightly rewrite of `forecasts`/`gaps`; `write()` on this store is that same operation,
-        scoped to this tenant only -- WRITE_TRUNCATE would erase every other tenant's rows, so
-        this deletes only this tenant's existing rows first, then loads the new set)."""
+        """Replace rows in place, scoped by tenant (and by run_id for RUN_SCOPED_TABLES -- see
+        that set's own comment for why `forecasts` must never take a tenant-wide delete).
+
+        Failure safety (2026-09-27 fix, after a tenant-wide DELETE on `forecasts` was found to be
+        able to wipe every prior run's rows before the new ones ever landed -- see
+        eval/raw/bigquery_forecast_dataloss_2026-09-27/): the new rows are loaded into a fresh
+        staging table FIRST. If that load fails, nothing has touched the real table -- the old
+        rows are untouched, guaranteed by construction, not by cleanup after the fact. Only once
+        the staging load has succeeded does a single scripted `BEGIN TRANSACTION ... COMMIT
+        TRANSACTION` delete the old scoped rows and insert the staged ones; if any statement in
+        that script fails, BigQuery rolls the whole transaction back, so the table is never left
+        in a deleted-but-not-reloaded state either.
+        """
         if table not in BIGQUERY_TABLES:
             return super().write(table, rows)
-        rows = list(rows)
+        rows = [_json_safe_row(r) for r in rows]
         from google.cloud import bigquery
 
-        self.client.query(
-            f"DELETE FROM `{self._table(table)}` WHERE tenant_id = @tenant_id",
-            job_config=bigquery.QueryJobConfig(query_parameters=[bigquery.ScalarQueryParameter("tenant_id", "STRING", self.tenant_id)]),
-        ).result()
-        if rows:
-            job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=bigquery.WriteDisposition.WRITE_APPEND)
-            self.client.load_table_from_json(rows, self._table(table), job_config=job_config).result()
+        scope_run = table in RUN_SCOPED_TABLES
+        run_id = None
+        if scope_run and rows:
+            run_ids = {r.get("run_id") for r in rows}
+            if len(run_ids) != 1:
+                raise ValueError(f"BigQueryStore.write({table!r}, ...) requires every row to share one run_id, got {run_ids!r}")
+            run_id = next(iter(run_ids))
+        if scope_run and not rows:
+            # Nothing to write and no run_id to scope a delete to -- a no-op is the only safe
+            # reading of "replace this run's rows with zero rows" when we don't know which run.
+            self._invalidate(table)
+            return
+
+        where = "tenant_id = @tenant_id" + (" AND run_id = @run_id" if scope_run else "")
+        params = [bigquery.ScalarQueryParameter("tenant_id", "STRING", self.tenant_id)]
+        if scope_run:
+            params.append(bigquery.ScalarQueryParameter("run_id", "STRING", run_id))
+
+        if not rows:
+            # No staging needed: deleting an already-scoped, possibly-empty set is safe on its own.
+            self.client.query(f"DELETE FROM `{self._table(table)}` WHERE {where}", job_config=bigquery.QueryJobConfig(query_parameters=params)).result()
+            self._invalidate(table)
+            return
+
+        stage_table = f"{self._table(table)}_stage_{uuid.uuid4().hex[:8]}"
+        # Create the staging table as an exact empty clone of the real one (`CREATE TABLE ...
+        # LIKE`), rather than passing an explicit Python-side schema copy to LoadJobConfig: a
+        # nested RECORD column (gaps.evidence, whose keys vary by gap type) round-trips through
+        # google-cloud-bigquery's SchemaField objects lossily and the load rejects rows with
+        # "No such field: evidence.<x>" (found live, 2026-09-27, running this against a real
+        # staging dataset). Loading into an existing table with no explicit schema is exactly
+        # what the original direct-into-target load always did successfully; this only changes
+        # which table gets loaded first.
+        self.client.query(f"CREATE TABLE `{stage_table}` LIKE `{self._table(table)}`").result()
+        try:
+            load_job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+            self.client.load_table_from_json(rows, stage_table, job_config=load_job_config).result()
+            # An explicit, name-matched column list, not `SELECT *`: found live (2026-09-27) that
+            # `INSERT INTO target SELECT * FROM stage` matches columns POSITIONALLY, and the
+            # staging table's column order did not in fact match the target's ("column 1 has type
+            # DATE which cannot be inserted into column tenant_id, which has type STRING").
+            # Naming every column on both sides removes any dependence on column order at all.
+            cols = ", ".join(f.name for f in self.client.get_table(self._table(table)).schema)
+            script = f"""
+            BEGIN TRANSACTION;
+            DELETE FROM `{self._table(table)}` WHERE {where};
+            INSERT INTO `{self._table(table)}` ({cols}) SELECT {cols} FROM `{stage_table}`;
+            COMMIT TRANSACTION;
+            """
+            self.client.query(script, job_config=bigquery.QueryJobConfig(query_parameters=params)).result()
+        finally:
+            self.client.delete_table(stage_table, not_found_ok=True)
         self._invalidate(table)
 
     def append(self, table: str, rows: Iterable[dict[str, Any]]) -> None:
@@ -128,7 +206,7 @@ class BigQueryStore(LocalStore):
         small, low-QPS demo tenant like this one -- not a guarantee for a high-volume table."""
         if table not in BIGQUERY_TABLES:
             return super().append(table, rows)
-        rows = list(rows)
+        rows = [_json_safe_row(r) for r in rows]
         if not rows:
             return
         errors = self.client.insert_rows_json(self._table(table), rows)
