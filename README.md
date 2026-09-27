@@ -132,18 +132,25 @@ real SQL `INSERT`s. Fixed: `run.py` no longer re-writes `forecasts` for the `big
 backend; `BigQueryStore.write()` now scopes `forecasts` deletes to `(tenant_id, run_id)` (never
 tenant-wide), stages new rows in a throwaway table and swaps them in via a single `BEGIN
 TRANSACTION`/`COMMIT TRANSACTION` script, so a failed load or swap always leaves the existing rows
-untouched; date/Decimal values are made JSON-safe before any load. Evidence, tests and the full bug
-chain: `eval/raw/bigquery_forecast_dataloss_2026-09-27/`, `tests/unit/test_bigquery_store.py`,
-`tests/unit/test_sense_bigquery_backend.py`. **A separate, pre-existing, still-open bug was found
-by the same dry run**: `taal.gaps`'s DDL declares `evidence` as a closed `STRUCT` that is missing
-the `counterpart_gap_id` field `jobs/sense/gaps.py`'s rebalance-gap evidence has always emitted --
-this has nothing to do with the fix above and would have broken the original code identically the
-first time it wrote a real rebalance gap; the DDL fix is prepared in
-`data/bigquery/ddl/14_gaps.sql` but not yet applied live (needs a schema-update action outside
-what this session's own tooling permission would allow). Until it is, `TAAL_BATCH_STORE=bigquery`
-correctly writes `forecasts` but still fails writing `gaps` for any run producing a rebalance gap.
-See `eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the billing timeline and
-`eval/raw/bigquery_forecast_dataloss_2026-09-27/` for the data-loss bug and its fix. The
+untouched; date/Decimal values are made JSON-safe before any load. `load_table_from_json` with
+`WRITE_TRUNCATE` into an existing table was also found to silently reorder and drop nested
+`STRUCT` subfields when no explicit schema is passed -- fixed by always passing the real, fetched
+target schema. Evidence, tests and the full bug chain: `eval/raw/bigquery_forecast_dataloss_2026-09-27/`,
+`tests/unit/test_bigquery_store.py`, `tests/unit/test_sense_bigquery_backend.py`.
+
+**The `taal.gaps` DDL/code mismatch this uncovered has been migrated live and re-verified**:
+`evidence` was missing not just `counterpart_gap_id` (rebalance gaps) but 14 more fields
+`jobs/sense/gaps.py` has always emitted for online_sellby_breach/expiry_writeoff, stockout_risk,
+slow_mover, unmet_demand and assortment_gap gaps -- roughly 80% of all gaps by volume. All 15
+fields are now live on `taal.gaps` (additive, nullable; no field dropped, renamed or retyped), and
+`infra/deploy.sh` gained a permanent, idempotent migration step so a fresh deploy never falls
+behind the DDL again. **The nightly BigQuery batch path (`TAAL_BATCH_STORE=bigquery`,
+`TAAL_FORECAST_BACKEND=bigquery_timesfm`) is now verified against a staging clone of `taal`**: a
+full `jobs.sense` run against `taal_staging` succeeded end-to-end (533 gaps across all 6 real gap
+types, all 7 rebalance gaps carrying `counterpart_gap_id`, prior forecast runs untouched). It has
+not yet been run for real against `taal` itself -- see
+`eval/raw/bigquery_schema_migration_2026-09-27/finding.json` for the full migration record and
+`eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the billing timeline. The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
 from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
 across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,
