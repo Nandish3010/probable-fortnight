@@ -193,10 +193,11 @@ EOF
 # to 'local' everywhere else, including taal-agents' judge-mode serving path, which keeps reading
 # the frozen pinned-clock snapshot and is never switched to BigQuery). This is the nightly-batch
 # path from data/bigquery/sense/02_forecast_timesfm.sql -- see eval/raw/bigquery_billing_dml_2026-09-27/
-# for why the write side of this path (any BigQueryStore.write() call, and 04_rolldown.sql's own
-# DELETE) could not be verified end-to-end against amru-509214: that project has no billing
-# account enabled and BigQuery's free tier rejects DML. Deploying this does not depend on billing
-# being enabled -- it will simply fail at run time with the same 403 until it is.
+# for the write side of this path (any BigQueryStore.write() call, and 04_rolldown.sql's own
+# DELETE): a billing/payment issue on amru-509214 briefly blocked all BigQuery writes on
+# 2026-09-27, since resolved. This whole script depends on billing being enabled and current --
+# Cloud Build and Cloud Run both require it too, not just this job's BigQuery writes -- so a
+# lapsed billing account fails the deploy well before this job runs, not just at its run time.
 gcloud run jobs deploy taal-sense \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-sense" \
