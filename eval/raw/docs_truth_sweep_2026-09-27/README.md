@@ -52,3 +52,10 @@ repo's own `.local/`. `fssai.gov.in` and `arxiv.org` (and its `export.arxiv.org`
 unreachable from the build sandbox: every attempt, by both `curl` and the WebFetch tool, was
 rejected at the network egress proxy's CONNECT stage with HTTP 403 before reaching either site --
 see `fetch_log.txt`, `fssai_citation.json` and `winkelmann_abstract.json` for the full detail.
+
+**Added 2026-09-27, after rebasing this branch onto main at `98b3cb3`:** `deployed_env_names.json`
+and `prompt_b_status.md` were produced against main at `52ffa0f`, before PR #48 (`98b3cb3`, "Scope
+chat sessions and the Firestore serving cache to the visitor; keep both flags off") landed
+`ENABLE_VERTEX_SESSIONS`/`ENABLE_SERVING_CACHE` in `infra/deploy.sh` and the
+`agents/vertex_sessions.py`/`agents/gate/firestore_cache.py` visitor-isolation fixes. Both files
+predate that merge and were not re-run against it; they are left as-is, point-in-time records.

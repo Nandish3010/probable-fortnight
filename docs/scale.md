@@ -110,6 +110,7 @@ has run for a full billing cycle.
    filter on `tenant_id` plus the partition column first for this reason.
 5. **Firestore document contention** on a single `stock/{node}/{sku}` document -- a risk only if
    the optional Firestore serving cache is turned on (`TAAL_SERVING_CACHE=firestore`; `infra/deploy.sh`
-   never sets it, so it is off in the deployed service); many concurrent judge-mode visitors
+   sets it only when a maintainer flips `ENABLE_SERVING_CACHE` from its hard-coded default of 0,
+   `infra/deploy.sh:22`, so it is off in the deployed service today); many concurrent judge-mode visitors
    reading the same seeded tenant are isolated today by the per-visitor namespace clone in
    DECISIONS §5.6 instead.
