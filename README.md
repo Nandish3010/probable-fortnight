@@ -118,15 +118,15 @@ qualifying series (25,060 rows, ~23s, ~70MB billed) -- evidence in
 `eval/raw/bigquery_ai_forecast_2026-09-27/`. A head-to-head backtest against the local model, same
 rolling origins as `jobs/sense/backtest.py`, found the local model with lower MAPE in every one of
 45 (origin, tier) comparisons -- expected, since the seeded data was generated with the same form
-the local model fits; see `head_to_head_summary.json` in that directory. **What is not verified
-live:** this GCP project has no billing account enabled, and BigQuery's free tier rejects every DML
-statement (`DELETE`/`MERGE`/`UPDATE`) while allowing `SELECT` and `INSERT` -- confirmed directly
-against an unrelated table, not inferred. That blocks `04_rolldown.sql`'s node-level rolldown step
-and every `BigQueryStore.write()` call (it issues a `DELETE` before loading), so the
-`TAAL_BATCH_STORE=bigquery` path for both nightly jobs is written and unit-tested (default `local`
-behaviour is unaffected) but has not been exercised end-to-end against real BigQuery. This is a
-project billing-configuration gap, not an IAM role gap; see
-`eval/raw/bigquery_billing_dml_2026-09-27/finding.json`. The
+the local model fits; see `head_to_head_summary.json` in that directory. **A billing/payment issue
+on the GCP project briefly blocked all BigQuery writes on 2026-09-27** (DML, streaming inserts and
+load jobs all failed with `billingNotEnabled` for roughly the 15:31-15:33 UTC window and after);
+this has since been resolved by the project owner and re-verified live (streaming insert, DML
+`INSERT`, `CREATE TABLE` and `DROP TABLE` all succeeding again). No data was lost during the
+outage. `TAAL_BATCH_STORE=bigquery` for both nightly jobs is written and unit-tested (default
+`local` behaviour is unaffected everywhere else) but still needs a deliberate, owner-approved
+hand-execution with a row-count check before the nightly scheduler relies on it -- see
+`eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the full timeline and evidence. The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
 from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
 across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,

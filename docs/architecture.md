@@ -66,10 +66,12 @@ flowchart LR
    `bigquery_timesfm` (BigQuery `AI.FORECAST`) was verified live for real (25,060 rows across 895
    series; no covariate parameter; a real SQL bug found and fixed) -- evidence under
    `eval/raw/bigquery_ai_forecast_2026-09-27/`. `TAAL_BATCH_STORE=bigquery` (writes through
-   `BigQueryStore`) is written and unit-tested but **not verified live end-to-end**: this project
-   has no billing account enabled and BigQuery's free tier rejects the `DELETE` that both
-   `04_rolldown.sql` and every `BigQueryStore.write()` call issue -- see
-   `eval/raw/bigquery_billing_dml_2026-09-27/finding.json`.
+   `BigQueryStore`) is written and unit-tested but **not yet verified live end-to-end**: a
+   billing/payment issue on the GCP project briefly blocked all BigQuery writes (DML, streaming
+   inserts, load jobs) on 2026-09-27, since resolved and re-verified live -- see
+   `eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the timeline. Running the nightly
+   jobs with this backend for real still needs a deliberate, owner-approved hand-execution with a
+   row-count check first.
 3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
    `play_assignments`, inserts the play into `future_regressors`, and triggers a single-series
    `ML.FORECAST` re-run whose new p50 path the chart shows moving.
