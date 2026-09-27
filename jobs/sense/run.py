@@ -18,7 +18,6 @@ from typing import Any
 
 from agents.gate.bigquery_store import BigQueryStore
 from agents.gate.config import TenantConfig, load_tenant
-from agents.gate.firestore_cache import build_cache
 from agents.gate.store import LocalStore
 
 from .forecast import forecast, run_id_for
@@ -86,14 +85,9 @@ def run_sense(data_dir: str | Path, as_of: date | None = None, tenant: TenantCon
         "executed_at": executed_at, "execution_name": execution_name,
     }
     store.append("sense_runs", [record])
-    cache = build_cache(tenant.tenant_id)
-    if cache is not None:
-        products = {p["sku"]: p for p in store.read("products")}
-        record["firestore_mirror"] = {
-            "stock_docs": cache.mirror_stock(store.read("inventory_batches"), products, as_of),
-            "customer_docs": cache.mirror_customers(store.read("customers"), store.read("consent")),
-            "offer_docs": cache.mirror_offers(store.read("offers")),
-        }
+    # No Firestore serving-cache mirror here: the nightly job runs on real calendar dates against
+    # BigQuery, while chat serves the pinned seeded snapshot. The mirror is a deploy-time step
+    # from that same snapshot (agents/gate/firestore_cache.py --mirror, infra/deploy.sh).
     return record
 
 
