@@ -17,13 +17,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-import os
 
 from agents.gate.bigquery_store import BigQueryStore
 from agents.gate.config import load_tenant
