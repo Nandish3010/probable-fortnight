@@ -14,6 +14,7 @@ import type {
   FeedbackSubmission,
   FeedbackSubmitResponse,
   FeedbackSummary,
+  PriorUpdate,
   ExecutionResponse,
   Gap,
   HealthResponse,
@@ -40,6 +41,7 @@ import mockRerun from "../mocks/rerun.json";
 import mockCapture from "../mocks/capture.json";
 import mockExecution from "../mocks/execution.json";
 import mockOutcomes from "../mocks/outcomes.json";
+import mockPriorUpdate from "../mocks/prior_update.json";
 import mockCustomersDemo from "../mocks/customers_demo.json";
 import mockChat from "../mocks/chat.json";
 import mockStylistChat from "../mocks/stylist_chat.json";
@@ -229,6 +231,16 @@ export async function getOutcomes(): Promise<Outcome[]> {
     return mockOutcomes as unknown as Outcome[];
   }
   return request<Outcome[]>("/outcomes");
+}
+
+// Built once with the tenant and served from the base data dir, so it is the same for every
+// visitor and "Reset demo data" does not change it.
+export async function getPriorUpdate(): Promise<PriorUpdate> {
+  if (isMockMode()) {
+    await delay(150);
+    return mockPriorUpdate as unknown as PriorUpdate;
+  }
+  return request<PriorUpdate>("/outcomes/prior-update");
 }
 
 // Joins play_assignments to order_lines for every approved play and writes play_outcomes; the
