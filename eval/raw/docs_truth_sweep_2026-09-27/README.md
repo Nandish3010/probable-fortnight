@@ -59,3 +59,5 @@ chat sessions and the Firestore serving cache to the visitor; keep both flags of
 `ENABLE_VERTEX_SESSIONS`/`ENABLE_SERVING_CACHE` in `infra/deploy.sh` and the
 `agents/vertex_sessions.py`/`agents/gate/firestore_cache.py` visitor-isolation fixes. Both files
 predate that merge and were not re-run against it; they are left as-is, point-in-time records.
+
+- 28 Sep 2026, after rebasing onto main at 21b68d1: `make verify` green. The first `make live-test` run failed one test, `web/tests/live/judge.spec.ts:74` (health strip turns amber), with "route.fetch: Target page, context or browser has been closed"; main's own CI fails the same test the same way at 21b68d1, and this change touches no web test or health code. One re-run passed 15 of 15; that run is `live_test.log`.

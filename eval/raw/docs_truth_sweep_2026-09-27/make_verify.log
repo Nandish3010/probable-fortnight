@@ -17,7 +17,7 @@ uv run pytest tests/contract -q
 uv run python -m data.generator --out .local/data --seed 20260912
 {"out": ".local/data", "seed": 20260912, "counts": {"products": 300, "nodes": 16, "sales_daily": 324271, "inventory_batches": 4800, "inbound": 1643, "customers": 4000, "consent": 4000, "affinity": 55404, "orders": 16936, "order_lines": 42051, "future_regressors": 25200, "estimator_priors": 72, "apparel_products": 350, "apparel_stock": 11383, "style_requests": 485}}
 uv run python -m jobs.sense
-{"run_id": "sense_20260912_baseline_2aaad73c", "as_of": "2026-09-12", "tenant_id": "kutumb-mart", "forecast_rows": 134400, "series": 4800, "gaps": 555, "planner_eligible": 428, "planner_threshold_inr": 500.0, "segments": 6, "substitute_rows": 300, "style_trends": 28, "timing_ms": {"forecast": 2646, "gaps": 180, "segments_substitutes": 1122, "trends": 2, "total": 3952}, "model": "local_seasonal_xreg", "executed_at": "2026-09-27T19:59:36Z", "execution_name": "local", "gaps_by_type": {"online_sellby_breach": 330, "expiry_writeoff": 114, "stockout_risk": 55, "rebalance": 4, "slow_mover": 47, "unmet_demand": 0, "assortment_gap": 5}}
+{"run_id": "sense_20260912_baseline_2aaad73c", "as_of": "2026-09-12", "tenant_id": "kutumb-mart", "forecast_rows": 134400, "series": 4800, "gaps": 555, "planner_eligible": 428, "planner_threshold_inr": 500.0, "segments": 6, "substitute_rows": 300, "style_trends": 28, "timing_ms": {"forecast": 2782, "gaps": 224, "segments_substitutes": 1159, "trends": 2, "total": 4169}, "model": "local_seasonal_xreg", "executed_at": "2026-09-28T01:53:07Z", "execution_name": "local", "gaps_by_type": {"online_sellby_breach": 330, "expiry_writeoff": 114, "stockout_risk": 55, "rebalance": 4, "slow_mover": 47, "unmet_demand": 0, "assortment_gap": 5}}
 uv run python -m harness.seed_plays
 /home/user/probable-fortnight/.venv/lib/python3.11/site-packages/google/adk/models/llm_request.py:298: UserWarning: [EXPERIMENTAL] feature FeatureName.JSON_SCHEMA_FOR_FUNC_DECL is enabled.
   declaration = tool._get_declaration()
@@ -29,10 +29,12 @@ seed: gap_kaju_ds01 -> proposed play_kaju_ds01_v1 (1 iteration(s))
 seed: gap_kaju_ds03 -> proposed play_kaju_ds03_v1 (1 iteration(s))
 seed: gap_quinoa_out02 -> proposed play_quinoa_out02_v1 (1 iteration(s))
 seed: gap_blazer_ds07 -> proposed play_blazer_ds07_v1 (1 iteration(s))
+uv run python -m harness.prior_update_demo
+prior update (bundle x snacks): Beta(1,19) -> Beta(15,292); treated 14/287, holdout 1/26; SYNTHETIC
 uv run pytest tests/unit -q
-........................................................................ [ 45%]
-........................................................................ [ 90%]
-...............                                                          [100%]
+........................................................................ [ 36%]
+........................................................................ [ 73%]
+....................................................                     [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32
   /home/user/probable-fortnight/.venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32: DeprecationWarning: SelectableGroups dict interface is deprecated. Use select.
@@ -43,7 +45,7 @@ uv run pytest tests/unit -q
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 uv run pytest tests/sql -q
-....................................                                     [100%]
+.....................................                                    [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32
   /home/user/probable-fortnight/.venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32: DeprecationWarning: SelectableGroups dict interface is deprecated. Use select.
@@ -55,8 +57,8 @@ uv run pytest tests/sql -q
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 uv run pytest tests/agents -q
-........................................................................ [ 98%]
-.                                                                        [100%]
+........................................................................ [ 77%]
+.....................                                                    [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32
   /home/user/probable-fortnight/.venv/lib/python3.11/site-packages/opentelemetry/util/_importlib_metadata.py:32: DeprecationWarning: SelectableGroups dict interface is deprecated. Use select.
@@ -68,7 +70,7 @@ uv run pytest tests/agents -q
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 uv run pytest tests/api -q
-.................................                                        [100%]
+.......................................                                  [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/starlette/testclient.py:53
   /home/user/probable-fortnight/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
@@ -92,49 +94,51 @@ tests/api/test_api.py::test_health_shape
 > cross-env NEXT_PUBLIC_TAAL_MOCK=1 playwright test --reporter=line
 
 
-Running 39 tests using 2 workers
+Running 40 tests using 2 workers
 
-[1A[2K[1/39] [desktop] › tests/e2e/feedback.spec.ts:22:5 › completes the form, skipping from c0 = No straight to section D
-[1A[2K[2/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: / (desktop) has no violations
-[1A[2K[3/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /desk (desktop) has no violations
-[1A[2K[4/39] [desktop] › tests/e2e/feedback.spec.ts:54:5 › pay amount appears only for monthly per store, and c2 stops at two
-[1A[2K[5/39] [desktop] › tests/e2e/feedback.spec.ts:69:5 › missing required answers are announced and linked
-[1A[2K[6/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /phone (desktop) has no violations
-[1A[2K[7/39] [desktop] › tests/e2e/feedback.spec.ts:81:5 › landing footer links to the form; the top navigation does not
-[1A[2K[8/39] [desktop] › tests/e2e/feedback.spec.ts:87:5 › results page in mock mode shows no simulated numbers
-[1A[2K[9/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /chat (desktop) has no violations
-[1A[2K[10/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /stylist (desktop) has no violations
-[1A[2K[11/39] [desktop] › tests/e2e/gap-card-clock.spec.ts:9:7 › GapCard uses the server clock, not the browser clock › renders the correct day count when the browser clock is wildly wrong
-[1A[2K[12/39] [desktop] › tests/e2e/landing.spec.ts:4:7 › judge-mode landing › paints with no console errors
-[1A[2K[13/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /trends (desktop) has no violations
-[1A[2K[14/39] [desktop] › tests/e2e/landing.spec.ts:14:7 › judge-mode landing › 60-second beat: gap card, approve, chart
-[1A[2K[15/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /outcomes (desktop) has no violations
-[1A[2K[16/39] [desktop] › tests/e2e/landing.spec.ts:27:7 › judge-mode landing › chat as Meena responds within 6s
-[1A[2K[17/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /feedback (desktop) has no violations
-[1A[2K[18/39] [desktop] › tests/e2e/outcomes.spec.ts:4:7 › outcomes: measure button › Run Measure is clickable and reports a summary
-[1A[2K[19/39] [desktop] › tests/e2e/phone.spec.ts:4:7 › phone view › sample photo -> table -> confirm -> gap card -> approve -> chart
-[1A[2K[20/39] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /feedback/results (desktop) has no violations
-[1A[2K[21/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: / (phone) has no violations
-[1A[2K[22/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /desk (phone) has no violations
-[1A[2K[23/39] [desktop] › tests/e2e/stylist.spec.ts:7:7 › stylist: pairings and photo upload › paints with no console errors and a text ask returns pairings
-[1A[2K[24/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /phone (phone) has no violations
-[1A[2K[25/39] [desktop] › tests/e2e/stylist.spec.ts:22:7 › stylist: pairings and photo upload › uploading a garment photo returns pairings for it
-[1A[2K[26/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /chat (phone) has no violations
-[1A[2K[27/39] [desktop] › tests/e2e/stylist.spec.ts:32:7 › stylist: pairings and photo upload › picking a sample garment photo needs no file dialog
-[1A[2K[28/39] [desktop] › tests/e2e/stylist.spec.ts:44:7 › trends: recompute button › shows the trend row and recompute reports a count
-[1A[2K[29/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /stylist (phone) has no violations
-[1A[2K[30/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /trends (phone) has no violations
-[1A[2K[31/39] [mobile] › tests/e2e/feedback.spec.ts:22:5 › completes the form, skipping from c0 = No straight to section D
-[1A[2K[32/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /outcomes (phone) has no violations
-[1A[2K[33/39] [mobile] › tests/e2e/feedback.spec.ts:54:5 › pay amount appears only for monthly per store, and c2 stops at two
-[1A[2K[34/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /feedback (phone) has no violations
-[1A[2K[35/39] [mobile] › tests/e2e/feedback.spec.ts:69:5 › missing required answers are announced and linked
-[1A[2K[36/39] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /feedback/results (phone) has no violations
-[1A[2K[37/39] [mobile] › tests/e2e/feedback.spec.ts:81:5 › landing footer links to the form; the top navigation does not
-[1A[2K[38/39] [mobile] › tests/e2e/feedback.spec.ts:87:5 › results page in mock mode shows no simulated numbers
-[1A[2K[39/39] [mobile] › tests/e2e/phone.spec.ts:4:7 › phone view › sample photo -> table -> confirm -> gap card -> approve -> chart
-[1A[2K  39 passed (1.1m)
+[1A[2K[1/40] [desktop] › tests/e2e/feedback.spec.ts:22:5 › completes the form, skipping from c0 = No straight to section D
+[1A[2K[2/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: / (desktop) has no violations
+[1A[2K[3/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /desk (desktop) has no violations
+[1A[2K[4/40] [desktop] › tests/e2e/feedback.spec.ts:54:5 › pay amount appears only for monthly per store, and c2 stops at two
+[1A[2K[5/40] [desktop] › tests/e2e/feedback.spec.ts:69:5 › missing required answers are announced and linked
+[1A[2K[6/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /phone (desktop) has no violations
+[1A[2K[7/40] [desktop] › tests/e2e/feedback.spec.ts:81:5 › landing footer links to the form; the top navigation does not
+[1A[2K[8/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /chat (desktop) has no violations
+[1A[2K[9/40] [desktop] › tests/e2e/feedback.spec.ts:87:5 › results page in mock mode shows no simulated numbers
+[1A[2K[10/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /stylist (desktop) has no violations
+[1A[2K[11/40] [desktop] › tests/e2e/gap-card-clock.spec.ts:9:7 › GapCard uses the server clock, not the browser clock › renders the correct day count when the browser clock is wildly wrong
+[1A[2K[12/40] [desktop] › tests/e2e/landing.spec.ts:4:7 › judge-mode landing › paints with no console errors
+[1A[2K[13/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /trends (desktop) has no violations
+[1A[2K[14/40] [desktop] › tests/e2e/landing.spec.ts:14:7 › judge-mode landing › 60-second beat: gap card, approve, chart
+[1A[2K[15/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /outcomes (desktop) has no violations
+[1A[2K[16/40] [desktop] › tests/e2e/landing.spec.ts:27:7 › judge-mode landing › chat as Meena responds within 6s
+[1A[2K[17/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /feedback (desktop) has no violations
+[1A[2K[18/40] [desktop] › tests/e2e/outcomes.spec.ts:4:7 › outcomes: measure button › Run Measure is clickable and reports a summary
+[1A[2K[19/40] [desktop] › tests/e2e/outcomes.spec.ts:20:7 › outcomes: estimator prior on the featured play › the prior update line shows on the featured card and survives Reset
+[1A[2K[20/40] [desktop] › tests/e2e/a11y.spec.ts:19:7 › axe: /feedback/results (desktop) has no violations
+[1A[2K[21/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: / (phone) has no violations
+[1A[2K[22/40] [desktop] › tests/e2e/phone.spec.ts:4:7 › phone view › sample photo -> table -> confirm -> gap card -> approve -> chart
+[1A[2K[23/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /desk (phone) has no violations
+[1A[2K[24/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /phone (phone) has no violations
+[1A[2K[25/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /chat (phone) has no violations
+[1A[2K[26/40] [desktop] › tests/e2e/stylist.spec.ts:7:7 › stylist: pairings and photo upload › paints with no console errors and a text ask returns pairings
+[1A[2K[27/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /stylist (phone) has no violations
+[1A[2K[28/40] [desktop] › tests/e2e/stylist.spec.ts:22:7 › stylist: pairings and photo upload › uploading a garment photo returns pairings for it
+[1A[2K[29/40] [desktop] › tests/e2e/stylist.spec.ts:32:7 › stylist: pairings and photo upload › picking a sample garment photo needs no file dialog
+[1A[2K[30/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /trends (phone) has no violations
+[1A[2K[31/40] [desktop] › tests/e2e/stylist.spec.ts:44:7 › trends: recompute button › shows the trend row and recompute reports a count
+[1A[2K[32/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /outcomes (phone) has no violations
+[1A[2K[33/40] [mobile] › tests/e2e/feedback.spec.ts:22:5 › completes the form, skipping from c0 = No straight to section D
+[1A[2K[34/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /feedback (phone) has no violations
+[1A[2K[35/40] [desktop] › tests/e2e/a11y.spec.ts:31:9 › phone viewport (390x844) › axe: /feedback/results (phone) has no violations
+[1A[2K[36/40] [mobile] › tests/e2e/feedback.spec.ts:54:5 › pay amount appears only for monthly per store, and c2 stops at two
+[1A[2K[37/40] [mobile] › tests/e2e/feedback.spec.ts:69:5 › missing required answers are announced and linked
+[1A[2K[38/40] [mobile] › tests/e2e/phone.spec.ts:4:7 › phone view › sample photo -> table -> confirm -> gap card -> approve -> chart
+[1A[2K[39/40] [mobile] › tests/e2e/feedback.spec.ts:81:5 › landing footer links to the form; the top navigation does not
+[1A[2K[40/40] [mobile] › tests/e2e/feedback.spec.ts:87:5 › results page in mock mode shows no simulated numbers
+[1A[2K  40 passed (1.3m)
 docs: clean
 uv run python -m harness.status
 status: wrote /home/user/probable-fortnight/STATUS.md (17 components)
 VERIFY: green
+verify exit: 0
