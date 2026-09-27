@@ -46,21 +46,35 @@ services' idle floor -- are shared across tenants rather than duplicated per ten
 
 ## The three-CSV ingestion contract
 
-A new tenant onboards by providing three CSVs matching the columns below (a superset maps
-straight onto the DDL in `data/bigquery/ddl/01_products.sql`, `03_inventory_batches.sql`,
-`05_sales_daily.sql`; extra columns are ignored, missing required ones fail validation before any
-BigQuery load):
+A new tenant onboards with three CSVs. The contract is executable: `data/ingest/contract.py`
+defines the columns and types, and `python -m data.ingest` validates them, derives each batch's
+`online_sellby_date` under the tenant's rule (`agents/gate/sellby.py`), writes the LocalStore
+tenant (the same tables `data/generator` writes, mapped onto `data/bigquery/ddl/01_products.sql`,
+`03_inventory_batches.sql`, `05_sales_daily.sql`) and runs Sense on it. Extra columns are ignored.
+Every contract problem is reported with file, line and column before anything is written.
 
-| File | Required columns |
-|---|---|
-| `products.csv` | `sku, name, category, pack_size, pack_weight_g, unit_cost, list_price, margin_floor_pct, shelf_life_days, is_food` |
-| `inventory_batches.csv` | `batch_id, sku, node_id, qty_on_hand, expiry_date, received_at, source` (`online_sellby_date` is derived, not supplied) |
-| `sales_daily.csv` | `date, sku, node_id, units, revenue, on_promo` |
+| File | Required columns | Blank cell allowed in |
+|---|---|---|
+| `products.csv` | `sku, name, category, pack_size, pack_weight_g, unit_cost, list_price, margin_floor_pct, shelf_life_days, is_food` | `pack_size`, `pack_weight_g`, `margin_floor_pct` (blank = the tenant config's floor for the category) |
+| `inventory_batches.csv` | `batch_id, sku, node_id, qty_on_hand, expiry_date, received_at, source` (`online_sellby_date` is derived, never supplied) | `expiry_date` (a non-perishable lot), `received_at`, `source` |
+| `sales.csv` | `date, sku, node_id, units, revenue, on_promo` (daily grain; repeated `(date, sku, node_id)` rows are summed) | `revenue` |
 
-`nodes.csv` (node_id, type, lat, lng, lead_time_days, cluster_id) is required alongside these
-three in practice -- gaps cannot be computed without node cluster assignment -- but the "three-CSV
-contract" language in DECISIONS §18 refers to the demand-side minimum; a tenant with one node can
-supply a one-row `nodes.csv` and skip the cluster-rolldown step entirely.
+Two optional files sharpen the result:
+
+- `nodes.csv` (`node_id, type, lead_time_days, cluster_id`, optional `lat, lng`; `type` is
+  `dark_store` or `outlet`). Without it every node is treated as an online dark store in one
+  cluster with a 3-day lead time (`--default-lead-time-days`), and the CLI says so. Outlets matter
+  because the online sell-by rule applies only at nodes that sell online.
+- `inbound.csv` (`po_id, sku, node_id, qty, eta`). Without it Sense sees no stock in flight, so
+  `stockout_risk` is an upper bound.
+
+Round-trip proof, `make ingest-roundtrip`: the seeded tenant exported to these files
+(`python -m data.ingest.export`) and ingested again gives the same 550 grocery gaps, byte for byte,
+and the same 134,400 forecast rows. Measured on the seeded synthetic tenant, recomputed from
+`eval/raw/ingest_roundtrip_2026-09-27/summary.json`. The 5 apparel `assortment_gap` rows are
+excluded because they come from stylist asks, which are outside this contract. A 2-sku worked
+example lives in `data/samples/`, checked byte-for-byte against the generator by
+`tests/unit/test_ingest.py`.
 
 ## Cost profiles (DECISIONS §18.5)
 

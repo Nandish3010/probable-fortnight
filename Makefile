@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -38,6 +38,12 @@ mocks:            ## regenerate web/mocks/*.json from the API (after make genera
 
 openapi:          ## regenerate docs/openapi.yaml from the FastAPI app
 	uv run python -m harness.openapi
+
+ingest-roundtrip: ## seeded tenant -> contract CSVs -> data.ingest -> Sense; gaps must be identical (eval/raw/ingest_roundtrip_<date>/)
+	uv run python -m harness.ingest_roundtrip
+
+samples:          ## rebuild data/samples/*.csv (the ingest contract's worked example) from the seeded tenant
+	uv run python -m data.ingest.export --data $(TAAL_DATA_DIR) --out data/samples --sample
 
 sense:            ## nightly job locally
 	uv run python -m jobs.sense

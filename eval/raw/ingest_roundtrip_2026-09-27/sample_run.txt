@@ -1,0 +1,21 @@
+$ uv run python -m data.ingest --products data/samples/products.csv --batches data/samples/inventory_batches.csv --sales data/samples/sales.csv --tenant config/tenant.demo.toml --out <tmp>
+Ingested 2 products, 2 batches, 110 sales rows into <tmp> (tenant kutumb-mart)
+warning: no nodes.csv: every node_id is treated as an online dark store in one cluster ('all'); pass --nodes to set outlets, clusters and lead times
+warning: no inbound.csv: Sense sees no purchase orders in flight, so stockout_risk is an upper bound
+
+As of 2026-09-12 (sell-by rule v1-either): 2 gaps
+
+Lots flagged under the online sell-by rule: 2 lots, 463 units, Rs 41,500.00 at stake (0 already past online sell-by: outlet or write-off only)
+
+At stake by gap type (write-off types at unit cost; stockout/unmet demand at lost margin):
+  online_sellby_breach       2 gaps        463 units  Rs      41,500.00
+
+Ten largest gaps by Rs at stake:
+  Rs    32,300.00  online_sellby_breach   SKU-DARJEELING-TEA-100G @ DS-04  95 units by 2026-10-06 (online_sellby)
+  Rs     9,200.00  online_sellby_breach   SKU-MASALA-CHIPS-200G @ DS-07  368 units by 2026-09-18 (online_sellby)
+
+Food at dark stores already past its online sell-by (outlet or write-off only): 0 lots, 0 units, Rs 0.00 at unit cost (0 of these lots are in a Sense gap; the rest expire after the 28-day horizon)
+
+Already past printed expiry with stock on hand (a write-off already incurred): 0 lots, 0 units, Rs 0.00 at unit cost
+
+Full report: <tmp>/ingest_report.json; gaps: <tmp>/gaps.jsonl

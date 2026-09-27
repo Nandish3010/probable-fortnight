@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.gate.bigquery_store import BigQueryStore
-from agents.gate.config import load_tenant
+from agents.gate.config import TenantConfig, load_tenant
 from agents.gate.firestore_cache import build_cache
 from agents.gate.store import LocalStore
 
@@ -39,12 +39,12 @@ def build_batch_store(data_dir: str | Path) -> LocalStore:
     return LocalStore(data_dir)
 
 
-def run_sense(data_dir: str | Path, as_of: date | None = None) -> dict[str, Any]:
+def run_sense(data_dir: str | Path, as_of: date | None = None, tenant: TenantConfig | None = None) -> dict[str, Any]:
     store = build_batch_store(data_dir)
     manifest_path = store.root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
     as_of = as_of or date.fromisoformat(manifest.get("as_of", date.today().isoformat()))
-    tenant = load_tenant()
+    tenant = tenant or load_tenant()
     executed_at = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
     execution_name = os.environ.get("CLOUD_RUN_EXECUTION") or os.environ.get("CLOUD_RUN_TASK_INDEX") or "local"
     t0 = time.perf_counter()
