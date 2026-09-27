@@ -95,7 +95,7 @@ def build_rows() -> list[Row]:
     # commits an exact number (the test only asserts a >=95%/>=90% threshold and passes in CI);
     # cite the checklist tick and the test rather than inventing a percentage.
     checklist = _read(PLANNER_CHECKLIST)
-    schema_ticked = bool(re.search(r"- \[x\] `adk eval` on 50 gaps: schema validity >= 95% after revision", checklist))
+    schema_ticked = bool(re.search(r"- \[x\] Schema validity >= 95% after revision on the 50 largest eligible gaps", checklist))
     gate_ticked = bool(re.search(r"- \[x\] Gate-pass-after-revision >= 90%", checklist))
     test_src = _read(PLANNER_TEST)
     has_test = "def test_evalset_batch_schema_validity_and_gate_pass" in test_src

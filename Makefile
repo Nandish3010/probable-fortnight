@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -106,8 +106,14 @@ sweep:            ## every API endpoint, one line each, against API (default loc
 demo: generate    ## local demo = api + web against generated data
 	@echo "Run 'make api' and 'make web' in two terminals; open http://localhost:3000"
 
+eval-gaps:        ## pick the 50 planner evalset gaps (stratified) -> eval/raw/planner_evalset_selection_<date>.json
+	uv run python -m harness.select_eval_gaps
+
+planner-traces:   ## one recorded planner run per selected gap -> eval/raw/planner_traces_<date>/ (set TAAL_MODEL_BACKEND=vertex)
+	uv run python -m harness.record_planner_traces
+
 eval:             ## planner evalset (stub or vertex per TAAL_MODEL_BACKEND)
-	uv run python -m harness.run_evals
+	uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals
 
 deploy:           ## gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT)
 	@bash infra/deploy.sh

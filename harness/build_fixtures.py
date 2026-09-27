@@ -6,6 +6,14 @@ Writes: fixtures/plays/valid/*.json (20 golden plays from the stub planner), fix
 (20 mutations, each with the mutation named), fixtures/golden_runs/*.jsonl (planner traces for the demo
 gaps under policy v1 and v2, the chips approve response, Meena's conversation), agents/planner/evalsets/*.evalset.json
 (ADK evalset format, tool trajectories from the recorded runs), fixtures/demo_snapshot.json.
+
+Evalsets come from real recorded model runs when a committed vertex trace directory exists
+(eval/raw/planner_traces_<date>/, written by harness/record_planner_traces.py): one evalset per
+recorded gap, expected trajectory = the recorded tool names in order, plus
+agents/planner/evalsets/test_config.json with the criteria. Without one, the five stub-run evalsets
+are written as before. Rebuild only the evalsets:
+
+    python -m harness.build_fixtures --evalsets-from-traces eval/raw/planner_traces_<date>
 """
 from __future__ import annotations
 
@@ -115,6 +123,81 @@ def mutations(play: dict) -> list[tuple[str, dict]]:
     return out
 
 
+# The evalset criteria (adk eval reads agents/planner/evalsets/test_config.json via
+# harness/run_evals.py). EXACT + ignore_args: same tool names, same count, same positions; argument
+# content (the batched estimator's drafts, propose_play's play) may differ between runs. With one
+# invocation per case the trajectory score is 0 or 1, so 0.8 means "the whole sequence matches".
+EVAL_CRITERIA = {
+    "criteria": {
+        "tool_trajectory_avg_score": {"threshold": 0.8, "match_type": "EXACT", "ignore_args": True},
+        "response_match_score": 0.8,
+    }
+}
+TRACE_MARKER = "source=recorded_trace"
+
+
+def latest_real_traces() -> Path | None:
+    """Newest committed eval/raw/planner_traces_*/ recorded against the real model (vertex)."""
+    for d in sorted((ROOT / "eval" / "raw").glob("planner_traces_*"), reverse=True):
+        summary = d / "summary.json"
+        if summary.exists() and json.loads(summary.read_text(encoding="utf-8")).get("backend") == "vertex":
+            return d
+    return None
+
+
+def evalset_from_trace(gap_id: str, records: list[dict], summary: dict, trace_rel: str) -> dict:
+    """One evalset from one recorded run: the exact user message the model saw, the recorded tool
+    names in order (args left empty -- the criterion ignores them), the recorded final text."""
+    from harness.record_planner_traces import trace_facts
+
+    user = next(r["content"] for r in records if r.get("kind") == "user")
+    facts = trace_facts(records)
+    name = f"planner_{gap_id}"
+    outcome = "accepted play" if facts["planner_source"] == "model" else f"no accepted model play ({facts['fallback_reason'] or facts['status']})"
+    return {
+        "eval_set_id": name, "name": name,
+        "description": (
+            f"{TRACE_MARKER}: planner trajectory for {gap_id} from {trace_rel} "
+            f"({summary['backend']} {summary['model']}, prompt {summary['prompt_version']}, recorded {summary['recorded_at']}; "
+            f"{len(facts['tool_names'])} tool calls, {facts['revisions']} rejected propose_play, {outcome})"
+        ),
+        "eval_cases": [{
+            "eval_id": f"{name}_case", "conversation": [{
+                "invocation_id": f"inv-{gap_id}",
+                "user_content": {"parts": [{"text": "".join(p.get("text", "") for p in user.get("parts", []))}], "role": "user"},
+                "final_response": {"parts": [{"text": facts["final_text"]}], "role": "model"},
+                # tool_responses keeps only each recorded propose_play verdict (valid or not): the
+                # trajectory metric reads tool_uses alone, and the stub's replay mode
+                # (agents/planner/stub_llm.py) needs the verdicts to reproduce the rejections
+                "intermediate_data": {
+                    "tool_uses": [{"name": n, "args": {}} for n in facts["tool_names"]],
+                    "tool_responses": [{"name": "propose_play", "response": {"valid": v}} for v in facts["propose_play_verdicts"]],
+                    "intermediate_responses": [],
+                },
+            }], "session_input": {"app_name": "taal_planner", "user_id": "planner", "state": {}},
+        }],
+    }
+
+
+def build_evalsets_from_traces(trace_dir: Path) -> int:
+    trace_dir = trace_dir.resolve()
+    summary = json.loads((trace_dir / "summary.json").read_text(encoding="utf-8"))
+    es = ROOT / "agents" / "planner" / "evalsets"
+    shutil.rmtree(es, ignore_errors=True)
+    es.mkdir(parents=True, exist_ok=True)
+    rel = str(trace_dir.relative_to(ROOT)) if trace_dir.is_relative_to(ROOT) else str(trace_dir)
+    n = 0
+    for row in summary["gaps"]:
+        gid = row["gap_id"]
+        records = [json.loads(line) for line in (trace_dir / f"{gid}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        if not any(r.get("kind") == "user" for r in records):
+            continue  # the run crashed before the model saw anything: nothing to evaluate against
+        _write(es / f"{gid}.evalset.json", evalset_from_trace(gid, records, summary, f"{rel}/{gid}.jsonl"))
+        n += 1
+    _write(es / "test_config.json", EVAL_CRITERIA)
+    return n
+
+
 def evalset_from_events(name: str, gap_id: str, events: list[dict], final_text: str) -> dict:
     tool_uses = [{"name": e["function_call"]["name"], "args": {}} for e in events if e.get("function_call")]
     return {
@@ -182,12 +265,18 @@ async def main_async(data_dir: Path) -> int:
     _write(gr / "measure_chips.json", {"summary": m, "outcomes": overlay.read("play_outcomes")})
     overlay.reset()
     shutil.rmtree(overlay.root, ignore_errors=True)
-    # 5. evalsets
+    # 5. evalsets: from the committed real-model traces when there are any, else the stub runs
     es = ROOT / "agents" / "planner" / "evalsets"
     es.mkdir(parents=True, exist_ok=True)
-    for gid in ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_kaju_ds01", "gap_quinoa_out02"]:
-        if gid in runs:
-            _write(es / f"{gid}.evalset.json", evalset_from_events(f"planner_{gid}", gid, runs[gid]["events"], f"DONE {runs[gid]['play']['play_id']}"))
+    real = latest_real_traces()
+    if real is not None:
+        n_evalsets = build_evalsets_from_traces(real)
+    else:
+        n_evalsets = 0
+        for gid in ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_kaju_ds01", "gap_quinoa_out02"]:
+            if gid in runs:
+                _write(es / f"{gid}.evalset.json", evalset_from_events(f"planner_{gid}", gid, runs[gid]["events"], f"DONE {runs[gid]['play']['play_id']}"))
+                n_evalsets += 1
     # 6. snapshot manifest
     manifest = json.loads((data_dir / "manifest.json").read_text(encoding="utf-8"))
     _write(FIX / "demo_snapshot.json", {
@@ -198,13 +287,21 @@ async def main_async(data_dir: Path) -> int:
         "approve_chips": {"treated_n": resp["assignment"]["treated_n"], "holdout_n": resp["assignment"]["holdout_n"], "writeoff_before_inr": resp["forecast"]["writeoff_before_inr"], "writeoff_after_inr": resp["forecast"]["writeoff_after_inr"]},
         "note": "Rebuilt by `python -m harness.build_fixtures` after `make generate`; all values derive from the seeded tenant.",
     })
-    print(f"fixtures: {len(plays) + 1} valid plays, {len(mutations(plays['gap_chips_ds07']))} invalid, {len(DEMO_GAPS) + 1} golden runs, 5 evalsets")
+    print(f"fixtures: {len(plays) + 1} valid plays, {len(mutations(plays['gap_chips_ds07']))} invalid, {len(DEMO_GAPS) + 1} golden runs, {n_evalsets} evalsets")
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
     import os
 
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--evalsets-from-traces", default=None, help="rebuild only agents/planner/evalsets/ from this recorded trace dir")
+    args = ap.parse_args(argv)
+    if args.evalsets_from_traces:
+        n = build_evalsets_from_traces(Path(args.evalsets_from_traces))
+        print(f"fixtures: {n} evalsets from {args.evalsets_from_traces}")
+        return 0
     n = _write_garment_swatches()
     print(f"fixtures: {n} stylist photo swatches")
     return asyncio.run(main_async(Path(os.environ.get("TAAL_DATA_DIR", ".local/data")).resolve()))
