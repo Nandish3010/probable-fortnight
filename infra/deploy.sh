@@ -10,6 +10,19 @@
 # Usage: GOOGLE_CLOUD_PROJECT=my-proj REGION=asia-south1 ./infra/deploy.sh
 set -euo pipefail
 
+# ---- chat-time Google Cloud integrations on taal-agents (rollback = set back to 0 and redeploy) ----
+# Vertex AI Sessions (Agent Engine) for chat sessions, keyed per visitor + customer
+# (agents/chat_runtime.py::adk_ids). 0 = in-memory sessions, today's behaviour.
+ENABLE_VERTEX_SESSIONS=0
+# The Agent Engine created and verified in eval/raw/vertex_sessions_2026-09-24/summary.json.
+AGENT_ENGINE_ID=5616208637656563712
+# Firestore serving cache for stock + customer profiles (agents/gate/firestore_cache.py), mirrored
+# from the image's own seeded snapshot by the taal-cache-mirror job below. 0 = every chat read goes
+# to the visitor's store, today's behaviour.
+ENABLE_SERVING_CACHE=0
+# Both stay 0 until the live acceptance runs (p95 < 6.0 s over 50 /chat calls, restart test)
+# are committed under eval/raw/ -- see eval/evaluation.md, "Sessions and serving cache".
+
 : "${GOOGLE_CLOUD_PROJECT:?set GOOGLE_CLOUD_PROJECT}"
 : "${REGION:?set REGION}"
 
@@ -193,14 +206,39 @@ else
   echo "   (secret ${FEEDBACK_SECRET} not found: /feedback/results will be disabled)"
 fi
 
+AGENTS_ENV="TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore"
+if [ "${ENABLE_VERTEX_SESSIONS}" = "1" ]; then
+  echo "   chat sessions: Vertex AI Sessions on Agent Engine ${AGENT_ENGINE_ID}"
+  AGENTS_ENV="${AGENTS_ENV},TAAL_SESSION_BACKEND=vertex,TAAL_AGENT_ENGINE_ID=${AGENT_ENGINE_ID},TAAL_REGION=${REGION}"
+fi
+if [ "${ENABLE_SERVING_CACHE}" = "1" ]; then
+  echo "   chat reads: Firestore serving cache (mirrored below from this image's snapshot)"
+  AGENTS_ENV="${AGENTS_ENV},TAAL_SERVING_CACHE=firestore"
+fi
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
-  --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore" \
+  --set-env-vars "${AGENTS_ENV}" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
   --allow-unauthenticated
 # CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
 # (--set-env-vars above replaces every env var, so the origins must be re-applied on each deploy.)
+
+# Serving-cache mirror: from the SAME seeded snapshot and TAAL_NOW the taal-agents image serves
+# (the Dockerfile bakes both), as a one-off job on that image -- never from the nightly BigQuery
+# job, whose dates are real ones. Idempotent: every doc is a full set keyed by id, and serving
+# rejects any doc whose as_of/snapshot_id does not match the image, so a stale mirror degrades to
+# store reads, never to wrong answers.
+if [ "${ENABLE_SERVING_CACHE}" = "1" ]; then
+  echo "-- mirroring the served snapshot into the Firestore serving cache (taal-cache-mirror job) --"
+  gcloud run jobs deploy taal-cache-mirror \
+    --project "${PROJECT}" --region "${REGION}" \
+    --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
+    --command uv \
+    --args="run,python,-m,agents.gate.firestore_cache,--mirror" \
+    --set-env-vars "TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT}" \
+    --execute-now --wait
+fi
 
 AGENTS_URL="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format='value(status.url)')"
 echo "   taal-agents URL: ${AGENTS_URL}"

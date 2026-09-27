@@ -850,3 +850,69 @@ end-to-end (only the cache module itself, directly) -- both are live-service cha
 own explicit go-ahead. Read latency at chat-scale (many customers, many SKUs) was not benchmarked
 against the store-scan baseline it is meant to replace; the win is architectural (a bounded doc
 read instead of an unbounded table scan) but has no measured number attached yet.
+
+## Sessions and serving cache: visitor isolation fixed, live flip blocked, 2026-09-27
+
+Goal: turn `TAAL_SESSION_BACKEND=vertex` and `TAAL_SERVING_CACHE=firestore` on in the deployed
+`taal-agents` without breaking per-visitor sandbox isolation or the chat p95 < 6 s bar. **Both
+flags stay off** (`infra/deploy.sh`: `ENABLE_VERTEX_SESSIONS=0`, `ENABLE_SERVING_CACHE=0`): the
+isolation and clock-safety fixes are done and tested offline, but none of the live acceptance runs
+could be executed in this session. The service-account key file named for this work is absent from
+the container, so no Google Cloud call was possible (`eval/raw/sessions_cache_2026-09-27/gcp_smoke_test.txt`).
+
+**Isolation bugs fixed (both would have leaked between judges with a flag on):**
+1. Sessions. ADK sessions were keyed `customer_id:web`. Behind ONE shared Agent Engine, two
+   visitors chatting as `CUST-MEENA` would read and write the same session. Now keyed
+   `<visitor>:<customer_id>:web`, user `<visitor>:<customer_id>` (`agents/chat_runtime.py::adk_ids`);
+   `/reset` also deletes the visitor's persisted sessions, so a reset sandbox never resumes a
+   conversation about orders that no longer exist. `tests/agents/test_session_isolation.py` runs
+   two visitors through one shared session service (the Vertex shape); with the visitor dropped
+   from the key, visitor A's history contains visitor B's "Cola Zero" turn, so the test detects the bug.
+   The planner no longer follows the chat flag onto Vertex (its own `TAAL_PLANNER_SESSION_BACKEND`):
+   its session id is a deterministic `make_run_id(gap, policy, salt)`, which two visitors would share.
+2. Serving cache. It was keyed by tenant only and also served consent and offers. It now serves
+   stock only when the visitor has no overlay `inventory_batches`/`order_lines`, and profiles only
+   when they have no overlay `customers`. Consent and offers are never cached: they have no reader.
+   Every mirrored doc carries `as_of` and `snapshot_id` and is rejected unless both match the
+   serving clock (`TAAL_NOW`) and the image's own seeded snapshot. The mirror moved from the
+   nightly BigQuery job to a deploy-time job over the image's own snapshot (`taal-cache-mirror`).
+   `tests/agents/test_serving_cache_overlay.py`: one visitor approves `play_chips_ds07_v1`, one
+   does not; only the approver sees the offer, the approver's STOP never reaches the other, and
+   unchanged stock is still served from the cache and equals the store scan.
+3. Found by running a local API with the cache flag on and unusable credentials: every `/chat`
+   returned 500, because the Firestore client was built outside the read's fail-open path. Fixed;
+   the same run now returns 15/15 200s with the cache reporting one error and falling back
+   (`eval/raw/sessions_cache_2026-09-27/fail_open_no_credentials_summary.json`, synthetic: stub model).
+
+**Measured offline** (`eval/raw/sessions_cache_2026-09-27/offline_counts.json`; this container's disk,
+stub model, fake Firestore, in-memory session service, 45 turns over the 15-message pool):
+- the store reads the cache replaces cost p50 25.26 ms (`inventory_batches`, once per stock lookup)
+  and 17.43 ms (`customers`); the cache does not cover `order_lines`, p50 234.06 ms, read by
+  `apply_offer`. A Firestore hit saves at most the former per lookup, minus its own round trip.
+- Firestore reads per turn: mean 1.13, max 2; hit rate 1.0 for fresh visitors. Visitors who ran
+  `/plan` bypass the stock and profile cache, because `/plan` copies `inventory_batches`,
+  `order_lines` and `customers` into the overlay.
+- session-service calls per turn: create 1, get 2, append_event 5.33 (mean). With Vertex each of
+  these is a network round trip on the turn's critical path.
+
+**Flags-on /chat latency: not yet measured live.** The acceptance run is written and exercised end
+to end in stub mode (`harness/live_sessions_cache.py latency --sessions --cache --n 50`, and
+`restart --sessions` for the kill-and-restart test); it needs the deploy credentials. Projected,
+not measured: the 2026-09-21 flags-off p95 is 5.7515 s
+(`eval/raw/customer_latency_fix_summary_2026-09-21.json`), leaving 0.2485 s for about 8 Agent
+Engine round trips per first turn. That is likely to miss the 6.0 s bar unless in-region round trips
+are near 30 ms; `session_io_ms` in the harness's summary will show whether session I/O or the model
+dominates.
+
+Projected cost: `eval/raw/sessions_cache_2026-09-27/cost_estimate.json` gives per-turn read and event
+counts and 8801 Firestore writes per mirror. No unit price was verified in this session.
+
+**Open decision for the owner, found while reviewing this change (not measured):** with
+`TAAL_SESSION_BACKEND=vertex`, chat history outlives the visitor's sandbox. Sandboxes are files on
+the Cloud Run instance's own disk (`TAAL_SANDBOX_DIR`, default `.local/sandbox`), so a new instance
+or a restart gives the visitor a fresh copy of the base tenant (no approvals, orders or STOP), while
+their Agent Engine session still holds the earlier conversation about them. Offers, consent and
+stock are still read from the store on every turn, so a guardrail cannot be bypassed this way, but
+the model can see a history that contradicts the store. Options: accept it for the demo; add a
+sandbox epoch to the session id, so sessions last only as long as sandboxes (which gives up most of the
+restart benefit on Cloud Run); or persist sandboxes (a larger change).

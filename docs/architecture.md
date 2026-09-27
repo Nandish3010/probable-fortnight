@@ -31,7 +31,8 @@ flowchart LR
     Judge[Judge mode]
   end
 
-  Firestore[(Firestore: stock / customers / offers / plays / substitutes)]
+  Firestore[(Firestore serving cache: stock / customer profiles\nflag TAAL_SERVING_CACHE, off by default)]
+  Sessions[(Vertex AI Sessions on Agent Engine\nflag TAAL_SESSION_BACKEND, off by default)]
 
   Phone -- "1 photo/voice" --> AgentsSvc
   AgentsSvc -- "inventory_batches write" --> BigQuery
@@ -40,9 +41,9 @@ flowchart LR
   Planner -- "propose_play" --> Plays
   Plays -- "3 Approve" --> Approve
   Approve -- "assignment + re-forecast" --> Forecasts
-  Approve -- "sync write" --> Firestore
-  BigQuery -- "nightly mirror" --> Firestore
-  Firestore -- "4 stock/offers" --> Customer
+  AgentsSvc -- "deploy-time mirror of the served snapshot" --> Firestore
+  Firestore -- "4 stock/profile (only when the visitor has not changed them)" --> Customer
+  Customer -- "sessions keyed visitor:customer" --> Sessions
   Customer -- "orders" --> BigQuery
   BigQuery -- "5 nightly Measure" --> Outcomes
   Outcomes -- "Looker embed" --> PlayDesk
@@ -83,8 +84,22 @@ flowchart LR
 3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
    `play_assignments`, inserts the play into `future_regressors`, and triggers a single-series
    `ML.FORECAST` re-run whose new p50 path the chart shows moving.
-4. **Engage.** The Customer Agent reads `pending_offers` from Firestore on session start and
-   delivers the play; a customer's order goes to `taal.orders` / `order_lines` with `play_id` set.
+4. **Engage.** The Customer Agent reads `pending_offers` and marketing consent from the
+   visitor's own sandbox store (never a shared cache: Approve and STOP change them per visitor)
+   and delivers the play; a customer's order goes to `order_lines` with `play_id` set. Two Google
+   Cloud integrations exist for this path, each behind its own flag and **both off in the
+   deployed service** until their live acceptance runs are committed (`infra/deploy.sh`,
+   `ENABLE_VERTEX_SESSIONS` / `ENABLE_SERVING_CACHE`):
+   - **Vertex AI Sessions** (`TAAL_SESSION_BACKEND=vertex`, `agents/vertex_sessions.py`): chat
+     history kept on an Agent Engine across container restarts. Every ADK session is keyed
+     `<visitor>:<customer_id>:web` (user `<visitor>:<customer_id>`), so two judges chatting as the
+     same customer never share a session, and `/reset` deletes the visitor's sessions. Off: an
+     in-memory session per visitor sandbox, lost on restart.
+   - **Firestore serving cache** (`TAAL_SERVING_CACHE=firestore`, `agents/gate/firestore_cache.py`):
+     stock and customer-profile docs mirrored at deploy time from the same seeded snapshot and
+     `TAAL_NOW` the image serves. Served only when the visitor has no overlay rows in the source
+     tables and the doc's `as_of`/`snapshot_id` match the serving clock and image; otherwise, and
+     on any Firestore error, the turn reads the store. Off: every read goes to the store.
 5. **Measure.** The nightly Measure job joins `orders` to `play_assignments` inside the play
    window, writes `play_outcomes` (treated vs holdout), and updates `estimator_priors`; Looker
    Studio reads the same table. With `TAAL_BATCH_STORE=bigquery` (the `taal-measure` job) it
@@ -98,7 +113,7 @@ flowchart LR
 
 | Path | Budget | Notes |
 |---|---|---|
-| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash, streaming; stock from Firestore; substitutes precomputed; no per-turn memory calls |
+| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash; stock from the visitor's store (or the Firestore serving cache when that flag is on); substitutes precomputed; no per-turn memory calls |
 | Vision intake (one photo) | < 8 s | Gemini image understanding, strict output schema |
 | Voice turn, first audio | < 2 s | Gemini Live API; recorded for the video regardless of live status at the finale |
 | Planner, one gap | 20-60 s | nightly batch, or streamed on an on-demand re-run |
