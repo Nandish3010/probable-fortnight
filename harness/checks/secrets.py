@@ -13,6 +13,12 @@ PATTERNS = {
     "assistant/model vendor name": re.compile(r"\b(claude|anthropic)\b", re.I),
 }
 RAW_DATA = re.compile(r"^data/public/raw/|\.(csv|parquet|zip)$", re.I)
+# The one exemption: the ingest contract's worked example, exported from the seeded synthetic
+# generator (python -m data.ingest.export --sample). tests/unit/test_ingest.py regenerates it and
+# fails on any byte difference, so real partner data cannot be committed here; the row cap is a
+# second fence in case that test is ever skipped.
+SAMPLES = re.compile(r"^data/samples/[a-z_]+\.csv$")
+SAMPLE_MAX_LINES = 201  # header + 200 rows
 ALLOW = {"harness/checks/secrets.py"}
 
 
@@ -20,6 +26,13 @@ def main() -> int:
     files = subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True).stdout.split()
     bad = 0
     for f in files:
+        if SAMPLES.match(f):
+            with open(f, encoding="utf-8", errors="ignore") as fh:
+                n = sum(1 for _ in fh)
+            if n > SAMPLE_MAX_LINES:
+                print(f"sample over {SAMPLE_MAX_LINES - 1} rows: {f} ({n - 1})")
+                bad += 1
+            continue
         if RAW_DATA.search(f):
             print(f"raw data tracked: {f}")
             bad += 1
