@@ -93,6 +93,10 @@ HAND_REVIEWED_NAMES: dict[str, str] = {
 
 def build_segments(store: LocalStore, as_of: date, seed: int = 6) -> list[dict[str, Any]]:
     ids, X, cats, tops = _features(store, as_of)
+    if not ids:
+        # A tenant ingested from the three-CSV contract has no customer table yet: no segments.
+        store.write("segments", [])
+        return []
     Z, mean, sd = _standardise(X)
     labels, centroids = kmeans(Z, K, seed)
     tenant = store.read("nodes")[0]["tenant_id"]
