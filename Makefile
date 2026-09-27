@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -83,6 +83,9 @@ vision-real-prep: ## real phone photos in .local/photos -> EXIF-stripped, downsc
 
 vision-real-eval: ## live Vertex vision accuracy on VISION_REAL_DIR, 3 passes -> results.json + summary.md there
 	TAAL_MODEL_BACKEND=vertex uv run python -m harness.vision_real_eval --dir $(VISION_REAL_DIR) --passes 3
+
+nightly-report:   ## read-only nightly Sense/Measure record -> eval/raw/nightly_runs/<date>.json + README row (needs GOOGLE_APPLICATION_CREDENTIALS)
+	uv run python -m harness.nightly_report
 
 eval-table:       ## regenerate eval/evaluation_table.md from eval/evaluation.md + eval/raw/ (never typed by hand)
 	uv run python -m harness.build_eval_table
