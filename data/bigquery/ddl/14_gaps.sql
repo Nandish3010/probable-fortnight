@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS `taal.gaps` (
     margin_per_unit FLOAT64,
     counterpart_node_id STRING,
     counterpart_units INT64,
+    counterpart_gap_id STRING,  -- rebalance gaps only (jobs/sense/gaps.py); missing here until 2026-09-27,
+                                -- found live the first time a rebalance gap was ever written to real BigQuery
     requests_count INT64,      -- real out_of_stock chat requests corroborating this gap (stockout_risk, unmet_demand)
     distinct_customers INT64
   >,

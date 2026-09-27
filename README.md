@@ -121,12 +121,29 @@ rolling origins as `jobs/sense/backtest.py`, found the local model with lower MA
 the local model fits; see `head_to_head_summary.json` in that directory. **A billing/payment issue
 on the GCP project briefly blocked all BigQuery writes on 2026-09-27** (DML, streaming inserts and
 load jobs all failed with `billingNotEnabled` for roughly the 15:31-15:33 UTC window and after);
-this has since been resolved by the project owner and re-verified live (streaming insert, DML
-`INSERT`, `CREATE TABLE` and `DROP TABLE` all succeeding again). No data was lost during the
-outage. `TAAL_BATCH_STORE=bigquery` for both nightly jobs is written and unit-tested (default
-`local` behaviour is unaffected everywhere else) but still needs a deliberate, owner-approved
-hand-execution with a row-count check before the nightly scheduler relies on it -- see
-`eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the full timeline and evidence. The
+this has since been resolved by the project owner and re-verified live, twice, over an hour apart
+(streaming insert, DML `INSERT`/`DELETE`, `LOAD`, `CREATE TABLE` and `DROP TABLE` all succeeding
+cleanly). No data was lost during the outage. **A separate, real data-loss bug was found and fixed
+the same day** (before it ever ran against a project with billing enabled): `BigQueryStore.write()`
+used a tenant-wide `DELETE` even on `forecasts`, a history table, which would have wiped every
+prior run's rows on the very next nightly write; `run.py` also unconditionally re-wrote `forecasts`
+through that path even when the `bigquery_timesfm` backend had already persisted the same rows via
+real SQL `INSERT`s. Fixed: `run.py` no longer re-writes `forecasts` for the `bigquery_timesfm`
+backend; `BigQueryStore.write()` now scopes `forecasts` deletes to `(tenant_id, run_id)` (never
+tenant-wide), stages new rows in a throwaway table and swaps them in via a single `BEGIN
+TRANSACTION`/`COMMIT TRANSACTION` script, so a failed load or swap always leaves the existing rows
+untouched; date/Decimal values are made JSON-safe before any load. Evidence, tests and the full bug
+chain: `eval/raw/bigquery_forecast_dataloss_2026-09-27/`, `tests/unit/test_bigquery_store.py`,
+`tests/unit/test_sense_bigquery_backend.py`. **A separate, pre-existing, still-open bug was found
+by the same dry run**: `taal.gaps`'s DDL declares `evidence` as a closed `STRUCT` that is missing
+the `counterpart_gap_id` field `jobs/sense/gaps.py`'s rebalance-gap evidence has always emitted --
+this has nothing to do with the fix above and would have broken the original code identically the
+first time it wrote a real rebalance gap; the DDL fix is prepared in
+`data/bigquery/ddl/14_gaps.sql` but not yet applied live (needs a schema-update action outside
+what this session's own tooling permission would allow). Until it is, `TAAL_BATCH_STORE=bigquery`
+correctly writes `forecasts` but still fails writing `gaps` for any run producing a rebalance gap.
+See `eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the billing timeline and
+`eval/raw/bigquery_forecast_dataloss_2026-09-27/` for the data-loss bug and its fix. The
 stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
 from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
 across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,
