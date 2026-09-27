@@ -67,15 +67,19 @@ flowchart LR
    series; no covariate parameter; a real SQL bug found and fixed) -- evidence under
    `eval/raw/bigquery_ai_forecast_2026-09-27/`. `TAAL_BATCH_STORE=bigquery` (writes through
    `BigQueryStore`) is written and unit-tested; `forecasts` writes were verified safe in a live dry
-   run against a throwaway dataset after a real data-loss bug was found and fixed (a tenant-wide
-   `DELETE` on a history table -- see `eval/raw/bigquery_forecast_dataloss_2026-09-27/`). `gaps`
-   writes through this backend are still blocked by a separate, pre-existing DDL/code mismatch
-   (`taal.gaps`'s `evidence` STRUCT is missing a field `jobs/sense/gaps.py` has always emitted for
-   rebalance gaps); the fix is prepared but not yet applied live. A billing/payment issue on the
-   GCP project also briefly blocked all BigQuery writes on 2026-09-27, since resolved and
-   re-verified live twice, an hour apart -- see `eval/raw/bigquery_billing_dml_2026-09-27/finding.json`
-   for the timeline. Running the nightly jobs with this backend against real `taal` still needs the
-   `gaps` DDL fix applied and a deliberate, owner-approved hand-execution with a row-count check.
+   run after a real data-loss bug was found and fixed (a tenant-wide `DELETE` on a history table),
+   and a separate bug in the same write path (an unscoped BigQuery load silently reordering and
+   dropping nested `STRUCT` fields) was found and fixed too -- see
+   `eval/raw/bigquery_forecast_dataloss_2026-09-27/`. `taal.gaps`'s DDL/code mismatch (`evidence`
+   was missing 15 real fields `jobs/sense/gaps.py` emits, across every gap type) has been migrated
+   live and verified via `INFORMATION_SCHEMA`; `infra/deploy.sh` now applies this migration
+   idempotently on every deploy -- see `eval/raw/bigquery_schema_migration_2026-09-27/finding.json`.
+   A billing/payment issue on the GCP project also briefly blocked all BigQuery writes on
+   2026-09-27, since resolved and re-verified live twice, an hour apart -- see
+   `eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the timeline. **The nightly BigQuery
+   batch path is now verified end-to-end against a staging clone of `taal`** (a full `jobs.sense`
+   run: 533 gaps across all 6 real gap types, all rebalance gaps carrying `counterpart_gap_id`,
+   prior forecast runs untouched); it has not yet been run for real against `taal` itself.
 3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
    `play_assignments`, inserts the play into `future_regressors`, and triggers a single-series
    `ML.FORECAST` re-run whose new p50 path the chart shows moving.

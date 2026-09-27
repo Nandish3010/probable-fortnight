@@ -167,24 +167,28 @@ class BigQueryStore(LocalStore):
             return
 
         stage_table = f"{self._table(table)}_stage_{uuid.uuid4().hex[:8]}"
+        target_schema = self.client.get_table(self._table(table)).schema
         # Create the staging table as an exact empty clone of the real one (`CREATE TABLE ...
-        # LIKE`), rather than passing an explicit Python-side schema copy to LoadJobConfig: a
-        # nested RECORD column (gaps.evidence, whose keys vary by gap type) round-trips through
-        # google-cloud-bigquery's SchemaField objects lossily and the load rejects rows with
-        # "No such field: evidence.<x>" (found live, 2026-09-27, running this against a real
-        # staging dataset). Loading into an existing table with no explicit schema is exactly
-        # what the original direct-into-target load always did successfully; this only changes
-        # which table gets loaded first.
+        # LIKE`), AND pass the real, unmodified fetched schema to the load explicitly. Both are
+        # needed: found live (2026-09-27) that `load_table_from_json` with WRITE_TRUNCATE into an
+        # EXISTING table, given no explicit `schema=`, does not respect that table's declared
+        # schema at all -- it infers a schema from the batch of rows being loaded, which silently
+        # reorders a nested RECORD's subfields and drops any subfield absent from every row in
+        # this batch (reproduced directly: gaps.evidence's declared field order was scrambled and
+        # requests_count/distinct_customers vanished after loading rows that happened not to set
+        # them). Passing the real schema object straight from get_table() -- never a manually
+        # rebuilt copy, which round-trips a nested RECORD's SchemaField objects lossily and can
+        # itself produce "No such field: evidence.<x>" -- fixes both the reordering and the drop.
         self.client.query(f"CREATE TABLE `{stage_table}` LIKE `{self._table(table)}`").result()
         try:
-            load_job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+            load_job_config = bigquery.LoadJobConfig(source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE, schema=target_schema)
             self.client.load_table_from_json(rows, stage_table, job_config=load_job_config).result()
             # An explicit, name-matched column list, not `SELECT *`: found live (2026-09-27) that
             # `INSERT INTO target SELECT * FROM stage` matches columns POSITIONALLY, and the
             # staging table's column order did not in fact match the target's ("column 1 has type
             # DATE which cannot be inserted into column tenant_id, which has type STRING").
             # Naming every column on both sides removes any dependence on column order at all.
-            cols = ", ".join(f.name for f in self.client.get_table(self._table(table)).schema)
+            cols = ", ".join(f.name for f in target_schema)
             script = f"""
             BEGIN TRANSACTION;
             DELETE FROM `{self._table(table)}` WHERE {where};
