@@ -1,0 +1,362 @@
+{
+  "_meta": {
+    "generated_by": "eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.py",
+    "env": {
+      "TAAL_MODEL_BACKEND": {
+        "value": "stub",
+        "was_set_by_caller": true,
+        "expected": "stub"
+      },
+      "TAAL_TENANT_CONFIG": {
+        "value": "config/tenant.demo.toml",
+        "was_set_by_caller": true,
+        "expected": "config/tenant.demo.toml"
+      },
+      "TAAL_NOW": {
+        "value": "2026-09-12T03:30:00Z",
+        "was_set_by_caller": true,
+        "expected": "2026-09-12T03:30:00Z"
+      },
+      "TAAL_DATA_DIR": {
+        "value": "/tmp/sandbox-scratch/sweep_tenant",
+        "was_set_by_caller": true,
+        "expected": "/tmp/sandbox-scratch/sweep_tenant"
+      },
+      "scratch_dir_really_used": {
+        "store.root": "/tmp/sandbox-scratch/sweep_tenant",
+        "matches_TAAL_DATA_DIR": true,
+        "manifest_seed": 20260912,
+        "manifest_as_of": "2026-09-12",
+        "manifest_sha256_present_for_n_tables": 15
+      }
+    },
+    "note": "Tenant quantities (gap/product/batch facts, planner trace, treated_n/holdout_n/eligible_n/regressor_rows_touched) are labelled 'seeded': deterministic output of data.generator --seed 20260912 + jobs.sense + harness.seed_plays, TAAL_MODEL_BACKEND=stub (no LLM calls) against the scratch tenant. forecast.latency_ms and the total approve() elapsed_ms are labelled 'measured': a real wall-clock measurement on this sandbox, one run, local stub-backend forecaster (jobs/sense/forecast.py's local_seasonal_xreg), not the BigQuery ML.FORECAST/ARIMA_PLUS_XREG path and not necessarily representative of a loaded/deployed Cloud Run instance's latency. writeoff_after_inr is labelled 'projected': it depends on the just-approved play's on_promo regressor changing the re-forecast, which is itself a model output, not a measured sale."
+  },
+  "labeled_values": {
+    "units_at_risk": {
+      "value": 368,
+      "unit": "units",
+      "label": "seeded",
+      "source": "gaps.jsonl (scratch tenant, seeded) gap_chips_ds07.units_at_risk",
+      "note": null
+    },
+    "rupees_at_stake": {
+      "value": 9200.0,
+      "unit": "INR",
+      "label": "seeded",
+      "source": "gaps.jsonl (scratch tenant, seeded) gap_chips_ds07.rupees_at_stake",
+      "note": null
+    },
+    "shelf_life_days": {
+      "value": 90,
+      "unit": "days",
+      "label": "seeded",
+      "source": "products.jsonl (scratch tenant, seeded) products[sku=SKU-MASALA-CHIPS-200G].shelf_life_days",
+      "note": null
+    },
+    "days_pinned_to_expiry": {
+      "value": 33,
+      "unit": "days",
+      "label": "seeded",
+      "source": "inventory_batches.jsonl (scratch tenant, seeded) batch.expiry_date (2026-10-15) minus pinned TAAL_NOW date (2026-09-12)",
+      "note": "arithmetic on seeded dates, computed in this script"
+    },
+    "days_pinned_to_sellby": {
+      "value": 6,
+      "unit": "days",
+      "label": "seeded",
+      "source": "inventory_batches.jsonl (scratch tenant, seeded) batch.online_sellby_date (2026-09-18) minus pinned TAAL_NOW date (2026-09-12)",
+      "note": "cross-checked against config/tenant.demo.toml [sellby_rule] recomputation, see gap_chips_ds07.sellby_rule_check"
+    },
+    "first_draft_mechanic": {
+      "value": "coupon",
+      "unit": "mechanic name",
+      "label": "seeded",
+      "source": "events/run_chips_ds07_v1_bd0a8253.jsonl (scratch tenant, seeded by harness.seed_plays) seq=3 function_call.args.play.mechanic",
+      "note": null
+    },
+    "first_draft_discount_pct": {
+      "value": 15,
+      "unit": "percent",
+      "label": "seeded",
+      "source": "events/run_chips_ds07_v1_bd0a8253.jsonl (scratch tenant, seeded by harness.seed_plays) seq=3 function_call.args.play.mechanic_params.discount_pct",
+      "note": null
+    },
+    "guardrail_failed": {
+      "value": "guardrail margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%",
+      "unit": "text",
+      "label": "seeded",
+      "source": "events/run_chips_ds07_v1_bd0a8253.jsonl (scratch tenant, seeded by harness.seed_plays) seq=4 function_response.response.errors[0]",
+      "note": null
+    },
+    "revision_mechanic": {
+      "value": "bundle",
+      "unit": "mechanic name",
+      "label": "seeded",
+      "source": "events/run_chips_ds07_v1_bd0a8253.jsonl (scratch tenant, seeded by harness.seed_plays) seq=6 function_call.args.play.mechanic",
+      "note": null
+    },
+    "treated_n": {
+      "value": 287,
+      "unit": "customers",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).assignment.treated_n",
+      "note": "assignment is a deterministic hash of customer_id + play.holdout.seed (agents/gate/assignment.py), independent of model backend"
+    },
+    "holdout_n": {
+      "value": 26,
+      "unit": "customers",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).assignment.holdout_n",
+      "note": "matches holdout_n=26 in the live-Vertex sweeps too (eval/raw/sweep_vertex_2026-09-20.txt, sweep_vertex_2026-09-21.txt), i.e. backend-independent"
+    },
+    "eligible_n": {
+      "value": 313,
+      "unit": "customers",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).assignment.eligible_n",
+      "note": null
+    },
+    "regressor_rows_touched": {
+      "value": 7,
+      "unit": "future_regressors rows",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).regressor_rows_touched",
+      "note": null
+    },
+    "forecast_model": {
+      "value": "local_seasonal_xreg",
+      "unit": "model name",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).forecast.model",
+      "note": "jobs/sense/forecast.py's local seasonal-xreg forecaster; not BigQuery ML.FORECAST/ARIMA_PLUS_XREG (services/api/approve.py's own comment)"
+    },
+    "forecast_latency_ms": {
+      "value": 1554,
+      "unit": "milliseconds",
+      "label": "measured",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).forecast.latency_ms",
+      "note": "real wall-clock on this sandbox, one run, local stub-backend forecast() call only -- no live Gemini/BigQuery call is on this path even with TAAL_MODEL_BACKEND=vertex (see deployed_or_live_latency_search for the separate, larger, live end-to-end /approve latency)"
+    },
+    "elapsed_ms_total_approve_call": {
+      "value": 4052,
+      "unit": "milliseconds",
+      "label": "measured",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).elapsed_ms",
+      "note": "real wall-clock for the whole approve() call on this sandbox, one run, stub backend (no live copy-generation call)"
+    },
+    "writeoff_before_inr": {
+      "value": 9194.12,
+      "unit": "INR",
+      "label": "seeded",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).forecast.writeoff_before_inr",
+      "note": "baseline (pre-play) forecast's write-off, from the same deterministic local forecaster over seeded sales history; exactly matches 9194.12 in both eval/raw/sweep_vertex_2026-09-20.txt and _21.txt (same gap, same play, live Vertex backend, different day) -- backend-independent"
+    },
+    "writeoff_after_inr": {
+      "value": 8067.53,
+      "unit": "INR",
+      "label": "projected",
+      "source": "services.api.approve.approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of) response (this run).forecast.writeoff_after_inr",
+      "note": "re-forecast WITH the play's on_promo regressor set -- bakes in the estimator/forecaster's assumed response to the play, not an observed sale; exactly matches eval/raw/sweep_vertex_2026-09-21.txt's 8067.53"
+    }
+  },
+  "gap_chips_ds07": {
+    "gap_id": "gap_chips_ds07",
+    "type": "online_sellby_breach",
+    "sku": "SKU-MASALA-CHIPS-200G",
+    "sku_name": "Masala Chips 200G",
+    "node_id": "DS-07",
+    "batch_id": "B-CHIPS-DS07-01",
+    "units_at_risk": 368,
+    "rupees_at_stake": 9200.0,
+    "deadline_date": "2026-09-18",
+    "deadline_type": "online_sellby",
+    "sellby_rule_version": "v1-either",
+    "shelf_life_days": 90,
+    "batch_expiry_date": "2026-10-15",
+    "batch_online_sellby_date": "2026-09-18",
+    "batch_received_at": "2026-07-17",
+    "pinned_date": "2026-09-12",
+    "days_pinned_to_expiry": 33,
+    "days_pinned_to_sellby": 6,
+    "source": {
+      "gap": "gaps.jsonl (scratch tenant, seeded) find gap_id=gap_chips_ds07",
+      "product": "products.jsonl (scratch tenant, seeded) find sku=SKU-MASALA-CHIPS-200G",
+      "batch": "inventory_batches.jsonl (scratch tenant, seeded) find batch_id=B-CHIPS-DS07-01"
+    },
+    "sellby_rule_check": {
+      "rule_version_in_toml": "v1-either",
+      "rule_version_on_gap": "v1-either",
+      "min_fraction_remaining": 0.3,
+      "min_days_remaining": 45,
+      "combine": "min",
+      "computed_cutoff_days_before_expiry": 27.0,
+      "computed_online_sellby_date": "2026-09-18",
+      "matches_batch_online_sellby_date": true,
+      "source": "config/tenant.demo.toml [sellby_rule]"
+    }
+  },
+  "planner_trace": {
+    "trace_file": "events/run_chips_ds07_v1_bd0a8253.jsonl (scratch tenant, seeded by harness.seed_plays)",
+    "n_events": 9,
+    "n_propose_play_drafts": 2,
+    "first_draft": {
+      "seq": 3,
+      "mechanic": "coupon",
+      "mechanic_params": {
+        "discount_pct": 15
+      }
+    },
+    "first_draft_guardrail_failure": {
+      "seq": 4,
+      "valid": false,
+      "errors": [
+        "guardrail margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%"
+      ]
+    },
+    "revision_log_line": {
+      "seq": 5,
+      "text": "Guardrail failed: margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%. Revising the play."
+    },
+    "final_draft": {
+      "seq": 6,
+      "mechanic": "bundle",
+      "mechanic_params": {
+        "bundle_sku": "SKU-COCONUT-WATER-1L",
+        "bundle_price": 61.0
+      },
+      "alternatives_recorded": [
+        {
+          "mechanic": "coupon",
+          "mechanic_params": {
+            "discount_pct": 15
+          },
+          "expected_units": 21.67,
+          "expected_margin_inr": 10.84,
+          "rejected_because": "margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%"
+        }
+      ]
+    },
+    "final_validation": {
+      "seq": 7,
+      "valid": true,
+      "play_id": "play_chips_ds07_v1"
+    },
+    "seed_plays_stdout_iterations": "seed: gap_chips_ds07 -> proposed play_chips_ds07_v1 (2 iteration(s))  # from commands.txt run log"
+  },
+  "approve_call": {
+    "called_as": "do_approve(store, tenant, \"play_chips_ds07_v1\", now, None, None, None, \"judge\", as_of=as_of)",
+    "now": "2026-09-12T03:30:00+00:00",
+    "as_of": "2026-09-12",
+    "response_source": "live",
+    "assignment": {
+      "treated_n": 287,
+      "holdout_n": 26,
+      "seed": "seed-play_chips_ds07_v1",
+      "fraction": 0.1,
+      "eligible_n": 313,
+      "excluded_subscribers": 2
+    },
+    "offers_written": 287,
+    "regressor_rows_touched": 7,
+    "copy": {
+      "variants": 10,
+      "rejected": []
+    },
+    "forecast": {
+      "run_id": "refc_play_chips_ds07_v1_033000",
+      "model": "local_seasonal_xreg",
+      "latency_ms": 1554,
+      "writeoff_before_inr": 9194.12,
+      "writeoff_after_inr": 8067.53,
+      "n_series_points": 28
+    },
+    "elapsed_ms_total_approve_call": 4052
+  },
+  "deployed_or_live_latency_search": {
+    "searched": "eval/raw/**/*.{txt,json,md} for 'POST /approve' or 'refc_' lines (excluding this task's own output dir)",
+    "hits": [
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-20.txt",
+        "line": 12,
+        "text": "OK  200    12.3s  POST /approve                          status=approved source=live holdout_n=26 writeoff 9194.12->9194.12"
+      },
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-20.txt",
+        "line": 13,
+        "text": "OK  200     0.0s  POST /approve (again, idempotent)      note='already approved at 2026-09-20T18:08:21Z; returning the recorded result' elapsed=12245ms"
+      },
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-20.txt",
+        "line": 29,
+        "text": "4xx 404     0.0s  POST /approve unknown play (expect 404) {\"detail\":\"unknown play 'nope'\"}"
+      },
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-21.txt",
+        "line": 12,
+        "text": "OK  200     8.3s  POST /approve                          status=approved source=live holdout_n=26 writeoff 9194.12->8067.53"
+      },
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-21.txt",
+        "line": 13,
+        "text": "OK  200     0.0s  POST /approve (again, idempotent)      note='already approved at 2026-09-12T03:30:00Z; returning the recorded result' elapsed=8259ms"
+      },
+      {
+        "file": "eval/raw/sweep_vertex_2026-09-21.txt",
+        "line": 31,
+        "text": "4xx 404     0.0s  POST /approve unknown play (expect 404) {\"detail\":\"unknown play 'nope'\"}"
+      }
+    ],
+    "note": "Two real hits: eval/raw/sweep_vertex_2026-09-20.txt and eval/raw/sweep_vertex_2026-09-21.txt, both harness.sweep_live runs against play_chips_ds07_v1 itself (same gap/play as this hook) on a live TAAL_MODEL_BACKEND=vertex server (GET /health backend=vertex; real Gemini + BigQuery AI.GENERATE_TABLE copy calls happen inside that /approve). Total POST /approve endpoint latency there was 12.3s (2026-09-20) and 8.3s (2026-09-21) -- NOT the same measurement as forecast.latency_ms above: that total includes the live copy-generation call (services/api/approve.py's generate_copy_bigquery, ~3-4s measured elsewhere per docs/scale.md, 6s timeout) on top of assignment + re-forecast. harness/sweep_live.py defaults to http://localhost:8080 and also accepts a *.run.app Cloud Run URL as argv[1]; neither of these two committed log files records which base URL that run actually used, so whether this was the deployed Cloud Run service specifically or a local server running with real Vertex credentials could NOT be confirmed from the committed file alone. holdout_n=26 in both live runs, matching this script's own approve_call.assignment.holdout_n below."
+  },
+  "readme_claims_check": [
+    {
+      "claim": "a 90-day-shelf-life chips pack expiring in 33 days can be sold online for 6 more days",
+      "reproduced": {
+        "shelf_life_days": 90,
+        "days_pinned_to_expiry": 33,
+        "days_pinned_to_sellby": 6
+      },
+      "match": true
+    },
+    {
+      "claim": "demo gap gap_chips_ds07 is 368 units of Masala Chips at DS-07 with Rs 9,200 at stake and online sell-by in 6 days",
+      "reproduced": {
+        "units_at_risk": 368,
+        "sku_name": "Masala Chips 200G",
+        "node_id": "DS-07",
+        "rupees_at_stake": 9200.0,
+        "days_pinned_to_sellby": 6
+      },
+      "match": true
+    },
+    {
+      "claim": "the planner's first draft (a 15% coupon) fails the margin floor and it revises to a bundle",
+      "reproduced": {
+        "first_draft_mechanic": "coupon",
+        "first_draft_discount_pct": 15,
+        "guardrail_errors": [
+          "guardrail margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%"
+        ],
+        "final_mechanic": "bundle"
+      },
+      "match": true
+    },
+    {
+      "claim": "approval assigns 287 treated and 26 holdout customers by hash",
+      "reproduced": {
+        "treated_n": 287,
+        "holdout_n": 26
+      },
+      "match": true
+    },
+    {
+      "claim": "approval ... re-forecasts the series in about 1.5 s",
+      "reproduced": {
+        "forecast_latency_ms": 1554
+      },
+      "match": true,
+      "match_rule": "within +/-50% of 1500ms (1500ms is 'about 1.5s' in prose, not an exact spec)"
+    }
+  ]
+}

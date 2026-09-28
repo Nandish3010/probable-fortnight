@@ -6,14 +6,20 @@ final published rules before any real-tenant deployment].
 
 ## What leaves the tenant
 
-Nothing by default. BigQuery (system of record) and Firestore (serving cache) live inside the
-tenant's own Google Cloud project; the only outbound calls are to Vertex AI (Gemini, embeddings)
+Nothing by default. BigQuery (system of record), the per-visitor local store that serves chat-time
+reads, and Firestore (practitioner feedback in the deployed service, `TAAL_FEEDBACK_STORE=firestore`
+in `infra/deploy.sh`; an optional stock/customer-profile serving cache also exists behind
+`TAAL_SERVING_CACHE=firestore`, which `infra/deploy.sh` sets only when a maintainer flips
+`ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so the cache is
+off in the deployed service today) all live inside the tenant's own Google Cloud project; the only outbound calls are to Vertex AI (Gemini, embeddings)
 for model inference, which Google's Vertex AI terms treat as not used to train foundation models
 by default for enterprise customers [likely -- verify the current Vertex AI data-use terms at
 deploy time, they have changed before]. No customer data is sent to any third party beyond
-Google Cloud/Vertex AI. The Looker Studio embed reads BigQuery through the owner's own
-credentials with "anyone with the link" sharing -- this makes the **dashboard link** shareable,
-not the underlying customer PII, since the dashboard's cards are aggregates (DECISIONS §5.8).
+Google Cloud/Vertex AI. A Looker Studio report over `play_outcomes`, reading BigQuery through the
+owner's own credentials with "anyone with the link" sharing, is designed but not wired into this
+repo (DECISIONS §5.8; see `docs/architecture.md` for what the Outcomes page actually shows). If
+built as designed, this would make the **dashboard link** shareable, not the underlying customer
+PII, since the dashboard's cards are aggregates.
 
 ## Where photos live and for how long
 
@@ -52,8 +58,12 @@ substitute candidates filtered by current stock (`find_substitutes`); its own co
 history in the current session.
 
 **Cannot see**: any other customer's data, ever -- every tool call is scoped to the session's own
-`customer_id`; any BigQuery table directly (all chat-time reads are Firestore or Sessions, per
-DECISIONS §18.2 "no LLM reads BigQuery at chat time"); a holdout customer's arm status framed as
+`customer_id`; any BigQuery table directly (chat-time reads go through the per-visitor local store
+-- `LocalStore`/`OverlayStore` over the frozen snapshot -- or ADK session state, never live
+BigQuery, per DECISIONS §18.2 "no LLM reads BigQuery at chat time"; an optional Firestore serving
+cache also exists behind `TAAL_SERVING_CACHE`, which `infra/deploy.sh` sets only when a maintainer
+flips `ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so it is off
+in the deployed service today); a holdout customer's arm status framed as
 anything other than "no pending offer" (the agent does not say "you are in the holdout group" --
 it simply has nothing pending to deliver, and `apply_offer` refuses on arm=holdout without
 revealing why); consent-withdrawn customers' pending offers (filtered before they ever reach the
@@ -63,11 +73,15 @@ agent's context).
 
 A customer sending "STOP" (or an equivalent phrase the Customer Agent recognises) calls
 `record_stop(customer_id)`, which sets `consent.withdrawn_at` for that customer's marketing-purpose
-consent row. From that point: the gate's `consent_required` guardrail excludes the customer from
-every future audience; the nightly Firestore mirror stops writing `offers/{customer_id}` for them;
-and a direct "any offers?" question gets no offer, the same as a holdout customer, without
-distinguishing the two reasons in the reply. STOP is honoured immediately, not on the next nightly
-run -- `record_stop` writes `withdrawn_at` synchronously.
+consent row, always in the visitor's own store: consent and offers are never served from the
+Firestore serving cache (`TAAL_SERVING_CACHE=firestore`, off in the deployed service today --
+`infra/deploy.sh` sets it only when a maintainer flips `ENABLE_SERVING_CACHE` from its hard-coded
+default of 0, `infra/deploy.sh:22` -- and even then the cache mirrors stock and customer-profile
+docs only), so turning that flag on cannot delay a STOP. From that point: the gate's
+`consent_required` guardrail excludes the customer from every future audience; and a direct "any
+offers?" question gets no offer, the same as a holdout customer, without distinguishing the two
+reasons in the reply. STOP is honoured immediately, not on the next nightly run --
+`record_stop` writes `withdrawn_at` synchronously.
 
 ## DPDP framing
 

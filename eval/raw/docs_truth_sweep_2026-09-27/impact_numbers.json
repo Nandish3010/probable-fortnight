@@ -1,0 +1,210 @@
+{
+  "_meta": {
+    "generated_by": "eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py",
+    "inputs": [
+      "eval/raw/portfolio_2026-09-24.json",
+      "eval/raw/cost_measurement_2026-09-23.json",
+      "agents/gate/estimator.py",
+      "agents/planner/tools.py",
+      "config/tenant.demo.toml",
+      "docs/impact_math.md",
+      "docs/DECISIONS.md",
+      "jobs/sense/gaps.py",
+      "jobs/sense/forecast.py"
+    ],
+    "sense_run_id": "sense_20260912_baseline_2aaad73c",
+    "portfolio_as_of": "2026-09-12",
+    "portfolio_computed_at": "2026-09-24T14:53:47Z",
+    "tenant_id": "kutumb-mart"
+  },
+  "exposure": {
+    "value": 1795463.92,
+    "unit": "INR",
+    "label": "seeded",
+    "source": "eval/raw/portfolio_2026-09-24.json#/totals/exposure_inr",
+    "note": "Sum of rupees_at_stake across every one of the 555 gaps from Sense run sense_20260912_baseline_2aaad73c (as_of 2026-09-12), computed deterministically from the seeded tenant's generated inventory/forecast data with no assumed customer response rate -- this is total exposure across ALL gaps, not just the 424 the planner drafted a play for (127 were triaged out below the Rs 500 threshold, 4 eligible gaps got no valid play). Matches docs/impact_math.md Part 3 'Total exposure' row exactly."
+  },
+  "horizon_days": {
+    "value": null,
+    "unit": "days",
+    "label": "synthetic",
+    "source": "eval/raw/portfolio_2026-09-24.json has no horizon_days field (checked: no key containing 'horizon' anywhere in the file); jobs/sense/forecast.py:31 (HORIZON = 28)",
+    "note": "The portfolio file itself does not state a horizon. The underlying Sense gap-detection horizon is a 28-day code constant (jobs/sense/forecast.py: HORIZON = 28), used at jobs/sense/gaps.py:126 to build horizon_end=as_of+27d, and gated at jobs/sense/gaps.py:177 for online_sellby_breach/expiry_writeoff/slow_mover/rebalance gaps only -- consistent with docs/DECISIONS.md:177 ('horizon 28'). stockout_risk uses each node's own lead_time_days instead (jobs/sense/gaps.py:204), as do unmet_demand (jobs/sense/gaps.py:275) and assortment_gap (jobs/sense/gaps.py:326), so 'the portfolio's horizon' is not one single number across all 6 gap types that produced exposure this run. Could not find the phrase 'this week alone' in docs/impact_math.md to cross-check."
+  },
+  "plays_planned": {
+    "value": 424,
+    "unit": "plays",
+    "label": "seeded",
+    "source": "eval/raw/portfolio_2026-09-24.json#/planned/count (== len(/plays))",
+    "note": "planned.count and len(plays) agree (424). Every play is the deterministic drafter's output for one planner-eligible gap (agents/planner/deterministic.py via jobs/portfolio/run.py), not a model call.",
+    "by_mechanic": {
+      "bundle": 270,
+      "transfer_plus_nudge": 91,
+      "coupon": 28,
+      "outlet_markdown": 27,
+      "preorder": 4,
+      "usual_order_addon": 3,
+      "substitution": 1
+    }
+  },
+  "expected_margin_total": {
+    "value": 347355.96,
+    "unit": "INR",
+    "label": "projected",
+    "source": "eval/raw/portfolio_2026-09-24.json#/planned/expected_margin_inr",
+    "note": "Sum of expected_outcome.margin_inr over all 424 planned plays; an expectation under the estimator's default 5% response-rate prior (see default_response_prior below), not a measured outcome -- no play in this portfolio run has been approved or measured."
+  },
+  "sales_margin": {
+    "value": 206204.98,
+    "unit": "INR",
+    "label": "projected",
+    "source": "eval/raw/portfolio_2026-09-24.json#/plays[*]/expected_outcome/margin_inr (summed over mechanic != 'transfer_plus_nudge')",
+    "note": "Plays whose margin the estimator computes by selling units at some net price (coupon, outlet_markdown, bundle, and the docstring's 'other mechanics' catch-all -- agents/gate/estimator.py:19, code branch agents/gate/estimator.py:242). Mechanics present in this portfolio: bundle (270), coupon (28), outlet_markdown (27), preorder (4), usual_order_addon (3), substitution (1)."
+  },
+  "writeoff_avoided_net_of_transfer": {
+    "value": 141150.98,
+    "unit": "INR",
+    "label": "projected",
+    "source": "eval/raw/portfolio_2026-09-24.json#/plays[*]/expected_outcome/margin_inr (summed over mechanic == 'transfer_plus_nudge')",
+    "note": "transfer_plus_nudge plays only (91 of them): the estimator defines this mechanic's margin as waste_avoided_inr minus the per-unit transfer cost (agents/gate/estimator.py:17, code agents/gate/estimator.py:231), not as units sold at a price. transfer_cost_per_unit_inr = 2.0 in config/tenant.demo.toml, identical to the estimator's own DEFAULT_TRANSFER_COST_PER_UNIT = 2.0; the planner wires the tenant value in at agents/planner/tools.py:114, so both sources agree and there is no silent divergence."
+  },
+  "margin_sum_check": {
+    "value": 347355.96,
+    "unit": "INR",
+    "label": "projected",
+    "source": "computed in this script from the two sums above",
+    "note": "sales_margin + writeoff_avoided_net_of_transfer = 206204.98 + 141150.98 = 347355.96, vs. planned.expected_margin_inr = 347355.96 in the portfolio file. Match within Rs 0.01: True.",
+    "assertion_passed": true
+  },
+  "monthly_cost": {
+    "value": 486.46,
+    "unit": "INR",
+    "label": "measured",
+    "source": "eval/raw/cost_measurement_2026-09-23.json#/modeled/total_inr",
+    "note": "Measured (usage), list-priced; not a bill -- usage quantities measured over the trailing 30 days, priced at Google's public list rates. Covers: bigquery_query, bigquery_storage, cloud_run, firestore, vertex_ai_gemini (Vertex AI Gemini tokens, BigQuery query bytes billed, BigQuery active storage, Cloud Run vCPU/GiB-seconds, Firestore read/write/delete units). Period: trailing 30 days from 2026-09-23T17:20:51Z for every line except bigquery_storage, which the file itself labels a real point-in-time snapshot, not usage over the window (eval/raw/cost_measurement_2026-09-23.json#/modeled/lines/bigquery_storage/note). Method, in the file's own words: 'modeled_from_measured_usage' -- 'Every quantity above is real and measured for this project over the trailing 30 days (or, for storage, a real point-in-time snapshot). Priced at Google's public list rates, not an actual billing-dollar figure -- excludes any discount, free-tier allowance, or negotiated rate. See PUBLIC_RATES for sources.'. So: the USAGE QUANTITIES (tokens, bytes, vcpu-seconds, read/write units) are measured real telemetry for project amru-509214; the RUPEE TOTAL (total_usd=5.861, total_inr=486.46) is those quantities priced at Google's public list rates checked 2026-09-23 (usd_to_inr=83.0), explicitly NOT an actual billing-dollar figure -- No BigQuery billing export table (gcp_billing_export_v1_* or gcp_billing_export_resource_v1_*) exists in any dataset of project 'amru-509214'. Billing export is configured at the Cloud Billing account level, not the project level; the credentials used here could not be checked for that permission without attempting it, so the Cloud Billing API diagnostics below record what was actually tried. A tier-2 modeled estimate (real measured usage x public list rates) is attempted below instead of leaving this row blank. cost_per_play_inr is None: `taal.plays` has 0 rows with status in (approved, running, measured, unmeasured) in the window, so cost_per_play has no real denominator. Total modeled spend is still reported above."
+  },
+  "default_response_prior": {
+    "value": {
+      "mean": 0.05,
+      "alpha": 1.0,
+      "beta": 19.0
+    },
+    "unit": "probability (mean); pseudo-counts (alpha, beta)",
+    "label": "synthetic",
+    "source": "agents/gate/estimator.py:35; agents/gate/estimator.py:36",
+    "note": "The portfolio file does not carry a named default_alpha/default_beta field. Cross-check: expected_outcome.prior_n (= alpha+beta at estimate time) takes exactly one distinct value across all 424 plays in the portfolio file: [20.0], and expected_outcome.measured_n is [0] for all of them -- i.e. every play was estimated from an unmeasured prior. 20.0 == DEFAULT_ALPHA (=1.0) + DEFAULT_BETA (=19.0) from the code: True. Mean response rate = alpha/(alpha+beta) = 1.0/20.0 = 0.05, matching the estimator's own module docstring ('default alpha=1, beta=19, i.e. 5% with a pseudo-count of 20'). Labelled 'synthetic' here (a weak-by-construction modelling assumption, not measured and not part of the seeded tenant's business data) rather than 'seeded', since it is a code constant the tenant config does not override.",
+    "assertion_passed": true
+  },
+  "who_pays": {
+    "value": null,
+    "unit": "text",
+    "label": "projected",
+    "source": "docs/DECISIONS.md:484 (Sec. 11 'Deck', Full order, item 8 'Impact')",
+    "note": "Text-only per the task; no rupee number is stated anywhere for the price anchor, only the concept 'share of waste avoided'. Labelled 'projected' loosely (this is a stated go-to-market design decision, not measured/seeded/synthetic data) -- the closest of the four allowed labels, flagged as an approximation.",
+    "buyer_persona": {
+      "text": "category or supply-chain head",
+      "source": "docs/DECISIONS.md:484 (Sec. 11 'Deck', Full order, item 8 'Impact')"
+    },
+    "price_anchor": {
+      "text": "share of waste avoided",
+      "source": "docs/DECISIONS.md:484 (Sec. 11 'Deck', Full order, item 8 'Impact')"
+    }
+  },
+  "impact_math_part3_reproduction": {
+    "rows": [
+      {
+        "row": "Gaps in the run (sense_20260912_baseline_2aaad73c)",
+        "docs_impact_math_value": 555,
+        "portfolio_file_value": 555,
+        "reproduced": true
+      },
+      {
+        "row": "Total exposure (INR)",
+        "docs_impact_math_value": 1795463.92,
+        "portfolio_file_value": 1795463.92,
+        "reproduced": true
+      },
+      {
+        "row": "...online sell-by breaches, count",
+        "docs_impact_math_value": 330,
+        "portfolio_file_value": 330,
+        "reproduced": true
+      },
+      {
+        "row": "...online sell-by breaches, exposure (INR)",
+        "docs_impact_math_value": 1499536.95,
+        "portfolio_file_value": 1499536.95,
+        "reproduced": true
+      },
+      {
+        "row": "Planner-eligible (>= Rs 500 at stake)",
+        "docs_impact_math_value": 428,
+        "portfolio_file_value": 428,
+        "reproduced": true
+      },
+      {
+        "row": "Triaged out by the Cost Governor, count",
+        "docs_impact_math_value": 127,
+        "portfolio_file_value": 127,
+        "reproduced": true
+      },
+      {
+        "row": "Triaged out by the Cost Governor, exposure (INR)",
+        "docs_impact_math_value": 28170.54,
+        "portfolio_file_value": 28170.54,
+        "reproduced": true
+      },
+      {
+        "row": "Planned (valid play drafted)",
+        "docs_impact_math_value": 424,
+        "portfolio_file_value": 424,
+        "reproduced": true
+      },
+      {
+        "row": "Eligible but no valid play, count",
+        "docs_impact_math_value": 4,
+        "portfolio_file_value": 4,
+        "reproduced": true
+      },
+      {
+        "row": "Eligible but no valid play, exposure (INR)",
+        "docs_impact_math_value": 15984.64,
+        "portfolio_file_value": 15984.64,
+        "reproduced": true
+      },
+      {
+        "row": "Portfolio-wide do-nothing (write-off), INR",
+        "docs_impact_math_value": 1837170.32,
+        "portfolio_file_value": 1837170.32,
+        "reproduced": true
+      },
+      {
+        "row": "Portfolio-wide blanket markdown (20%), INR",
+        "docs_impact_math_value": 1369538.96,
+        "portfolio_file_value": 1369538.96,
+        "reproduced": true
+      },
+      {
+        "row": "Expected units moved across all 424 planned plays",
+        "docs_impact_math_value": 9142.64,
+        "portfolio_file_value": 9142.64,
+        "reproduced": true
+      },
+      {
+        "row": "Expected margin across all 424 planned plays (INR)",
+        "docs_impact_math_value": 347355.96,
+        "portfolio_file_value": 347355.96,
+        "reproduced": true
+      },
+      {
+        "row": "Expected waste avoided across all 424 planned plays (INR)",
+        "docs_impact_math_value": 706183.28,
+        "portfolio_file_value": 706183.28,
+        "reproduced": true
+      }
+    ],
+    "all_reproduced": true,
+    "not_reproduced": [],
+    "note": "docs/impact_math.md Part 3 states its totals are 'that file's own summary block' (docs/impact_math.md, sourced from eval/raw/portfolio_2026-09-24.json). Every row checked above was reproducible directly from the committed portfolio file's totals/governor/planned blocks -- none required re-running the pipeline."
+  }
+}

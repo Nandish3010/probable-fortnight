@@ -1,5 +1,6 @@
 // Per-visitor sandbox id (§5.6). Kept in localStorage so a visitor keeps the
-// same Firestore namespace across reloads; never sent anywhere but our own API.
+// same OverlayStore namespace across reloads (services/api/sandbox.py,
+// agents/gate/store.py); never sent anywhere but our own API.
 const KEY = "taal_visitor";
 
 function randomId(): string {

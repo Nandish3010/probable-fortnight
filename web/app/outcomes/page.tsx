@@ -53,7 +53,10 @@ function PortfolioCard() {
         </div>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
-          <span className="muted">expected margin across {planned.count} planned plays</span>
+          <span className="muted">
+            expected margin across {planned.count} planned plays -- sales margin, or for
+            transfer plays, write-off avoided net of transfer cost
+          </span>
         </div>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_waste_avoided_inr)}</span>
@@ -81,8 +84,9 @@ function PortfolioCard() {
       <p className="muted portfolio-card__counterfactual-line">
         Under do-nothing this exposure is a {inr(totals.do_nothing_inr)} write-off; a blanket 20%
         markdown across every gap brings that to {inr(totals.blanket_markdown_inr)}. Planned plays
-        are projected to recover {inr(planned.expected_margin_inr)} of margin without discounting
-        volume that was not at risk.
+        are projected to recover {inr(planned.expected_margin_inr)} of margin (sales margin, or
+        for transfer plays, write-off avoided net of transfer cost) without discounting volume
+        that was not at risk.
       </p>
       <p className="muted portfolio-card__governor-line">
         The Cost Governor triaged {governor.triaged_out} of {totals.gaps} gaps out before a play

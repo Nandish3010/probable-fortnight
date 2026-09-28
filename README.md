@@ -10,11 +10,25 @@ inventory-aware chat agent, and measured against a holdout.
 ## Judge quick-start
 
 - Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
-- Click **Run the 60-second beat**, then **Approve**, and watch the forecast line move and the write-off change.
+- Click **Run the 60-second beat**, then **Approve**: the approved play sets a promo flag on its window in `future_regressors`, and the re-forecast applies the fitted promo lift to the chart -- a projection; Measure tests it against the holdout.
 - Then **Chat as Meena**: the offer arrives in Kannada with the best-before date; ask for Cola Zero and get what is actually on her shelf.
 - Video (under 3 min): _pending_ · Deck: [`docs/deck.pdf`](docs/deck.pdf)
 - Live vs replay: every panel carries a LIVE/REPLAY (or REAL PILOT/SYNTHETIC) badge -- the play card itself keeps its `REPLAY · policy <version>` badge -- except the Desk's trace panel and its re-plan result, which instead carry one of four provenance badges -- `Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)`, or `Live · Gemini` -- naming exactly where that trace or run came from. Sense is nightly and replayed; approve, chat, capture and execution are live calls. **Change policy → re-plan** is itself a live, streamed call on the deployed service: it runs Gemini, streams each tool call and guardrail check as they happen, and ends badged with whichever of the four provenance kinds the run actually produced.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
+
+## Impact in numbers
+
+Every number below is reproduced from a committed evidence file or a named code constant, not
+typed by hand; see `eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py` for the script that
+reproduced each one.
+
+| What | Number | Label | Source |
+|---|---|---|---|
+| 28-day exposure on the seeded tenant (one Sense run, 555 gaps; the 28-day horizon bounds 4 of the 7 gap types, `agents/gate/models.py:34-36` -- the other 3 (`stockout_risk`, `unmet_demand`, `assortment_gap`) use each node's `lead_time_days` instead, 3-5 days in the seeded tenant, `data/generator/generate.py:119`) | ₹1,795,464 | seeded | `eval/raw/portfolio_2026-09-24.json` (`totals/exposure_inr`); horizon = `HORIZON`, `jobs/sense/forecast.py:31`; reproduced in `impact_numbers.json` |
+| Plays planned | 424 | seeded | `eval/raw/portfolio_2026-09-24.json` (`planned/count`); reproduced in `impact_numbers.json` |
+| Expected margin at the default response prior (5%, `agents/gate/estimator.py:35-36`) -- sales margin ₹206,205 plus write-off avoided (net of transfer cost) ₹141,151 | ₹347,356 total | projected | `eval/raw/portfolio_2026-09-24.json` (`plays[*].expected_outcome.margin_inr`, split by mechanic); transfer-cost formula per the `agents/gate/estimator.py` docstring; reproduced in `impact_numbers.json` |
+| Monthly running cost of this deployment -- usage measured over the trailing 30 days to 2026-09-23, priced at Google's public list rates; not a bill | ₹486 | measured (usage), list-priced; not a bill | `eval/raw/cost_measurement_2026-09-23.json` (`modeled/total_inr`; method "modeled_from_measured_usage": usage quantities measured over the trailing 30 days, priced at Google's public list rates) |
+| Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md:484` |
 
 ## Screenshots
 
@@ -36,13 +50,27 @@ photos has not been measured yet.
 
 ## The hook
 
-India's food regulator asks that food delivered online still has 30% of its shelf life or 45 days
-left at delivery. A 90-day-shelf-life pack of chips that expires in **33 days** can therefore
-only be sold online for **6** more days. No forecasting tool knows that. Taal's sell-by rule is a
-versioned tenant parameter (`config/tenant.demo.toml`, `sellby_rule`) shown on every gap card:
-the default reads "either condition satisfies" (the earlier of the two cut-offs, which keeps bread
-and milk sellable online); the stricter reading is one switch away and retailers set their own.
+FSSAI, India's food regulator, advises e-commerce food business operators
+[CITATION: owner to paste primary URL] that food delivered online should still have 30% of its
+shelf life or 45 days left at delivery. It is an advisory, not a statute: Taal treats it as the
+regulator's advisory, applied as a tenant-set, versioned rule (`config/tenant.demo.toml`,
+`sellby_rule`) -- a tenant parameter, not hard-coded. A 90-day-shelf-life pack of chips that
+expires in **33 days** can therefore only be sold online for **6** more days under the demo
+tenant's own reading. Forecasting tools treat expiry as the deadline; Taal makes the online
+sell-by cut-off a first-class gap type. The rule is shown on every gap card: the demo tenant uses
+the lenient reading ("either condition satisfies", the earlier of the two cut-offs, which keeps
+bread and milk sellable online); the stricter reading is one switch away and retailers set their
+own.
 
+Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07, ₹9,200 at stake, online
+sell-by in 6 days. In the replayed nightly plan (scripted planner fixture), the planner's first
+draft (a 15% coupon) fails the margin floor; it revises to a bundle; approval assigns 287 treated
+and 26 holdout customers by hash, writes the play into `future_regressors`, re-forecasts the
+series in about 1.6 s (1,554 ms, measured once locally, stub backend), and Meena's chat delivers
+the offer. Every number above is reproduced by executing the code on the seeded tenant --
+tenant/plan figures labelled seeded, the re-forecast time labelled measured -- in
+`eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json` (gap size, stake and the first-draft
+discount also committed in `eval/raw/rationale_judge_plays_2026-09-21/play_chips_ds07_v1.json`).
 Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07 (seeded), ₹9,200 at stake
 (seeded), online sell-by in 6 days (computed) -- every number in this paragraph is recomputed by
 `harness/flagship_facts.py` into `eval/raw/flagship_facts_2026-09-27.json`. The trace judges see for
@@ -65,26 +93,27 @@ reason shown.
 The mechanism behind the hook is not specific to food. A `Play` (`docs/schemas/play.schema.json`)
 is a single object -- target, mechanic, audience, guardrails, holdout, expected outcome -- and
 `agents/gate/guardrails.py` and `agents/gate/estimator.py` never look at what kind of gap produced
-it. The same loop runs today on two different problems with zero domain-specific code in the gate
-layer:
+it. The same loop runs on two domains with zero domain-specific code in the gate layer. The
+grocery loop:
 
-- **Grocery**: `online_sellby_breach`, `expiry_writeoff`, `stockout_risk`, `rebalance`,
-  `slow_mover` -- a forecast says a lot will go unsold before a deadline.
-- **Apparel**: `unmet_demand` and `assortment_gap` -- customers ask the Stylist Agent for a style
-  or colour the node does not stock; those real asks become a gap the same Planner, the same eight
-  guardrails and the same holdout-measured Play loop can act on
-  (`agents/stylist/tools.py`, `jobs/sense/gaps.py`).
+1. **Online sell-by is a first-class gap type**, not a side note on expiry: `online_sellby_breach`
+   sits alongside `expiry_writeoff`, `stockout_risk`, `rebalance` and `slow_mover` as one of the
+   forecast-driven gap types a lot can raise before a deadline.
+2. **A guardrailed planner drafts the play.** The ADK Planner Agent (`LlmAgent` in a `LoopAgent`)
+   proposes a mechanic; `agents/gate/guardrails.py`'s eight rules gate it before it reaches a
+   human, revising the play on a failed guardrail rather than failing outright.
+3. **Every play gets a hash holdout.** Assignment (`agents/gate/assignment.py`) splits treated vs
+   holdout by a deterministic hash of the customer id on every play, never an all-in send.
+4. **Measure updates the estimator's prior.** Every Measure run calls `update_prior()`
+   (`agents/gate/estimator.py`, `jobs/measure/run.py`) and writes the new `alpha`/`beta` back to
+   `estimator_priors`, keyed by mechanic, category and segment -- the next play of that shape
+   starts from what was actually measured, not a static assumption.
 
-Two more things close the loop rather than leaving it open-ended:
+The same schema also runs an apparel assortment gap; kept in code, not in the pitch.
 
-1. **Approve doesn't just log a decision, it feeds the forecast.** An approved play is written
-   into `future_regressors` and the affected series is re-forecast immediately (the chart moving
-   on screen in the 60-second beat *is* this) -- the agent's action becomes the model's next input,
-   not a side effect the next Sense run has to catch up to.
-2. **The estimator updates from evidence, not just once.** Every Measure run calls
-   `update_prior()` (`agents/gate/estimator.py`, `jobs/measure/run.py`) and writes the new
-   `alpha`/`beta` back to `estimator_priors`, keyed by mechanic, category and segment -- the next
-   play of that shape starts from what was actually measured, not a static assumption.
+The loop closes rather than staying open-ended: the approved play sets a promo flag on its window;
+the re-forecast applies the fitted promo lift (a projection; Measure tests it against the holdout)
+and the chart moves in the 60-second beat, not a side effect the next Sense run has to catch up to.
 
 ## What Gemini decides / what it is never allowed to decide
 
@@ -134,7 +163,7 @@ fetched and cited.
 ## What it does
 
 1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
-2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; seven gap types across two domains -- grocery write-off risk (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) and apparel demand signal (unmet demand, assortment gap) -- with rupees at stake; segments; substitutes.
+2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; seven gap types -- five grocery write-off-risk types from the forecast (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) plus one grocery demand-signal type from real chat requests (unmet demand) -- with rupees at stake; segments; substitutes. The same schema also runs an apparel assortment gap; kept in code, not in the pitch.
 3. **Plan**: an ADK Planner Agent (LlmAgent inside a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator; eight guardrails gate it; the Cost Governor decides which gaps are worth a model call.
 4. **Approve**: assignment with a holdout, vernacular copy with the best-before line, offers for treated customers only, the play as a known future regressor, the chart moves.
 5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
@@ -148,7 +177,7 @@ fetched and cited.
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
 | Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
-| Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with, reading a garment or selfie photo into attributes | colour theory (hue wheel), stock at the node, the demand-signal write, trend aggregation, colour family and skin-tone confirmation, checkout, and the assortment_gap this demand signal raises when it resolves to real supply elsewhere -- same guardrail-gated, holdout-measured play loop as the grocery gaps |
+| Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with | colour theory, stock, checkout, the assortment_gap this raises -- apparel; kept in code, not in the pitch |
 | Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -159,93 +188,35 @@ through Vertex AI. Model ids live only in `config/models.toml`; verify each in M
 
 ## What is real, what is simulated
 
-Real code paths: forecasts, gaps, estimator, guardrails, planner loop, assignment by hash,
-re-forecast, chat, MCP orders, measurement. Simulated and disclosed: the tenant Kutumb Mart
-(300 SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales) comes from a seeded
-generator (`data/generator`) whose rule is stated in its docstring. No pilot has run yet; the
-Outcomes screen is labelled SYNTHETIC until `docs/pilot.md` says otherwise.
+BigQuery batch path status, the 27 Sep billing outage and the forecasts data-loss bug (found and
+fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
 
-**Forecasting and the nightly batch split, stated once here** (the same wording appears in
-`docs/architecture.md`, `docs/scale.md`, `infra/README.md`): the judge-mode serving path
-(`taal-agents`, this app) always reads a frozen, pinned-clock local snapshot and never touches
-BigQuery directly -- what a judge clicks never depends on a nightly job having run. Behind that,
-`jobs/sense` and `jobs/measure` support two backends, selected by env vars that default to the
-local path everywhere except the `taal-sense`/`taal-measure` Cloud Run Jobs' own environment:
-`TAAL_FORECAST_BACKEND=local` (the pure-Python forecaster) or `bigquery_timesfm`, which runs
-BigQuery `AI.FORECAST` (TimesFM) for real; `TAAL_BATCH_STORE=local` (JSONL) or `bigquery`, which
-writes through `agents/gate/bigquery_store.py::BigQueryStore`. `AI.FORECAST` was verified live
-against project `amru-509214` in `asia-south1`: available, no covariate/regressor parameter
-(confirmed by a real rejection), a real SQL bug found and fixed, and a full run across all 895
-qualifying series (25,060 rows, ~23s, ~70MB billed) -- evidence in
-`eval/raw/bigquery_ai_forecast_2026-09-27/`. A head-to-head backtest against the local model, same
-rolling origins as `jobs/sense/backtest.py`, found the local model with lower MAPE in every one of
-45 (origin, tier) comparisons -- expected, since the seeded data was generated with the same form
-the local model fits; see `head_to_head_summary.json` in that directory. **A billing/payment issue
-on the GCP project briefly blocked all BigQuery writes on 2026-09-27** (DML, streaming inserts and
-load jobs all failed with `billingNotEnabled` for roughly the 15:31-15:33 UTC window and after);
-this has since been resolved by the project owner and re-verified live, twice, over an hour apart
-(streaming insert, DML `INSERT`/`DELETE`, `LOAD`, `CREATE TABLE` and `DROP TABLE` all succeeding
-cleanly). No data was lost during the outage. **A separate, real data-loss bug was found and fixed
-the same day** (before it ever ran against a project with billing enabled): `BigQueryStore.write()`
-used a tenant-wide `DELETE` even on `forecasts`, a history table, which would have wiped every
-prior run's rows on the very next nightly write; `run.py` also unconditionally re-wrote `forecasts`
-through that path even when the `bigquery_timesfm` backend had already persisted the same rows via
-real SQL `INSERT`s. Fixed: `run.py` no longer re-writes `forecasts` for the `bigquery_timesfm`
-backend; `BigQueryStore.write()` now scopes `forecasts` deletes to `(tenant_id, run_id)` (never
-tenant-wide), stages new rows in a throwaway table and swaps them in via a single `BEGIN
-TRANSACTION`/`COMMIT TRANSACTION` script, so a failed load or swap always leaves the existing rows
-untouched; date/Decimal values are made JSON-safe before any load. `load_table_from_json` with
-`WRITE_TRUNCATE` into an existing table was also found to silently reorder and drop nested
-`STRUCT` subfields when no explicit schema is passed -- fixed by always passing the real, fetched
-target schema. Evidence, tests and the full bug chain: `eval/raw/bigquery_forecast_dataloss_2026-09-27/`,
-`tests/unit/test_bigquery_store.py`, `tests/unit/test_sense_bigquery_backend.py`.
-
-**The `taal.gaps` DDL/code mismatch this uncovered has been migrated live and re-verified**:
-`evidence` was missing not just `counterpart_gap_id` (rebalance gaps) but 14 more fields
-`jobs/sense/gaps.py` has always emitted for online_sellby_breach/expiry_writeoff, stockout_risk,
-slow_mover, unmet_demand and assortment_gap gaps -- roughly 80% of all gaps by volume. All 15
-fields are now live on `taal.gaps` (additive, nullable; no field dropped, renamed or retyped), and
-`infra/deploy.sh` gained a permanent, idempotent migration step so a fresh deploy never falls
-behind the DDL again. **The nightly BigQuery batch path (`TAAL_BATCH_STORE=bigquery`,
-`TAAL_FORECAST_BACKEND=bigquery_timesfm`) is now verified against a staging clone of `taal`**: a
-full `jobs.sense` run against `taal_staging` succeeded end-to-end (533 gaps across all 6 real gap
-types, all 7 rebalance gaps carrying `counterpart_gap_id`, prior forecast runs untouched). It has
-not yet been run for real against `taal` itself -- see
-`eval/raw/bigquery_schema_migration_2026-09-27/finding.json` for the full migration record and
-`eval/raw/bigquery_billing_dml_2026-09-27/finding.json` for the billing timeline. The
-stylist's apparel catalogue (~350 SKUs across ~45 garment types, sized stock at dark stores) comes
-from the same seeded generator on its own RNG stream. So does its demand: `~485` `style_requests`
-across the same 70-day window and 4,000-customer base as the grocery side, on a third RNG stream,
-by a stated rule (`data/generator/apparel.py::generate_style_requests`) -- tier-weighted asking
-frequency, one "hot" dark store per cluster, a couple of trending (garment, colour) pairs per
-cluster so real trends emerge from aggregation, and a festival-window lift on festive/wedding
-occasions from the same calendar the grocery side uses. `jobs/sense/trends.py` aggregates these
-into `style_trends`, and `jobs/sense/gaps.py` resolves unfulfilled clusters of them into
-`assortment_gap` rows the same way `rebalance` gaps work for grocery. None of this is a forecast or
-hand-placed to hit a target count; the trends and assortment-gap panels are labelled SYNTHETIC the
-same way the Outcomes screen is. Garment and selfie photo fixtures remain generated colour
-swatches, never real photos -- turning them into real, self-shot photographs needs a physical
-camera and staged garments this build does not have; see `docs/DECISIONS.md` §5.9 for that gap.
+| Real | Seeded | Projected |
+|---|---|---|
+| Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
+| Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | Apparel catalogue (~350 SKUs) and ~485 style requests (`tenant_counts.json`) | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
+| Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | Garment and selfie photo fixtures: generated colour swatches, never real photos (`docs/DECISIONS.md` §5.9) | -- |
+| The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan: scripted planner fixture, not a recorded Gemini trace (`infra/Dockerfile.api`) | -- |
 
 ## Related work
 
 Two outside references anchor design decisions here, rather than left as unverified intuition:
 
-- **[OTTO's forecasting team, "Team Lumen"](https://cloud.google.com/customers/otto)** put a
-  Time-series Dense Encoder (TiDE) model on Vertex AI, BigQuery and GKE and measured up to a 30%
-  improvement in demand-forecast accuracy for seasonal inventory. It is the production evidence
-  that this project's own choice of stack (BigQuery `AI.FORECAST`/`ARIMA_PLUS_XREG` on Vertex) is
-  not a hackathon-only convenience -- the same primitives already carry real retail forecasting
-  load elsewhere.
+- **[OTTO's forecasting team, "Team Lumen"](https://cloud.google.com/customers/otto)**, as reported
+  in Google Cloud's customer story: a Time-series Dense Encoder (TiDE) model, trained on Vertex AI
+  and deployed on GKE, drawing on BigQuery as a data source, which the story credits with up to a
+  30% improvement in demand-forecast accuracy; the story's own worked example is seasonal
+  inventory (gaming consoles). Taal's own forecaster is different: the local seasonal-xreg
+  forecaster (`jobs/sense/forecast.py`) in the served demo, and BigQuery `AI.FORECAST` (TimesFM) in
+  the nightly job -- verified live once, see
+  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
 - **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
   for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
-  2026), a two-step regression study over 1,700+ SKUs across 676 stores of a major European
-  grocery retailer, finds that standard demand forecasts systematically underestimate the demand
-  uplift a markdown produces on expiring stock -- because the discount itself is not fed back into
-  the forecast as a covariate. That is precisely the gap Taal's approve step closes: an approved
-  play is written into `future_regressors` and the series is re-forecast with the play as a known
-  covariate, rather than left for the next forecast cycle to be surprised by the uplift after the
-  fact.
+  2026) -- its title names a real, open problem: forecasting demand for discounted, soon-to-expire
+  perishables in grocery retail. Taal's own design takes a stance on one piece of that problem: an
+  approved play is written into `future_regressors` and the series is re-forecast with the play's
+  promo flag as a known covariate, rather than left for the next forecast cycle to be surprised by
+  the uplift after the fact.
 
 ## Related work: AP2 vocabulary for consent and approval
 
