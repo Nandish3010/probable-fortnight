@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { approve } from "../lib/api";
 import { Badge } from "./Badge";
 import { ForecastChart } from "./ForecastChart";
@@ -21,6 +21,13 @@ export function ApprovePanel({
   const [result, setResult] = useState<ApproveResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Move keyboard/screen-reader focus to the result heading once it renders, the same pattern
+  // used for the feedback form's "Thank you" heading (app/feedback/page.tsx).
+  useEffect(() => {
+    if (result) headingRef.current?.focus();
+  }, [result]);
 
   async function handleApprove() {
     setLoading(true);
@@ -59,7 +66,10 @@ export function ApprovePanel({
           ) : null}
         </>
       ) : (
-        <div className="approve-panel__result" data-testid="approve-result">
+        <div className="approve-panel__result" role="status" aria-live="polite" data-testid="approve-result">
+          <h4 ref={headingRef} tabIndex={-1}>
+            Approved · {result.play_id}
+          </h4>
           <div className="approve-panel__badges">
             <Badge
               kind={result.source === "live" ? "live" : "replay"}
