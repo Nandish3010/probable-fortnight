@@ -12,6 +12,24 @@ from harness.checklists import ROOT
 DEMO = {"gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"}
 
 
+def _parse_sse(text: str) -> list[dict]:
+    """Every SSE frame in a /events/{run_id}/stream body, in arrival order, as {"event", "data"}
+    (default event name "message", matching EventSource); the terminal `event: done` frame is
+    included, so its "data" is the same result summary POST /rerun's status_url resolves to."""
+    records: list[dict] = []
+    event_name = None
+    for line in text.splitlines():
+        if not line or line.startswith(":"):
+            continue
+        if line.startswith("event:"):
+            event_name = line.split(":", 1)[1].strip()
+            continue
+        if line.startswith("data:"):
+            records.append({"event": event_name or "message", "data": json.loads(line[len("data:"):].strip())})
+            event_name = None
+    return records
+
+
 def main() -> int:
     os.environ["TAAL_SANDBOX_DIR"] = str(ROOT / ".local" / "mock_sandbox")
     from fastapi.testclient import TestClient
@@ -32,7 +50,12 @@ def main() -> int:
     out["approve"] = c.post("/approve", json={"play_id": "play_chips_ds07_v1"}).json()
     chips = next(p for p in out["plays"] if p["play_id"] == "play_chips_ds07_v1")
     out["events"] = c.get("/events/" + chips["trace_ref"].split("/", 1)[1]).json()
-    out["rerun"] = c.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": (ROOT / "fixtures" / "policy_v2.txt").read_text(encoding="utf-8"), "policy_version": "v2"}).json()
+    # POST /rerun is asynchronous (202 + a run_id); consuming its SSE stream to completion (a plain
+    # GET, not .stream() -- TestClient drains a StreamingResponse into .text the same way it
+    # already does for /chat above) both waits for the run and captures every record it emitted.
+    rerun_accepted = c.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": (ROOT / "fixtures" / "policy_v2.txt").read_text(encoding="utf-8"), "policy_version": "v2"}).json()
+    out["rerun_events"] = _parse_sse(c.get(rerun_accepted["stream_url"]).text)
+    out["rerun"] = next((r["data"] for r in out["rerun_events"] if r["event"] == "done"), None)
     out["capture"] = c.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_01.jpg"}).json()
     out["execution"] = c.post("/execution", json={"play_id": "play_chips_ds07_v1", "node_id": "DS-07", "steps_done": ["print_tag"]}).json()
 
