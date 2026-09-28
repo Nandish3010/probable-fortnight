@@ -215,14 +215,38 @@ paths:
               $ref: '#/components/schemas/RerunRequest'
         required: true
       responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RerunAccepted'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /rerun/{run_id}:
+    get:
+      summary: Rerun Status
+      operationId: rerun_status_rerun__run_id__get
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                additionalProperties: true
                 type: object
-                title: Response Rerun Rerun Post
+                additionalProperties: true
+                title: Response Rerun Status Rerun  Run Id  Get
         '422':
           description: Validation Error
           content:
@@ -994,10 +1018,10 @@ paths:
   /feedback/summary:
     get:
       summary: Feedback Summary
-      description: 'Aggregates only -- the same summarize() the committed harness
-        command runs. Never reads
+      description: 'Aggregates only -- the same summarize() and the same config/feedback_exclusions.json
+        the
 
-        the contacts collection.'
+        committed harness command uses. Never reads the contacts collection.'
       operationId: feedback_summary_feedback_summary_get
       responses:
         '200':
@@ -1380,6 +1404,51 @@ components:
       - text
       - policy_version
       title: PolicyUpdate
+    RerunAccepted:
+      properties:
+        run_id:
+          type: string
+          title: Run Id
+        status:
+          type: string
+          const: running
+          title: Status
+        gap_id:
+          type: string
+          title: Gap Id
+        policy_version:
+          type: string
+          title: Policy Version
+        backend:
+          type: string
+          title: Backend
+        deadline_s:
+          type: number
+          title: Deadline S
+        stream_url:
+          type: string
+          title: Stream Url
+        status_url:
+          type: string
+          title: Status Url
+      type: object
+      required:
+      - run_id
+      - status
+      - gap_id
+      - policy_version
+      - backend
+      - deadline_s
+      - stream_url
+      - status_url
+      title: RerunAccepted
+      description: 'POST /rerun''s 202 body: the planner keeps running on a worker
+        thread after this response
+
+        lands; poll `status_url` or follow `stream_url` for the outcome (DECISIONS:
+        re-plan is
+
+        asynchronous because a live model call takes 20-45s -- see _run_replan_worker).'
     RerunRequest:
       properties:
         gap_id:

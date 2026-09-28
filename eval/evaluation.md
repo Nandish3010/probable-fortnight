@@ -103,6 +103,7 @@ DECISIONS calls out for a manual policy-change beat rather than a fully automate
 | Planner Agent fan-out, 50 gaps, Batch API | The Batch API fan-out design in §18.3 has not been built; nothing in this repo submits a Batch job. |
 | BigQuery bytes scanned, one Sense run | Sense reads/writes `LocalStore`, not BigQuery, in this codebase today (verified: `grep -rn "bigquery.Client" agents/ services/ jobs/ data/ harness/` finds no hits outside the new `jobs/sense/copy.py::generate_copy_bigquery`). There is no BigQuery job for Sense to have a bytes-scanned figure. |
 | ~~`AI.GENERATE_TABLE` end-to-end copy generation~~ | **No longer true as of 22 Sep -- see the correction at the top of this file.** Now working end-to-end through a real `/approve` call, three real bugs fixed. Left struck through here rather than deleted so the "blocked, needs IAM" history stays visible. |
+| Planner live re-plan latency (p50/p95) and fallback rate at the 45 s deadline | No Google Cloud credential exists in this build container (`google.auth.exceptions.DefaultCredentialsError: File /root/.gcp/taal-deploy-key.json was not found.`), so neither the 5 independent recorded real-Gemini planner runs nor the 10 live re-plans this metric would need against a real Vertex backend could be produced. `harness/record_flagship_traces.py` and `harness/measure_live_rerun.py` are committed and produce this the moment a credential exists -- see "Planner: recorded traces and live re-plan (2026-09-27)" below for the exact commands. A stub-backend harness check of `harness/measure_live_rerun.py`'s own mechanics exists (`eval/raw/planner_rerun_harness_check_2026-09-27/`) but is explicitly labelled `"synthetic (stub backend) -- harness validation, not a Gemini latency"`, never this metric. |
 
 ### Note on row 5: two real bugs found and fixed to get this number at all
 
@@ -907,3 +908,94 @@ stock are still read from the store on every turn, so a guardrail cannot be bypa
 the model can see a history that contradicts the store. Options: accept it for the demo; add a
 sandbox epoch to the session id, so sessions last only as long as sandboxes (which gives up most of the
 restart benefit on Cloud Run); or persist sandboxes (a larger change).
+
+## Planner: recorded traces and live re-plan (2026-09-27)
+
+**What this branch built.** Every play and trace now carries an explicit `source` --
+`"recorded_gemini"`, `"scripted_stub"`, `"deterministic_rules"` or `"live_gemini"` -- and every
+trace ends with one `kind: run_summary` record (`agents/planner/run.py`). `POST /rerun` is now
+asynchronous: it answers `202` with a `run_id` immediately and keeps planning on a worker thread;
+`GET /events/{run_id}/stream` streams the trace live and ends with `event: done`; `GET
+/rerun/{run_id}` reports status; runs are isolated per visitor (`services/api/main.py`).
+`infra/deploy.sh` sets `TAAL_PLANNER_DEADLINE_S=45` on `taal-agents`; the code default
+(`agents/planner/run.py`'s `DEFAULT_DEADLINE_S`) is still `8.0`. The Desk streams a re-plan live --
+"Gemini is planning -- typically 20-40 s" on the vertex backend, "Scripted planner is running (stub
+backend)" on stub, an elapsed timer throughout -- and badges its provenance: `Recorded from Gemini
+· <date>`, `Scripted fixture`, `Rules (fallback)`, `Live · Gemini`. `harness/record_flagship_traces.py`
+records real planner runs against a freshly built tenant copy; `harness/recorded_traces.py` +
+`harness/seed_plays.py` seed the flagship gap (`gap_chips_ds07`) from a committed, validated
+recording instead of the scripted stub, but only once every provenance signal across five
+independent places (the recording directory's own backend, the run's own result, the play's own
+source, the trace's own `run_summary` record, and a real reported Gemini token count no stub run
+can ever fake) agrees it is a genuine, completed real-Gemini call --
+`harness/recorded_traces.py::discover_candidates`. Not to be confused with
+`harness/record_planner_traces.py`, a separate, pre-existing tool that records one run per selected
+gap across many gaps to build ADK evalsets (`harness/build_fixtures.py`, `harness/run_evals.py`,
+"Planner evalset (`adk eval`)" above) -- `harness/record_flagship_traces.py` instead runs the SAME
+flagship gap repeatedly to pick the best of several independent attempts for its seeded play.
+
+**Neither the five recorded Gemini runs nor the ten live re-plans this work was meant to produce
+exist, for one reason: no Google Cloud credential exists in this build container.**
+`/root/.gcp/taal-deploy-key.json` is absent (confirmed by listing `/root/.gcp/` directly), and the
+`CLOUDSDK_AUTH_ACCESS_TOKEN` this container does carry is a proxy placeholder, not a usable
+credential -- confirmed live: `curl`ing Google's own `tokeninfo` endpoint with it returns `{"error":
+"invalid_token", "error_description": "Invalid Value"}`. Actually attempting the real call surfaces
+the same failure any `harness.record_flagship_traces --gap gap_chips_ds07 --runs 5` invocation would
+hit today:
+
+```
+google.auth.exceptions.DefaultCredentialsError: File /root/.gcp/taal-deploy-key.json was not found.
+```
+
+Because no recording exists, `make generate` seeds the flagship gap's play from the scripted stub,
+exactly like every other demo gap; its trace is badged "Scripted fixture" -- not "Recorded from
+Gemini". See
+`eval/raw/flagship_facts_2026-09-27.json` (built by the committed `harness/flagship_facts.py`) for
+exactly what that seeded fixture contains: its mechanic, its rejected first draft, its revision, and
+one real approve of it through FastAPI's `TestClient`.
+
+**Harness check done instead (synthetic, stub backend).** `harness/measure_live_rerun.py` is the
+committed tool for the live-re-plan measurement above. Pointed at any output directory named
+`planner_live_rerun_*`, it refuses to write at all unless every run's own `POST /rerun` `202` body
+named backend `"vertex"` -- no flag overrides that specific check. To prove the tool's own mechanics
+work before a credential exists, it was instead run with `--allow-stub` against a local stub-backend
+server, output directed at a differently-named directory: `make generate`; `TAAL_MODEL_BACKEND=stub
+uv run uvicorn services.api.main:app --port 8090` in the background; once `/health` answered,
+`uv run python -m harness.measure_live_rerun --api http://localhost:8090 --allow-stub --runs 3 --gap
+gap_chips_ds07 --out eval/raw/planner_rerun_harness_check_2026-09-27`; then the server was stopped
+and port 8090 confirmed free. 3/3 runs completed, `source: scripted_stub`, no fallback; wall time
+(client wall clock, `POST /rerun` to the `event: done` SSE message) p50 **2.68 s**, p95 **2.81 s**;
+`mean_tokens: null` (the stub backend never reports `usage_metadata` at all -- an honest absence, not
+a zero). The file labels itself `"synthetic (stub backend) -- harness validation, not a Gemini
+latency"`. Raw evidence: `eval/raw/planner_rerun_harness_check_2026-09-27/summary.json`,
+`eval/raw/planner_rerun_harness_check_2026-09-27/runs.jsonl`. **These are a harness smoke test of
+the measurement tool, not a planner latency figure, and must never be read as one.**
+
+**Exact commands to produce the real evidence, once a credential is present.** Five real,
+independent planner runs against the flagship gap, at a deadline generous enough to let even a slow
+run reach a genuine outcome (model success or a real fallback) rather than being cut off mid-run --
+the same reasoning already used for the 2026-09-24 prompt v6 session above:
+
+```
+GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 GOOGLE_GENAI_USE_VERTEXAI=TRUE TAAL_MODEL_BACKEND=vertex TAAL_PLANNER_DEADLINE_S=120 TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.record_flagship_traces --gap gap_chips_ds07 --runs 5 --out eval/raw/planner_real_traces_<date>
+```
+
+Ten live re-plans against the local API pointed at real Vertex, at the deployed deadline -- one
+terminal running the server:
+
+```
+GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 GOOGLE_GENAI_USE_VERTEXAI=TRUE TAAL_MODEL_BACKEND=vertex TAAL_PLANNER_DEADLINE_S=45 TAAL_TENANT_CONFIG=config/tenant.demo.toml TAAL_NOW=2026-09-12T03:30:00Z uv run uvicorn services.api.main:app --port 8090
+```
+
+and, against that server, from a second terminal:
+
+```
+uv run python -m harness.measure_live_rerun --api http://localhost:8090 --runs 10 --gap gap_chips_ds07 --out eval/raw/planner_live_rerun_<date>
+```
+
+The result would be **"local API process to real Vertex"**, not the deployed Cloud Run service --
+the same shape of substitute measurement, for the same reason (this sandbox's egress proxy reaches
+`*.googleapis.com` but not a deployed `*.a.run.app` URL directly), as the method
+`eval/raw/customer_latency_fix_2026-09-21.json` already used for the Customer Agent's `/chat` p95:
+a local server process, pointed at the real Vertex backend, standing in for the deployed service
+because the deployed URL itself is not reachable from here.

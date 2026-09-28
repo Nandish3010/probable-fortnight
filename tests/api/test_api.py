@@ -1,9 +1,13 @@
 """API contract and judge-mode flows against the FastAPI app with per-visitor sandboxes."""
+import asyncio
 import json
 import os
+import time
 
 import pytest
 from fastapi.testclient import TestClient
+
+from agents.planner.stub_llm import StubPlannerLlm
 
 
 @pytest.fixture
@@ -28,6 +32,56 @@ def client(data_dir, tmp_path, monkeypatch):
 
 def _h(vid):
     return {"X-Taal-Visitor": vid}
+
+
+def _policy_v2():
+    return open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "policy_v2.txt")).read()
+
+
+def _poll_rerun(client, run_id, headers, timeout_s=30.0, interval_s=0.05):
+    """Bounded poll of GET /rerun/{run_id} until it leaves "running" -- never a bare sleep."""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        r = client.get(f"/rerun/{run_id}", headers=headers)
+        assert r.status_code == 200, r.text
+        d = r.json()
+        if d["status"] != "running":
+            return d
+        time.sleep(interval_s)
+    raise AssertionError(f"run {run_id} still running for this visitor after {timeout_s}s")
+
+
+@pytest.fixture
+def slow_stub(monkeypatch):
+    """Make every planner LLM turn take >=1s (the real StubPlannerLlm.decide still runs, so the
+    scripted play logic is untouched) -- long enough to prove POST /rerun answers before the
+    planner finishes, without waiting anywhere near as long as a real Gemini call would."""
+
+    async def _slow_generate_content_async(self, llm_request, stream=False):
+        await asyncio.sleep(1.0)
+        yield self.decide(llm_request)
+
+    monkeypatch.setattr(StubPlannerLlm, "generate_content_async", _slow_generate_content_async)
+
+
+def _read_sse(resp):
+    """Parse an SSE response body into (records, done_payload): every `data:` frame not tagged
+    `event: done` goes to `records` in arrival order; the `done` frame's JSON is `done_payload`."""
+    records, done_payload, event_name = [], None, None
+    for line in resp.iter_lines():
+        if not line or line.startswith(":"):
+            continue
+        if line.startswith("event:"):
+            event_name = line.split(":", 1)[1].strip()
+            continue
+        if line.startswith("data:"):
+            payload = json.loads(line[len("data:"):].strip())
+            if event_name == "done":
+                done_payload = payload
+            else:
+                records.append(payload)
+            event_name = None
+    return records, done_payload
 
 
 def test_health_shape(client):
@@ -96,13 +150,188 @@ def test_chat_sse_and_json(client):
 
 
 def test_rerun_with_policy_and_events(client):
-    v2 = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "policy_v2.txt")).read()
-    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": v2, "policy_version": "v2"}, headers=_h("v-rerun")).json()
-    assert r["play"]["policy_version"] == "v2" and r["source"] == "live"
-    ev = client.get(f"/events/{r['run_id']}", headers=_h("v-rerun")).json()
+    """POST /rerun is asynchronous (202 immediately); poll GET /rerun/{run_id} for the outcome."""
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v2"}, headers=_h("v-rerun"))
+    assert r.status_code == 202
+    body = r.json()
+    assert body["status"] == "running" and body["gap_id"] == "gap_tea_ds04" and body["policy_version"] == "v2"
+    done = _poll_rerun(client, body["run_id"], _h("v-rerun"))
+    assert done["status"] == "done"
+    result = done["result"]
+    assert result["play"]["policy_version"] == "v2" and result["policy_version"] == "v2"
+    ev = client.get(f"/events/{result['run_id']}", headers=_h("v-rerun")).json()
     assert ev["events"] and ev["events"][0]["author"] == "cost_governor" and all("ts_offset_ms" in e for e in ev["events"])
+    assert ev["source"] == "scripted_stub"
+    # the async worker never appends its own run_summary (agents.planner.run.run_planner_async
+    # writes the trace's one terminal record itself) -- exactly one, and the done payload agrees.
+    summaries = [e for e in ev["events"] if e.get("kind") == "run_summary"]
+    assert len(summaries) == 1
+    assert result["source"] == ev["source"] == summaries[0]["source"]
     assert client.get("/policy", headers=_h("v-rerun")).json()["policy_version"] == "v2"
     assert client.get("/events/does-not-exist", headers=_h("v-rerun")).status_code == 404
+
+
+def test_rerun_unknown_gap_is_404_not_202(client):
+    r = client.post("/rerun", json={"gap_id": "does-not-exist", "policy_text": _policy_v2(), "policy_version": "v-404"}, headers=_h("v-rerun-404"))
+    assert r.status_code == 404
+
+
+def test_rerun_returns_202_and_is_really_async(client, slow_stub):
+    """The POST answers immediately; the planner keeps running on a worker thread afterwards --
+    proven by monkeypatching the stub LLM to sleep 1s per turn and finding the run still
+    "running" right after the 202 comes back (Starlette's TestClient runs BackgroundTasks to
+    completion before returning, so this would fail if /rerun still used those)."""
+    t0 = time.monotonic()
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-async"}, headers=_h("v-async"))
+    dt = time.monotonic() - t0
+    assert r.status_code == 202
+    assert dt < 0.5, f"POST /rerun took {dt:.3f}s; a truly async endpoint should return well under 1s"
+    body = r.json()
+    assert body["status"] == "running" and body["run_id"] and body["gap_id"] == "gap_tea_ds04"
+    assert body["policy_version"] == "v-async" and body["backend"] == "stub"
+    assert isinstance(body["deadline_s"], float) and body["deadline_s"] > 0
+    assert body["stream_url"] == f"/events/{body['run_id']}/stream"
+    assert body["status_url"] == f"/rerun/{body['run_id']}"
+
+    still_running = client.get(body["status_url"], headers=_h("v-async")).json()
+    assert still_running["status"] == "running", "the slow stub sleeps 1s per turn; this GET should win the race"
+
+    done = _poll_rerun(client, body["run_id"], _h("v-async"))
+    assert done["status"] == "done" and done["result"]["status"] == "proposed"
+
+
+def test_rerun_stream_contract(client):
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-stream"}, headers=_h("v-stream"))
+    assert r.status_code == 202
+    body = r.json()
+    with client.stream("GET", body["stream_url"], headers=_h("v-stream")) as resp:
+        assert resp.status_code == 200
+        records, done_payload = _read_sse(resp)
+    assert records, "expected at least one live trace record while the run was in flight"
+    assert done_payload is not None, "the stream must end with an `event: done` frame"
+    assert done_payload["status"] == "proposed"
+    assert done_payload["play"]["gap_id"] == "gap_tea_ds04"
+    assert done_payload["policy_version"] == body["policy_version"] == "v-stream"
+    # exactly one run_summary record flows through the live SSE trace too -- the worker must not
+    # append a second one alongside the planner's own.
+    assert sum(1 for r in records if r.get("kind") == "run_summary") == 1
+    # the run really did finish by the time the stream closed
+    assert client.get(body["status_url"], headers=_h("v-stream")).json()["status"] == "done"
+
+
+def test_rerun_deadline_exceeded_falls_back_to_deterministic(client, monkeypatch, slow_stub):
+    monkeypatch.setenv("TAAL_PLANNER_DEADLINE_S", "0.3")
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-deadline"}, headers=_h("v-deadline"))
+    assert r.status_code == 202
+    body = r.json()
+    assert body["deadline_s"] == 0.3
+    done = _poll_rerun(client, body["run_id"], _h("v-deadline"))
+    result = done["result"]
+    assert result["planner_source"] == "deterministic_fallback"
+    assert result["fallback_reason"].startswith("deadline exceeded")
+
+
+def test_rerun_isolation_across_visitors_and_no_visitor(client):
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-iso"}, headers=_h("v-iso-a"))
+    assert r.status_code == 202
+    run_id = r.json()["run_id"]
+
+    # a different visitor sees none of it
+    assert client.get(f"/rerun/{run_id}", headers=_h("v-iso-b")).status_code == 404
+    assert client.get(f"/events/{run_id}", headers=_h("v-iso-b")).status_code == 404
+    with client.stream("GET", f"/events/{run_id}/stream", headers=_h("v-iso-b")) as resp:
+        assert resp.status_code == 404
+
+    # neither does a request with no visitor id at all
+    assert client.get(f"/rerun/{run_id}").status_code == 404
+    assert client.get(f"/events/{run_id}").status_code == 404
+    with client.stream("GET", f"/events/{run_id}/stream") as resp:
+        assert resp.status_code == 404
+
+    # the visitor who started it can watch it end to end
+    done = _poll_rerun(client, run_id, _h("v-iso-a"))
+    assert done["status"] == "done"
+    assert client.get(f"/events/{run_id}", headers=_h("v-iso-a")).status_code == 200
+
+
+def test_rerun_worker_exception_yields_short_error_without_a_traceback(client, monkeypatch):
+    import services.api.main as api_main
+
+    async def _boom(*args, **kwargs):
+        raise RuntimeError("boom: simulated planner failure")
+
+    monkeypatch.setattr(api_main, "run_planner_async", _boom)
+    r = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-boom"}, headers=_h("v-boom"))
+    assert r.status_code == 202
+    done = _poll_rerun(client, r.json()["run_id"], _h("v-boom"))
+    assert done["status"] == "error"
+    result = done["result"]
+    assert result["status"] == "error" and "boom" in result["error"]
+    assert len(result["error"]) <= 300
+    assert "Traceback" not in result["error"] and 'File "' not in result["error"]
+    # the visitor is unblocked for a new re-plan after an error, not stuck behind the 409 check
+    r2 = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-after-boom"}, headers=_h("v-boom"))
+    assert r2.status_code == 202
+
+
+def test_rerun_409_on_concurrent_post_same_visitor_other_visitor_unaffected(client, slow_stub):
+    r1 = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-c1"}, headers=_h("v-409"))
+    assert r1.status_code == 202
+    run_id = r1.json()["run_id"]
+
+    r2 = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-c2"}, headers=_h("v-409"))
+    assert r2.status_code == 409
+    assert run_id in r2.json()["detail"]
+
+    r3 = client.post("/rerun", json={"gap_id": "gap_chips_ds07", "policy_text": _policy_v2(), "policy_version": "v-c3"}, headers=_h("v-409-other"))
+    assert r3.status_code == 202
+
+    done = _poll_rerun(client, run_id, _h("v-409"))
+    assert done["status"] == "done"
+
+
+def test_rerun_submit_failure_rolls_back_the_registry_claim(client):
+    """If claiming the in-flight slot succeeds but starting the run does not (the executor itself
+    raises), POST /rerun must fail loudly (5xx) rather than leaving the visitor's slot claimed --
+    otherwise every subsequent /rerun for them would 409 ("already running") until the process
+    restarts, with no run actually in flight to ever finish and clear it. Restores the executor's
+    real `submit` in a `finally` -- deliberately not via the shared `monkeypatch` fixture, whose
+    single undo stack this test does not want to disturb (the `client` fixture pushed the env vars
+    this test still needs onto that same stack)."""
+    import services.api.main as api_main
+
+    original_submit = api_main._REPLAN_EXECUTOR.submit
+
+    def _boom_submit(*args, **kwargs):
+        raise RuntimeError("executor unavailable")
+
+    # TestClient re-raises an unhandled server exception by default instead of returning a 500
+    # response; a second client with that off is what actually lets us assert the status code.
+    from fastapi.testclient import TestClient as _TestClient
+
+    lenient = _TestClient(api_main.app, raise_server_exceptions=False)
+    api_main._REPLAN_EXECUTOR.submit = _boom_submit
+    try:
+        r = lenient.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-submit-fail"}, headers=_h("v-submit-fail"))
+        assert 500 <= r.status_code < 600
+    finally:
+        api_main._REPLAN_EXECUTOR.submit = original_submit
+
+    r2 = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": _policy_v2(), "policy_version": "v-submit-retry"}, headers=_h("v-submit-fail"))
+    assert r2.status_code == 202, "the failed submit must not leave this visitor stuck behind a phantom 409"
+    done = _poll_rerun(client, r2.json()["run_id"], _h("v-submit-fail"))
+    assert done["status"] == "done"
+
+
+def test_plan_reports_live_source_and_the_planners_own_plan_source(client):
+    """POST /plan's response-level "source" stays "live" (pre-existing contract: this hit the live
+    endpoint, not a recorded fixture); the planner's own provenance (agents/planner/run.py's
+    PLAN_SOURCES) is surfaced separately as "plan_source" instead of silently overwritten."""
+    r = client.post("/plan", json={"gap_id": "gap_tea_ds04"}, headers=_h("v-plan"))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["source"] == "live"
+    assert body["plan_source"] == "scripted_stub"
 
 
 def test_capture_confirm_and_execution(client):
