@@ -199,10 +199,21 @@ def _configured_replan_deadline_s() -> dict[str, Any]:
     m = re.search(r'gcloud run deploy taal-agents\b.*?--set-env-vars "([^"]*)"', text, re.S)
     if not m:
         raise FactsAbort(f"could not find the 'gcloud run deploy taal-agents ... --set-env-vars' block in {DEPLOY_SH}")
-    m2 = re.search(r"TAAL_PLANNER_DEADLINE_S=([0-9.]+)", m.group(1))
+    env_str = m.group(1)
+    # taal-agents' --set-env-vars is built up into a shell variable (AGENTS_ENV, so the Vertex
+    # Sessions / Firestore cache flags can append to it) rather than written inline; resolve a bare
+    # "${VAR}" reference back to that variable's own assignment before looking for the deadline.
+    var_ref = re.fullmatch(r"\$\{(\w+)\}", env_str.strip())
+    if var_ref:
+        var_name = var_ref.group(1)
+        vm = re.search(rf'^{re.escape(var_name)}="([^"]*)"', text, re.M)
+        if not vm:
+            raise FactsAbort(f"--set-env-vars references ${{{var_name}}} but no '{var_name}=\"...\"' assignment was found in {DEPLOY_SH}")
+        env_str = vm.group(1)
+    m2 = re.search(r"TAAL_PLANNER_DEADLINE_S=([0-9.]+)", env_str)
     if not m2:
         raise FactsAbort(f"TAAL_PLANNER_DEADLINE_S not set in the taal-agents deploy block of {DEPLOY_SH}")
-    return _val(float(m2.group(1)), "configured", "infra/deploy.sh (gcloud run deploy taal-agents --set-env-vars)")
+    return _val(float(m2.group(1)), "configured", "infra/deploy.sh (gcloud run deploy taal-agents --set-env-vars, resolved through AGENTS_ENV)")
 
 
 def _planner_prompt_v6_facts() -> dict[str, Any]:
