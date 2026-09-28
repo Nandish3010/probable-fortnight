@@ -20,7 +20,14 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from agents.chat_runtime import ENVELOPE_SCHEMA, ChatRuntime, clamp, detect_lang, now_iso, parse_envelope
+from agents.chat_runtime import (
+    ENVELOPE_SCHEMA,
+    ChatRuntime,
+    clamp,
+    detect_lang,
+    now_iso,
+    parse_envelope,
+)
 from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore
 
