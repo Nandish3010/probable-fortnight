@@ -84,5 +84,13 @@ test.describe("judge: landing", () => {
     await expect(page.locator(".health-strip__item--amber")).toBeVisible();
     // every other check in the crafted payload stayed healthy, so the strip is not all-amber
     await expect(page.locator(".health-strip__item--ok").first()).toBeVisible();
+    // The landing page fires two independent GET /health calls on mount (HealthStrip and
+    // TenantLine each call getHealth() in their own effect, HealthStrip.tsx) -- both hit this
+    // one page.route handler. The assertions above only need the first response to land; the
+    // second invocation can still be awaiting route.fetch() when the test (and then the page)
+    // closes, which throws "Target page, context or browser has been closed" and fails the test
+    // on a passing run. unrouteAll's ignoreErrors silently drops that in-flight handler instead
+    // of letting its rejection surface, per Playwright's own suggestion in that error message.
+    await page.unrouteAll({ behavior: "ignoreErrors" });
   });
 });
