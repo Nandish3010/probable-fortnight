@@ -335,6 +335,19 @@ def check_guardrails(play_draft: dict) -> dict:
         return {"error": f"check_guardrails: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
 
+def play_row(ctx: PlannerContext, play: dict[str, Any]) -> dict[str, Any]:
+    """The `plays` table row for a play: the denormalised scalar columns (docs/DATA_MODEL.md's
+    `plays` table) plus the full object as `play_json`. Shared by `propose_play` (the first write,
+    below) and run.py (the re-upsert once a run's `source` is known, after propose_play already
+    returned) so the column list is never duplicated between the two writers."""
+    return {
+        "tenant_id": ctx.tenant.tenant_id, "play_id": play["play_id"], "gap_id": play["gap_id"], "status": play["status"], "objective": play["objective"],
+        "mechanic": play["mechanic"], "channel": play["channel"], "sku": play["target"]["sku"], "target_node_ids": play["target"]["node_ids"],
+        "target_batch_ids": play["target"]["batch_ids"], "window_start": play["window"]["start"], "window_end": play["window"]["end"],
+        "policy_version": play["policy_version"], "created_at": play["created_at"], "approved_at": play.get("approved_at"), "play_json": json.dumps(play, ensure_ascii=False),
+    }
+
+
 def propose_play(play: dict, tool_context: ToolContext) -> dict:
     """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
     ctx = current()
@@ -378,12 +391,7 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
         tool_context.state["guardrails_all_passed"] = False
         return {"play_id": None, "valid": False, "errors": errors}
     play["cost"] = governor.cost_for_play(play, _gap(ctx, play["gap_id"]), ctx.tenant)
-    ctx.store.upsert("plays", "play_id", {
-        "tenant_id": ctx.tenant.tenant_id, "play_id": play["play_id"], "gap_id": play["gap_id"], "status": play["status"], "objective": play["objective"],
-        "mechanic": play["mechanic"], "channel": play["channel"], "sku": play["target"]["sku"], "target_node_ids": play["target"]["node_ids"],
-        "target_batch_ids": play["target"]["batch_ids"], "window_start": play["window"]["start"], "window_end": play["window"]["end"],
-        "policy_version": play["policy_version"], "created_at": play["created_at"], "approved_at": play.get("approved_at"), "play_json": json.dumps(play, ensure_ascii=False),
-    })
+    ctx.store.upsert("plays", "play_id", play_row(ctx, play))
     tool_context.state["guardrails_all_passed"] = True
     tool_context.state["proposed_play_id"] = play["play_id"]
     tool_context.actions.escalate = True

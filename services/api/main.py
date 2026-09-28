@@ -6,14 +6,18 @@ rerun, chat, capture, execution. Recorded fallbacks carry `source: recorded`.
 """
 from __future__ import annotations
 
+import asyncio
 import hmac
 import json
 import os
 import threading
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any, Literal
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +28,7 @@ from agents.capture.vision import commit_rows, intake
 from agents.customer.chat import run_chat_async
 from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore, OverlayStore, load_catalogue
-from agents.planner.run import run_planner_async
+from agents.planner.run import DEFAULT_DEADLINE_S, make_run_id, run_planner, run_planner_async
 from agents.stylist.chat import run_stylist_chat_async
 from jobs.measure.run import run_measure
 from jobs.sense.trends import build_style_trends
@@ -144,6 +148,21 @@ class RerunRequest(BaseModel):
     gap_id: str
     policy_text: str
     policy_version: str | None = None
+
+
+class RerunAccepted(BaseModel):
+    """POST /rerun's 202 body: the planner keeps running on a worker thread after this response
+    lands; poll `status_url` or follow `stream_url` for the outcome (DECISIONS: re-plan is
+    asynchronous because a live model call takes 20-45s -- see _run_replan_worker)."""
+
+    run_id: str
+    status: Literal["running"]
+    gap_id: str
+    policy_version: str
+    backend: str
+    deadline_s: float
+    stream_url: str
+    status_url: str
 
 
 class PlanRequest(BaseModel):
@@ -329,17 +348,21 @@ async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(s
     except KeyError as e:
         raise HTTPException(404, str(e)) from e
     # `planner_source` ("model" vs "deterministic_fallback", set by run_planner_async) must never
-    # be clobbered: a deterministic-fallback play is never presented as model output.
-    return {k: v for k, v in out.items() if k != "events"} | {"source": "live"}
+    # be clobbered: a deterministic-fallback play is never presented as model output. `out` already
+    # carries the planner's own provenance under "source" (agents/planner/run.py's PLAN_SOURCES,
+    # e.g. "scripted_stub"); the response's "source" key is a pre-existing, unrelated contract (this
+    # request hit the live endpoint, not a recorded fixture), so the planner's value is surfaced
+    # separately as "plan_source" rather than silently overwritten by the union below.
+    return {k: v for k, v in out.items() if k != "events"} | {"source": "live", "plan_source": out.get("source")}
 
 
-async def _plan_overlay(store: OverlayStore, gap_id: str, policy_text: str | None = None, policy_version: str | None = None) -> dict[str, Any]:
+async def _plan_overlay(store: OverlayStore, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, salt: str = "") -> dict[str, Any]:
     """Planner against a visitor overlay: run with the overlay as the store root by materialising the tables it reads."""
     for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
         store._materialise(t)
     if not (store.root / "manifest.json").exists():
         (store.root / "manifest.json").write_bytes((store.base.root / "manifest.json").read_bytes())
-    return await run_planner_async(store.root, gap_id, policy_text=policy_text, policy_version=policy_version)
+    return await run_planner_async(store.root, gap_id, policy_text=policy_text, policy_version=policy_version, salt=salt)
 
 
 @app.post("/approve", response_model=ApproveResponseOut)
@@ -350,16 +373,132 @@ def approve_play(req: ApproveRequest, store: LocalStore = Depends(store_for)) ->
         raise HTTPException(404, f"unknown play {e}") from e
 
 
-@app.post("/rerun")
+# ----------------------------------------------------------------------------- async re-plan runs
+#
+# POST /rerun used to run the planner inline and only answer once it was done; with the real model
+# a run takes 20-45s (agents/planner/agent.py prompt CHANGELOG), and awaiting that on the API's one
+# event loop stalls every other coroutine sharing it -- /chat included. The planner call now runs
+# on a worker thread from this small pool; `_RUNS` is how its outcome becomes visible (to GET
+# /rerun/{run_id} and the live SSE stream below) before the caller re-reads it from the trace file
+# (agents/gate/store.py's events/<run_id>.jsonl, which run_planner_async itself always ends with one
+# `kind: run_summary` record for -- see `_run_summary_source`). Keyed by (visitor_id, run_id) so one
+# visitor's runs are never visible to another; `_INFLIGHT` caps each visitor at one running re-plan
+# at a time.
+_REPLAN_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="replan")
+_RUN_TTL_S = 30 * 60  # prune finished entries this long after they finish
+
+
+@dataclass
+class _RunEntry:
+    visitor_id: str
+    status: str  # "running" | "done" | "error"
+    started_at: float
+    finished_at: float | None = None
+    result: dict[str, Any] | None = None
+
+
+_RUNS: dict[tuple[str, str], _RunEntry] = {}
+_INFLIGHT: dict[str, str] = {}  # visitor_id -> run_id, present only while that run is "running"
+_RUNS_LOCK = threading.Lock()
+
+
+def _prune_runs_locked() -> None:
+    now = time.time()
+    for key, entry in list(_RUNS.items()):
+        if entry.finished_at is not None and now - entry.finished_at > _RUN_TTL_S:
+            del _RUNS[key]
+
+
+def _get_run_entry(vid: str | None, run_id: str) -> _RunEntry | None:
+    if not vid:
+        return None
+    with _RUNS_LOCK:
+        _prune_runs_locked()
+        return _RUNS.get((vid, run_id))
+
+
+def _finish_run(vid: str, run_id: str, status: str, result: dict[str, Any]) -> None:
+    with _RUNS_LOCK:
+        entry = _RUNS.get((vid, run_id))
+        if entry is not None:
+            entry.status = status
+            entry.finished_at = time.time()
+            entry.result = result
+        if _INFLIGHT.get(vid) == run_id:
+            del _INFLIGHT[vid]
+
+
+def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: str, version: str, salt: str, run_id: str) -> None:
+    """Runs on a `_REPLAN_EXECUTOR` thread, never on the API's event loop (DECISIONS: this is CPU-
+    bound tool work, not I/O). Mirrors the two sync call shapes /plan already uses: an OverlayStore
+    goes through `_plan_overlay` (materialise, then plan) via `asyncio.run`; a bare LocalStore goes
+    through the plain sync `run_planner` wrapper. run_planner_async itself appends the trace's one
+    terminal `kind: run_summary` record (agents/planner/run.py) before returning, so this worker
+    never writes one of its own -- doing so would duplicate it."""
+    try:
+        if isinstance(store, OverlayStore):
+            out = asyncio.run(_plan_overlay(store, gap_id, policy_text, version, salt=salt))
+        else:
+            out = run_planner(store.root, gap_id, policy_text=policy_text, policy_version=version, salt=salt)
+    except Exception as e:
+        # A short message only -- never a stack trace, and never anything from the environment.
+        _finish_run(vid, run_id, "error", {"run_id": run_id, "status": "error", "error": str(e)[:300]})
+        return
+    result = {
+        "run_id": out["run_id"], "status": out["status"], "play": out["play"], "policy_version": out.get("policy_version", version),
+        "iterations": out["iterations"], "elapsed_ms": out.get("elapsed_ms"), "source": out.get("source"),
+        "planner_source": out.get("planner_source"), "fallback_reason": out.get("fallback_reason"),
+    }
+    _finish_run(vid, run_id, "done", result)
+
+
+@app.post("/rerun", response_model=RerunAccepted, status_code=202)
 async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     _rate_limit(request, "plan", max_calls=20, window_s=900)  # same planner call as /plan; shares its bucket
+    if not store.find("gaps", gap_id=req.gap_id):
+        raise HTTPException(404, f"unknown gap {req.gap_id}")
+    vid = visitor_id(request)  # store_for already requires this for a mutating request; never None here
     version = req.policy_version or f"v{len(store.read('policy')) + 2}"
-    store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
+    salt = uuid4().hex[:8]  # a fresh salt per async run so re-posting the same policy_version never collides with a run still in flight
+    run_id = make_run_id(req.gap_id, version, salt)
+    with _RUNS_LOCK:
+        _prune_runs_locked()
+        running = _INFLIGHT.get(vid)
+        if running is not None:
+            raise HTTPException(409, f"a re-plan is already running for this visitor: {running}")
+        _RUNS[(vid, run_id)] = _RunEntry(visitor_id=vid, status="running", started_at=time.time())
+        _INFLIGHT[vid] = run_id
     try:
-        out = await (_plan_overlay(store, req.gap_id, req.policy_text, version) if isinstance(store, OverlayStore) else run_planner_async(store.root, req.gap_id, policy_text=req.policy_text, policy_version=version))
-    except KeyError as e:
-        raise HTTPException(404, str(e)) from e
-    return {"run_id": out["run_id"], "play": out["play"], "policy_version": version, "status": out["status"], "iterations": out["iterations"], "source": "live", "planner_source": out.get("planner_source"), "fallback_reason": out.get("fallback_reason")}
+        store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
+        _REPLAN_EXECUTOR.submit(_run_replan_worker, store, vid, req.gap_id, req.policy_text, version, salt, run_id)
+    except Exception:
+        # Neither the policy append nor the submit actually started a run -- undo the claim above
+        # so this visitor is not stuck seeing 409 ("already running") for a run that never runs,
+        # until the process restarts and clears `_INFLIGHT` for them.
+        with _RUNS_LOCK:
+            _RUNS.pop((vid, run_id), None)
+            if _INFLIGHT.get(vid) == run_id:
+                del _INFLIGHT[vid]
+        raise
+    backend = load_models()["backend"]
+    deadline_s = float(os.environ.get("TAAL_PLANNER_DEADLINE_S", DEFAULT_DEADLINE_S))
+    return {
+        "run_id": run_id, "status": "running", "gap_id": req.gap_id, "policy_version": version, "backend": backend,
+        "deadline_s": deadline_s, "stream_url": f"/events/{run_id}/stream", "status_url": f"/rerun/{run_id}",
+    }
+
+
+@app.get("/rerun/{run_id}")
+def rerun_status(run_id: str, request: Request) -> dict[str, Any]:
+    entry = _get_run_entry(visitor_id(request), run_id)
+    if entry is None:
+        raise HTTPException(404, f"no re-plan run {run_id} for this visitor")
+    return {
+        "run_id": run_id, "status": entry.status,
+        "started_at": _iso(datetime.fromtimestamp(entry.started_at, UTC)),
+        "finished_at": _iso(datetime.fromtimestamp(entry.finished_at, UTC)) if entry.finished_at else None,
+        "result": entry.result,
+    }
 
 
 @app.get("/policy")
@@ -378,6 +517,15 @@ def put_policy(req: PolicyUpdate, store: LocalStore = Depends(store_for)) -> dic
     return row
 
 
+def _run_summary_source(evs: list[dict[str, Any]]) -> str | None:
+    """The `source` of the trace's `kind: run_summary` record, else None. run_planner_async
+    (agents/planner/run.py) ends every run -- /plan, /rerun, and a seeded recording alike -- with
+    exactly one such record, so this is the planner's own account of where the play came from, not
+    something this API computes or appends itself."""
+    summary = next((e for e in reversed(evs) if e.get("kind") == "run_summary"), None)
+    return summary.get("source") if summary else None
+
+
 @app.get("/events/{run_id}")
 def events(run_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     evs = store.read_events(run_id)
@@ -385,11 +533,63 @@ def events(run_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any
         evs = store.base.read_events(run_id)
     if not evs:
         raise HTTPException(404, f"no events for {run_id}")
-    return {"run_id": run_id, "recorded_at": _iso(datetime.fromtimestamp(evs[0]["timestamp"], UTC)) if evs[0].get("timestamp") else None, "events": evs}
+    return {
+        "run_id": run_id, "recorded_at": _iso(datetime.fromtimestamp(evs[0]["timestamp"], UTC)) if evs[0].get("timestamp") else None,
+        "source": _run_summary_source(evs), "events": evs,
+    }
+
+
+_LIVE_POLL_S = 0.25
+_LIVE_KEEPALIVE_S = 10.0
+
+
+async def _live_follow_events(store: LocalStore, vid: str, run_id: str, request: Request):
+    """Server-sent events for a run this API kicked off asynchronously (POST /rerun): poll the
+    visitor's own trace file and forward each new record as soon as it lands, so the web app can
+    show a live-updating trace instead of only a final result 20-45s later with the real model.
+    An async generator throughout (asyncio.sleep only) so this never blocks the event loop either.
+    """
+    sent = 0
+    last_sent_at = time.monotonic()
+    try:
+        while True:
+            if await request.is_disconnected():
+                return
+            evs = store.read_events(run_id)
+            for e in evs[sent:]:
+                yield f"data: {json.dumps(e, ensure_ascii=False)}\n\n"
+            if len(evs) > sent:
+                sent = len(evs)
+                last_sent_at = time.monotonic()
+            entry = _get_run_entry(vid, run_id)
+            if entry is None or entry.status != "running":
+                # flush anything written between the last read above and now, then close
+                evs = store.read_events(run_id)
+                for e in evs[sent:]:
+                    yield f"data: {json.dumps(e, ensure_ascii=False)}\n\n"
+                result = (entry.result if entry else None) or {"run_id": run_id, "status": "error", "error": "run no longer tracked"}
+                yield f"event: done\ndata: {json.dumps(result, ensure_ascii=False)}\n\n"
+                return
+            if time.monotonic() - last_sent_at >= _LIVE_KEEPALIVE_S:
+                yield ": keepalive\n\n"
+                last_sent_at = time.monotonic()
+            await asyncio.sleep(_LIVE_POLL_S)
+    except asyncio.CancelledError:
+        return
 
 
 @app.get("/events/{run_id}/stream")
-def events_stream(run_id: str, speed: float = Query(4.0, ge=0.1, le=100), store: LocalStore = Depends(store_for)) -> StreamingResponse:
+def events_stream(run_id: str, request: Request, speed: float = Query(4.0, ge=0.1, le=100), store: LocalStore = Depends(store_for)) -> StreamingResponse:
+    vid = visitor_id(request)
+    entry = _get_run_entry(vid, run_id)
+    if entry is not None:
+        # `vid` cannot be None here: _get_run_entry(None, ...) always returns None.
+        return StreamingResponse(_live_follow_events(store, vid, run_id, request), media_type="text/event-stream")
+
+    # Not a run this session is tracking for the calling visitor: today's replay behaviour for a
+    # recorded trace, completely unchanged (including the same 404 when there are no events, and
+    # the same visitor-scoped-then-base-tenant-fallback read that keeps another visitor's -- or a
+    # headerless caller's -- in-flight /rerun run invisible here too).
     evs = store.read_events(run_id) or (store.base.read_events(run_id) if isinstance(store, OverlayStore) else [])
     if not evs:
         raise HTTPException(404, f"no events for {run_id}")

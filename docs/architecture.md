@@ -116,13 +116,17 @@ flowchart LR
 | Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash; stock from the visitor's store (or the Firestore serving cache when that flag is on); substitutes precomputed; no per-turn memory calls |
 | Vision intake (one photo) | < 8 s | Gemini image understanding, strict output schema |
 | Voice turn, first audio | < 2 s | Gemini Live API; recorded for the video regardless of live status at the finale |
-| Planner, one gap | 20-60 s | nightly batch, or streamed on an on-demand re-run |
+| Planner, one gap (on-demand re-plan) | `POST /rerun` answers `202` at once; deadline **45 s** (configured on `taal-agents`; `eval/raw/flagship_facts_2026-09-27.json`) | The Desk streams each tool call and guardrail check live over SSE until `event: done`; nothing waits on the model synchronously. Last measured real Gemini **end-to-end** latency: **24.0-43.3 s** over 4 runs that reached the model (measured 2026-09-24, real Vertex; `eval/raw/planner_prompt_v6_2026-09-24/summary.json`, via the facts file above) -- already close to the 45 s deadline at the tail. p50/p95 and fallback rate *at* the 45 s deadline: not yet measured -- no Google Cloud credential exists in this build container (`harness/record_flagship_traces.py`, `harness/measure_live_rerun.py` are committed and produce it once one exists; see `eval/evaluation.md`, "Planner: recorded traces and live re-plan"). |
 | Approve → re-forecast | < 15 s | single-series `ML.FORECAST` on a nightly pre-trained `ARIMA_PLUS_XREG` model; approve only updates `future_regressors` and re-runs `ML.FORECAST`, never retrains |
 | Sense job (full nightly run) | minutes | never a live request path |
 
-All figures in this table are **estimated** budgets from DECISIONS §4.3, not measurements; the
-build replaces them with measured p50/p95 from Cloud Trace once services are deployed, and the
-judge-mode footer's latency chips show the measured number for that run.
+Most figures in this table are **estimated** budgets from DECISIONS §4.3, not measurements. The
+Planner row is the exception: its deadline is a real configured value and its latency range a real,
+dated measurement (citations in the row itself) -- but not yet the p50/p95 and fallback rate at that
+45 s deadline specifically, which needs a real Vertex credential this build environment does not
+have (`eval/evaluation.md`). The build replaces the remaining estimated rows with measured p50/p95
+from Cloud Trace once services are deployed, and the judge-mode footer's latency chips show the
+measured number for that run.
 
 ## What Gemini decides / what it is never allowed to decide
 

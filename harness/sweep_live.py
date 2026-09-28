@@ -41,6 +41,22 @@ def show(label, res, pick=None):
     flag = "OK " if st == 200 else ("4xx" if isinstance(st, int) and 400 <= st < 500 else "FAIL")
     print(f"{flag} {st!s:4} {dt:6.1f}s  {label:38} {summ}")
 
+def call_and_wait(method, path, data=None, timeout=300, poll_s=1.0):
+    """POST /rerun answers 202 immediately (run_id + status_url) and keeps planning on a worker
+    thread; poll status_url until it leaves "running" or `timeout` elapses. Returns (status, body,
+    elapsed) shaped like call() -- on success `body` is the finished run's result summary, the same
+    shape the old synchronous /rerun response body had, so callers built for that keep working."""
+    t0 = time.time()
+    st, body, _ = call(method, path, data, timeout=timeout)
+    if st != 202 or not isinstance(body, dict) or "status_url" not in body:
+        return st, body, time.time() - t0
+    while time.time() - t0 < timeout:
+        st2, poll_body, _ = call("GET", body["status_url"], timeout=timeout)
+        if st2 == 200 and isinstance(poll_body, dict) and poll_body.get("status") != "running":
+            return 200, poll_body.get("result") or poll_body, time.time() - t0
+        time.sleep(poll_s)
+    return "ERR", f"timed out after {timeout}s waiting for {body['status_url']}", time.time() - t0
+
 png = "data:image/png;base64," + "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
 show("POST /reset", call("POST", "/reset", {}))
@@ -76,7 +92,7 @@ show("POST /chat Cola Zero? (LIVE Gemini)", call("POST", "/chat", {"session_id":
 show(f"POST /chat holdout {holdout_id}", call("POST", "/chat", {"session_id": f"{holdout_id}:web", "text": "Any offers today?", "customer_id": holdout_id}, timeout=120), lambda b: (b[-1]['text'][:110] if isinstance(b, list) and b else str(b)[:110]))
 st, pol, _ = r = call("GET", "/policy")
 policy_text = pol.get("text", "") if isinstance(pol, dict) else ""
-show("POST /rerun (policy re-plan, LIVE)", call("POST", "/rerun", {"gap_id": "gap_tea_ds04", "policy_text": policy_text + "\n8. Premium tea is never discounted; move it to outlets instead.", "policy_version": "v2-sweep"}, timeout=300), lambda b: f"status={b.get('status')} iterations={b.get('iterations')} mechanic={(b.get('play') or {}).get('mechanic')} policy={b.get('policy_version')}")
+show("POST /rerun (policy re-plan, LIVE, async)", call_and_wait("POST", "/rerun", {"gap_id": "gap_tea_ds04", "policy_text": policy_text + "\n8. Premium tea is never discounted; move it to outlets instead.", "policy_version": "v2-sweep"}, timeout=300), lambda b: f"status={b.get('status')} iterations={b.get('iterations')} mechanic={(b.get('play') or {}).get('mechanic')} policy={b.get('policy_version')}")
 show("PUT /policy", call("PUT", "/policy", {"policy_version": "v3-sweep", "text": policy_text}), lambda b: f"{b.get('policy_version')}")
 show("POST /capture (sample -> recorded)", call("POST", "/capture", {"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_01.jpg"}, timeout=120), lambda b: f"model={b.get('model_id')} rows={len(b['rows'])}")
 st, cap, _ = r = call("POST", "/capture", {"node_id": "DS-07", "image_data_url": png}, timeout=120)
