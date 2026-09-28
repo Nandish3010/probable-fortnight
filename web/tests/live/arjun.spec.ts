@@ -22,7 +22,10 @@ test.describe("Arjun: Play Desk", () => {
     await shot(page, "arjun-02-play-card");
 
     await card.getByRole("button", { name: "Why this play?" }).click();
-    await expect(card.getByText(/coupon/).first()).toBeVisible();
+    // The flagship play is seeded from a real, committed Gemini recording (2026-09-28); the
+    // model's own rejected alternative is a transfer, not a coupon (that was the old scripted
+    // stub's story), rejected for negative expected margin.
+    await expect(card.getByText(/transfer|negative expected margin/).first()).toBeVisible();
     await expect(card.getByText(/margin floor|margin_floor/).first()).toBeVisible();
     await shot(page, "arjun-03-why");
 
@@ -30,13 +33,17 @@ test.describe("Arjun: Play Desk", () => {
     await expect(card.locator(".trace-panel__event").first()).toBeVisible();
     await expect((await card.locator(".trace-panel__event").count())).toBeGreaterThan(3);
     await expect(card.getByText(/^e-[0-9a-f-]+$/).first()).toBeVisible();
-    await expect(card.getByText(/Guardrail failed: margin_floor/).first()).toBeVisible();
+    // The real recorded run's own rejections were all cite_or_drop (an uncited number in the
+    // rationale), not margin_floor -- that was the old scripted stub's story.
+    await expect(card.getByText(/guardrail cite_or_drop|cite_or_drop/).first()).toBeVisible();
 
     // replay reproduces the same panel state as the live run, event for event (snapshot diff)
     const trace = card.locator(".trace-panel__list");
     const beforeReplay = await trace.innerText();
+    // The real recorded run took 65 s wall time (7 iterations); at 4x replay that is ~16.2 s,
+    // just over the old 15 s timeout sized for the much shorter scripted-stub trace.
     await card.getByRole("button", { name: /Replay at 4x/ }).click();
-    await expect(card.getByRole("button", { name: "Replay at 4x" })).toBeVisible({ timeout: 15_000 });
+    await expect(card.getByRole("button", { name: "Replay at 4x" })).toBeVisible({ timeout: 25_000 });
     const afterReplay = await trace.innerText();
     expect(afterReplay).toBe(beforeReplay);
 

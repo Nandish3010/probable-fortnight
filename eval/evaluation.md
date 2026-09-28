@@ -999,3 +999,34 @@ the same shape of substitute measurement, for the same reason (this sandbox's eg
 `eval/raw/customer_latency_fix_2026-09-21.json` already used for the Customer Agent's `/chat` p95:
 a local server process, pointed at the real Vertex backend, standing in for the deployed service
 because the deployed URL itself is not reachable from here.
+
+## Flagship recording: done (2026-09-28)
+
+A GCP credential exists in this build environment now. `harness/record_flagship_traces.py --gap
+gap_chips_ds07 --runs 5 --out eval/raw/planner_real_traces_2026-09-28` was run for real against
+`TAAL_MODEL_BACKEND=vertex`, `TAAL_PLANNER_DEADLINE_S=120`, `TAAL_NOW=2026-09-12T03:30:00Z`: 5/5
+runs reached `proposed`, 5/5 `source: live_gemini`, 0 fallbacks (`eval/raw/planner_real_traces_2026-09-28/summary.json`).
+Wall time ranged 34.1-65.0 s (median 40.8 s), 4-7 planner iterations per run. None passed the
+guardrail gate on the first `propose_play` attempt; all five passed after revision, every rejection
+on `cite_or_drop` (an uncited number in the rationale).
+
+`harness/seed_plays.py` picked the highest-margin candidate, `run_04`
+(`run_chips_ds07_v1_e9971541`, `margin_inr=191.88`) to seed the flagship gap's play. It is a
+**bundle**, not the scripted stub's coupon-then-bundle story: Masala Chips 200G with Coconut Water
+1L at ₹58.50 for the pair, offered through the outlet channel, to 334 consented customers across 6
+segments. The model considered a `transfer_plus_nudge` alternative and rejected it itself for
+negative expected margin (-₹161.52). `margin_floor` passed at 14.27% net margin (₹58.50 price,
+₹50.15 cost) against the snacks category's 8% floor. The rationale was rejected by `cite_or_drop`
+three times ("uncited numbers in rationale: 52") before the fourth `propose_play` attempt passed
+guardrails, at iteration 7 of 7, 65.038 s wall time. A real local `/approve` of the freshly seeded
+play (stub-planner-independent; only the seeding is Gemini-derived) assigned **316 treated / 36
+holdout** customers by hash and moved the write-off projection from ₹9,194.12 to ₹8,067.53.
+
+This supersedes the "Because no recording exists..." framing two sections above for `gap_chips_ds07`
+specifically: from this commit forward `make generate` seeds this gap's play from the committed
+recording, and its Desk trace panel badge reads `Recorded from Gemini · 28 Sep 2026` (the badge's
+`formatDate()` renders `recorded_at` in `en-IN` locale as "28 Sep 2026", not the ISO string
+"2026-09-28" that appears in file paths and raw JSON -- worth knowing before reading a screenshot
+against a raw-data date). The "ten live re-plans" measurement in that section is still not done
+(that is a `/rerun` latency measurement, a different exercise from this one-time seeding recording)
+and its credential-absent framing still applies to it.

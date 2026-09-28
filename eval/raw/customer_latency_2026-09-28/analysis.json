@@ -1,0 +1,105 @@
+{
+  "method": "same method as eval/raw/customer_latency_fix_2026-09-21.json: 50 POST /chat calls as Meena (CUST-MEENA), one fresh visitor per call, 15-message pool cycled, local API process (uv run uvicorn services.api.main:app --port 8080), TAAL_MODEL_BACKEND=vertex",
+  "n_calls": 50,
+  "all_status_200": true,
+  "overall": {
+    "p50_s": 4.563,
+    "p95_s": 6.478,
+    "max_s": 12.35,
+    "min_s": 3.23
+  },
+  "per_message_type": {
+    "hi": {
+      "n": 4,
+      "p50_s": 3.354,
+      "p95_s": 3.484,
+      "max_s": 3.489
+    },
+    "do you have chips?": {
+      "n": 4,
+      "p50_s": 5.278,
+      "p95_s": 6.409,
+      "max_s": 6.608
+    },
+    "any offers for me?": {
+      "n": 4,
+      "p50_s": 4.08,
+      "p95_s": 4.091,
+      "max_s": 4.093
+    },
+    "what tea do you have?": {
+      "n": 4,
+      "p50_s": 5.961,
+      "p95_s": 6.331,
+      "max_s": 6.389
+    },
+    "do you have quinoa?": {
+      "n": 4,
+      "p50_s": 4.671,
+      "p95_s": 11.199,
+      "max_s": 12.35
+    },
+    "what's available in snacks?": {
+      "n": 3,
+      "p50_s": 4.826,
+      "p95_s": 5.026,
+      "max_s": 5.048
+    },
+    "I want cola": {
+      "n": 3,
+      "p50_s": 4.233,
+      "p95_s": 4.828,
+      "max_s": 4.894
+    },
+    "any offers?": {
+      "n": 3,
+      "p50_s": 4.226,
+      "p95_s": 4.324,
+      "max_s": 4.335
+    },
+    "STOP": {
+      "n": 3,
+      "p50_s": 4.308,
+      "p95_s": 4.352,
+      "max_s": 4.357
+    },
+    "what do you have": {
+      "n": 3,
+      "p50_s": 4.534,
+      "p95_s": 4.576,
+      "max_s": 4.581
+    },
+    "do you have kaju katli?": {
+      "n": 3,
+      "p50_s": 5.045,
+      "p95_s": 5.382,
+      "max_s": 5.419
+    },
+    "is bread in stock?": {
+      "n": 3,
+      "p50_s": 4.606,
+      "p95_s": 6.356,
+      "max_s": 6.551
+    },
+    "hello, what's on offer today": {
+      "n": 3,
+      "p50_s": 4.575,
+      "p95_s": 4.837,
+      "max_s": 4.867
+    },
+    "chips please": {
+      "n": 3,
+      "p50_s": 4.553,
+      "p95_s": 4.681,
+      "max_s": 4.695
+    },
+    "what categories do you sell": {
+      "n": 3,
+      "p50_s": 4.26,
+      "p95_s": 4.504,
+      "max_s": 4.531
+    }
+  },
+  "substitute_lookup_finding": "None of the product-availability / substitute-lookup messages (do you have chips/tea/quinoa/kaju katli/cola, is bread in stock) show a SUSTAINED >7s p50 or p95 on this run: worst p50 is 5.96s (\"what tea do you have?\"), worst p95 is 11.20s (\"do you have quinoa?\", driven by one 12.35s outlier out of 4 calls, not a consistent pattern). Per the task instructions, tool-vs-model profiling is only triggered by a consistent >7s pattern, which this run does not show, so no profiling script was written. This does not reproduce yesterdays one-off 7.6s/8.3s figures as a persistent regression -- 2026-09-21s run was 10 calls; this is 50, and only 3/50 calls here exceed 7s, none in the same message twice.",
+  "methodology_note": "This run followed an earlier, corrupted attempt on the same day: a port-8080 uvicorn process serving this measurement was killed mid-run by an unrelated command targeting that port (an unqualified pkill -f during separate verification work), producing 37/50 real calls and 13/50 connection-error rows in a since-discarded calls.json. That partial file was deleted and this 50/50-clean run replaces it entirely; the port-8080 server was restarted once and left untouched for the remainder of this run. No prompt or model setting was changed in this branch."
+}

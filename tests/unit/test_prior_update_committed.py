@@ -1,11 +1,11 @@
-"""The committed prior-update evidence (eval/raw/prior_update_2026-09-27.json) is exactly the
+"""The committed prior-update evidence (eval/raw/prior_update_2026-09-28.json) is exactly the
 conjugate update of its own committed inputs -- no number in it is typed by hand."""
 import json
 from pathlib import Path
 
 from agents.gate.estimator import update_prior
 
-RAW = Path(__file__).resolve().parents[2] / "eval" / "raw" / "prior_update_2026-09-27.json"
+RAW = Path(__file__).resolve().parents[2] / "eval" / "raw" / "prior_update_2026-09-28.json"
 
 
 def test_update_prior_reproduces_the_committed_after_from_the_committed_inputs():
