@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -105,7 +106,10 @@ def _initial_message(ctx: PlannerContext, gap_id: str) -> types.Content:
     return types.Content(role="user", parts=[types.Part(text=text)])
 
 
-async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "", deadline_s: float | None = None) -> dict[str, Any]:
+async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "", deadline_s: float | None = None, on_event: Callable[[str, Any], None] | None = None) -> dict[str, Any]:
+    """`on_event`, when given, is called with ("user", <initial Content>) once and then ("event",
+    <ADK Event>) for every event, unshrunk -- the trace recorder (harness/record_planner_traces.py)
+    uses it to keep full tool args, responses and token usage. None changes nothing."""
     tenant = load_tenant()
     probe = PlannerContext.build(data_dir, run_id="probe", policy_text=policy_text, policy_version=policy_version, tenant=tenant)
     run_id = make_run_id(gap_id, probe.policy_version, salt)
@@ -135,6 +139,8 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
             runner = Runner(app_name=APP, agent=agent, artifact_service=InMemoryArtifactService(), session_service=session_service, memory_service=InMemoryMemoryService())
         session = await runner.session_service.create_session(app_name=APP, user_id="planner", session_id=run_id)
         msg = _initial_message(ctx, gap_id)
+        if on_event is not None:
+            on_event("user", msg)
         seq, iterations, t0 = 1, 0, None
         proposed = None
         deadline = DEFAULT_DEADLINE_S if deadline_s is None else deadline_s
@@ -146,6 +152,8 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
             async for ev in runner.run_async(user_id="planner", session_id=session.id, new_message=msg):
                 if t0 is None:
                     t0 = ev.timestamp
+                if on_event is not None:
+                    on_event("event", ev)
                 rec = _event_record(ev, seq, t0, run_id)
                 ctx.store.append_event(run_id, rec)
                 seq += 1

@@ -8,18 +8,53 @@ block the way prompts/planner.md tells Gemini to, instead of issuing a tool call
 estimates every candidate in one `estimate_outcomes` call and tries `propose_play` on candidates
 in policy order, ending its turn with text when a guardrail fails (so the LoopAgent can iterate)
 or when the proposal is accepted.
+
+Replay mode (TAAL_STUB_TRAJECTORY=recorded; off by default): for a gap whose evalset under
+agents/planner/evalsets/ (or TAAL_STUB_TRAJECTORY_DIR) was built from a recorded real-model run
+(harness/build_fixtures.py, marker "source=recorded_trace"), the stub issues the recorded tool names
+in the recorded order instead of its own script -- same count, same positions, each recorded
+propose_play rejection reproduced with a deliberately incomplete play -- then ends with the
+recorded final text. It is the CI stand-in for the evalsets: with it on, `make eval` in stub mode
+checks the harness and the tools against the real model's shape; it cannot say anything about
+whether the model still behaves that way (only the vertex run of `make eval` does). Gaps without
+a recorded evalset keep the scripted behaviour.
 """
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from typing import Any
 
 from google.adk.models import BaseLlm, LlmRequest, LlmResponse
 from google.genai import types
 
 from . import drafting
+
+TRACE_MARKER = "source=recorded_trace"
+EVALSETS = Path(__file__).resolve().parent / "evalsets"
+
+
+def recorded_trajectory(gap_id: str) -> dict[str, Any] | None:
+    """{tools, verdicts, final_text} from the gap's recorded-trace evalset, or None when replay is
+    off or the gap has none."""
+    if os.environ.get("TAAL_STUB_TRAJECTORY", "") != "recorded":
+        return None
+    path = Path(os.environ.get("TAAL_STUB_TRAJECTORY_DIR") or EVALSETS) / f"{gap_id}.evalset.json"
+    if not path.exists():
+        return None
+    es = json.loads(path.read_text(encoding="utf-8"))
+    if TRACE_MARKER not in es.get("description", ""):
+        return None
+    inv = es["eval_cases"][0]["conversation"][0]
+    data = inv["intermediate_data"]
+    return {
+        "tools": [t["name"] for t in data.get("tool_uses") or []],
+        "verdicts": [bool((r.get("response") or {}).get("valid")) for r in data.get("tool_responses") or [] if r.get("name") == "propose_play"],
+        "final_text": "".join(p.get("text", "") for p in (inv.get("final_response") or {}).get("parts") or []),
+    }
 
 POLICY_RE = re.compile(r"policy_version=([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)")
 CONTEXT_RE = re.compile(r"```json\n(.*)\n```", re.S)
@@ -96,6 +131,10 @@ class StubPlannerLlm(BaseLlm):
         for name, resp in t["responses"]:
             by_name.setdefault(name, []).append(resp)
 
+        recorded = recorded_trajectory(gap.get("gap_id", ""))
+        if recorded is not None:
+            return self._replay(recorded, t, gap, audiences, candidates, drafts, by_name)
+
         est_resps = by_name.get("estimate_outcomes", [])
         if not est_resps:
             return self._call("estimate_outcomes", {"play_drafts": [drafts[drafting.draft_key(c)] for c in candidates]})
@@ -129,6 +168,62 @@ class StubPlannerLlm(BaseLlm):
                 play = self._with_estimate(drafts[k], est, gap, audiences, rejected)
                 return self._call("propose_play", {"play": play})
         return self._say("No candidate passed the guardrails within the loop budget; escalate to a human.")
+
+    def _replay(self, rec: dict[str, Any], t: dict[str, Any], gap: dict[str, Any], audiences: list[dict[str, Any]], candidates: list[dict[str, Any]], drafts: dict[str, dict[str, Any]], by_name: dict[str, list[dict[str, Any]]]) -> LlmResponse:
+        made = [name for name, _ in t["calls"]]
+        expected = rec["tools"]
+        if made != expected[: len(made)]:
+            return self._say(f"Replay diverged from the recorded trajectory at call {len(made) + 1}: made {made}, recorded {expected}")
+        got = [bool(r.get("valid")) for r in by_name.get("propose_play", [])]
+        if got != rec["verdicts"][: len(got)]:
+            # e.g. the one play meant to be accepted was rejected: never paper over it with the recorded DONE
+            return self._say(f"Replay diverged from the recorded propose_play verdicts: got {got}, recorded {rec['verdicts']}")
+        if len(made) >= len(expected):
+            return self._say(rec["final_text"])
+        name = expected[len(made)]
+        est_resps = by_name.get("estimate_outcomes", [])
+        estimates: dict[str, dict[str, Any]] = {}
+        if est_resps:
+            first = est_resps[0].get("result", est_resps[0]) if isinstance(est_resps[0], dict) else est_resps[0]
+            estimates = {drafting.draft_key(c): first[i] for i, c in enumerate(candidates) if i < len(first)}
+
+        def play_for(c: dict[str, Any]) -> dict[str, Any]:
+            k = drafting.draft_key(c)
+            est = estimates.get(k)
+            if est is None or "error" in est:
+                return drafts[k]
+            return self._with_estimate(drafts[k], est, gap, audiences, [])
+
+        if name == "estimate_outcomes":
+            return self._call(name, {"play_drafts": [drafts[drafting.draft_key(c)] for c in candidates]})
+        if name == "get_gap":
+            return self._call(name, {"gap_id": gap["gap_id"]})
+        if name == "get_candidate_audiences":
+            return self._call(name, {"sku": gap["sku"], "node_ids": [gap["node_id"]], "objective": drafting.OBJECTIVE_BY_GAP[gap["type"]], "gap_id": gap["gap_id"]})
+        if name == "get_past_plays":
+            return self._call(name, {"sku": gap["sku"], "category": (gap.get("product") or {}).get("category", ""), "mechanic": candidates[0]["mechanic"]})
+        if name == "check_guardrails":
+            return self._call(name, {"play_draft": play_for(candidates[0])})
+        if name == "propose_play":
+            n_prop = made.count("propose_play")
+            should_pass = rec["verdicts"][n_prop] if n_prop < len(rec["verdicts"]) else True
+            if not should_pass:
+                bad = dict(play_for(candidates[0]))
+                bad.pop("citations", None)  # schema-invalid on purpose: reproduces a recorded rejection
+                return self._call(name, {"play": bad})
+            return self._call(name, {"play": self._passing_play(candidates, play_for)})
+        return self._say(f"Replay cannot issue recorded tool {name!r}")
+
+    def _passing_play(self, candidates: list[dict[str, Any]], play_for) -> dict[str, Any]:
+        """The first candidate in policy order whose finished play clears the guardrails (checked
+        directly, so the one recorded accepted propose_play is not spent on a known failure)."""
+        from .tools import check_guardrails
+
+        plays = [play_for(c) for c in candidates]
+        for play in plays:
+            if play.get("expected_outcome") and check_guardrails(play).get("all_passed"):
+                return play
+        return plays[0]
 
     def _alt(self, c: dict[str, Any], est: dict[str, Any], why: str) -> dict[str, Any]:
         return {"mechanic": c["mechanic"], "mechanic_params": c.get("mechanic_params", {}), "expected_units": est["expected_outcome"]["units"], "expected_margin_inr": est["expected_outcome"]["margin_inr"], "rejected_because": why[:400]}
