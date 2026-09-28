@@ -45,6 +45,10 @@ test.describe("Arjun: Play Desk", () => {
     await ta.fill("Approved for the Friday rush. 368 units at risk, ₹9200 write-off if we do nothing.");
     await card.getByRole("button", { name: "Approve" }).click();
     await expect(page.locator("svg.forecast-chart")).toBeVisible({ timeout: 30_000 });
+    // ARIA status region for the result, screen-reader focus moved to its heading (ApprovePanel.tsx)
+    const approveResult = page.getByTestId("approve-result");
+    await expect(approveResult).toHaveAttribute("role", "status");
+    await expect(approveResult.getByRole("heading", { name: /Approved/ })).toBeFocused();
     await shot(page, "arjun-04-approved");
 
     // policy beat on the tea play
@@ -70,6 +74,9 @@ test.describe("Arjun: Play Desk", () => {
     await expect(page.getByTestId("live-replan")).toBeVisible();
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
     await expect(card.getByText(/v2/).first()).toBeVisible();
+    // ARIA status region for the re-plan result (web/app/desk/page.tsx)
+    const replanResult = card.locator(".play-card__section").filter({ hasText: "Re-plan result" });
+    await expect(replanResult).toHaveAttribute("role", "status");
     await shot(page, "arjun-05-replan");
     await expectNoConsoleErrors(errors);
   });
