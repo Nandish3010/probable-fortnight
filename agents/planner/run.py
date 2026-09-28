@@ -18,7 +18,7 @@ from typing import Any
 from google.adk.runners import InMemoryRunner, Runner
 from google.genai import types
 
-from agents.gate.config import load_tenant
+from agents.gate.config import load_models, load_tenant
 from agents.vertex_sessions import build_session_service
 
 from . import drafting, governor
@@ -30,9 +30,39 @@ from .deterministic import deterministic_plan
 APP = "taal_planner"
 
 # A live Gemini planner call that exceeds this many seconds falls back to the deterministic draft
-# (deterministic.py) rather than let a demo-facing request run unbounded. Comfortably under the
-# entry's 10s response budget, leaving headroom for API/network overhead on top of this function.
+# (deterministic.py) rather than let a demo-facing request run unbounded. The deployed service
+# overrides this default through TAAL_PLANNER_DEADLINE_S (infra/deploy.sh, being changed in the
+# same branch as this file); the async re-plan endpoint no longer holds a request open for the
+# planner, so that override no longer has to fit under a synchronous HTTP response budget.
 DEFAULT_DEADLINE_S = 8.0
+
+# Every play's provenance is one of these four. `resolve_source` below decides which, for a run
+# just executed; "recorded_gemini" is not one of its outputs -- it is reserved for a play whose
+# play_json was captured from a real historical Vertex call and is now served as fixed data
+# (never re-run), distinct from "scripted_stub" (the deterministic script standing in for Gemini
+# in CI, DECISIONS on the stub backend) producing new plays every run.
+PLAN_SOURCES = ("recorded_gemini", "scripted_stub", "deterministic_rules", "live_gemini")
+
+
+def resolve_source(backend: str, planner_source: str | None, skipped: bool) -> str:
+    """Which of PLAN_SOURCES a run's play (or attempted play) came from.
+
+    `backend` must already be resolved the way `build_planner` resolves it (`backend or
+    load_models()["backend"]`) -- this function does not read TAAL_MODEL_BACKEND itself.
+
+    - the Cost Governor skipped the gap (no planner run happened at all), or the deterministic
+      fallback is what produced the play (`planner_source == "deterministic_fallback"`, set only
+      when that fallback succeeds): "deterministic_rules".
+    - otherwise (`planner_source == "model"`): the backend's own model source, "live_gemini" for
+      vertex or "scripted_stub" for stub. This is the same value whether the model itself produced
+      the play or status ended up `no_play` (the model path was attempted and the deterministic
+      fallback that always follows it was also unable to produce one) -- `planner_source` stays
+      "model" in both cases, and the model path is what this run actually attempted either way, so
+      it is what the source names.
+    """
+    if skipped or planner_source == "deterministic_fallback":
+        return "deterministic_rules"
+    return "live_gemini" if backend == "vertex" else "scripted_stub"
 
 
 def make_run_id(gap_id: str, policy_version: str, salt: str = "") -> str:
@@ -40,8 +70,17 @@ def make_run_id(gap_id: str, policy_version: str, salt: str = "") -> str:
     return f"run_{gap_id[4:]}_{policy_version}_{h}"
 
 
+_USAGE_FIELDS = ("prompt_token_count", "candidates_token_count", "thoughts_token_count", "cached_content_token_count", "total_token_count")
+
+
 def _event_record(ev: Any, seq: int, t0: float, run_id: str) -> dict[str, Any]:
     rec: dict[str, Any] = {"seq": seq, "run_id": run_id, "invocation_id": ev.invocation_id, "author": ev.author, "timestamp": ev.timestamp, "ts_offset_ms": int((ev.timestamp - t0) * 1000), "level": "info"}
+    if ev.usage_metadata is not None:
+        usage = {f: getattr(ev.usage_metadata, f) for f in _USAGE_FIELDS if getattr(ev.usage_metadata, f, None) is not None}
+        if usage:
+            rec["usage"] = usage
+    if ev.model_version:
+        rec["model_version"] = ev.model_version
     for part in (ev.content.parts if ev.content and ev.content.parts else []):
         if part.text:
             rec["text"] = part.text
@@ -111,6 +150,9 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
     <ADK Event>) for every event, unshrunk -- the trace recorder (harness/record_planner_traces.py)
     uses it to keep full tool args, responses and token usage. None changes nothing."""
     tenant = load_tenant()
+    models = load_models()
+    resolved_backend = backend or models["backend"]
+    model_label = models["ids"]["flash"] if resolved_backend == "vertex" else "stub-planner"
     probe = PlannerContext.build(data_dir, run_id="probe", policy_text=policy_text, policy_version=policy_version, tenant=tenant)
     run_id = make_run_id(gap_id, probe.policy_version, salt)
     ctx = PlannerContext.build(data_dir, run_id=run_id, policy_text=policy_text, policy_version=policy_version, tenant=tenant)
@@ -125,7 +167,16 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         trace.unlink()
     ctx.store.append_event(run_id, {"seq": 0, "run_id": run_id, "invocation_id": "", "author": "cost_governor", "timestamp": started, "ts_offset_ms": 0, "text": why, "level": "info" if eligible else "warn"})
     if not eligible:
-        return {"run_id": run_id, "play": None, "status": "skipped", "reason": why, "iterations": 0, "events": ctx.store.read_events(run_id)}
+        source = resolve_source(resolved_backend, None, skipped=True)
+        finished = time.time()
+        ctx.store.append_event(run_id, {
+            "seq": 1, "run_id": run_id, "invocation_id": "", "author": "planner_run", "kind": "run_summary",
+            "timestamp": finished, "ts_offset_ms": int((finished - started) * 1000), "level": "warn",
+            "source": source, "status": "skipped", "play_id": None, "iterations": 0, "elapsed_ms": int((finished - started) * 1000),
+            "fallback_reason": None, "backend": resolved_backend, "model": model_label,
+            "text": f"Run finished: governor skipped ({why})",
+        })
+        return {"run_id": run_id, "play": None, "status": "skipped", "reason": why, "iterations": 0, "events": ctx.store.read_events(run_id), "source": source}
     token = set_context(ctx)
     try:
         agent = build_planner(tenant, ctx.policy_text, ctx.policy_version, run_id, ctx.as_of.isoformat(), backend)
@@ -143,6 +194,7 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
             on_event("user", msg)
         seq, iterations, t0 = 1, 0, None
         proposed = None
+        usage_totals: dict[str, int] = {}
         deadline = DEFAULT_DEADLINE_S if deadline_s is None else deadline_s
         deadline = float(os.environ.get("TAAL_PLANNER_DEADLINE_S", deadline))
         timed_out = False
@@ -157,6 +209,8 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
                 rec = _event_record(ev, seq, t0, run_id)
                 ctx.store.append_event(run_id, rec)
                 seq += 1
+                for field, count in (rec.get("usage") or {}).items():
+                    usage_totals[field] = usage_totals.get(field, 0) + count
                 for part in (ev.content.parts if ev.content and ev.content.parts else []):
                     if part.text and ev.author == "planner":
                         iterations += 1
@@ -175,16 +229,41 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         planner_source = "model"
         fallback_reason = None
         if play is None:
-            fallback_reason = f"deadline exceeded after {deadline:.0f}s" if timed_out else f"no_play after {iterations} iteration(s)"
+            fallback_reason = f"deadline exceeded after {deadline:g}s" if timed_out else f"no_play after {iterations} iteration(s)"
             ctx.store.append_event(run_id, {"seq": seq, "run_id": run_id, "invocation_id": "", "author": "planner_fallback", "timestamp": time.time(), "ts_offset_ms": int((time.time() - started) * 1000), "text": f"{fallback_reason}; falling back to the deterministic draft", "level": "warn"})
             seq += 1
             play = deterministic_plan(ctx, gap_id)
             if play is not None:
                 planner_source = "deterministic_fallback"
+
+        source = resolve_source(resolved_backend, planner_source, skipped=False)
+        if play is not None:
+            play["source"] = source
+            ctx.store.upsert("plays", "play_id", pt.play_row(ctx, play))
+        status = "proposed" if play else "no_play"
+        finished = time.time()
+        elapsed_ms = int((finished - started) * 1000)
+        if play is not None and fallback_reason is None:
+            text = f"Run finished: play proposed ({source}) in {elapsed_ms / 1000:.1f} s"
+        elif play is not None:
+            text = f"Run finished: {source} fallback ({fallback_reason})"
+        else:
+            text = f"Run finished: no play produced ({source}); {fallback_reason}"
+        summary: dict[str, Any] = {
+            "seq": seq, "run_id": run_id, "invocation_id": "", "author": "planner_run", "kind": "run_summary",
+            "timestamp": finished, "ts_offset_ms": elapsed_ms, "level": "ok" if play else "warn",
+            "source": source, "status": status, "play_id": play["play_id"] if play else None, "iterations": iterations,
+            "elapsed_ms": elapsed_ms, "fallback_reason": fallback_reason, "backend": resolved_backend, "model": model_label,
+            "text": text,
+        }
+        if usage_totals:
+            summary["usage"] = usage_totals
+        ctx.store.append_event(run_id, summary)
         return {
-            "run_id": run_id, "play": play, "status": "proposed" if play else "no_play", "iterations": iterations,
+            "run_id": run_id, "play": play, "status": status, "iterations": iterations,
             "events": ctx.store.read_events(run_id), "policy_version": ctx.policy_version,
-            "elapsed_ms": int((time.time() - started) * 1000), "planner_source": planner_source, "fallback_reason": fallback_reason,
+            "elapsed_ms": elapsed_ms, "planner_source": planner_source, "fallback_reason": fallback_reason,
+            "source": source,
         }
     finally:
         reset_context(token)
