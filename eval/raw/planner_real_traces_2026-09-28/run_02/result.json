@@ -1,0 +1,164 @@
+{
+  "run_id": "run_chips_ds07_v1_516ca1ac",
+  "play": {
+    "window": {
+      "end": "2026-09-18T23:59:59Z",
+      "start": "2026-09-12T00:00:00Z"
+    },
+    "alternatives": [
+      {
+        "expected_margin_inr": -58.32,
+        "mechanic": "transfer_plus_nudge",
+        "expected_units": 27.11,
+        "mechanic_params": {
+          "transfer_units": 368,
+          "transfer_to_node": "OUT-03"
+        },
+        "rejected_because": "negative expected margin"
+      }
+    ],
+    "rationale": "This play proposes an outlet markdown of 9% for SKU-MASALA-CHIPS-200G at DS-07 to clear an online sell-by breach. This markdown ensures the net margin of 8.42% remains above the category floor of 8.00%. The play has an expected outcome of 27.11 units sold and a positive margin of 62.35 INR.",
+    "counterfactuals": {
+      "blanket_markdown_inr": 8744.95,
+      "blanket_markdown_pct": 9,
+      "do_nothing_inr": 9200
+    },
+    "mechanic_params": {
+      "markdown_pct": 9
+    },
+    "holdout": {
+      "fraction": 0.1,
+      "seed": "seed-play_chips_ds07_v1_markdown_v2",
+      "min_treated_n": 20
+    },
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_chips_ds07"
+      },
+      {
+        "type": "estimator",
+        "ref": "est-v1"
+      },
+      {
+        "ref": "v1",
+        "type": "policy"
+      },
+      {
+        "ref": "sense_20260912_baseline_2aaad73c",
+        "type": "forecast"
+      }
+    ],
+    "copy": {
+      "language_set": [
+        "en"
+      ],
+      "variants": [],
+      "copy_status": "pending"
+    },
+    "objective": "clear_online_sellby",
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 8.42% (net price 27.30, cost 25.00) vs snacks floor 8.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 0 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "outlet channel: no personal message, consent not required"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "no active subscribers of SKU-MASALA-CHIPS-200G in audience"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "no stockout gap for SKU-MASALA-CHIPS-200G at DS-07"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "4 number(s) in rationale all cited; 4 citation(s) resolve"
+      }
+    ],
+    "expected_outcome": {
+      "discount_cost_inr": 73.19,
+      "prior_n": 20,
+      "waste_avoided_inr": 677.68,
+      "margin_inr": 62.35,
+      "units": 27.11,
+      "measured_n": 0,
+      "ci_high": 79.08,
+      "estimator_version": "est-v1",
+      "ci_low": 1.46
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_chips_ds07",
+    "play_id": "play_chips_ds07_v1",
+    "audience": {
+      "size_after_consent": 394,
+      "segment_ids": [
+        "seg_5",
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_4",
+        "seg_6"
+      ],
+      "purpose": "marketing",
+      "size_before_consent": 476,
+      "filters": {}
+    },
+    "target": {
+      "sku": "SKU-MASALA-CHIPS-200G",
+      "batch_ids": [
+        "B-CHIPS-DS07-01"
+      ],
+      "deadline_date": "2026-09-18",
+      "deadline_type": "online_sellby",
+      "units": 368,
+      "node_ids": [
+        "DS-07"
+      ]
+    },
+    "channel": "outlet",
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_chips_ds07_v1_516ca1ac",
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 51.22,
+      "pct_of_rupees_at_stake": 0.573
+    },
+    "source": "live_gemini"
+  },
+  "status": "proposed",
+  "iterations": 8,
+  "policy_version": "v1",
+  "elapsed_ms": 61541,
+  "planner_source": "model",
+  "fallback_reason": null,
+  "source": "live_gemini",
+  "wall_time_s": 61.618,
+  "started_at": "2026-09-28T10:31:49Z",
+  "finished_at": "2026-09-28T10:32:51Z"
+}

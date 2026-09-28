@@ -22,6 +22,10 @@ from jobs.sense.forecast import forecast, series_for
 logger = logging.getLogger(__name__)
 
 
+class WindowExpired(Exception):
+    """Raised when the play's window has already ended at approve time -- see `approve()`."""
+
+
 def _load_play(store: LocalStore, play_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rows = store.find("plays", play_id=play_id)
     if not rows:
@@ -64,7 +68,15 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     if changes:
         play["edits"] = (play.get("edits") or []) + changes
         play["status"] = "modified"
-    # --- window starts now
+    # --- window starts now, unless the window already ended: this happens whenever TAAL_NOW is
+    # unset and the wall clock has drifted past the seeded window, and used to silently rewrite
+    # the window to [now, original_end) with original_end < now -- an inverted, empty window that
+    # touches zero future_regressors rows and returns a success response with no write-off
+    # movement. Fail loudly instead.
+    window_end = datetime.fromisoformat(play["window"]["end"].replace("Z", "+00:00"))
+    if now > window_end:
+        pinned = os.environ.get("TAAL_NOW") or "<unset -- the server is using the real wall clock>"
+        raise WindowExpired(f"play window ended {play['window']['end']}; the demo clock is pinned to TAAL_NOW={pinned}")
     play["window"]["start"] = now_iso
     play["status"] = "approved"
     play["approved_by"], play["approved_at"] = approved_by, now_iso

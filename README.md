@@ -63,30 +63,27 @@ bread and milk sellable online); the stricter reading is one switch away and ret
 own.
 
 Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07, ₹9,200 at stake, online
-sell-by in 6 days. In the replayed nightly plan (scripted planner fixture), the planner's first
-draft (a 15% coupon) fails the margin floor; it revises to a bundle; approval assigns 287 treated
-and 26 holdout customers by hash, writes the play into `future_regressors`, re-forecasts the
-series in about 1.6 s (1,554 ms, measured once locally, stub backend), and Meena's chat delivers
-the offer. Every number above is reproduced by executing the code on the seeded tenant --
-tenant/plan figures labelled seeded, the re-forecast time labelled measured -- in
-`eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json` (gap size, stake and the first-draft
-discount also committed in `eval/raw/rationale_judge_plays_2026-09-21/play_chips_ds07_v1.json`).
-Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07 (seeded), ₹9,200 at stake
-(seeded), online sell-by in 6 days (computed) -- every number in this paragraph is recomputed by
-`harness/flagship_facts.py` into `eval/raw/flagship_facts_2026-09-27.json`. The trace judges see for
-this gap is the scripted stub planner, badged "Scripted fixture" -- **not** a Gemini run: its first
-draft, a 15% coupon (seeded), fails the margin-floor guardrail; it revises to a bundle -- Masala
-Chips with Coconut Water 1L, ₹61 for the pair (seeded). A real Gemini recording for this gap could
-not be made in the build environment on 27 Sep 2026: no Google Cloud credential exists there.
-`harness/record_flagship_traces.py` records one, and `make generate` seeds it automatically once a
-recording is committed -- from that point on this gap's trace is badged `Recorded from Gemini ·
-<date>` instead. Approval assigns 287 treated and 26 holdout customers by hash (seeded), writes the
-play into `future_regressors`, and re-forecasts the series in about 2.0 s (measured locally against
-the stub backend, not the deployed service); Meena's chat then delivers the offer. On the deployed
-service, **Change policy → re-plan** instead runs Gemini live: the Desk streams each tool call and
+sell-by in 6 days. The Desk's trace for this gap is a real, committed Gemini recording, badged
+`Recorded from Gemini · 28 Sep 2026` -- not a scripted fixture: five independent live Vertex runs
+(`harness/record_flagship_traces.py --gap gap_chips_ds07 --runs 5`, `TAAL_MODEL_BACKEND=vertex`,
+`gemini-2.5-flash`) all reached `proposed` with 0 fallbacks; `harness/seed_plays.py` picked the
+highest-margin one to seed the play. That run's first `propose_play` attempt, and its next two,
+were rejected by the `cite_or_drop` guardrail for an uncited number in the rationale; the fourth
+attempt passed all eight guardrails -- a bundle of Masala Chips 200G with Coconut Water 1L, ₹58.50
+for the pair, offered to 334 consented customers across 6 segments through the outlet channel. The
+model itself considered and rejected a transfer-to-another-node alternative for negative expected
+margin (-₹161.52); `margin_floor` passed at 14.27% net margin against the snacks category's 8%
+floor. The whole run took 65.0 s over 7 planner iterations. Approval assigns 316 treated and 36
+holdout customers by hash, writes the play into `future_regressors`, and moves the projected
+write-off from ₹9,194.12 to ₹8,067.53; Meena's chat then delivers the offer. Every number above is
+reproduced in `eval/raw/planner_real_traces_2026-09-28/summary.json` and
+`eval/raw/planner_real_traces_2026-09-28/run_04/{play,result}.json`. On the deployed service,
+**Change policy → re-plan** instead runs Gemini live on demand: the Desk streams each tool call and
 guardrail check as it happens, and if no valid play arrives within the configured 45 s deadline
 (configured) the deterministic-rules fallback runs instead, badged "Rules (fallback)" with the
-reason shown.
+reason shown. A demo gap that has never had a recording made for it (`gap_tea_ds04`) still seeds
+from the scripted stub and is badged "Scripted fixture" -- that branch of the seeding logic is
+still exercised, just not by the flagship gap anymore.
 
 ## Why this generalizes: one decision loop, not a promo bot
 
@@ -196,7 +193,7 @@ fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.m
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
 | Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | Apparel catalogue (~350 SKUs) and ~485 style requests (`tenant_counts.json`) | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
 | Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | Garment and selfie photo fixtures: generated colour swatches, never real photos (`docs/DECISIONS.md` §5.9) | -- |
-| The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan: scripted planner fixture, not a recorded Gemini trace (`infra/Dockerfile.api`) | -- |
+| The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
 
 ## Related work
 

@@ -1,0 +1,24 @@
+Local `docker build -f infra/Dockerfile.api -t taal-api-test .` (built successfully, 692MB image).
+
+=== bare `python` (the interpreter infra/deploy.sh's --command python invoked directly, bypassing uv's environment) ===
+$ docker run --rm --entrypoint python taal-api-test:latest -c "import google.cloud.bigquery, pydantic; print('OK bare python:', google.cloud.bigquery.__file__)"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'google'
+
+=== `uv run python` (the fixed invocation: --command uv --args="run,python,-m,..." ) ===
+$ docker run --rm --entrypoint uv taal-api-test:latest run python -c "import google.cloud.bigquery, pydantic; print('OK uv run python:', google.cloud.bigquery.__file__)"
+   Building taal @ file:///app
+      Built taal @ file:///app
+Uninstalled 1 package in 1ms
+Installed 1 package in 1ms
+OK uv run python: /app/.venv/lib/python3.11/site-packages/google/cloud/bigquery/__init__.py
+
+CONCLUSION: bare `python` reproduces the exact 27 Sep failure
+("ModuleNotFoundError: No module named 'google'") byte-for-byte. google-cloud-bigquery is
+installed only into uv's managed virtualenv (.venv), which `uv sync --frozen --no-dev` creates;
+the base image's bare `python` interpreter (system site-packages) never sees it. infra/deploy.sh's
+`--command python --args="-m,jobs.sense"` (and jobs.measure) invoked that bare interpreter
+directly, bypassing uv entirely -- exactly the bug this PR fixes, matching the Firestore-mirror
+job at deploy.sh:237 which already used the correct `--command uv --args="run,python,..."` form.
+No further investigation needed: this is the root cause, not a secondary symptom.
