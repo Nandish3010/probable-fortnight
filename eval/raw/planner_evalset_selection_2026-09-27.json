@@ -1,0 +1,529 @@
+{
+  "selected_at": "2026-09-27",
+  "label": "seeded (synthetic tenant, generator seed 20260912)",
+  "tenant": {
+    "seed": 20260912,
+    "as_of": "2026-09-12",
+    "gaps_total": 555
+  },
+  "n": 50,
+  "rule": "1. Only planner-eligible gaps (agents/planner/governor.planner_eligible: rupees at stake >= the\n   tenant's min_rupees_at_stake_for_planner). An ineligible gap never reaches the model -- the Cost\n   Governor skips it -- so it has no model trajectory to record or evaluate.\n2. The five gaps that already had evalsets (PINNED) are always in.\n3. A stratum is (gap type, node kind); node kind is nodes.type (dark_store or outlet). Every\n   non-empty eligible stratum gets min(its size, FLOOR) gaps, pinned gaps counting towards it.\n4. The remaining slots go to strata in proportion to their eligible size (largest remainder),\n   never more than a stratum has.\n5. Inside a stratum, gaps are sorted by rupees at stake (desc, then gap_id) and picked at evenly\n   spaced ranks, so the selection spans the at-stake range instead of only the largest gaps.",
+  "floor_per_stratum": 4,
+  "pinned": [
+    "gap_kaju_ds01",
+    "gap_chips_ds07",
+    "gap_tea_ds04",
+    "gap_quinoa_out02",
+    "gap_cola_ds07"
+  ],
+  "strata": {
+    "online_sellby_breach/dark_store": {
+      "gaps": 330,
+      "eligible": 302,
+      "selected": 23
+    },
+    "expiry_writeoff/outlet": {
+      "gaps": 114,
+      "eligible": 86,
+      "selected": 9
+    },
+    "stockout_risk/dark_store": {
+      "gaps": 4,
+      "eligible": 4,
+      "selected": 4
+    },
+    "stockout_risk/outlet": {
+      "gaps": 51,
+      "eligible": 1,
+      "selected": 1
+    },
+    "slow_mover/dark_store": {
+      "gaps": 7,
+      "eligible": 3,
+      "selected": 3
+    },
+    "slow_mover/outlet": {
+      "gaps": 40,
+      "eligible": 28,
+      "selected": 6
+    },
+    "rebalance/dark_store": {
+      "gaps": 3,
+      "eligible": 0,
+      "selected": 0
+    },
+    "rebalance/outlet": {
+      "gaps": 1,
+      "eligible": 0,
+      "selected": 0
+    },
+    "assortment_gap/dark_store": {
+      "gaps": 5,
+      "eligible": 4,
+      "selected": 4
+    }
+  },
+  "not_covered": {
+    "strata_with_gaps_but_none_eligible": [
+      "rebalance/dark_store",
+      "rebalance/outlet"
+    ],
+    "strata_with_no_gaps_in_tenant": [
+      "online_sellby_breach/outlet",
+      "expiry_writeoff/dark_store",
+      "assortment_gap/outlet"
+    ]
+  },
+  "gaps": [
+    {
+      "gap_id": "gap_tea_ds04",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-04",
+      "sku": "SKU-DARJEELING-TEA-100G",
+      "rupees_at_stake": 35020.0,
+      "pinned": true
+    },
+    {
+      "gap_id": "gap_f719d5e87b",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-TONED-MILK-500ML",
+      "rupees_at_stake": 29565.82,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_21c1125721",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-09",
+      "sku": "SKU-FULL-CREAM-MILK-1L",
+      "rupees_at_stake": 15751.81,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_6e796bcc5b",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-02",
+      "sku": "SKU-FLAVOURED-MILK-400G",
+      "rupees_at_stake": 11544.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_chips_ds07",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-MASALA-CHIPS-200G",
+      "rupees_at_stake": 9200.0,
+      "pinned": true
+    },
+    {
+      "gap_id": "gap_c02e766d28",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-04",
+      "sku": "SKU-MILK-BREAD-400G",
+      "rupees_at_stake": 9190.68,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_9e4c488516",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-10",
+      "sku": "SKU-FLAVOURED-MILK-400G",
+      "rupees_at_stake": 7696.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_ad08c43194",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-02",
+      "sku": "SKU-PANEER-400G",
+      "rupees_at_stake": 6205.59,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_9426bef03a",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-06",
+      "sku": "SKU-MILK-BREAD-400G",
+      "rupees_at_stake": 4998.44,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_1eb3203f9f",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-CREAM-BUN-200G",
+      "rupees_at_stake": 4402.3,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_7dee46ec8c",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-MILK-BREAD-200G",
+      "rupees_at_stake": 3911.46,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_3f99699ca7",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-02",
+      "sku": "SKU-MILK-BREAD-400G",
+      "rupees_at_stake": 3345.73,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_5ba1aa5d88",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-CHEESE-SLICES-500ML",
+      "rupees_at_stake": 2946.5,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_ed96b445e2",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-06",
+      "sku": "SKU-CURD-200G",
+      "rupees_at_stake": 2545.79,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_dad278ba64",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-10",
+      "sku": "SKU-CURD-400G",
+      "rupees_at_stake": 2326.6,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_8dfe823c2b",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-CHEESE-SLICES-1L",
+      "rupees_at_stake": 2065.28,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_6626556f14",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-03",
+      "sku": "SKU-RUSK-400G",
+      "rupees_at_stake": 1842.5,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_cb40286835",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-04",
+      "sku": "SKU-RUSK-200G",
+      "rupees_at_stake": 1571.5,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_8dec04ade8",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-04",
+      "sku": "SKU-RUSK-400G",
+      "rupees_at_stake": 1340.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_56649f4666",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-09",
+      "sku": "SKU-MILK-BREAD-200G",
+      "rupees_at_stake": 1069.32,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_f7615ac8a8",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-05",
+      "sku": "SKU-MILK-BREAD-400G",
+      "rupees_at_stake": 886.82,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_5385f1b9ca",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-06",
+      "sku": "SKU-CREAM-500ML",
+      "rupees_at_stake": 696.54,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_e74b6f1368",
+      "type": "online_sellby_breach",
+      "node_kind": "dark_store",
+      "node_id": "DS-05",
+      "sku": "SKU-BUTTER-500ML",
+      "rupees_at_stake": 501.48,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_7bcc0cc853",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-01",
+      "sku": "SKU-CREAM-400G",
+      "rupees_at_stake": 8641.36,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_7eb16d4ac6",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-02",
+      "sku": "SKU-CURD-200G",
+      "rupees_at_stake": 5287.41,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_050bdb383a",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-03",
+      "sku": "SKU-WHEAT-BREAD-400G",
+      "rupees_at_stake": 3091.92,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_8e086baba7",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-02",
+      "sku": "SKU-KHARI-400G",
+      "rupees_at_stake": 2356.2,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_b70cecc625",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-06",
+      "sku": "SKU-MILK-BREAD-400G",
+      "rupees_at_stake": 1773.64,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_b2b3cdd33b",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-05",
+      "sku": "SKU-CREAM-BUN-400G",
+      "rupees_at_stake": 1244.44,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_c6fc27127d",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-03",
+      "sku": "SKU-MULTIGRAIN-BREAD-200G",
+      "rupees_at_stake": 975.24,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_ef8e390fdd",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-02",
+      "sku": "SKU-MILK-BREAD-200G",
+      "rupees_at_stake": 647.22,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_255b01502c",
+      "type": "expiry_writeoff",
+      "node_kind": "outlet",
+      "node_id": "OUT-06",
+      "sku": "SKU-MILK-BREAD-200G",
+      "rupees_at_stake": 506.52,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_kaju_ds01",
+      "type": "stockout_risk",
+      "node_kind": "dark_store",
+      "node_id": "DS-01",
+      "sku": "SKU-KAJU-KATLI-250G",
+      "rupees_at_stake": 1100.0,
+      "pinned": true
+    },
+    {
+      "gap_id": "gap_cola_ds02",
+      "type": "stockout_risk",
+      "node_kind": "dark_store",
+      "node_id": "DS-02",
+      "sku": "SKU-COLA-ZERO-500ML",
+      "rupees_at_stake": 650.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_cola_ds07",
+      "type": "stockout_risk",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "SKU-COLA-ZERO-500ML",
+      "rupees_at_stake": 590.0,
+      "pinned": true
+    },
+    {
+      "gap_id": "gap_kaju_ds03",
+      "type": "stockout_risk",
+      "node_kind": "dark_store",
+      "node_id": "DS-03",
+      "sku": "SKU-KAJU-KATLI-250G",
+      "rupees_at_stake": 500.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_f6c4f8c850",
+      "type": "stockout_risk",
+      "node_kind": "outlet",
+      "node_id": "OUT-02",
+      "sku": "SKU-BESAN-LADOO-1KG",
+      "rupees_at_stake": 573.08,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_2a3539033c",
+      "type": "slow_mover",
+      "node_kind": "dark_store",
+      "node_id": "DS-03",
+      "sku": "SKU-ASSAM-GOLD-TEA-100G",
+      "rupees_at_stake": 1198.86,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_43722614ab",
+      "type": "slow_mover",
+      "node_kind": "dark_store",
+      "node_id": "DS-10",
+      "sku": "SKU-ASSAM-GOLD-TEA-100G",
+      "rupees_at_stake": 1198.86,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_704ad364e3",
+      "type": "slow_mover",
+      "node_kind": "dark_store",
+      "node_id": "DS-08",
+      "sku": "SKU-QUINOA-500G",
+      "rupees_at_stake": 570.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_quinoa_out02",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-02",
+      "sku": "SKU-QUINOA-500G",
+      "rupees_at_stake": 11210.0,
+      "pinned": true
+    },
+    {
+      "gap_id": "gap_2e7621a152",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-06",
+      "sku": "SKU-ASSAM-GOLD-TEA-250G",
+      "rupees_at_stake": 2358.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_e4a6ba2f01",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-01",
+      "sku": "SKU-ASSAM-GOLD-TEA-100G",
+      "rupees_at_stake": 1198.86,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_7c3fb48027",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-06",
+      "sku": "SKU-MASALA-CHAI-BLEND-100G",
+      "rupees_at_stake": 809.58,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_cfa43fb303",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-05",
+      "sku": "SKU-DARJEELING-TEA-100G",
+      "rupees_at_stake": 680.0,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_a15466e60f",
+      "type": "slow_mover",
+      "node_kind": "outlet",
+      "node_id": "OUT-05",
+      "sku": "SKU-MOTICHOOR-LADOO-1KG",
+      "rupees_at_stake": 570.64,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_blazer_ds07",
+      "type": "assortment_gap",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "APP-BLAZER-BLACK-U",
+      "rupees_at_stake": 8397.2,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_91ede39301",
+      "type": "assortment_gap",
+      "node_kind": "dark_store",
+      "node_id": "DS-07",
+      "sku": "APP-BANGLES-IVORY-W",
+      "rupees_at_stake": 3343.6,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_39bdd7d3e1",
+      "type": "assortment_gap",
+      "node_kind": "dark_store",
+      "node_id": "DS-09",
+      "sku": "APP-TUNIC-LAVENDER-W",
+      "rupees_at_stake": 3182.88,
+      "pinned": false
+    },
+    {
+      "gap_id": "gap_92bbd43ff4",
+      "type": "assortment_gap",
+      "node_kind": "dark_store",
+      "node_id": "DS-10",
+      "sku": "APP-TUNIC-LAVENDER-W",
+      "rupees_at_stake": 1060.96,
+      "pinned": false
+    }
+  ]
+}
