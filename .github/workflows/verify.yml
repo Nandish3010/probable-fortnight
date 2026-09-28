@@ -115,3 +115,20 @@ jobs:
       - name: Confirm the authenticated identity (must be taal-deploy)
         run: gcloud auth list --format="value(account)"
       - run: bash infra/deploy.sh
+
+  smoke:
+    # Gate: a deploy that ships a broken live path (e.g. the taal-agents memory limit that
+    # 503'd every POST /approve on 2026-09-28, runs 36445374014 / 36445971526) must fail the
+    # pipeline, not just get caught later by smoke.yml's separate weekly schedule. Runs the same
+    # infra/smoke_test.sh smoke.yml runs (health x2, a real gap, a real approve, a real chat
+    # reply) against the same default live URLs, immediately after deploy.sh finishes.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: infra/smoke_test.sh against the live URL (health, a real gap, a real approve, a real chat reply)
+        env:
+          TAAL_AGENTS_URL: https://taal-agents-2obkp776ca-el.a.run.app
+          TAAL_WEB_URL: https://taal-web-2obkp776ca-el.a.run.app
+        run: bash infra/smoke_test.sh
