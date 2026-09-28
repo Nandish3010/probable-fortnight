@@ -10,7 +10,7 @@ test.describe("Management: outcomes", () => {
     await expect(page.getByRole("heading", { name: "Outcomes" })).toBeVisible();
     await expect(page.getByText(/No plays measured yet/)).toBeVisible();
     // Built once with the tenant: present before this visitor measures anything, and unchanged after.
-    const priorLine = page.locator(".prior-update").getByText(/Estimator prior: Beta\(1,19\) → Beta\(15,292\) · SYNTHETIC orders/);
+    const priorLine = page.locator(".prior-update").getByText(/Estimator prior: Beta\(1,19\) → Beta\(17,319\) · SYNTHETIC orders/);
     await expect(priorLine).toBeVisible();
     await shot(page, "mgmt-01-empty");
 

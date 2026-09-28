@@ -27,8 +27,11 @@ wins.
   `eval/raw/sessions_cache_2026-09-27`), which `infra/deploy.sh` sets only when a maintainer flips
   `ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so it is off in
   the deployed service. In the deployed service Firestore stores practitioner feedback only.
-- The Play Desk's plan and planner trace in the deployed app are the replayed nightly plan
-  (scripted planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
+- **28 Sep 2026 update:** the flagship gap's (`gap_chips_ds07`) plan and planner trace in the
+  deployed app are now a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`,
+  seeded by `harness/seed_plays.py`), badged `Recorded from Gemini · <date>` -- not the replayed
+  nightly plan. Every other demo gap's plan and trace is still the replayed nightly plan (scripted
+  planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
 - Claims that no forecasting tool or competitor sees the online sell-by date read as: "Forecasting
   tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap
   type."

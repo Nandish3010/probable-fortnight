@@ -296,8 +296,8 @@ EOF
 gcloud run jobs deploy taal-sense \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-sense" \
-  --command python \
-  --args="-m,jobs.sense" \
+  --command uv \
+  --args="run,python,-m,jobs.sense" \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery,TAAL_FORECAST_BACKEND=bigquery_timesfm"
 
 echo "-- creating the nightly Cloud Scheduler trigger (01:30 IST = 20:00 UTC) --"
@@ -329,8 +329,8 @@ EOF
 gcloud run jobs deploy taal-measure \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-measure" \
-  --command python \
-  --args="-m,jobs.measure" \
+  --command uv \
+  --args="run,python,-m,jobs.measure" \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery"
 
 echo "-- creating the taal-measure-nightly Cloud Scheduler trigger (30 min after Sense: 02:00 IST = 20:30 UTC) --"

@@ -38,6 +38,7 @@ from services.feedback.store import feedback_backend
 from services.feedback.summary import exclusion_config as feedback_exclusion_config
 from services.feedback.summary import summarize as summarize_feedback
 
+from .approve import WindowExpired
 from .approve import approve as do_approve
 from .health_probes import firestore_check, sessions_check
 from .sandbox import base_dir, store_for, visitor_id
@@ -371,6 +372,8 @@ def approve_play(req: ApproveRequest, store: LocalStore = Depends(store_for)) ->
         return do_approve(store, load_tenant(), req.play_id, _now(), req.holdout_fraction, req.rationale, req.edits, req.approved_by or "judge", as_of=_as_of(store))
     except KeyError as e:
         raise HTTPException(404, f"unknown play {e}") from e
+    except WindowExpired as e:
+        raise HTTPException(409, str(e)) from e
 
 
 # ----------------------------------------------------------------------------- async re-plan runs

@@ -1,0 +1,174 @@
+{
+  "run_id": "run_chips_ds07_v1_71596554",
+  "play": {
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 12.28% (net price 28.50, cost 25.00) vs snacks floor 8.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 0 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "outlet channel: no personal message, consent not required"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "no active subscribers of SKU-MASALA-CHIPS-200G in audience"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "no stockout gap for SKU-MASALA-CHIPS-200G at DS-07"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "4 number(s) in rationale all cited; 4 citation(s) resolve"
+      }
+    ],
+    "gap_id": "gap_chips_ds07",
+    "channel": "outlet",
+    "window": {
+      "start": "2026-09-12T00:00:00Z",
+      "end": "2026-09-18T23:59:59Z"
+    },
+    "rationale": "This play addresses an online sell-by breach for Masala Chips 200G by offering a 5% markdown at the outlet. This mechanic was chosen as transfers to other nodes resulted in negative expected margins, and the policy prefers markdowns as a last resort for such gaps. The expected margin for this play is 80.43 INR, with 22.98 units expected to be sold, avoiding 574.48 INR in waste. The markdown ensures the net margin remains above the category floor of 8%.",
+    "objective": "clear_online_sellby",
+    "expected_outcome": {
+      "measured_n": 0,
+      "prior_n": 20,
+      "ci_low": 1.24,
+      "margin_inr": 80.43,
+      "estimator_version": "est-v1",
+      "waste_avoided_inr": 574.48,
+      "discount_cost_inr": 34.47,
+      "units": 22.98,
+      "ci_high": 67.04
+    },
+    "alternatives": [
+      {
+        "mechanic_params": {
+          "transfer_units": 368,
+          "transfer_to_node": "OUT-03"
+        },
+        "expected_units": 22.98,
+        "rejected_because": "negative expected margin",
+        "expected_margin_inr": -161.52,
+        "mechanic": "transfer_plus_nudge"
+      },
+      {
+        "mechanic_params": {
+          "transfer_units": 368,
+          "transfer_to_node": "OUT-04"
+        },
+        "expected_units": 22.98,
+        "rejected_because": "negative expected margin",
+        "expected_margin_inr": -161.52,
+        "mechanic": "transfer_plus_nudge"
+      }
+    ],
+    "counterfactuals": {
+      "blanket_markdown_pct": 5,
+      "do_nothing_inr": 9200,
+      "blanket_markdown_inr": 8947.19
+    },
+    "audience": {
+      "purpose": "marketing",
+      "segment_ids": [
+        "seg_5",
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_4",
+        "seg_6"
+      ],
+      "size_before_consent": 476,
+      "filters": {},
+      "size_after_consent": 334
+    },
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_chips_ds07"
+      },
+      {
+        "type": "estimator",
+        "ref": "est-v1"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      },
+      {
+        "ref": "sense_20260912_baseline_2aaad73c",
+        "type": "forecast"
+      }
+    ],
+    "holdout": {
+      "min_treated_n": 20,
+      "fraction": 0.1,
+      "seed": "seed-play_gap_chips_ds07_v1_markdown"
+    },
+    "play_id": "play_chips_ds07_v1",
+    "mechanic": "outlet_markdown",
+    "copy": {
+      "variants": [],
+      "copy_status": "pending",
+      "language_set": [
+        "en"
+      ]
+    },
+    "mechanic_params": {
+      "markdown_pct": 5
+    },
+    "target": {
+      "node_ids": [
+        "DS-07"
+      ],
+      "sku": "SKU-MASALA-CHIPS-200G",
+      "units": 368,
+      "deadline_type": "online_sellby",
+      "deadline_date": "2026-09-18",
+      "batch_ids": [
+        "B-CHIPS-DS07-01"
+      ]
+    },
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_chips_ds07_v1_71596554",
+    "cost": {
+      "plan_cost_inr": 1.51,
+      "conversation_budget_inr": 43.42,
+      "pct_of_rupees_at_stake": 0.488
+    },
+    "source": "live_gemini"
+  },
+  "status": "proposed",
+  "iterations": 3,
+  "policy_version": "v1",
+  "elapsed_ms": 36966,
+  "planner_source": "model",
+  "fallback_reason": null,
+  "source": "live_gemini",
+  "wall_time_s": 37.064,
+  "started_at": "2026-09-28T10:31:12Z",
+  "finished_at": "2026-09-28T10:31:49Z"
+}

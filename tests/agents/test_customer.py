@@ -1,5 +1,6 @@
 """The 20 scripted conversations under fixtures/conversations run against the stub Customer Agent in a
-sandbox. `__TREATED_EN__` / `__HOLDOUT__` are resolved from the approved play's assignments."""
+sandbox. `__TREATED_EN__` / `__TREATED_KN__` / `__HOLDOUT__` are resolved from the approved play's
+assignments."""
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,7 +25,8 @@ def _resolve(customer_id: str, sandbox, play_id: str | None) -> str:
     rows = [a for a in sandbox.read("play_assignments") if a["play_id"] == play_id]
     if customer_id == "__HOLDOUT__":
         return next(a["customer_id"] for a in rows if a["arm"] == "holdout")
-    return next(a["customer_id"] for a in rows if a["arm"] == "treated" and lang.get(a["customer_id"]) == "en")
+    want_lang = "kn" if customer_id == "__TREATED_KN__" else "en"
+    return next(a["customer_id"] for a in rows if a["arm"] == "treated" and lang.get(a["customer_id"]) == want_lang)
 
 
 @pytest.mark.parametrize("path", CONVOS, ids=[p.stem for p in CONVOS])
