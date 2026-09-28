@@ -53,7 +53,21 @@ test.describe("Arjun: Play Desk", () => {
     const policy = card.locator("textarea").last();
     const text = await policy.inputValue();
     await policy.fill(text.replace("; prefer transfers for premium tea", ""));
+
+    // POST /rerun now answers in 202 almost immediately and the planner keeps running after that
+    // (services/api/main.py); a stub run can finish in a second or two, which would race past the
+    // live-replan panel before this test could ever observe it. Delay the SSE stream's response
+    // (fetch it for real, wait, then hand it back) so the panel is provably visible before the
+    // eventual result, without fabricating any data -- every record the page receives is still the
+    // real run's own trace.
+    await page.route("**/events/*/stream", async (route) => {
+      const response = await route.fetch();
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.fulfill({ response });
+    });
+
     await card.getByRole("button", { name: /Change policy/ }).click();
+    await expect(page.getByTestId("live-replan")).toBeVisible();
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
     await expect(card.getByText(/v2/).first()).toBeVisible();
     await shot(page, "arjun-05-replan");

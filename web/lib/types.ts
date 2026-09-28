@@ -46,6 +46,12 @@ export type PlayStatus =
   | "measured"
   | "unmeasured";
 
+export type PlanSource =
+  | "recorded_gemini"
+  | "scripted_stub"
+  | "deterministic_rules"
+  | "live_gemini";
+
 export interface PlayTarget {
   sku: string;
   node_ids: string[];
@@ -180,6 +186,7 @@ export interface Play {
   approved_at?: string;
   edits?: PlayEdit[];
   cost?: PlayCost;
+  source?: PlanSource;
 }
 
 // ---------- gap.schema.json ----------
@@ -359,14 +366,43 @@ export interface RerunRequest {
   policy_version?: string;
 }
 
-export interface RerunResponse {
+// POST /rerun's 202 body (services/api/main.py's RerunAccepted): the planner keeps running on a
+// worker thread after this response lands -- poll status_url (getRerunStatus) or follow
+// stream_url (streamRerun) for the outcome.
+export interface RerunAccepted {
   run_id: string;
-  play: Play;
+  status: "running";
+  gap_id: string;
   policy_version: string;
-  source: Source;
+  backend: "stub" | "vertex";
+  deadline_s: number;
+  stream_url: string;
+  status_url: string;
+}
+
+// The run's outcome: GET /rerun/{run_id}'s own "result" field, and the SSE stream's terminal
+// `event: done` frame data (services/api/main.py's _run_replan_worker / _live_follow_events).
+// Most fields are absent when status is "error" (only run_id/status/error are set then).
+export interface RerunResult {
+  run_id: string;
+  status: "proposed" | "no_play" | "error";
+  play?: Play | null;
+  policy_version?: string;
+  iterations?: number;
+  elapsed_ms?: number;
+  source?: PlanSource | null;
   planner_source?: "model" | "deterministic_fallback" | null;
   fallback_reason?: string | null;
-  iterations?: number;
+  error?: string;
+}
+
+// GET /rerun/{run_id} (services/api/main.py's rerun_status).
+export interface RerunStatus {
+  run_id: string;
+  status: "running" | "done" | "error";
+  started_at: string;
+  finished_at?: string | null;
+  result?: RerunResult | null;
 }
 
 export interface TraceEvent {
@@ -380,11 +416,27 @@ export interface TraceEvent {
   function_call?: { name: string; args?: Record<string, unknown> };
   function_response?: { name: string; response?: Record<string, unknown> };
   level?: "info" | "warn" | "error" | "ok";
+  // Present only on the trace's one terminal record (agents/planner/run.py always ends a trace
+  // with kind: "run_summary"): the planner's own account of how the run finished.
+  kind?: "run_summary";
+  source?: PlanSource;
+  status?: "proposed" | "no_play" | "skipped";
+  fallback_reason?: string | null;
+  // A seeded recording's run_summary only (harness/recorded_traces.py's _seeded_trace_text):
+  // when this run_summary was recorded, distinct from the run itself (`timestamp` above).
+  recorded_at?: string;
+  // Present when the model call reported token usage (never on a scripted_stub run) -- either on
+  // the individual event that reported it, or (run_summary only) the run's total.
+  usage?: Record<string, number>;
+  elapsed_ms?: number;
 }
 
 export interface EventsResponse {
   run_id: string;
   recorded_at?: string;
+  // The trace's own run_summary record's `source`, or null/absent when the trace has none
+  // (services/api/main.py's _run_summary_source).
+  source?: PlanSource | null;
   events: TraceEvent[];
 }
 

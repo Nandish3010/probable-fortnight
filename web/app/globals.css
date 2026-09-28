@@ -25,6 +25,11 @@
   --live-text: #096f66;
   --replay-text: #595b92;
   --muted-badge-text: #454a55;
+  /* "recorded" (Recorded from Gemini) and "rules" (Rules fallback) badges (Badge.tsx): the same
+     darker-for-light-mode / same-as-base-for-dark-mode pattern as --live-text/--replay-text
+     above, each verified >=4.5:1 against its own kind's 14% tint on --surface. */
+  --recorded-text: #a83f08;
+  --warn-text: #875a0b;
   --focus: #4f46e5;
   --radius: 12px;
   --radius-sm: 8px;
@@ -68,6 +73,8 @@
     --live-text: #2dd4bf;
     --replay-text: #9aa1e8;
     --muted-badge-text: #9aa0b3;
+    --recorded-text: #fb923c;
+    --warn-text: #e0ab4e;
     --focus: #8b85f7;
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -104,6 +111,8 @@
   --live-text: #2dd4bf;
   --replay-text: #9aa1e8;
   --muted-badge-text: #9aa0b3;
+  --recorded-text: #fb923c;
+  --warn-text: #e0ab4e;
   --focus: #8b85f7;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -433,6 +442,46 @@ p {
   background: color-mix(in srgb, var(--text-muted) 16%, var(--surface));
   color: var(--muted-badge-text);
   border-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
+}
+
+/* Play provenance kinds (SourceBadge.tsx / PlanSource): "Recorded from Gemini" is a committed,
+   validated real-Gemini planner transcript -- distinct from a REPLAY (an unspecified recorded
+   fixture) or SYNTHETIC (fabricated data). --recorded-text is a darkened --accent-2 verified
+   >=4.5:1 against this tint on --surface in light mode; dark mode reuses --accent-2 itself. */
+.badge--recorded {
+  background: color-mix(in srgb, var(--accent-2) 14%, var(--surface));
+  color: var(--recorded-text);
+  border-color: color-mix(in srgb, var(--accent-2) 35%, transparent);
+}
+
+/* "Scripted fixture": the stub backend standing in for Gemini (scripted_stub) -- visually grouped
+   with REPLAY (both are "not live"), same tokens, different label. */
+.badge--scripted {
+  background: color-mix(in srgb, var(--replay) 14%, var(--surface));
+  color: var(--replay-text);
+  border-color: color-mix(in srgb, var(--replay) 35%, transparent);
+}
+
+/* "Rules (fallback)": the deterministic draft that stands in when the model path did not produce
+   a play in time -- amber, not REPLAY (a rules play was never recorded from anything) and not
+   SYNTHETIC. --warn-text is a darkened --warn verified >=4.5:1 in light mode; dark mode reuses
+   --warn itself. */
+.badge--rules {
+  background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  color: var(--warn-text);
+  border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+}
+
+/* "Live · Gemini": a real Vertex call in progress or just completed -- same tokens and pulsing
+   dot as LIVE, a different label for the more specific claim. */
+.badge--live-gemini {
+  background: color-mix(in srgb, var(--live) 14%, var(--surface));
+  color: var(--live-text);
+  border-color: color-mix(in srgb, var(--live) 35%, transparent);
+}
+
+.badge--live-gemini::before {
+  animation: pulseDot 1.8s ease-out infinite;
 }
 
 .badge__detail {
@@ -1332,6 +1381,11 @@ textarea:focus-visible {
   margin-bottom: 8px;
 }
 
+.trace-panel__run-id {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+}
+
 .trace-panel__list {
   list-style: none;
   padding: 0;
@@ -1481,6 +1535,26 @@ textarea:focus-visible {
   word-break: break-word;
   max-height: 220px;
   overflow-y: auto;
+}
+
+/* ---------- live re-plan ---------- */
+
+.live-replan__status {
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.live-replan__timing {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  margin: 0 0 10px;
+}
+
+.re-plan-result__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
 }
 
 /* ---------- policy editor ---------- */
