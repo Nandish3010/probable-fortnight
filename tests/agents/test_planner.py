@@ -141,7 +141,13 @@ def _records(gap_id: str, names: list[str], verdicts: list[bool], final_text: st
         resp = {"valid": next(v), "errors": []} if n == "propose_play" else {}
         recs.append({"kind": "event", "event": {"author": "planner", "content": {"parts": [{"function_response": {"name": n, "response": resp}}]}}})
     recs.append({"kind": "event", "event": {"author": "planner", "content": {"parts": [{"text": final_text}]}}})
-    recs.append({"kind": "result", "status": "proposed", "planner_source": "model", "play": {"play_id": final_text.split()[-1]}})
+    if final_text:
+        recs.append({"kind": "result", "status": "proposed", "planner_source": "model", "play": {"play_id": final_text.split()[-1]}})
+    else:
+        # the real no_play recordings (eval/raw/planner_traces_2026-09-28/): the model's own
+        # conversation ends with no play and no text; run.py's deterministic fallback then
+        # proposes one outside the model's turn, labelled planner_source=deterministic_fallback.
+        recs.append({"kind": "result", "status": "no_play", "planner_source": "deterministic_fallback", "fallback_reason": "no_play after 0 iteration(s)", "play": None})
     return recs
 
 
@@ -208,3 +214,44 @@ def test_stub_replay_reports_a_rejected_play_instead_of_the_recorded_done():
     out = StubPlannerLlm()._replay(rec, t, {}, [], [], {}, {"propose_play": [{"valid": False}]})
     text = out.content.parts[0].text
     assert text.startswith("Replay diverged") and "DONE" not in text
+
+
+@pytest.mark.parametrize("gap_id", ["gap_255b01502c", "gap_7bcc0cc853", "gap_8dec04ade8"])
+def test_stub_replay_faithfully_reproduces_a_no_play_recording(sandbox, tmp_path, monkeypatch, gap_id):
+    """These three 2026-09-28 recordings (eval/raw/planner_traces_2026-09-28/) are cases where the
+    real model called estimate_outcomes once and then produced no propose_play and no closing text
+    (MALFORMED_FUNCTION_CALL twice, per the raw trace) -- run.py's own deterministic fallback then
+    proposes a play outside the model's conversation, but the recorded evalset's tool_names/
+    final_text (what the model itself did) is exactly ["estimate_outcomes"] / "". The replay must
+    stop there too, not fall through to a fabricated play: this is why adk eval's stub-with-replay
+    run scores 47/50 rather than 50/50 on these three -- tool_trajectory_avg_score is 1.0 (exact
+    match) but response_match_score is 0.0 because ADK's RougeEvaluator scores empty-vs-empty text
+    as 0.0 fmeasure (see test_rouge1_of_empty_vs_empty_is_zero_not_the_replays_fault below), not
+    because the replay diverges. There is no fix for this in the replay: never fabricate text the
+    model did not say to chase a metric that cannot score silence as a match."""
+    es = evalset_from_trace(gap_id, _records(gap_id, ["estimate_outcomes"], [], ""), _summary(), "x")
+    (tmp_path / f"{gap_id}.evalset.json").write_text(json.dumps(es))
+    monkeypatch.setenv("TAAL_STUB_TRAJECTORY", "recorded")
+    monkeypatch.setenv("TAAL_STUB_TRAJECTORY_DIR", str(tmp_path))
+    out = _run(sandbox, gap_id)
+    assert _trajectory(out["events"]) == ["estimate_outcomes"]
+    assert "propose_play" not in _trajectory(out["events"])
+    # run.py's own deterministic fallback (never the model) is what proposes a play here, exactly
+    # as it did in the real recording (eval/raw/planner_traces_2026-09-28/summary.json).
+    assert out["status"] == "proposed" and out["planner_source"] == "deterministic_fallback"
+
+
+def test_rouge1_of_empty_vs_empty_is_zero_not_the_replays_fault():
+    """Documents the metric limitation behind the three FAILED response_match_score cases above:
+    ADK's RougeEvaluator (google.adk.evaluation.final_response_match_v1) scores rouge1 fmeasure
+    between the actual and expected final text. When the recorded (expected) text is empty --
+    a genuine, faithfully-replayed "the model said nothing" outcome -- rouge1 fmeasure is 0.0 for
+    any actual text, including a matching empty string. No change to stub_llm.py's replay can turn
+    this into a passing score without either fabricating text the model never said (never done) or
+    editing the evalset/criteria (also never done)."""
+    pytest.importorskip("rouge_score", reason="google-adk[eval] extra; not in uv.lock, see harness/run_evals.py")
+    from google.adk.dependencies.rouge_scorer import rouge_scorer
+
+    scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+    assert scorer.score("", "")["rouge1"].fmeasure == 0.0
+    assert scorer.score("anything the stub could say instead", "")["rouge1"].fmeasure == 0.0

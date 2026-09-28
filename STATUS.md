@@ -12,7 +12,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 | [Sense: gaps](harness/checklists/sense_gaps.md) | D | §2.3, §3.4, §5.2 | 10 of 10 | green: 13 passed, 0 failed, 0 skipped |
 | [Segments and substitutes](harness/checklists/segments_substitutes.md) | D | §5.2 | 6 of 6 | green: 4 passed, 0 failed, 0 skipped |
 | [Estimator and gate](harness/checklists/estimator_gate.md) | B | §2.5, §3.4, §17.5 | 9 of 9 | green: 210 passed, 0 failed, 0 skipped |
-| [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 10 | green: 18 passed, 0 failed, 0 skipped; via `make eval` |
+| [Planner Agent](harness/checklists/planner_agent.md) | B | §5.3, §12 | 8 of 10 | green: 21 passed, 0 failed, 1 skipped; via `make eval` |
 | [Approve and assignment](harness/checklists/approve_assignment.md) | B | §5.4, §5.6 | 7 of 7 | green: 27 passed, 0 failed, 0 skipped |
 | [Customer Agent](harness/checklists/customer_agent.md) | B | §5.5, §2.6 | 13 of 14 | green: 34 passed, 0 failed, 0 skipped |
 | [Stylist Agent](harness/checklists/stylist_agent.md) | B | §5.9 | 15 of 17 | green: 66 passed, 0 failed, 0 skipped |
@@ -20,7 +20,7 @@ Refresh with `make status` (runs the tests each checklist names and rewrites thi
 | [Voice (if kept)](harness/checklists/voice.md) | B | §5.1 | 0 of 4 | no tests yet (tests/agents/test_voice.py) |
 | [Measure](harness/checklists/measure.md) | D | §5.7, §5.8, §18.3 | 6 of 8 | green: 9 passed, 0 failed, 0 skipped |
 | [Web (Play Desk, phone view, chat, judge mode)](harness/checklists/web.md) | C | §5.6, §10 | 11 of 11 | via `make web-test` |
-| [Event log and replay](harness/checklists/event_log_replay.md) | B | §10 | 5 of 5 | green: 40 passed, 0 failed, 0 skipped |
+| [Event log and replay](harness/checklists/event_log_replay.md) | B | §10 | 5 of 5 | green: 43 passed, 0 failed, 1 skipped |
 | [Infra and deploy](harness/checklists/infra_deploy.md) | D | §4.1, §4.4, §4.5, §18.3 | 4 of 8 | green: 22 passed, 0 failed, 0 skipped; via `make secrets` |
 | [Docs and submission](harness/checklists/docs_submission.md) | A | §11a, §12, §13 | 5 of 9 | via `make docs` |
 
