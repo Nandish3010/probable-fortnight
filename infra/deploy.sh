@@ -301,12 +301,18 @@ gcloud run jobs deploy taal-sense \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery,TAAL_FORECAST_BACKEND=bigquery_timesfm"
 
 echo "-- creating the nightly Cloud Scheduler trigger (01:30 IST = 20:00 UTC) --"
+# The oauth-service-account-email must be a real, existing service account or `jobs create`
+# fails outright with NOT_FOUND (not "already exists" -- the `|| echo` fallback below used to
+# mask this). `taal-sense@${PROJECT}.iam.gserviceaccount.com` was never created (see the "Known
+# deviation" note in infra/README.md: iam.sh's three dedicated service accounts need
+# roles/iam.serviceAccountAdmin, which taal-deploy does not hold), so this used taal-deploy's own
+# identity instead, matching every other resource this script deploys under taal-deploy today.
 gcloud scheduler jobs create http taal-sense-nightly \
   --project "${PROJECT}" --location "${REGION}" \
   --schedule "0 20 * * *" \
   --uri "https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT}/jobs/taal-sense:run" \
   --http-method POST \
-  --oauth-service-account-email "taal-sense@${PROJECT}.iam.gserviceaccount.com" \
+  --oauth-service-account-email "taal-deploy@${PROJECT}.iam.gserviceaccount.com" \
   || echo "   (scheduler job already exists; run 'gcloud scheduler jobs update' to change it)"
 
 echo "-- building taal-measure image and deploying the Cloud Run Job (same image as taal-sense) --"
@@ -328,12 +334,15 @@ gcloud run jobs deploy taal-measure \
   --set-env-vars "TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_BATCH_STORE=bigquery"
 
 echo "-- creating the taal-measure-nightly Cloud Scheduler trigger (30 min after Sense: 02:00 IST = 20:30 UTC) --"
+# Same fix as taal-sense-nightly above: taal-sense@ was never created, so this job's create call
+# failed NOT_FOUND on every deploy (never actually created, just silently reported as "already
+# exists"), which is why the post-deploy verification below always failed on this trigger.
 gcloud scheduler jobs create http taal-measure-nightly \
   --project "${PROJECT}" --location "${REGION}" \
   --schedule "30 20 * * *" \
   --uri "https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT}/jobs/taal-measure:run" \
   --http-method POST \
-  --oauth-service-account-email "taal-sense@${PROJECT}.iam.gserviceaccount.com" \
+  --oauth-service-account-email "taal-deploy@${PROJECT}.iam.gserviceaccount.com" \
   || echo "   (scheduler job already exists; run 'gcloud scheduler jobs update' to change it)"
 
 # Post-deploy check: fails the deploy if either nightly job or trigger is missing (style of
