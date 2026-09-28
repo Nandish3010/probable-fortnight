@@ -1,59 +1,38 @@
 import { test, expect } from "@playwright/test";
 import { asVisitor, collectConsoleErrors, expectNoConsoleErrors } from "./helpers";
 
-// Provenance badges (Badge.tsx / SourceBadge.tsx) against the real stack, stub backend. Today no
-// real Gemini recording is committed (harness/recorded_traces.py finds none), so the flagship's
-// own trace is genuinely "scripted_stub" -- checked here with no injection at all. The other three
-// PlanSource values (recorded_gemini, live_gemini, deterministic_rules) cannot occur for real in
-// this environment (no recording, no Vertex credentials, and the stub backend basically never
-// misses its deadline), so those three tests inject a response with page.route to exercise each
-// badge's UI branch. Every injected value below is clearly fabricated (fake run ids, a round
-// elapsed_ms, an invented fallback reason) -- never a real measurement or a real recording.
+// Provenance badges (Badge.tsx / SourceBadge.tsx) against the real stack, stub backend. As of
+// 2026-09-28 a real, committed Gemini recording exists for the flagship gap
+// (eval/raw/planner_real_traces_2026-09-28/, harness/record_flagship_traces.py + 5 independent
+// real Vertex runs), and harness/seed_plays.py seeds it regardless of TAAL_MODEL_BACKEND -- so
+// the flagship's own trace is genuinely "recorded_gemini" here, checked with no injection at all.
+// A second, still-scripted demo gap (gap_tea_ds04 -- never had a recording made for it) proves the
+// "Scripted fixture" branch still works, also with no injection. The remaining two PlanSource
+// values (live_gemini, deterministic_rules) cannot occur for real in this environment (no Vertex
+// credentials, and the stub backend basically never misses its deadline), so those two tests
+// inject a response with page.route to exercise each badge's UI branch. Every injected value below
+// is clearly fabricated (fake run ids, a round elapsed_ms, an invented fallback reason) -- never a
+// real measurement or a real recording.
 test.describe("Play Desk: provenance badges (real stack, stub backend)", () => {
-  test("the real flagship trace badge reads Scripted fixture", async ({ page }) => {
+  test("the real flagship trace badge reads Recorded from Gemini · <date>", async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await asVisitor(page, "live-desk-sources-flagship");
     await page.goto("/desk");
     const inbox = page.getByLabel("Play inbox");
     await inbox.getByRole("button", { name: /Masala Chips 200G/ }).first().click();
     const card = page.getByTestId("play-detail");
-    await expect(card.locator(".trace-panel").getByText("Scripted fixture")).toBeVisible();
+    await expect(card.locator(".trace-panel").getByText(/Recorded from Gemini · \d{1,2} \S+ 2026/)).toBeVisible();
     await expectNoConsoleErrors(errors);
   });
 
-  test("Recorded from Gemini · <date> for a trace whose events response carries source recorded_gemini (injected fixture)", async ({ page }) => {
+  test("a scripted play (gap_tea_ds04, never recorded) still reads Scripted fixture", async ({ page }) => {
     const errors = collectConsoleErrors(page);
-    await asVisitor(page, "live-desk-sources-recorded");
-
-    // INJECTED FIXTURE, not real data: no committed recording exists in this repo, so GET
-    // /events/{run_id} never actually returns source "recorded_gemini" here. Fabricated to
-    // exercise TracePanel's "recorded" SourceBadge branch. Matches "**/events/*" only (one path
-    // segment), so the separate "/events/{run_id}/stream" route below is unaffected.
-    await page.route("**/events/*", async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          run_id: "run_injected_recorded",
-          recorded_at: "2026-09-20T10:00:00Z",
-          source: "recorded_gemini",
-          events: [
-            { seq: 0, run_id: "run_injected_recorded", invocation_id: "", author: "planner", timestamp: 1758361200, ts_offset_ms: 0, level: "info", text: "Plan gap_chips_ds07" },
-            {
-              seq: 1, run_id: "run_injected_recorded", invocation_id: "", author: "planner_run", kind: "run_summary",
-              timestamp: 1758361201, ts_offset_ms: 1000, level: "ok", source: "recorded_gemini", status: "proposed",
-              fallback_reason: null, recorded_at: "2026-09-20T10:00:00Z",
-              text: "Run finished: play proposed (recorded_gemini) in 1.0 s",
-            },
-          ],
-        }),
-      });
-    });
-
+    await asVisitor(page, "live-desk-sources-scripted");
     await page.goto("/desk");
     const inbox = page.getByLabel("Play inbox");
-    await inbox.getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    await inbox.getByRole("button", { name: /Darjeeling Tea 100G/ }).first().click();
     const card = page.getByTestId("play-detail");
-    await expect(card.locator(".trace-panel").getByText(/Recorded from Gemini · \d{1,2} \S+ 2026/)).toBeVisible();
+    await expect(card.locator(".trace-panel").getByText("Scripted fixture")).toBeVisible();
     await expectNoConsoleErrors(errors);
   });
 

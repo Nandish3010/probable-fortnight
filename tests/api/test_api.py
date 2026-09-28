@@ -117,6 +117,25 @@ def test_approve_is_idempotent_and_moves_the_forecast(client):
     assert b["assignment"] == a["assignment"]
 
 
+def test_approve_after_window_end_is_rejected_not_silently_inverted(client, monkeypatch):
+    """services/api/approve.py used to rewrite play["window"]["start"] to "now" unconditionally,
+    even when "now" is already past the original window end (whenever TAAL_NOW is unset and the
+    wall clock has drifted) -- producing an inverted, empty window that touches zero
+    future_regressors rows and returns 200 with no write-off movement. Now it fails loudly."""
+    monkeypatch.setenv("TAAL_NOW", "2027-01-01T00:00:00Z")  # well past every seeded play window
+    r = client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-expired"))
+    assert r.status_code == 409
+    body = r.json()["detail"]
+    assert "play window ended" in body and "TAAL_NOW=2027-01-01T00:00:00Z" in body
+
+
+def test_approve_before_window_end_still_succeeds(client):
+    """The other branch of the same guard: approving before the window ends is unaffected."""
+    r = client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-on-time"))
+    assert r.status_code == 200
+    assert r.json()["status"] == "approved"
+
+
 def test_two_visitors_are_isolated_and_reset_is_scoped(client):
     client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("visitor-a"))
     assert client.get("/plays/play_chips_ds07_v1", headers=_h("visitor-a")).json()["status"] == "approved"
@@ -142,7 +161,12 @@ def test_chat_sse_and_json(client):
     r = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Any offers today?"}, headers=_h("v-chat"))
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
     frames = [json.loads(line[5:]) for line in r.text.splitlines() if line.startswith("data:")]
-    assert frames and "ಬಳಕೆಗೆ ಉತ್ತಮ" in frames[0]["text"] and frames[0]["latency_ms"] >= 0
+    # play_chips_ds07_v1 is seeded from a real, committed Gemini recording as of 2026-09-28
+    # (eval/raw/planner_real_traces_2026-09-28/); the model chose English-only copy for it, so
+    # the offer text here is in English, not the Kannada it used to be under the scripted stub.
+    # Kannada offer delivery is still covered by fixtures/conversations/01_offer_delivered_kn.json
+    # (a scripted-stub play with the tenant's full language set).
+    assert frames and "Best before" in frames[0]["text"] and frames[0]["latency_ms"] >= 0
     r2 = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Do you have Cola Zero?"}, headers={**_h("v-chat"), "Accept": "application/json"})
     env = r2.json()[0]
     assert env["list"]["rows"] and len(env["list"]["rows"]) <= 10

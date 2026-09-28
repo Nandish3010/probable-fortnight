@@ -215,10 +215,28 @@ def find_substitutes(sku: str, node_id: str) -> list[dict]:
     return out
 
 
+def _resolve_pending_play_id(ctx, customer_id: str) -> str | None:
+    """This customer's own single undelivered, unredeemed offer's play_id, if there is exactly
+    one. `context_summary` (this module) deliberately never tells the model the real play_id
+    behind an offer -- only its customer-facing text -- so a model asked to act on an "add:<sku>"
+    button click (the sku is all the click carries) sometimes invents a play_id from the sku
+    instead (observed live: "PLAY-SKU-..." for a real id like "play_chips_ds07_v1"). Falling back
+    to the customer's own real pending offer here, rather than failing the order, is a pure
+    lookup with no guardrail bypass: apply_offer's own arm/consent/cap/no-stacking checks below
+    still run against whatever play_id this resolves to."""
+    redeemed = {ln["play_id"] for ln in ctx.store.read("order_lines") if ln["customer_id"] == customer_id and ln.get("play_id")}
+    candidates = {o["play_id"] for o in ctx.store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at") and o["play_id"] not in redeemed}
+    return next(iter(candidates)) if len(candidates) == 1 else None
+
+
 def apply_offer(play_id: str, customer_id: str) -> dict:
     """Whether this customer may redeem the play now: arm, consent, frequency cap, no stacking."""
     ctx = current()
     play = _play(ctx, play_id)
+    if not play or play.get("status") not in ("approved", "running"):
+        fallback_id = _resolve_pending_play_id(ctx, customer_id)
+        if fallback_id and fallback_id != play_id:
+            play_id, play = fallback_id, _play(ctx, fallback_id)
     if not play or play.get("status") not in ("approved", "running"):
         return {"ok": False, "reason": "play is not active"}
     arms = _arms(ctx, customer_id)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from harness.prior_update_demo import FLAGSHIP_PLAY_ID, build, check
 
-RAW = Path(__file__).resolve().parents[2] / "eval" / "raw" / "prior_update_2026-09-27.json"
+RAW = Path(__file__).resolve().parents[2] / "eval" / "raw" / "prior_update_2026-09-28.json"
 
 
 def _digest(p: Path) -> str:
