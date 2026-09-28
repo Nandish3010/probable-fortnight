@@ -6,8 +6,10 @@ Usage: python -m harness.build_eval_table
 This script never measures anything itself and never invents a number. It parses the real
 tables/sections already committed in `eval/evaluation.md` (and, for the two rows with no eval/
 raw file, the checklist + test that gate them in CI) and reassembles them, verbatim, into one
-markdown table keyed to the 13 §12 metrics. A §12 row with no genuine measurement yet is rendered
-as "not yet measured -- see eval/evaluation.md" rather than being silently dropped or guessed at.
+markdown table keyed to the 13 §12 metrics, plus one further row (14) for this branch's own
+planner live-re-plan work, which §12 does not name but the submission still owes an honest answer
+on. A row with no genuine measurement yet is rendered as "not yet measured -- see
+eval/evaluation.md" rather than being silently dropped or guessed at.
 
 Re-run this after any change to eval/evaluation.md so eval/evaluation_table.md never drifts from
 the raw evidence it summarises.
@@ -217,6 +219,16 @@ def build_rows() -> list[Row]:
     key = next(k for k in not_measured if "Cost per play" in k)
     rows.append(Row("Cost from the billing export with Gemini tokens per play", NOT_MEASURED, not_measured[key]))
 
+    # 14. Not a DECISIONS §12 row -- this branch's own addition, appended rather than replacing one
+    # of the 13 above. No cloud credential in this build container (see eval/evaluation.md's "Not
+    # measured, and why" table and its "Planner: recorded traces and live re-plan" section) means
+    # neither the recorded real-Gemini traces nor the live re-plan sweep this would need exist yet.
+    key = next(k for k in not_measured if "Planner live re-plan latency" in k)
+    rows.append(Row(
+        "Planner live re-plan latency (p50/p95) and fallback rate at the 45 s deadline",
+        NOT_MEASURED, not_measured[key],
+    ))
+
     return rows
 
 
@@ -239,8 +251,9 @@ def render(rows: list[Row]) -> str:
     measured = sum(1 for r in rows if NOT_MEASURED not in r.result)
     lines += [
         "",
-        f"{measured} of {len(rows)} §12 rows carry a real measurement; the rest are explicitly",
-        "marked unmeasured above (see `eval/evaluation.md` for why). Nothing here is a guess.",
+        f"{measured} of {len(rows)} rows carry a real measurement (13 from DECISIONS §12, plus row 14,",
+        "this branch's own addition); the rest are explicitly marked unmeasured above (see",
+        "`eval/evaluation.md` for why). Nothing here is a guess.",
         "",
     ]
     return "\n".join(lines)
