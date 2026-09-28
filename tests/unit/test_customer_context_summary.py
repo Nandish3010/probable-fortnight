@@ -35,6 +35,21 @@ def test_context_summary_no_pending_offer():
     assert "Kannada" in summary
 
 
+def test_context_summary_turn_language_overrides_stored_preference():
+    """Regression for the live bug: a Kannada-preference customer typing English kept getting
+    Kannada replies. Root cause: this function always stated the stored preference as an ambient
+    "writes in Kannada" fact, which outweighed the prompt's own script-matching instruction. Fixed
+    by computing the language per turn (agents.chat_runtime.detect_lang) and rendering it as an
+    explicit directive; the stored preference alone is now only the fallback when no turn_language
+    is given."""
+    ctx = {"home_node_id": "DS-07", "language": "kn", "consent_marketing": True, "pending_offers": [], "memory": []}
+    assert "English" in context_summary(ctx, turn_language="en")
+    assert "Kannada" not in context_summary(ctx, turn_language="en")
+    assert "Kannada" in context_summary(ctx, turn_language="kn")
+    # no override given: falls back to the stored preference, same as before this fix
+    assert "Kannada" in context_summary(ctx)
+
+
 def test_clamp_strips_a_leaked_context_note():
     env = {"text": 'Yes, we have Cola Zero. (known: home store DS-04; writes in English; no pending offers right now)'}
     assert clamp(env)["text"] == "Yes, we have Cola Zero."
