@@ -272,7 +272,7 @@ export default function PlayDeskPage() {
               ) : null}
 
               {rerunResult ? (
-                <section className="play-card__section">
+                <section className="play-card__section" role="status" aria-live="polite">
                   <h4>Re-plan result</h4>
                   <div className="drawer">
                     {rerunResult.status === "error" ? (
