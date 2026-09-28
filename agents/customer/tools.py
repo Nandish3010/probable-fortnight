@@ -124,16 +124,23 @@ def get_customer_context(customer_id: str) -> dict:
     return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent, "memory": _customer_memory(ctx, customer_id)}
 
 
-def context_summary(context: dict) -> str:
+def context_summary(context: dict, turn_language: str | None = None) -> str:
     """A one-line, plain-prose rendering of get_customer_context's result, meant to be folded
     straight into a chat turn's text. Deliberately NOT the raw dict: a model handed a JSON blob
     plus a "never quote this" instruction inline in its own turn text will sometimes quote it
     anyway (observed live -- the whole bracketed block leaked into a real reply); a short sentence
     with no JSON syntax in it removes the thing there is to quote, rather than asking the model
     not to. Sensitive per-play internals (play_id, mechanic_params) are dropped -- the model only
-    ever needs the offer's own customer-facing text, not the mechanics behind it."""
-    lang = "Kannada" if context.get("language") == "kn" else "English"
-    bits = [f"home store {context['home_node_id']}", f"writes in {lang}"]
+    ever needs the offer's own customer-facing text, not the mechanics behind it.
+
+    `turn_language` (agents.chat_runtime.detect_lang's result for this exact turn) renders as a
+    per-turn directive rather than an ambient fact about the customer -- live-observed: a plain
+    "writes in Kannada" fact stated every turn outweighs the prompt's own "match the incoming
+    message's script" instruction, so a Kannada-preference customer typing English still got a
+    Kannada reply. Callers on the deterministic stub path (no live model to steer) can omit it;
+    it then falls back to the stored preference alone, same as before."""
+    lang = "Kannada" if (turn_language or context.get("language")) == "kn" else "English"
+    bits = [f"home store {context['home_node_id']}", f"reply in {lang} for this turn"]
     if context.get("consent_marketing"):
         offers = context.get("pending_offers") or []
         if offers:
