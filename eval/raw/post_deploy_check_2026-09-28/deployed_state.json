@@ -1,0 +1,60 @@
+{
+  "note": "Part 1: what is actually deployed, read via the Cloud Run Admin API v2, Cloud Scheduler API v1 and Cloud Build API v1 directly (gcloud CLI unavailable in this environment). Taken after deploy job 36385161582 (for main 5f976c4) completed successfully at 2026-09-28T06:56:09Z.",
+  "services": {
+    "taal-agents": {
+      "latestReadyRevision": "taal-agents-00058-6pk",
+      "revision_createTime": "2026-09-28T06:46:46.494587Z",
+      "image_digest": "asia-south1-docker.pkg.dev/amru-509214/taal/taal-agents@sha256:b20d0911056cc1b73bf11a990d0f6b1393d7c49b044a581d9b00e443f9268aea",
+      "built_by_cloud_build_id": "c65a475a-bc1... (createTime 2026-09-28T06:44:43Z)",
+      "corresponds_to_commit": "5f976c4 [Certain: this Cloud Build run is the deploy job for run 36385161582, whose head_sha is 5f976c4; 5f976c4 has baad236 (this session's deploy.sh fix) as an ancestor]",
+      "env": {"TAAL_MODEL_BACKEND": "vertex", "TAAL_TENANT_CONFIG": "config/tenant.demo.toml", "GOOGLE_CLOUD_PROJECT": "amru-509214", "TAAL_FEEDBACK_STORE": "firestore", "TAAL_PLANNER_DEADLINE_S": "45", "TAAL_FEEDBACK_ADMIN_TOKEN": "<secretKeyRef, value not read>"},
+      "flags_confirmed_absent": ["TAAL_SESSION_BACKEND", "TAAL_SERVING_CACHE"],
+      "TAAL_NOW": "not a service env var -- baked into the image via Dockerfile.api ENV TAAL_NOW=2026-09-12T03:30:00Z (confirmed in the build log, Docker step 8/12), so it does not appear in the Cloud Run service env list; /health on the deployed service reports server_now to confirm it live"
+    },
+    "taal-web": {
+      "latestReadyRevision": "taal-web-00039-64q",
+      "revision_createTime": "2026-09-28T06:50:41.835472Z",
+      "image_digest": "asia-south1-docker.pkg.dev/amru-509214/taal/taal-web@sha256:4ecd139169b577af53390690cf3098fe0a015b0a1a52e1a8ae71e2832dde207f",
+      "built_by_cloud_build_id": "d86e8d00-6d0... (createTime 2026-09-28T06:47:18Z)",
+      "corresponds_to_commit": "5f976c4",
+      "env": {"TAAL_MODEL_BACKEND": "vertex", "TAAL_TENANT_CONFIG": "config/tenant.demo.toml", "GOOGLE_CLOUD_PROJECT": "amru-509214"}
+    }
+  },
+  "jobs": {
+    "taal-sense": {
+      "image": "asia-south1-docker.pkg.dev/amru-509214/taal/taal-sense (tag :latest; Cloud Run Jobs do not expose a resolved digest the way Service revisions do)",
+      "built_by_cloud_build_id": "c02ed779-aa0... (createTime 2026-09-28T06:51:35Z, SUCCESS)",
+      "job_updateTime": "2026-09-28T06:53:32.122505Z",
+      "env": {"TAAL_MODEL_BACKEND": "vertex", "TAAL_TENANT_CONFIG": "config/tenant.demo.toml", "GOOGLE_CLOUD_PROJECT": "amru-509214", "TAAL_BATCH_STORE": "bigquery", "TAAL_FORECAST_BACKEND": "bigquery_timesfm"},
+      "confirmed": "TAAL_BATCH_STORE=bigquery and TAAL_FORECAST_BACKEND=bigquery_timesfm both present, as required"
+    },
+    "taal-measure": {
+      "image": "asia-south1-docker.pkg.dev/amru-509214/taal/taal-measure (tag :latest)",
+      "built_by_cloud_build_id": "9fbca20e-a47... (createTime 2026-09-28T06:53:39Z, SUCCESS)",
+      "job_updateTime": "2026-09-28T06:55:45.549279Z",
+      "env": {"TAAL_MODEL_BACKEND": "vertex", "TAAL_TENANT_CONFIG": "config/tenant.demo.toml", "GOOGLE_CLOUD_PROJECT": "amru-509214", "TAAL_BATCH_STORE": "bigquery"},
+      "confirmed": "TAAL_BATCH_STORE=bigquery present, as required"
+    }
+  },
+  "scheduler": {
+    "taal-sense-nightly": {
+      "schedule": "0 20 * * *",
+      "state": "ENABLED",
+      "target_uri": "https://asia-south1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/amru-509214/jobs/taal-sense:run",
+      "oauth_service_account": "taal-deploy@amru-509214.iam.gserviceaccount.com",
+      "next_scheduleTime": "2026-09-28T20:00:04.188018Z",
+      "lastAttemptTime": "2026-09-27T20:00:04.965551Z",
+      "note": "The one and only historical run so far -- see eval/raw/nightly_runs/2026-09-28.json: it failed (status red), root-caused below."
+    },
+    "taal-measure-nightly": {
+      "schedule": "30 20 * * *",
+      "state": "ENABLED",
+      "target_uri": "https://asia-south1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/amru-509214/jobs/taal-measure:run",
+      "oauth_service_account": "taal-deploy@amru-509214.iam.gserviceaccount.com",
+      "next_scheduleTime": "2026-09-28T20:30:00Z",
+      "lastAttemptTime": null,
+      "note": "Never fired -- this trigger did not exist at all before today's fix (PR #51). Tonight 20:30 UTC is its first scheduled fire."
+    }
+  },
+  "verdict": "taal-agents and taal-web are both at 5f976c4 (main HEAD at the time of this check) or later -- confirmed, not stopped. All four Cloud Run resources plus both scheduler triggers reflect this session's deploy.sh fix."
+}
