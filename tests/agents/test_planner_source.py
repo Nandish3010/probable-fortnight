@@ -123,12 +123,16 @@ def test_no_fallback_when_the_model_responds_in_time(sandbox, monkeypatch):
     assert not calls
 
 
-# ----------------------------------------------------------------------------- event_sink
+# ----------------------------------------------------------------------------- on_event
 
 
-def test_event_sink_receives_every_raw_adk_event(sandbox):
-    seen = []
-    out = _run(sandbox, "gap_tea_ds04", event_sink=seen.append)
+def test_on_event_receives_the_initial_message_then_every_raw_adk_event(sandbox):
+    seen: list[tuple[str, object]] = []
+    out = _run(sandbox, "gap_tea_ds04", on_event=lambda kind, obj: seen.append((kind, obj)))
     assert out["status"] == "proposed"
-    assert len(seen) > 0
-    assert all(hasattr(ev, "author") for ev in seen)
+    assert len(seen) > 1
+    # exactly one "user" record, first, carrying the exact initial Content the model saw
+    assert seen[0][0] == "user"
+    assert seen[0][1].role == "user"
+    assert all(kind == "event" for kind, _ in seen[1:])
+    assert all(hasattr(ev, "author") for _, ev in seen[1:])
