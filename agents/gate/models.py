@@ -31,6 +31,7 @@ CitationType = Literal["gap", "estimator", "outcome", "policy", "forecast", "sto
 PlayStatus = Literal[
     "proposed", "approved", "modified", "rejected", "running", "measured", "unmeasured"
 ]
+PlanSource = Literal["recorded_gemini", "scripted_stub", "deterministic_rules", "live_gemini"]
 GapType = Literal[
     "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand", "assortment_gap"
 ]
@@ -186,6 +187,7 @@ class Play(_Strict):
     approved_at: str | None = None
     edits: list[Edit] | None = None
     cost: Cost | None = None
+    source: PlanSource | None = None
 
 
 class GapEvidence(_Strict):
