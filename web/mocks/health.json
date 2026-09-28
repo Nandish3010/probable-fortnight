@@ -8,9 +8,10 @@
       "detail": "local store is the system of record here; the one real BigQuery call is AI.GENERATE_TABLE for copy generation on POST /approve (vertex backend), not checked by this endpoint"
     },
     "firestore": {
-      "ok": true,
       "checked_at": "2026-09-12T03:30:00Z",
-      "detail": "local store is the system of record here; Firestore is provisioned and a serving cache module exists, but this process queries it only when TAAL_SERVING_CACHE=firestore is set (unset in this deployment)"
+      "ok": true,
+      "backend": "local_store",
+      "detail": "serving cache off (TAAL_SERVING_CACHE unset): every chat read goes to the visitor's own store; no probe runs. Firestore here holds practitioner feedback only (see feedback_store)"
     },
     "vertex": {
       "ok": true,
@@ -18,9 +19,10 @@
       "detail": "stub backend; no live Vertex call (model id if live: gemini-2.5-flash)"
     },
     "sessions": {
-      "ok": true,
       "checked_at": "2026-09-12T03:30:00Z",
-      "detail": "session backend: InMemorySessionService (process-local; not persisted across restarts)"
+      "ok": true,
+      "backend": "in_memory",
+      "detail": "InMemorySessionService: process-local, one per visitor sandbox; a restart forgets every conversation (TAAL_SESSION_BACKEND=vertex is off, so no probe runs)"
     }
   },
   "backend": "stub",
