@@ -4,10 +4,13 @@ Sessions: one ADK session per visitor and customer -- session id `<visitor>:<cus
 user id `<visitor>:<customer_id>` (agents/chat_runtime.py::adk_ids), where the visitor is the
 X-Taal-Visitor sandbox id. The API-facing session id stays `customer_id:web`. Backend: an
 InMemorySessionService per visitor sandbox (lost on restart) unless TAAL_SESSION_BACKEND=vertex,
-which keeps sessions on a Vertex AI Agent Engine across restarts; that flag is off in the deployed
-service until its live acceptance run is committed (infra/deploy.sh, ENABLE_VERTEX_SESSIONS).
-Stock and customer-profile reads may come from the Firestore serving cache
-(TAAL_SERVING_CACHE=firestore, also off in the deployed service) only when safe for this visitor;
+which keeps sessions on a Vertex AI Agent Engine across restarts (verified in
+eval/raw/vertex_sessions_2026-09-24; visitor-isolation fixes and offline measurements in
+eval/raw/sessions_cache_2026-09-27). infra/deploy.sh sets that flag only when
+ENABLE_VERTEX_SESSIONS=1, hard-coded to 0 at infra/deploy.sh:16, so it is off in the deployed
+service. Stock and customer-profile reads may come from the Firestore serving cache
+(TAAL_SERVING_CACHE=firestore, gated the same way by ENABLE_SERVING_CACHE, hard-coded to 0 at
+infra/deploy.sh:22, so likewise off in the deployed service) only when safe for this visitor;
 offers and consent always come from the visitor's own store. Messages are persisted to
 conversations / messages by the shared runtime in agents/chat_runtime.py.
 """

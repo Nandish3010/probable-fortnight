@@ -24,7 +24,12 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 - `type` -- `dark_store` (online-fulfilling) or `outlet` (physical only); gates online_sellby_breach
 - `lat`, `lng` -- coordinates (used for `node_radius_km` audience filters)
 - `lead_time_days` -- input to stockout_risk
-- `cluster_id` -- forecast grain; nodes in a cluster share a TimesFM/ARIMA_PLUS_XREG series
+- `cluster_id` -- forecast grain; nodes in a cluster share one series: `local_seasonal_xreg`
+  by default (`jobs/sense/forecast.py:34`, what `services/api/approve.py` and the seeded image
+  run), or TimesFM in BigQuery when `TAAL_FORECAST_BACKEND=bigquery_timesfm` is set on the
+  nightly job (`jobs/sense/forecast_bigquery.py`). `ARIMA_PLUS_XREG` SQL also exists
+  (`data/bigquery/sense/03_forecast_arima_xreg.sql`) and was verified once by hand
+  (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`), but no job runs it
 
 ### `inventory_batches` (03)
 - `tenant_id`, `batch_id` -- key
@@ -81,15 +86,25 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 - `tenant_id`, `run_id` -- which Sense run produced this row
 - `sku`, `node_id` (null at cluster grain), `cluster_id`, `date` -- grain
 - `p10`, `p50`, `p90` -- quantile forecast
-- `model` -- `timesfm` or `arima_xreg`
-- `method` -- concrete rule used (e.g. `ai_forecast_timesfm`, `arima_plus_xreg`, `seasonal_naive_xreg` for the local mirror)
+- `model` -- `local_seasonal_xreg` by default (`jobs/sense/forecast.py:34`; what the deployed
+  service and the seeded image write), or `timesfm` when `TAAL_FORECAST_BACKEND=bigquery_timesfm`
+  runs the BigQuery SQL path (`jobs/sense/forecast_bigquery.py`,
+  `data/bigquery/sense/02_forecast_timesfm.sql`). `arima_xreg` never appears in this table:
+  `03_forecast_arima_xreg.sql` exists and was verified once by hand
+  (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) but, like `forecast_explain` below,
+  is not called from any job (`jobs/sense/forecast_bigquery.py` runs only
+  `02_forecast_timesfm.sql` then `04_rolldown.sql`)
+- `method` -- concrete rule used: `seasonal_naive_xreg` or `average_demand_intermittent` for the
+  local mirror (`jobs/sense/forecast.py:148`), `ai_forecast_timesfm` for the BigQuery path
+  (`data/bigquery/sense/02_forecast_timesfm.sql:71`); `arima_plus_xreg` is never written by a job,
+  for the same reason
 - `includes_plays` -- whether this run's `future_regressors` carried an approved play
 - `as_of` -- the forecast's origin date
 
 ### `gaps` (14)
 - `tenant_id`, `gap_id`, `run_id`
-- `type` -- one of six gap types: `online_sellby_breach`, `expiry_writeoff`, `stockout_risk`,
-  `rebalance`, `slow_mover`, `unmet_demand`
+- `type` -- one of seven gap types (`agents/gate/models.py:34-36`): `online_sellby_breach`,
+  `expiry_writeoff`, `stockout_risk`, `rebalance`, `slow_mover`, `unmet_demand`, `assortment_gap`
 - `sku`, `node_id`, `batch_id` (null for stockout_risk and unmet_demand)
 - `units_at_risk` -- units driving the rupee figure
 - `deadline_date`, `deadline_type` (`online_sellby` / `expiry` / `lead_time`)
@@ -149,8 +164,10 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 ### `forecast_explain` (26)
 - `tenant_id`, `run_id`, `sku`, `cluster_id`, `date`, `time_series_type`, `trend`,
   `seasonal_period_yearly`, `seasonal_period_weekly`, `holiday_effect`, `xreg_on_promo`,
-  `xreg_is_festival`, `residual` -- `ML.EXPLAIN_FORECAST` decomposition for the Play card's
-  "why this forecast" drawer
+  `xreg_is_festival`, `residual` -- `ML.EXPLAIN_FORECAST` decomposition, written only by
+  `data/bigquery/sense/03_forecast_arima_xreg.sql`. That script is not called from any Python job
+  (verified: no job invokes it), and no code in the repo currently reads this table -- there is no
+  Play-card "why this forecast" drawer built yet.
 
 ### `substitutes` (27)
 - `tenant_id`, `sku`, `candidates` (up to 5 same-category skus), `computed_at`
@@ -206,15 +223,20 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 
 ## The sell-by rule
 
-FSSAI's advisory to e-commerce food business operators (December 2024) reads: delivered food
-must have **"30 percent or 45 days before expiry at the time of delivery."** [measured: this is
-the advisory's own wording, quoted verbatim] That wording is ambiguous about whether it means the
-*later* or the *earlier* of the two cut-offs. Taal implements `sellby_rule` as a versioned policy
-parameter (`config/tenant.demo.toml [sellby_rule]`, `agents/gate/sellby.py`) and defaults to the
-**stricter reading**: `online_sellby_date = expiry_date - max(30% of shelf_life_days, 45 days)`.
-The gap card shows the rule version on every online_sellby_breach gap; the README and deck state
-plainly that a retailer configures its own reading of the advisory, and that Taal does not claim
-to interpret food-safety law -- it applies whichever rule the retailer sets.
+FSSAI's advisory to e-commerce food business operators (December 2024) is reported to read:
+delivered food must have **"30 percent or 45 days before expiry at the time of delivery"** -- as
+reported, and not yet checked against the primary source [CITATION: owner to paste primary URL].
+It is the regulator's advisory, not a statute, and its wording is ambiguous about whether it means
+the *later* or the *earlier* of the two cut-offs. Taal implements `sellby_rule` as a tenant-set,
+versioned policy parameter applying that advisory (`config/tenant.demo.toml [sellby_rule]`,
+`agents/gate/sellby.py`); the demo tenant's reading is the **lenient** one (rule version
+`v1-either`, `combine = "min"`): `online_sellby_date = expiry_date - min(30% of shelf_life_days,
+45 days)`. The gap card shows the rule version on every online_sellby_breach gap; the README and
+deck state plainly that a retailer sets its own reading of the advisory, and that Taal does not
+interpret food-safety law -- it applies whichever rule the retailer sets.
+
+**Superseded 27 Sep 2026:** this section previously said the default was the stricter reading
+(max). The demo tenant uses the lenient reading; retailers set their own.
 
 ## Daily sales generation rule
 

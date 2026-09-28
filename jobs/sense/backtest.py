@@ -11,9 +11,11 @@ and reporting fewer, real origins is more honest than padding to 8 by starving t
 
 `tier` groups results by product category (not node type: a cluster mixes dark stores and
 outlets, so node type is not a property of a (sku, cluster) series the way category is).
-`model` is the `forecasts.model` value being evaluated (locally always `local_seasonal_xreg`;
-in production this is where `timesfm` and `arima_xreg` would appear side by side). Writes one
-row per (origin, tier, model) to `eval_forecast`.
+`model` is the `forecasts.model` value being evaluated (locally, and in the deployed service,
+always `local_seasonal_xreg`; `timesfm` is the value when the nightly `taal-sense` job runs with
+`TAAL_FORECAST_BACKEND=bigquery_timesfm`; `arima_xreg` came from a separate, manually-run
+verification, `eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`, and is not wired into any
+job). Writes one row per (origin, tier, model) to `eval_forecast`.
 """
 from __future__ import annotations
 

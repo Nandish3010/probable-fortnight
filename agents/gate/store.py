@@ -2,7 +2,14 @@
 
 Layout: TAAL_DATA_DIR/<table>.jsonl, one JSON object per line, named after the BigQuery DDL
 tables in data/bigquery/ddl. Agent traces go to TAAL_DATA_DIR/events/<run_id>.jsonl.
-In production these calls are replaced by BigQuery/Firestore clients behind the same interface.
+A BigQueryStore (agents/gate/bigquery_store.py) and a Firestore serving cache
+(agents/gate/firestore_cache.py) exist behind the same interface, each opt-in via its own env var
+(TAAL_BATCH_STORE, TAAL_SERVING_CACHE). infra/deploy.sh never sets TAAL_BATCH_STORE on
+taal-agents (only on the taal-sense/taal-measure jobs' own environment), and sets
+TAAL_SERVING_CACHE on taal-agents only when a maintainer flips ENABLE_SERVING_CACHE from its
+hard-coded default of 0 (infra/deploy.sh:22) -- so the deployed judge-mode serving path always
+writes through this LocalStore/OverlayStore and, until that flag is flipped, reads stock and
+customer profiles through it too.
 """
 from __future__ import annotations
 

@@ -1,0 +1,84 @@
+{
+  "task": "FSSAI primary source for the \"30 percent or 45 days before expiry at the time of delivery\" rule",
+  "primary_found": false,
+  "primary": {
+    "url": "https://www.fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf",
+    "url_provenance": "Discovered via WebSearch (query: FSSAI advisory e-commerce food business operators December 2024 \"30 percent\" \"45 days\" expiry delivery site:fssai.gov.in). The search index's own title for this result was: \"Advisory for E-commerce Food Business Operators (FBOs) ...\" (truncated by the search result itself). This URL is on fssai.gov.in and is a strong candidate for the primary document, but it was NEVER FETCHED -- fssai.gov.in is unreachable from this session (see reachability below) -- so nothing below was read or verified from it. Not to be treated as a confirmed primary source.",
+    "document_title": null,
+    "document_date": null,
+    "reference_number": null,
+    "addressed_to": null,
+    "document_kind": null,
+    "verbatim_rule_text": null,
+    "matches_repo_wording": null,
+    "fetched_at": null,
+    "http_status": null,
+    "fetch_attempt": {
+      "tool": "curl (direct, through the session's configured HTTPS proxy)",
+      "attempted_at": "2026-09-27T18:57:54Z",
+      "result": "FAILED - curl: (56) CONNECT tunnel failed, response 403",
+      "proxy_relay_log": "connect_rejected: \"gateway answered 403 to CONNECT (policy denial or upstream failure)\", host www.fssai.gov.in:443, ts 2026-09-27T18:57:54.325Z"
+    }
+  },
+  "secondary_sources": [],
+  "secondary_sources_note": "Empty by design: per instructions, secondary_sources lists only sources this agent actually fetched. Every secondary-source candidate discovered by search (list below) was also blocked by this session's network egress policy on attempt, so none could be fetched and none are listed as secondary_sources.",
+  "secondary_candidates_discovered_but_unreachable": [
+    {
+      "url": "https://www.medianama.com/2024/12/223-fssai-asks-ecommerce-food-business-operators-food-safety-compliance/",
+      "publisher": "MediaNama",
+      "fetch_result": "BLOCKED - curl CONNECT 403; WebFetch EGRESS_BLOCKED"
+    },
+    {
+      "url": "https://www.storyboard18.com/brand-marketing/fssai-directs-e-commerce-food-operators-to-ensure-minimum-shelf-life-of-45-days-47235.htm",
+      "publisher": "Storyboard18 (Network18)",
+      "fetch_result": "BLOCKED - curl CONNECT 403"
+    },
+    {
+      "url": "https://food.chemlinked.com/news/food-news/fssai-reinforce-compliance-requirements-for-e-commerce-food-businesses",
+      "publisher": "ChemLinked",
+      "fetch_result": "BLOCKED - curl CONNECT 403"
+    },
+    {
+      "url": "https://www.newsonair.gov.in/fssai-urges-food-business-operators-to-ensure-45-day-expiry-of-their-products",
+      "publisher": "News on AIR (Government of India, All India Radio) -- itself a .gov.in domain but this is a news writeup, not the primary regulatory document",
+      "fetch_result": "BLOCKED - curl CONNECT 403"
+    },
+    {
+      "url": "https://web.archive.org/web/2025/https://www.fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf",
+      "publisher": "Internet Archive Wayback Machine (attempted as an alternate route to read an archived copy of the primary PDF's text; would still only count as secondary per this job's rule since the hosting domain is archive.org, not a government domain)",
+      "fetch_result": "BLOCKED - curl CONNECT 403"
+    }
+  ],
+  "reachability": {
+    "https://www.fssai.gov.in/": {
+      "reachable": false,
+      "methods_tried": [
+        "curl direct (via session HTTPS proxy)",
+        "WebFetch tool"
+      ],
+      "curl_result": "curl: (56) CONNECT tunnel failed, response 403",
+      "curl_tested_at": "2026-09-27T18:57:18Z",
+      "webfetch_result": "EGRESS_BLOCKED: \"Access to www.fssai.gov.in is blocked by the network egress proxy.\"",
+      "proxy_relay_log": "connect_rejected: gateway answered 403 to CONNECT (policy denial or upstream failure), host www.fssai.gov.in:443"
+    },
+    "https://fssai.gov.in/": {
+      "reachable": false,
+      "methods_tried": [
+        "curl direct (via session HTTPS proxy)",
+        "WebFetch tool"
+      ],
+      "curl_result": "curl: (56) CONNECT tunnel failed, response 403",
+      "curl_tested_at": "2026-09-27T18:57:18Z",
+      "webfetch_result": "EGRESS_BLOCKED: \"Access to fssai.gov.in is blocked by the network egress proxy.\"",
+      "proxy_relay_log": "connect_rejected: gateway answered 403 to CONNECT (policy denial or upstream failure), host fssai.gov.in:443"
+    }
+  },
+  "notes": [
+    "[Certain] Both https://www.fssai.gov.in/ and https://fssai.gov.in/ are unreachable from this session: every attempt (curl through the configured proxy, and the WebFetch tool) was rejected at the CONNECT/egress-proxy stage with HTTP 403, before any request reached the FSSAI server itself. This was verified twice per host with two different tools.",
+    "[Certain] This is a session-wide network egress policy restriction, not something specific to FSSAI: the same 403 CONNECT-rejection pattern was independently observed for arxiv.org, export.arxiv.org, and four unrelated third-party news/legal domains (medianama.com, storyboard18.com, food.chemlinked.com, newsonair.gov.in) and for web.archive.org. By contrast, cloud.google.com was reachable (200 OK, used for Task 3). This strongly suggests the session's proxy enforces a narrow allowlist rather than a block targeted at government or FSSAI content specifically.",
+    "[Certain] Per this job's network notes and /root/.ccr/README.md ('403/407 from the proxy ... Do not retry or route around it -- report the blocked host'), no further attempts were made once the pattern was confirmed across multiple unrelated hosts.",
+    "[Certain] No primary source was fetched or read. primary_found is honestly False. No URL, title, date, reference number, or rule text is asserted as verified. The candidate PDF URL above was discovered through a legitimate site-scoped web search (not guessed) but was never opened.",
+    "[Guessing] For context only, NOT used as evidence anywhere in this file: WebSearch's own generated summary of its search results (not a verbatim quote, not independently fetched or verified by this agent) rendered the rule as 'Food products must have a minimum shelf life of 30% or at least 45 days before expiry at the time of delivery,' which is directionally consistent with the repo's wording ('30 percent or 45 days before expiry at the time of delivery') but must not be treated as a confirmed quote or as matches_repo_wording evidence -- it is an AI-generated paraphrase of search snippets, exactly the kind of thing rule 5 (never fabricate a quote) forbids relying on.",
+    "[Certain] The repo's own docs/deck_audit.md already flags this same gap honestly: 'the FSSAI regulation text itself, inherited from the project's own earlier research, not re-verified against a primary government source this round.' This sweep also could not close that gap, due to network egress restrictions in this session rather than the document being unfindable -- a real candidate primary URL WAS located on fssai.gov.in via the site's own indexed advisories."
+  ]
+}

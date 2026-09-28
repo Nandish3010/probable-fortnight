@@ -1,0 +1,8 @@
+{
+  "status": "not_fetched",
+  "reason": "service-account key file not present in this sandbox; no other credentials used",
+  "checked_for": "GOOGLE_APPLICATION_CREDENTIALS was unset and /root/.gcp/taal-deploy-key.json does not exist in this container (ls: 'cannot access' both); no other credentials, tokens, key files or credential-like env vars were searched for or used, per orchestrator instruction",
+  "fallback_evidence": "infra/deploy.sh taal-agents --set-env-vars (replaces every env var on each deploy) and the later --update-env-vars for TAAL_ALLOWED_ORIGINS; neither sets TAAL_SESSION_BACKEND or TAAL_SERVING_CACHE",
+  "note": "CI runs infra/deploy.sh on pushes to main, gated on the verify job passing first -- verified by reading .github/workflows/verify.yml: the `deploy` job (starts line 87) has `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` (line 93) and `needs: verify` (line 95), and its last step is `run: bash infra/deploy.sh` (line 117). So this is 'every push to main that also passes verify', not literally every push regardless of outcome.",
+  "checked_at": "2026-09-27T18:57:08Z"
+}
