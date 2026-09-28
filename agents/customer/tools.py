@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import statistics
 import uuid
 from collections import defaultdict
 from datetime import timedelta
@@ -273,6 +274,25 @@ def apply_offer(play_id: str, customer_id: str) -> dict:
 _VOLUME_FRIENDLY_CATEGORIES = {"snacks", "beverages", "staples", "personal_care", "household"}
 
 
+def _typical_qty(ctx, customer_id: str, sku: str, category: str) -> float | None:
+    """The median units-per-order this customer actually buys of this sku, so a volume nudge asks
+    for more than their own habit rather than an arbitrary flat number -- e.g. a customer who
+    always buys 1 gets asked to buy a few more than that; a customer already buying several at a
+    time isn't offered a discount on volume they were always going to buy anyway.
+
+    Direct-sku history first; same-category history as a fallback (same sku-then-category order
+    as get_candidate_audiences' affinity lookup). Median, not mean: robust to a single bulk order
+    skewing the target. None with no history at all in either -- a customer this tool knows
+    nothing about gets negotiate_offer's flat default, not a guessed number."""
+    lines = ctx.store.read("order_lines")
+    direct = sorted(line_["qty"] for line_ in lines if line_["customer_id"] == customer_id and line_["sku"] == sku)
+    if direct:
+        return statistics.median(direct)
+    cat_skus = {s for s, p in ctx.products.items() if p["category"] == category}
+    cat = sorted(line_["qty"] for line_ in lines if line_["customer_id"] == customer_id and line_["sku"] in cat_skus)
+    return statistics.median(cat) if cat else None
+
+
 def negotiate_offer(customer_id: str, sku: str) -> dict:
     """A live, ad-hoc concession for a sku with no approved play targeting this customer -- the
     customer asked directly ("what offer can I get"), so unlike apply_offer (which only redeems
@@ -286,7 +306,13 @@ def negotiate_offer(customer_id: str, sku: str) -> dict:
     Returns one of two mechanics, chosen deterministically by category, never by the model:
     `volume_discount` (buy `min_qty` units, get the full ceiling off) for everyday multi-buy
     categories where committing to a bigger basket justifies the maximum concession; otherwise
-    `flat_discount` (half the ceiling, no purchase commitment)."""
+    `flat_discount` (half the ceiling, no purchase commitment).
+
+    `min_qty` on a volume_discount is personalized from `_typical_qty`, not a flat number: it asks
+    for more than this customer's own median order size (`ad_hoc_volume_nudge_step` more), so the
+    offer targets an actual behaviour change. A customer already ordering at or above
+    `ad_hoc_volume_already_loyal_qty` on their own gets no offer at all on this path -- discounting
+    a purchase they were always going to make is pure margin given away for no incremental sale."""
     ctx = current()
     product = ctx.products.get(sku)
     if not product:
@@ -317,9 +343,21 @@ def negotiate_offer(customer_id: str, sku: str) -> dict:
     loyalty_bonus = float(ctx.tenant.thresholds.get("ad_hoc_loyalty_bonus_pct", 3.0)) if is_repeat else 0.0
 
     if product["category"] in _VOLUME_FRIENDLY_CATEGORIES:
-        mechanic, min_qty, discount_pct = "volume_discount", 4, round(ceiling, 1)
+        typical = _typical_qty(ctx, customer_id, sku, product["category"])
+        already_loyal_qty = float(ctx.tenant.thresholds.get("ad_hoc_volume_already_loyal_qty", 4))
+        if typical is not None and typical >= already_loyal_qty:
+            return {"ok": False, "reason": f"already orders about {typical:g} units of this at a time on their own -- no incremental offer needed"}
+        nudge_step = float(ctx.tenant.thresholds.get("ad_hoc_volume_nudge_step", 3))
+        mechanic, discount_pct = "volume_discount", round(ceiling, 1)
+        if typical is not None:
+            min_qty = int(round(typical)) + int(nudge_step)
+            reason = f"orders about {typical:g} at a time on average, so buying {min_qty} unlocks {discount_pct:g}% off -- above their usual, not a discount on what they'd buy anyway"
+        else:
+            min_qty = 4
+            reason = "no order history for this category yet, so this is the standard multi-buy offer"
     else:
         mechanic, min_qty, discount_pct = "flat_discount", None, round(min(ceiling, ceiling / 2.0 + loyalty_bonus), 1)
+        reason = "returning customer, so this includes a small loyalty bonus" if is_repeat else "eligible"
 
     offer_id = f"adhoc_{customer_id}_{sku}_{uuid.uuid4().hex[:8]}"
     ctx.store.append("ad_hoc_offers", [{
@@ -327,7 +365,7 @@ def negotiate_offer(customer_id: str, sku: str) -> dict:
         "discount_pct": discount_pct, "min_qty": min_qty, "session_id": f"{customer_id}:{ctx.channel}",
         "ts": ctx.now_iso, "redeemed_at": None,
     }])
-    out: dict[str, Any] = {"ok": True, "reason": "eligible", "sku": sku, "mechanic": mechanic, "discount_pct": discount_pct}
+    out: dict[str, Any] = {"ok": True, "reason": reason, "sku": sku, "mechanic": mechanic, "discount_pct": discount_pct}
     if min_qty is not None:
         out["min_qty"] = min_qty
     return out
