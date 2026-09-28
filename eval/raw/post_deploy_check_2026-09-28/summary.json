@@ -1,0 +1,50 @@
+{
+  "note": "Summary of local behaviour checks against main head 5f976c4 (deploy job 36385161582/108813316588, conclusion success, completed 2026-09-28T06:56:09Z). Local API run with TAAL_MODEL_BACKEND=vertex, GOOGLE_CLOUD_PROJECT=amru-509214, TAAL_PLANNER_DEADLINE_S=45, TAAL_FEEDBACK_STORE=local. TAAL_NOW=2026-09-12T03:30:00Z was added after the first pass (the deployed image bakes it via Dockerfile ENV, Part 2's own env list omitted it) -- flagged separately below.",
+  "flagship_provenance": {
+    "endpoint": "GET /plays?gap_id=gap_chips_ds07",
+    "source_field": "scripted_stub",
+    "raw_file": "flagship_play.json",
+    "finding": "Not recorded_gemini. No committed real-Gemini recording exists under eval/raw/ for gap_chips_ds07 (harness/record_flagship_traces.py exists as tooling but has never been run and its output has never been committed). Confirmed three ways: (1) `ls eval/raw/` has no planner_real_traces_*/ directory, (2) the Docker build log for taal-agents prints 'seed: gap_chips_ds07: no committed recording found under /app/eval/raw -- seeding the scripted stub instead', (3) tests/live/desk_sources.spec.ts (run in this session, live-test 20/20) asserts 'the real flagship trace badge reads Scripted fixture' against the real stack."
+  },
+  "replan_x3": {
+    "endpoint": "POST /rerun then GET /rerun/{run_id} polled to completion (deadline_s=45)",
+    "runs": [
+      {"run_id": "run_chips_ds07_v2_399f68e9", "wall_s": 48.28, "elapsed_ms": 47183, "planner_source": "deterministic_fallback", "badge_source": "deterministic_rules"},
+      {"run_id": "run_chips_ds07_v2_8a006b67", "wall_s": 36.46, "elapsed_ms": 35418, "planner_source": "model", "badge_source": "live_gemini"},
+      {"run_id": "run_chips_ds07_v2_d0ee4da9", "wall_s": 19.92, "elapsed_ms": 19633, "planner_source": "model", "badge_source": "live_gemini"}
+    ],
+    "completed_as_model_within_45s": "2 of 3",
+    "caveat": "These 3 runs were made before TAAL_NOW was added to the local server's environment (real wall clock in effect, not the pinned demo date). Re-plan's own draft-window logic is not wall-clock dependent for pass/fail purposes -- only approve's window-shift is -- so this caveat does not change the 2/3-within-45s finding, but is noted for completeness."
+  },
+  "chat_x10": {
+    "endpoint": "POST /chat, session CUST-MEENA:web, visitor postdeploy-approve2 (same visitor as the approve check, so the offer is visible)",
+    "messages_in_order": ["Any offers today?", "Do you have Cola Zero?", "What all do you have?", "Is there bread?", "Tell me for chips", "How much is masala chips?", "Do you deliver today?", "What is my order status?", "Any deals??", "namaskara"],
+    "latencies_s_raw_file": "chat_times.txt",
+    "p50_s": 5.04,
+    "p95_s": 8.31,
+    "max_s": 8.31,
+    "finding": "p95 (8.31s) and p50 (5.04s) EXCEED the <6s p95 target on this run (10 calls, all against real Vertex/Gemini, no cache warmup). This is a real, measured finding, not a setup artifact -- flagged for the owner, not silently passed.",
+    "offer_response": "chat_0.txt: Kannada text quotes SKU-MASALA-CHIPS-200G bundle at Rs 61, 'ಉತ್ತಮವಾಗಿದೆ' (good) until 2026-10-15 -- best-before date present, matching gap.evidence.expiry_date",
+    "stop_flow": "chat_stop.txt: STOP acknowledged in Kannada ('ನಿಮ್ಮ ಮಾರ್ಕೆಟಿಂಗ್ ಒಪ್ಪಿಗೆಯನ್ನು ಹಿಂಪಡೆಯಲಾಗಿದೆ' -- your marketing consent has been withdrawn), record_stop tool called; chat_after_stop.txt: next 'Any offers today?' returns no offer ('ಸದ್ಯಕ್ಕೆ ಯಾವುದೇ ಕೊಡುಗೆಗಳು ಲಭ್ಯವಿಲ್ಲ' -- no offers currently available)"
+  },
+  "approve": {
+    "endpoint": "POST /approve, play_id=play_chips_ds07_v1, visitor postdeploy-approve2",
+    "raw_file": "approve.json",
+    "latency_ms": 10585,
+    "wall_s": 10.61,
+    "holdout_n": 26,
+    "treated_n": 287,
+    "writeoff_before_inr": 9194.12,
+    "writeoff_after_inr": 8067.53,
+    "caption_text_confirmed": "web/components/ApprovePanel.tsx:88-90: \"Projection: the play's promo lift applied to its window. Measure tests it against {holdout_n} held-back customers.\" -- exact string, matches README",
+    "first_attempt_bug_not_a_deploy_bug": "A first approve attempt (visitor postdeploy-approve1, before TAAL_NOW was set locally) showed regressor_rows_touched=0 and no write-off movement -- traced to services/api/approve.py:65 (`play[\"window\"][\"start\"] = now_iso`) using the REAL wall clock (2026-09-28) instead of the pinned demo date, inverting the play window (start > end) so zero future_regressors rows matched. This was a gap in local test setup (Part 2's env list omitted TAAL_NOW, unlike the deployed image which bakes it via Dockerfile ENV), not a deployed-code defect -- re-run with TAAL_NOW=2026-09-12T03:30:00Z reproduced the documented, correct behaviour exactly (write-off 9194.12 -> 8067.53, matching the historical verified sweep in the earlier session's plan notes)."
+  },
+  "live_test": {
+    "command": "make live-test, TAAL_MODEL_BACKEND=stub, TAAL_NOW=2026-09-12T03:30:00Z, non-mock web",
+    "result": "20/20 passed (3.2m)",
+    "notable": "tests/live/desk_sources.spec.ts:13 explicitly asserts the real flagship trace badge reads 'Scripted fixture' against the real stack -- independent corroboration of the flagship_provenance finding above"
+  },
+  "axe_and_a11y_suite": {
+    "note": "Not re-run separately this session -- already confirmed green on this exact commit (5f976c4) by CI's own verify job (run 36385161582/job 108808896095, make verify, includes tests/e2e/a11y.spec.ts) and by this session's own local make verify run on 5f976c4's parent commit (baad236) minutes earlier, both green."
+  }
+}
