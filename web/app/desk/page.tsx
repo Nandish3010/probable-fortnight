@@ -6,11 +6,13 @@ import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
 import { GAP_TYPE_LABEL } from "../../components/GapCard";
 import { GuardrailList } from "../../components/GuardrailList";
+import { LiveReplan } from "../../components/LiveReplan";
 import { PolicyEditor } from "../../components/PolicyEditor";
+import { SourceBadge } from "../../components/SourceBadge";
 import { TracePanel } from "../../components/TracePanel";
 import { getGaps, getPlays } from "../../lib/api";
 import { formatDate, inr, pct } from "../../lib/format";
-import type { Gap, Play, RerunResponse } from "../../lib/types";
+import type { Gap, Play, RerunAccepted, RerunResult } from "../../lib/types";
 
 function runIdFromTraceRef(traceRef: string): string {
   return traceRef.startsWith("events/") ? traceRef.slice("events/".length) : traceRef;
@@ -24,7 +26,20 @@ export default function PlayDeskPage() {
   const [holdoutFraction, setHoldoutFraction] = useState(0.1);
   const [language, setLanguage] = useState<string>("en");
   const [showWhy, setShowWhy] = useState(false);
-  const [rerunResult, setRerunResult] = useState<RerunResponse | null>(null);
+  // A run is in flight exactly while rerunAccepted is set (cleared the moment its LiveReplan
+  // calls onDone, at the same time rerunResult is set) -- the two are otherwise mutually exclusive.
+  const [rerunAccepted, setRerunAccepted] = useState<RerunAccepted | null>(null);
+  const [rerunResult, setRerunResult] = useState<RerunResult | null>(null);
+
+  function handleReplanStart(accepted: RerunAccepted) {
+    setRerunResult(null);
+    setRerunAccepted(accepted);
+  }
+
+  function handleReplanDone(result: RerunResult) {
+    setRerunAccepted(null);
+    setRerunResult(result);
+  }
 
   useEffect(() => {
     Promise.all([getPlays(), getGaps()]).then(([playList, gapList]) => {
@@ -54,6 +69,7 @@ export default function PlayDeskPage() {
       setHoldoutFraction(selected.holdout.fraction);
       setLanguage(selected.copy.language_set[0] ?? "en");
       setShowWhy(false);
+      setRerunAccepted(null);
       setRerunResult(null);
     }
   }, [selected]);
@@ -245,26 +261,49 @@ export default function PlayDeskPage() {
 
               <section className="play-card__section">
                 <h4>Policy</h4>
-                <PolicyEditor gapId={selected.gap_id} onReplan={setRerunResult} />
+                <PolicyEditor gapId={selected.gap_id} onReplanStart={handleReplanStart} replanning={rerunAccepted !== null} />
               </section>
+
+              {rerunAccepted ? (
+                <section className="play-card__section">
+                  <h4>Re-planning</h4>
+                  <LiveReplan accepted={rerunAccepted} onDone={handleReplanDone} />
+                </section>
+              ) : null}
 
               {rerunResult ? (
                 <section className="play-card__section">
                   <h4>Re-plan result</h4>
                   <div className="drawer">
-                    <p>
-                      <strong>Old:</strong> {selected.mechanic} — {selected.rationale}
-                    </p>
-                    <p>
-                      <strong>New ({rerunResult.play.policy_version}):</strong> {rerunResult.play.mechanic} — {rerunResult.play.rationale}
-                    </p>
-                    <p>
-                      {rerunResult.planner_source === "model" ? (
-                        <Badge kind="live" detail={`Gemini-authored play${rerunResult.iterations ? `, ${rerunResult.iterations} iteration${rerunResult.iterations === 1 ? "" : "s"}` : ""}`} />
-                      ) : (
-                        <Badge kind="replay" detail={`deterministic fallback${rerunResult.fallback_reason ? ` — ${rerunResult.fallback_reason}` : ""}`} title="The model did not produce a valid play in time; this play was assembled by rules, not Gemini." />
-                      )}
-                    </p>
+                    {rerunResult.status === "error" ? (
+                      <p className="error">Re-plan failed: {rerunResult.error || "unknown error"}</p>
+                    ) : rerunResult.status === "no_play" || !rerunResult.play ? (
+                      <>
+                        <p>
+                          The planner could not produce a valid play this time
+                          {rerunResult.fallback_reason ? ` (${rerunResult.fallback_reason})` : ""}.
+                        </p>
+                        <p>
+                          <SourceBadge source={rerunResult.source} fallbackReason={rerunResult.fallback_reason} />
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          <strong>Old:</strong> {selected.mechanic} — {selected.rationale}
+                        </p>
+                        <p>
+                          <strong>New ({rerunResult.policy_version}):</strong> {rerunResult.play.mechanic} — {rerunResult.play.rationale}
+                        </p>
+                        <p className="re-plan-result__meta">
+                          <SourceBadge source={rerunResult.source} fallbackReason={rerunResult.fallback_reason} />
+                          {typeof rerunResult.iterations === "number" ? (
+                            <span className="muted"> {rerunResult.iterations} iteration{rerunResult.iterations === 1 ? "" : "s"}</span>
+                          ) : null}
+                          {typeof rerunResult.elapsed_ms === "number" ? <span className="muted"> · {(rerunResult.elapsed_ms / 1000).toFixed(1)} s</span> : null}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </section>
               ) : null}
