@@ -45,24 +45,33 @@ export function ForecastChart({ forecast }: { forecast: Forecast }) {
       className="forecast-chart"
       preserveAspectRatio="xMidYMid meet"
     >
-      {windowX !== null ? (
-        <rect
-          x={windowX}
-          y={padTop}
-          width={width - padRight - windowX}
-          height={innerH}
-          className="forecast-chart__window"
-        />
-      ) : null}
-      <line x1={padLeft} y1={padTop + innerH} x2={width - padRight} y2={padTop + innerH} className="forecast-chart__axis" />
-      <path d={baselinePath} className="forecast-chart__line forecast-chart__line--baseline" />
-      <path d={playPath} className="forecast-chart__line forecast-chart__line--play" />
-      <line x1={padLeft} y1={padTop + 8} x2={padLeft + 18} y2={padTop + 8} className="forecast-chart__line forecast-chart__line--baseline" />
-      <text x={padLeft + 22} y={padTop + 11} className="forecast-chart__label">baseline p50</text>
-      <line x1={padLeft + 110} y1={padTop + 8} x2={padLeft + 128} y2={padTop + 8} className="forecast-chart__line forecast-chart__line--play" />
-      <text x={padLeft + 132} y={padTop + 11} className="forecast-chart__label">with play (units/day)</text>
-      <text x={padLeft} y={height - 6} className="forecast-chart__label">{firstDate}</text>
-      <text x={width - padRight} y={height - 6} textAnchor="end" className="forecast-chart__label">{lastDate}</text>
+      {/* Chromium's SVG accessibility mapping does not prune a role="img" element's own
+         descendants: without this, every <text> label below (legend, axis dates) is still
+         exposed as the img node's accessible content, alongside its aria-label -- which an
+         aria-live region announcing this chart (ApprovePanel's approve-result status region)
+         would read aloud in full. aria-hidden on one wrapping <g> makes the aria-label the
+         chart's only accessible content, confirmed via a Playwright ARIA snapshot
+         (tests/e2e/live-regions.spec.ts). */}
+      <g aria-hidden="true">
+        {windowX !== null ? (
+          <rect
+            x={windowX}
+            y={padTop}
+            width={width - padRight - windowX}
+            height={innerH}
+            className="forecast-chart__window"
+          />
+        ) : null}
+        <line x1={padLeft} y1={padTop + innerH} x2={width - padRight} y2={padTop + innerH} className="forecast-chart__axis" />
+        <path d={baselinePath} className="forecast-chart__line forecast-chart__line--baseline" />
+        <path d={playPath} className="forecast-chart__line forecast-chart__line--play" />
+        <line x1={padLeft} y1={padTop + 8} x2={padLeft + 18} y2={padTop + 8} className="forecast-chart__line forecast-chart__line--baseline" />
+        <text x={padLeft + 22} y={padTop + 11} className="forecast-chart__label">baseline p50</text>
+        <line x1={padLeft + 110} y1={padTop + 8} x2={padLeft + 128} y2={padTop + 8} className="forecast-chart__line forecast-chart__line--play" />
+        <text x={padLeft + 132} y={padTop + 11} className="forecast-chart__label">with play (units/day)</text>
+        <text x={padLeft} y={height - 6} className="forecast-chart__label">{firstDate}</text>
+        <text x={width - padRight} y={height - 6} textAnchor="end" className="forecast-chart__label">{lastDate}</text>
+      </g>
     </svg>
   );
 }

@@ -168,7 +168,7 @@ export function ChatPanel({
           {active ? <p className="muted chat-panel__customer-note">{active.note}</p> : null}
         </div>
       ) : null}
-      <div className="chat-panel__list" ref={listRef} data-testid="chat-log">
+      <div className="chat-panel__list" ref={listRef} data-testid="chat-log" role="log" aria-live="polite">
         {messages.length === 0 ? <p className="muted">Send a message to start.</p> : null}
         {messages.map((m) => (
           <div key={m.key} className={`chat-msg chat-msg--${m.role}`}>

@@ -13,6 +13,7 @@ test.describe("Meena: chat", () => {
     await asVisitor(page, vid);
     await page.goto("/chat");
     const log = page.getByTestId("chat-log");
+    await expect(log).toHaveAttribute("role", "log"); // ARIA live region, ChatPanel.tsx
     await page.getByRole("button", { name: "Send" }).click(); // pre-filled "Any offers today?"
     await expect(log.getByText(/ಯಾವುದೇ ಆಫರ್ ಇಲ್ಲ|No offers/)).toBeVisible();
 
