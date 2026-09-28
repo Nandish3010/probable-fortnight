@@ -1,0 +1,147 @@
+{
+  "computed_at": "2026-09-28T00:09:21Z",
+  "git_commit": "350362d03855e53c519c874d17059d77cfd1dfc9",
+  "backend": "stub",
+  "gap_id": "gap_chips_ds07",
+  "data_dir": "/home/user/probable-fortnight/.local/data",
+  "gap": {
+    "as_of": {
+      "value": "2026-09-12",
+      "label": "seeded",
+      "source": "manifest.json"
+    },
+    "units_at_risk": {
+      "value": 368,
+      "label": "seeded",
+      "source": "gaps.jsonl (data.generator -> jobs.sense), read via agents.planner.tools.get_gap"
+    },
+    "rupees_at_stake": {
+      "value": 9200.0,
+      "label": "seeded",
+      "source": "gaps.jsonl (data.generator -> jobs.sense), read via agents.planner.tools.get_gap"
+    },
+    "deadline_date": {
+      "value": "2026-09-18",
+      "label": "seeded",
+      "source": "gaps.jsonl (data.generator -> jobs.sense), read via agents.planner.tools.get_gap"
+    },
+    "deadline_type": {
+      "value": "online_sellby",
+      "label": "seeded",
+      "source": "gaps.jsonl (data.generator -> jobs.sense), read via agents.planner.tools.get_gap"
+    },
+    "days_as_of_to_deadline": {
+      "value": 6,
+      "label": "computed",
+      "source": "deadline_date minus as_of, both above"
+    },
+    "product_name": "Masala Chips 200G",
+    "product_shelf_life_days": {
+      "value": 90,
+      "label": "seeded",
+      "source": "data/generator/catalog.py, read via agents.planner.tools.get_gap"
+    }
+  },
+  "flagship_play": {
+    "play_id": "play_chips_ds07_v1",
+    "run_id": "run_chips_ds07_v1_bd0a8253",
+    "source": {
+      "value": "scripted_stub",
+      "label": "seeded",
+      "source": "plays.jsonl (make generate -> harness.seed_plays), read via agents.gate.store.LocalStore"
+    },
+    "mechanic": {
+      "value": "bundle",
+      "label": "seeded",
+      "source": "plays.jsonl (make generate -> harness.seed_plays), read via agents.gate.store.LocalStore"
+    },
+    "mechanic_params": {
+      "value": {
+        "bundle_sku": "SKU-COCONUT-WATER-1L",
+        "bundle_price": 61.0
+      },
+      "label": "seeded",
+      "source": "plays.jsonl (make generate -> harness.seed_plays), read via agents.gate.store.LocalStore"
+    },
+    "propose_play_attempts": {
+      "value": [
+        {
+          "attempt": 1,
+          "mechanic": "coupon",
+          "mechanic_params": {
+            "discount_pct": 15
+          },
+          "valid": false,
+          "failing_guardrail_rule_ids": [
+            "margin_floor"
+          ]
+        },
+        {
+          "attempt": 2,
+          "mechanic": "bundle",
+          "mechanic_params": {
+            "bundle_sku": "SKU-COCONUT-WATER-1L",
+            "bundle_price": 61.0
+          },
+          "valid": true,
+          "failing_guardrail_rule_ids": []
+        }
+      ],
+      "label": "seeded",
+      "source": "events/run_chips_ds07_v1_bd0a8253.jsonl (the flagship play's own recorded trace)"
+    }
+  },
+  "approve": {
+    "visitor": "factsprobe01",
+    "treated_n": {
+      "value": 287,
+      "label": "seeded",
+      "source": "POST /approve (FastAPI TestClient, visitor 'factsprobe01', throwaway TAAL_SANDBOX_DIR)"
+    },
+    "holdout_n": {
+      "value": 26,
+      "label": "seeded",
+      "source": "POST /approve (FastAPI TestClient, visitor 'factsprobe01', throwaway TAAL_SANDBOX_DIR)"
+    },
+    "writeoff_before_inr": {
+      "value": 9194.12,
+      "label": "seeded",
+      "source": "POST /approve (FastAPI TestClient, visitor 'factsprobe01', throwaway TAAL_SANDBOX_DIR)"
+    },
+    "writeoff_after_inr": {
+      "value": 8067.53,
+      "label": "seeded",
+      "source": "POST /approve (FastAPI TestClient, visitor 'factsprobe01', throwaway TAAL_SANDBOX_DIR)"
+    },
+    "forecast_latency_ms": {
+      "value": 1986,
+      "label": "measured, local process, LocalStore + pure-Python forecaster, stub backend -- not the deployed service",
+      "source": "POST /approve (FastAPI TestClient, visitor 'factsprobe01', throwaway TAAL_SANDBOX_DIR)"
+    }
+  },
+  "configured_replan_deadline_s": {
+    "value": 45.0,
+    "label": "configured",
+    "source": "infra/deploy.sh (gcloud run deploy taal-agents --set-env-vars)"
+  },
+  "planner_prompt_v6": {
+    "source_file": "eval/raw/planner_prompt_v6_2026-09-24/summary.json",
+    "model_run_gap_ids": [
+      "gap_2e7621a152",
+      "gap_7ac58767fe",
+      "gap_7bcc0cc853",
+      "gap_bf8c6eb467"
+    ],
+    "n_model_runs": 4,
+    "min_elapsed_ms": {
+      "value": 23952,
+      "label": "measured 2026-09-24, real Vertex",
+      "source": "eval/raw/planner_prompt_v6_2026-09-24/summary.json"
+    },
+    "max_elapsed_ms": {
+      "value": 43295,
+      "label": "measured 2026-09-24, real Vertex",
+      "source": "eval/raw/planner_prompt_v6_2026-09-24/summary.json"
+    }
+  }
+}

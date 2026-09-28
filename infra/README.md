@@ -26,7 +26,11 @@ cross-service latency assumptions in §4.3.
    30 minutes later (02:00 IST, `30 20 * * *` UTC). Only `taal-sense`'s own environment sets
    `TAAL_BATCH_STORE=bigquery`/`TAAL_FORECAST_BACKEND=bigquery_timesfm`; `taal-measure` sets
    `TAAL_BATCH_STORE=bigquery` only -- both default to `local` everywhere else, including the
-   deployed `taal-agents` judge-mode serving path, which is never switched. A post-deploy check
+   deployed `taal-agents` judge-mode serving path, which is never switched. `taal-agents` also gets
+   `TAAL_PLANNER_DEADLINE_S=45` (the on-demand re-plan's deadline before the deterministic-rules
+   fallback runs; the code default is `8.0`, see `agents/planner/run.py`) -- `/chat` is served by
+   this same Cloud Run service but never reads this variable at all, only the planner path does.
+   A post-deploy check
    fails the deploy if either job or either trigger is missing; it deliberately does not execute
    either job (that would bill real BigQuery compute on every deploy). Requires
    `GOOGLE_CLOUD_PROJECT`, `REGION`. **Known gap, not routed around:** `amru-509214` has no billing
@@ -72,6 +76,19 @@ scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
   startup. Consequence to know: the per-visitor judge-mode sandboxes live on the container's
   ephemeral filesystem, so a visitor's approvals reset when the instance is replaced (scale-to-zero,
   redeploy). Fine for judging; not a system of record (that is BigQuery, per DECISIONS §3.3).
+- **The on-demand re-plan (`POST /rerun`) makes the same single-instance assumption, worth knowing
+  before relying on it under real Cloud Run traffic.** `POST /rerun` answers `202` at once and the
+  planner keeps running on a worker thread inside whichever instance handled that request; the run
+  registry (`_RUNS`/`_INFLIGHT` in `services/api/main.py`) and the visitor sandboxes above are both
+  instance-local process/disk state, not shared across instances. In practice this works because the
+  Desk immediately opens `GET /events/{run_id}/stream` against the same origin and keeps that request
+  open until `event: done`, which keeps that one instance alive and serving under Cloud Run's normal
+  request-keeps-instance-alive behaviour for the run's whole duration. A stream request that Cloud
+  Run instead routes to a *different* instance -- no in-flight request pinning it to the first one,
+  a cold second instance spun up under load, min-instances at 0 -- finds no such run in its own
+  registry and answers `404`, exactly the same failure mode the per-visitor sandbox already accepts
+  for approvals. Not routed around here; no Cloud Run flag in this repository is changed to force
+  session affinity or a shared run registry.
 
 **IAM: resolved.** `taal-deploy@amru-509214.iam.gserviceaccount.com` was granted `roles/owner` on
 20 Sep 2026 (after two earlier attempts at a narrower Vertex role picked the wrong entries --

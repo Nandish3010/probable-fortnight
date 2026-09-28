@@ -13,7 +13,7 @@ inventory-aware chat agent, and measured against a holdout.
 - Click **Run the 60-second beat**, then **Approve**: the approved play sets a promo flag on its window in `future_regressors`, and the re-forecast applies the fitted promo lift to the chart -- a projection; Measure tests it against the holdout.
 - Then **Chat as Meena**: the offer arrives in Kannada with the best-before date; ask for Cola Zero and get what is actually on her shelf.
 - Video (under 3 min): _pending_ · Deck: [`docs/deck.pdf`](docs/deck.pdf)
-- Live vs replay: every panel carries a LIVE or REPLAY badge. Sense and Plan are nightly and replayed; approve, re-forecast, chat, capture and execution are live calls.
+- Live vs replay: every panel carries a LIVE/REPLAY (or REAL PILOT/SYNTHETIC) badge -- the play card itself keeps its `REPLAY · policy <version>` badge -- except the Desk's trace panel and its re-plan result, which instead carry one of four provenance badges -- `Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)`, or `Live · Gemini` -- naming exactly where that trace or run came from. Sense is nightly and replayed; approve, chat, capture and execution are live calls. **Change policy → re-plan** is itself a live, streamed call on the deployed service: it runs Gemini, streams each tool call and guardrail check as they happen, and ends badged with whichever of the four provenance kinds the run actually produced.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
 
 ## Impact in numbers
@@ -71,6 +71,22 @@ the offer. Every number above is reproduced by executing the code on the seeded 
 tenant/plan figures labelled seeded, the re-forecast time labelled measured -- in
 `eval/raw/docs_truth_sweep_2026-09-27/hook_numbers.json` (gap size, stake and the first-draft
 discount also committed in `eval/raw/rationale_judge_plays_2026-09-21/play_chips_ds07_v1.json`).
+Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07 (seeded), ₹9,200 at stake
+(seeded), online sell-by in 6 days (computed) -- every number in this paragraph is recomputed by
+`harness/flagship_facts.py` into `eval/raw/flagship_facts_2026-09-27.json`. The trace judges see for
+this gap is the scripted stub planner, badged "Scripted fixture" -- **not** a Gemini run: its first
+draft, a 15% coupon (seeded), fails the margin-floor guardrail; it revises to a bundle -- Masala
+Chips with Coconut Water 1L, ₹61 for the pair (seeded). A real Gemini recording for this gap could
+not be made in the build environment on 27 Sep 2026: no Google Cloud credential exists there.
+`harness/record_flagship_traces.py` records one, and `make generate` seeds it automatically once a
+recording is committed -- from that point on this gap's trace is badged `Recorded from Gemini ·
+<date>` instead. Approval assigns 287 treated and 26 holdout customers by hash (seeded), writes the
+play into `future_regressors`, and re-forecasts the series in about 2.0 s (measured locally against
+the stub backend, not the deployed service); Meena's chat then delivers the offer. On the deployed
+service, **Change policy → re-plan** instead runs Gemini live: the Desk streams each tool call and
+guardrail check as it happens, and if no valid play arrives within the configured 45 s deadline
+(configured) the deterministic-rules fallback runs instead, badged "Rules (fallback)" with the
+reason shown.
 
 ## Why this generalizes: one decision loop, not a promo bot
 
