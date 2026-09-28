@@ -215,11 +215,18 @@ if [ "${ENABLE_SERVING_CACHE}" = "1" ]; then
   echo "   chat reads: Firestore serving cache (mirrored below from this image's snapshot)"
   AGENTS_ENV="${AGENTS_ENV},TAAL_SERVING_CACHE=firestore"
 fi
+# --memory 2Gi: Cloud Run's default (512 MiB) starves the uvicorn worker under a live Vertex
+# call (locally it peaks at 481 MiB on the stub backend alone -- see
+# eval/raw/cloud_run_memory_2026-09-28/) and CI's smoke.yml has caught POST /approve 503ing on
+# it in production (runs 36445374014, 36445971526, both against main f48e04e). --concurrency 20,
+# not the 80 default: a judge's approve must never share an instance with dozens of others.
+# --min-instances is left unset (0), matching every other deploy in this script.
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
   --set-env-vars "${AGENTS_ENV}" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
+  --memory 2Gi --cpu 2 --concurrency 20 \
   --allow-unauthenticated
 # CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
 # (--set-env-vars above replaces every env var, so the origins must be re-applied on each deploy.)
@@ -259,6 +266,7 @@ EOF
 gcloud run deploy taal-web \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-web" \
+  --memory 1Gi \
   --allow-unauthenticated
 
 # Let the deployed web app call the API from the browser. Cloud Run serves a service at more than
