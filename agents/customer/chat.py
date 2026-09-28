@@ -20,7 +20,7 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from agents.chat_runtime import ENVELOPE_SCHEMA, ChatRuntime, clamp, now_iso, parse_envelope
+from agents.chat_runtime import ENVELOPE_SCHEMA, ChatRuntime, clamp, detect_lang, now_iso, parse_envelope
 from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore
 
@@ -71,7 +71,19 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
         extra_tool_calls: list[dict[str, Any]] = []
         if effective_backend == "vertex":
             customer_context = get_customer_context(customer_id)
-            turn_text = f"{text}\n\n(known: {context_summary(customer_context)})"
+            # The language directive folded into the note below is turn-specific (detect_lang on
+            # this message's own script), NOT the stored preference -- except on a proactive
+            # first-turn delivery: the pending offer's text was already generated once, in the
+            # customer's stored language, at /approve time (services/api/approve.py), and the
+            # prompt says to deliver it word for word. Telling the model "reply in English" right
+            # before "deliver this Kannada text verbatim" would fight itself, so this one case
+            # keeps the stored-preference fallback (turn_language=None) instead of detecting from
+            # `text`, which is usually a canned English trigger phrase ("Any offers today?") with
+            # no bearing on the offer's own pre-set language.
+            is_first_turn = not store.find("conversations", session_id=session_id)
+            has_pending_offer = bool(customer_context.get("pending_offers"))
+            turn_language = None if (is_first_turn and has_pending_offer) else detect_lang(text, language)
+            turn_text = f"{text}\n\n(known: {context_summary(customer_context, turn_language=turn_language)})"
             extra_tool_calls = [{"name": "get_customer_context", "args": {"customer_id": customer_id}}]
         envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id)
         return [envelope]
