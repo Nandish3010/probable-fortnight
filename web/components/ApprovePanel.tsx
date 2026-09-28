@@ -43,9 +43,21 @@ export function ApprovePanel({
   return (
     <div className="approve-panel">
       {!result ? (
-        <button type="button" className="approve-button" onClick={handleApprove} disabled={loading}>
-          {loading ? "Approving…" : "Approve"}
-        </button>
+        <>
+          <button type="button" className="approve-button" onClick={handleApprove} disabled={loading}>
+            {loading ? "Approving…" : "Approve"}
+          </button>
+          {/* Previously nested inside the `result` branch below, where a genuine POST /approve
+             failure (result stays null) could never actually render it. Sits here instead, as a
+             sibling of the button, so a live-call failure is actually visible and the judge can
+             retry. role="alert" gets it announced immediately (assertive), unlike the polite
+             status regions elsewhere on this panel. */}
+          {error ? (
+            <p className="error" role="alert" data-testid="approve-error">
+              Live call failed. Please try Approve again.
+            </p>
+          ) : null}
+        </>
       ) : (
         <div className="approve-panel__result" data-testid="approve-result">
           <div className="approve-panel__badges">
@@ -63,7 +75,6 @@ export function ApprovePanel({
           <p className="approve-panel__writeoff" data-testid="writeoff-line">
             Projected write-off {inr(result.forecast.writeoff_before_inr)} {"→"} {inr(result.forecast.writeoff_after_inr)}
           </p>
-          {error ? <p className="error">Live call failed; showing recorded result (live call failed).</p> : null}
         </div>
       )}
     </div>
