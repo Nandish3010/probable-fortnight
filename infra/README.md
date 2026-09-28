@@ -173,6 +173,20 @@ all invisible in stub mode, all fixed:**
    into the `taal-web` Cloud Build as `--build-arg NEXT_PUBLIC_TAAL_API_URL=...`. If you ever
    change `taal-agents`'s URL (a different region, a service rename), `taal-web` must be rebuilt,
    not just redeployed with a new env var.
+5. **The nightly Cloud Scheduler triggers' `--oauth-service-account-email` named a service account
+   that was never created.** `deploy.sh` referenced `taal-sense@${PROJECT}.iam.gserviceaccount.com`
+   for both `taal-sense-nightly` and `taal-measure-nightly` -- but the "Known deviation" above means
+   none of the three dedicated per-service accounts (`taal-sense`, `taal-agents`, `taal-web`) exist,
+   only `taal-deploy`. `gcloud scheduler jobs create` with a nonexistent oauth service account fails
+   with `NOT_FOUND: Requested entity was not found`, which the script's own `|| echo "already
+   exists"` fallback silently swallowed on every deploy -- so `taal-measure-nightly` was never
+   actually created, and the post-deploy verification step correctly failed the `deploy` CI job on
+   every merge to `main` since. (`taal-sense-nightly` already existed from an earlier, separately
+   fixed run that used `taal-deploy`'s identity directly -- which is why only the `taal-measure`
+   trigger showed as missing.) Fixed: both triggers now use
+   `taal-deploy@${PROJECT}.iam.gserviceaccount.com`, matching every other resource this script
+   deploys under `taal-deploy` today. Revisit both when `iam.sh`'s dedicated service accounts are
+   finally created (see the "Known deviation" note above).
 
 ## Not in this directory
 
