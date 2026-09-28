@@ -85,6 +85,10 @@ export function ApprovePanel({
           <p className="approve-panel__writeoff" data-testid="writeoff-line">
             Projected write-off {inr(result.forecast.writeoff_before_inr)} {"→"} {inr(result.forecast.writeoff_after_inr)}
           </p>
+          <p className="muted" data-testid="writeoff-caption">
+            Projection: the play&apos;s promo lift applied to its window. Measure tests it against{" "}
+            {result.assignment.holdout_n} held-back customers.
+          </p>
         </div>
       )}
     </div>
