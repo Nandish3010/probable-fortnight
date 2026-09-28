@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { asVisitor } from "./helpers";
+import { asVisitor, collectConsoleErrors, expectNoConsoleErrors } from "./helpers";
 
 // ApprovePanel.tsx's failure note used to repeat "(live call failed)" twice in one sentence, and
 // lived inside the branch that only renders once `result` is set -- so a genuine POST /approve
@@ -7,11 +7,16 @@ import { asVisitor } from "./helpers";
 // reaches the network at all outside mock mode, so this can only be exercised against the real
 // stack (`make live-test`), never the e2e mock suite.
 //
-// Not using helpers.ts's expectNoConsoleErrors here: injecting a 500 makes Chromium itself log
-// "Failed to load resource: the server responded with a status of 500" to the console for the
-// failed fetch -- expected noise from this test's own fault injection, not a defect to catch.
+// Injecting the 500 makes Chromium itself log "Failed to load resource: the server responded
+// with a status of 500" to the console -- expected noise from this test's own fault injection,
+// not a defect. Only that one message is dropped below, locally to this test (helpers.ts's
+// shared expectNoConsoleErrors is untouched), so any other console error -- a real regression --
+// still fails the test.
+const EXPECTED_INJECTED_500 = /Failed to load resource.*500/i;
+
 test.describe("Approve: a failed live call surfaces its message exactly once", () => {
   test("500 from POST /approve shows the failure note once and leaves the button for a retry", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
     await asVisitor(page, "live-approve-failure");
 
     // INJECTED FAILURE, not a real backend fault: fulfil the real POST /approve with a 500 so
@@ -46,5 +51,8 @@ test.describe("Approve: a failed live call surfaces its message exactly once", (
 
     // The button is still there: a judge can retry once the injected failure is gone.
     await expect(card.getByRole("button", { name: "Approve" })).toBeVisible();
+
+    // Any console error other than our own injected 500 is still a real defect.
+    await expectNoConsoleErrors(errors.filter((e) => !EXPECTED_INJECTED_500.test(e)));
   });
 });
