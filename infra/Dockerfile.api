@@ -19,6 +19,10 @@ RUN uv sync --frozen --no-dev
 # purpose -- the seeded plays are the golden fixtures; the vertex backend is a runtime setting.
 # prior_update_demo runs Measure once on SYNTHETIC orders for the flagship play in a throwaway
 # sandbox and writes prior_update_demo.json beside the tenant, so every visitor sees the same result.
+# harness.seed_plays seeds the flagship gap from a committed real-Gemini recording
+# (harness/record_flagship_traces.py + harness/recorded_traces.py) when one is committed and still
+# validates against this tenant; otherwise, and for every other demo gap always, it seeds the
+# scripted stub. Either way this build makes no model call and touches no network.
 ENV TAAL_DATA_DIR=/app/.local/data \
     TAAL_TENANT_CONFIG=config/tenant.demo.toml \
     TAAL_NOW=2026-09-12T03:30:00Z

@@ -3,12 +3,23 @@
 import { useEffect, useState } from "react";
 import { getPolicy, rerun } from "../lib/api";
 import { Badge } from "./Badge";
-import type { RerunResponse } from "../lib/types";
+import type { RerunAccepted } from "../lib/types";
 
-export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (res: RerunResponse) => void }) {
+export function PolicyEditor({
+  gapId,
+  onReplanStart,
+  replanning,
+}: {
+  gapId: string;
+  /** Hands the 202-accepted run to the Desk, which starts <LiveReplan> for it. */
+  onReplanStart: (accepted: RerunAccepted) => void;
+  /** True for the whole run (POST /rerun through the stream's "done" frame), driven by the Desk
+   * -- not just this component's own brief POST request, which `submitting` below covers. */
+  replanning: boolean;
+}) {
   const [text, setText] = useState("");
   const [version, setVersion] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,19 +30,21 @@ export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (re
   }, []);
 
   async function handleReplan() {
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
     try {
       // The API assigns the next policy version; re-sending the current one would overwrite the current play.
-      const res = await rerun({ gap_id: gapId, policy_text: text });
-      setVersion(res.policy_version);
-      onReplan(res);
-    } catch {
-      setError("Re-plan failed. Showing last recorded result would be safer here.");
+      const accepted = await rerun({ gap_id: gapId, policy_text: text });
+      setVersion(accepted.policy_version);
+      onReplanStart(accepted);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Re-plan failed. Showing last recorded result would be safer here.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
+
+  const busy = submitting || replanning;
 
   return (
     <div className="policy-editor">
@@ -45,8 +58,8 @@ export function PolicyEditor({ gapId, onReplan }: { gapId: string; onReplan: (re
         rows={6}
         aria-label="Policy text"
       />
-      <button type="button" onClick={handleReplan} disabled={loading}>
-        {loading ? "Re-planning…" : "Change policy → re-plan"}
+      <button type="button" onClick={handleReplan} disabled={busy}>
+        {busy ? "Re-planning…" : "Change policy → re-plan"}
       </button>
       {error ? <p className="error">{error}</p> : null}
     </div>

@@ -206,7 +206,7 @@ else
   echo "   (secret ${FEEDBACK_SECRET} not found: /feedback/results will be disabled)"
 fi
 
-AGENTS_ENV="TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore"
+AGENTS_ENV="TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore,TAAL_PLANNER_DEADLINE_S=45"
 if [ "${ENABLE_VERTEX_SESSIONS}" = "1" ]; then
   echo "   chat sessions: Vertex AI Sessions on Agent Engine ${AGENT_ENGINE_ID}"
   AGENTS_ENV="${AGENTS_ENV},TAAL_SESSION_BACKEND=vertex,TAAL_AGENT_ENGINE_ID=${AGENT_ENGINE_ID},TAAL_REGION=${REGION}"
