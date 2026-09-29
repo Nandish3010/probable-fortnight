@@ -33,6 +33,46 @@ def test_withdrawn_consent_blocks_every_offer_path_without_a_model(sandbox):
         reset_context(tok)
 
 
+def test_negotiate_offer_personalizes_volume_discount_to_the_customers_own_median(sandbox):
+    """The behavioural personalization asked for directly: a volume_discount's min_qty is the
+    customer's own median order size plus the configured nudge, not a flat number -- a customer
+    who always buys 1 gets asked to buy a few more than that, and the reply cites the real median
+    it was computed from (never a bare 'eligible')."""
+    tenant = load_tenant()
+    sandbox.write("order_lines", [
+        {"tenant_id": "kutumb-mart", "order_id": f"ORD-TEST-{i}", "line_no": 1, "customer_id": "CUST-MEENA", "node_id": "DS-07", "sku": "SKU-COLA-ZERO-500ML", "qty": 1, "price": 58.5, "discount": 0.0, "play_id": None, "ts": f"2026-09-0{i}T10:00:00Z"}
+        for i in range(1, 6)
+    ])
+    tok = set_context(CustomerContext.build(sandbox, "CUST-MEENA", "2026-09-12T09:05:00Z", tenant))
+    try:
+        out = ct.negotiate_offer("CUST-MEENA", "SKU-COLA-ZERO-500ML")
+        assert out["ok"] and out["mechanic"] == "volume_discount"
+        step = int(tenant.thresholds.get("ad_hoc_volume_nudge_step", 3))
+        assert out["min_qty"] == 1 + step, out
+        assert "1" in out["reason"] and str(out["min_qty"]) in out["reason"] and out["reason"] != "eligible"
+    finally:
+        reset_context(tok)
+
+
+def test_negotiate_offer_declines_volume_discount_for_an_already_loyal_customer(sandbox):
+    """The other half of the same ask: a customer whose own history already meets or beats the
+    loyal-quantity threshold gets no volume_discount at all -- they were always going to buy that
+    much, so a discount on it is pure margin given away, never an LLM call away from being offered
+    anyway."""
+    tenant = load_tenant()
+    already_loyal = float(tenant.thresholds.get("ad_hoc_volume_already_loyal_qty", 4))
+    sandbox.write("order_lines", [
+        {"tenant_id": "kutumb-mart", "order_id": f"ORD-TEST-{i}", "line_no": 1, "customer_id": "CUST-RAVI", "node_id": "DS-07", "sku": "SKU-COLA-ZERO-500ML", "qty": int(already_loyal), "price": 58.5, "discount": 0.0, "play_id": None, "ts": f"2026-09-0{i}T10:00:00Z"}
+        for i in range(1, 4)
+    ])
+    tok = set_context(CustomerContext.build(sandbox, "CUST-RAVI", "2026-09-12T09:05:00Z", tenant))
+    try:
+        out = ct.negotiate_offer("CUST-RAVI", "SKU-COLA-ZERO-500ML")
+        assert out == {"ok": False, "reason": f"already orders about {already_loyal:g} units of this at a time on their own -- no incremental offer needed"}
+    finally:
+        reset_context(tok)
+
+
 def test_ad_hoc_discount_never_exceeds_the_tenant_ceiling_or_the_margin_floor(sandbox):
     """negotiate_offer is the one discount path with no approved play behind it. The model only
     phrases what it returns; the percentage comes from min(ad_hoc_max_discount_pct, margin

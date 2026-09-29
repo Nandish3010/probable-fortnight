@@ -52,6 +52,14 @@ ad_hoc_max_discount_pct = 8.0
 # A repeat customer (>=1 past order at this tenant) gets this many extra points on top of the
 # base ad-hoc discount, still capped by ad_hoc_max_discount_pct and the margin floor above.
 ad_hoc_loyalty_bonus_pct = 3.0
+# A volume_discount's min_qty is this many units above the customer's own median order size for
+# the sku (or, with no direct-sku history, the category) -- a nudge past their habit, not a flat
+# number the same for everyone.
+ad_hoc_volume_nudge_step = 3
+# A customer whose own median order size for the sku/category already meets or exceeds this many
+# units gets no volume_discount at all: they were always going to buy that much, so discounting it
+# is margin given away for no incremental sale.
+ad_hoc_volume_already_loyal_qty = 4
 
 [margin_floor_pct]
 default = 8.0
