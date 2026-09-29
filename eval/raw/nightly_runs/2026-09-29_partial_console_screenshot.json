@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-09-29T00:00:00Z",
+  "label": "partial -- console-screenshot confirmed, NOT a make nightly-report run",
+  "project": "amru-509214",
+  "region": "asia-south1",
+  "source": "The user shared a screenshot of their own GCP Console (Cloud Run > Jobs) in this conversation. This is not a live API read from this session.",
+  "why_not_a_full_report": "harness/nightly_report.py requires the Cloud Run Admin API, Cloud Logging API and a BigQuery client (google.auth.default() against the taal-deploy service account key at /root/.gcp/taal-deploy-key.json). This session's own permission guardrail explicitly denied using that key to authenticate to GCP during this work, and this session's outbound network separately cannot reach the deployed Cloud Run URLs directly (proxy 403). Neither restriction lifted between the original request and this entry, so none of nightly_report.py's normal fields (forecast row counts, gaps by type, plays/play_assignments/play_outcomes counts, sales_daily max(date), execution log tails, green streak, row-count stability vs the previous report) could be independently measured. Only what the screenshot itself shows is recorded below -- nothing else is inferred or invented.",
+  "jobs_from_screenshot": {
+    "taal-sense": {
+      "status_of_last_execution": "Succeeded",
+      "last_executed_as_shown": "29 Sept 2026, 01:30:05",
+      "region": "asia-south1",
+      "created_by": "taal-deploy@amru-509214.iam.gserviceaccount.com"
+    },
+    "taal-measure": {
+      "status_of_last_execution": "Succeeded",
+      "last_executed_as_shown": "29 Sept 2026, 02:00:00",
+      "region": "asia-south1",
+      "created_by": "taal-deploy@amru-509214.iam.gserviceaccount.com"
+    }
+  },
+  "timezone_reconciliation": "The console's displayed times (01:30:05 and 02:00:00 on 29 Sept) are consistent with infra/deploy.sh's Cloud Scheduler cron entries read as IST (UTC+5:30): taal-sense-nightly fires '0 20 * * *' (20:00 UTC = 01:30 IST the next calendar day) and taal-measure-nightly fires '30 20 * * *' (20:30 UTC = 02:00 IST the next day). Both executions therefore appear to correspond to the 28 Sept 20:00/20:30 UTC nightly window this check-in was scheduled to confirm -- inferred from the timestamps matching the known schedule, not independently confirmed against the executions' own UTC start times.",
+  "apparent_significance": "If the console's 'Succeeded' status for both jobs is current (i.e. reflects last night's run and not a stale prior execution -- not independently verified here), this would be the first night both taal-sense-nightly and taal-measure-nightly report green since taal-measure-nightly began firing, and would be consistent with the 27 Sept ModuleNotFoundError (missing google-cloud-bigquery in that build) having been resolved by the full image rebuild that shipped with PR #51/#52.",
+  "still_unconfirmed": [
+    "BigQuery forecast row counts (node/cluster split) for last night's run_id",
+    "gaps by type for last night's run",
+    "plays / play_assignments / play_outcomes counts",
+    "sales_daily max(date) after last night's Sense run",
+    "row-count stability vs 2026-09-28.json (the previous real report)",
+    "execution log tails (whether the run was clean or succeeded with warnings)",
+    "whether 'last executed' in the console reflects last night's scheduled run specifically, as opposed to some other trigger"
+  ],
+  "follow_up_needed": "A real `make nightly-report` run (by someone with working GOOGLE_APPLICATION_CREDENTIALS for amru-509214) is still needed to produce the actual measured record and a legitimate README row. This file does not append a row to eval/raw/nightly_runs/README.md's table for that reason -- that table's own header states every number in it is measured, and this entry deliberately is not."
+}
