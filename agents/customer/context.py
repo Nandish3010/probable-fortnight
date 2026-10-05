@@ -21,6 +21,7 @@ class CustomerContext:
     customer_id: str
     channel: str = "web_chat"
     now_iso: str = ""
+    reply_lang: str = ""  # this turn's reply language (chat.detect_lang); the receipt is composed in it
     products: dict[str, dict[str, Any]] = field(default_factory=dict)
     # Overlay- and clock-aware Firestore reads (stock, customer profile); None when
     # TAAL_SERVING_CACHE is unset. Consent and offers are never read through it.

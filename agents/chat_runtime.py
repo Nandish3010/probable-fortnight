@@ -240,18 +240,22 @@ class ChatRuntime:
                 store.append("conversations", [{"tenant_id": tenant.tenant_id, "session_id": session_id, "customer_id": customer_id, "channel": channel, "play_id": None, "started_at": now}])
         msg = types.Content(role="user", parts=[types.Part(text=f"customer_id={customer_id} {text}".strip())])
         tool_calls: list[dict[str, Any]] = list(extra_tool_calls or [])
-        final_text = ""
+        final_text, reply = "", ""
         async for ev in runner.run_async(user_id=adk_user_id, session_id=session.id, new_message=msg):
             for part in (ev.content.parts if ev.content and ev.content.parts else []):
                 if part.function_call:
                     tool_calls.append({"name": part.function_call.name, "args": dict(part.function_call.args or {})})
                 if part.function_response:
                     tool_calls.append({"name": part.function_response.name, "result_ref": f"{session_id}#{len(tool_calls)}"})
+                    reply = (part.function_response.response or {}).get("reply") or reply
                 if part.text and ev.author == self.agent_name:
                     final_text = part.text
         latency_ms = int((time.perf_counter() - t0) * 1000)
         _log_timing(session_id, latency_ms, session_io)
         env = clamp(parse_envelope(final_text))
+        if reply:
+            # A tool-composed receipt or refusal (place_order, apply_offer) replaces whatever the model wrote: amounts and refusals come from code.
+            env["text"] = reply
         envelope = {"session_id": session_id, "message_id": f"{session_id}-{int(time.time() * 1000)}", "role": "agent", "language": language, **env, "tool_calls": [{"name": t["name"], **({"args": t["args"]} if "args" in t else {}), **({"result_ref": t["result_ref"]} if "result_ref" in t else {})} for t in tool_calls][:20], "latency_ms": latency_ms, "ts": now}
         _VALIDATOR.validate(envelope)
         store.append("messages", [

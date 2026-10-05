@@ -237,8 +237,34 @@ def _resolve_pending_play_id(ctx, customer_id: str) -> str | None:
     return next(iter(candidates)) if len(candidates) == 1 else None
 
 
+REFUSAL = {
+    "en": {
+        "not_treated": "This offer is not available on your account.",
+        "no_consent": "You have opted out of offers on chat, so I can't apply this one.",
+        "frequency_cap": "You have reached this week's limit on offers, so I can't apply this one.",
+        "already_redeemed": "This offer has already been used on your account.",
+    },
+    "kn": {
+        "not_treated": "ಈ ಆಫರ್ ನಿಮ್ಮ ಖಾತೆಗೆ ಲಭ್ಯವಿಲ್ಲ.",
+        "no_consent": "ನೀವು ಚಾಟ್‌ನಲ್ಲಿ ಆಫರ್‌ಗಳನ್ನು ನಿಲ್ಲಿಸಿದ್ದೀರಿ, ಹಾಗಾಗಿ ಈ ಆಫರ್ ಅನ್ವಯಿಸಲು ಆಗುವುದಿಲ್ಲ.",
+        "frequency_cap": "ಈ ವಾರದ ಆಫರ್ ಮಿತಿ ತಲುಪಿದೆ, ಹಾಗಾಗಿ ಈ ಆಫರ್ ಅನ್ವಯಿಸಲು ಆಗುವುದಿಲ್ಲ.",
+        "already_redeemed": "ಈ ಆಫರ್ ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಈಗಾಗಲೇ ಬಳಕೆಯಾಗಿದೆ.",
+    },
+}
+
+
+def _reply_lang(ctx, customer_id: str) -> str:
+    return ctx.reply_lang or (_customer_profile(ctx, customer_id) or {}).get("language", "en")
+
+
+def _refused(ctx, customer_id: str, code: str, reason: str) -> dict:
+    """A refusal with its customer-facing text composed here (`reply`), never by the model."""
+    return {"ok": False, "code": code, "reason": reason, "reply": REFUSAL.get(_reply_lang(ctx, customer_id), REFUSAL["en"])[code]}
+
+
 def apply_offer(play_id: str, customer_id: str) -> dict:
-    """Whether this customer may redeem the play now: arm, consent, frequency cap, no stacking."""
+    """Whether this customer may redeem the play now: arm, consent, frequency cap, no stacking.
+    A refusal carries a `code` and, for the customer-facing ones, the `reply` text to show."""
     ctx = current()
     play = _play(ctx, play_id)
     if not play or play.get("status") not in ("approved", "running"):
@@ -246,14 +272,14 @@ def apply_offer(play_id: str, customer_id: str) -> dict:
         if fallback_id and fallback_id != play_id:
             play_id, play = fallback_id, _play(ctx, fallback_id)
     if not play or play.get("status") not in ("approved", "running"):
-        return {"ok": False, "reason": "play is not active"}
+        return {"ok": False, "code": "not_active", "reason": "play is not active"}
     arms = _arms(ctx, customer_id)
     if arms.get(play_id) != "treated" or assign_arm(customer_id, play["holdout"]["seed"], float(play["holdout"]["fraction"])) != "treated":
-        return {"ok": False, "reason": "customer is not in the treated arm of this play"}
+        return _refused(ctx, customer_id, "not_treated", "customer is not in the treated arm of this play")
     if not _consent_ok(ctx, customer_id):
-        return {"ok": False, "reason": "no marketing consent on this channel"}
+        return _refused(ctx, customer_id, "no_consent", "no marketing consent on this channel")
     if any(ln.get("play_id") == play_id and ln["customer_id"] == customer_id for ln in ctx.store.read("order_lines")):
-        return {"ok": False, "reason": "offer already redeemed; coupons do not stack"}
+        return _refused(ctx, customer_id, "already_redeemed", "offer already redeemed; coupons do not stack")
     cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
     cutoff = (ctx.as_of - timedelta(days=7)).isoformat()
     recent = defaultdict(int)
@@ -261,9 +287,9 @@ def apply_offer(play_id: str, customer_id: str) -> dict:
         if a["customer_id"] == customer_id and a["arm"] == "treated" and a["assigned_at"][:10] >= cutoff:
             recent[a["play_id"]] += 1
     if len(recent) > cap:
-        return {"ok": False, "reason": f"frequency cap {cap} plays per 7 days reached"}
+        return _refused(ctx, customer_id, "frequency_cap", f"frequency cap {cap} plays per 7 days reached")
     params = play.get("mechanic_params") or {}
-    out: dict[str, Any] = {"ok": True, "reason": "eligible", "mechanic": play["mechanic"], "sku": play["target"]["sku"], "node_ids": play["target"]["node_ids"]}
+    out: dict[str, Any] = {"ok": True, "reason": "eligible", "play_id": play_id, "mechanic": play["mechanic"], "sku": play["target"]["sku"], "node_ids": play["target"]["node_ids"]}
     if play["mechanic"] == "coupon":
         out["discount_pct"] = float(params.get("discount_pct") or 0)
     if play["mechanic"] == "bundle":
@@ -377,13 +403,68 @@ def _pending_ad_hoc_offer(ctx, customer_id: str, sku: str) -> dict[str, Any] | N
     return rows[-1] if rows else None
 
 
+ORDER_CONFIRMATION = {
+    "en": "Your order for {items} has been placed. Your order ID is {order_id} and the total is ₹{total}.",
+    "kn": "ಆರ್ಡರ್ {order_id} ಆಗಿದೆ: {items}. ಒಟ್ಟು ₹{total}. ಧನ್ಯವಾದಗಳು!",
+}
+
+
+def _confirmation(ctx, customer_id: str, order_id: str, total: float, lines: list[dict[str, Any]]) -> str:
+    """The customer-facing receipt, composed here from the order record (never by the model) so it
+    can never disagree with what was placed. The runtime shows it verbatim (agents/chat_runtime.py)."""
+    items = " + ".join(f"{ln['qty']} x {ln['name']}" if ln["qty"] > 1 else ln["name"] for ln in lines)
+    return ORDER_CONFIRMATION.get(_reply_lang(ctx, customer_id), ORDER_CONFIRMATION["en"]).format(items=items, order_id=order_id, total=f"{total:.2f}".rstrip("0").rstrip("."))
+
+
+def _offer_play(ctx, customer_id: str, play_id: str, skus: set[str]) -> str | None:
+    """The active play whose offer an order for `skus` is accepting, or None for a plain order: the
+    play the model named, this customer's own pending offer, or one they redeemed earlier today (a
+    repeat click). Matched on the play's target sku, so the model's lines and play_id are only hints.
+    NOTE: "today" bounds how long a redeemed offer keeps refusing re-orders of its sku; a later
+    day buys at list price as usual."""
+    mine = [o for o in ctx.store.read("offers") if o["customer_id"] == customer_id]
+    today = ctx.now_iso[:10]
+    cands = [play_id] + [o["play_id"] for o in mine if not o.get("redeemed_at")] + [o["play_id"] for o in mine if today and (o.get("redeemed_at") or "")[:10] == today]
+    for pid in dict.fromkeys(c for c in cands if c):
+        play = _play(ctx, pid)
+        if play and play.get("status") in ("approved", "running") and play["target"]["sku"] in skus:
+            return pid
+    return None
+
+
 async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id: str) -> dict:
     """Place the order through the MCP order mock. lines: [{sku, qty}], priced here from the
     catalogue, the play (if any) and any pending negotiate_offer for a line's sku (checked
-    per-line, independently of the play offer, since a negotiated concession has no play_id)."""
+    per-line, independently of the play offer, since a negotiated concession has no play_id).
+
+    The model's `play_id` and `lines` are hints, not the order. The customer's own pending offer is
+    resolved server-side (`_offer_play`, whatever id the model sent) whenever the order contains
+    the offer's target sku -- an `add:<sku>` click carries only that one sku --
+    and a bundle offer then yields exactly the bundle: target x1 + partner x1 totalling the
+    play's `bundle_price`, whatever lines the model sent. Units beyond the bundle, and any other
+    sku, are priced as before. The result carries the receipt text (`reply`).
+
+    If the order touches the target sku of this customer's offer (pending, or redeemed earlier today:
+    a repeat click) or of the play the model named, it is an offer acceptance: when apply_offer
+    refuses, no order is placed and the result is a refusal (`refused` code + `reply`), never a
+    silent list-price order. An order with no offer context is a plain order, as before."""
     ctx = current()
+    offer: dict[str, Any] = {"ok": False}
+    if pid := _offer_play(ctx, customer_id, play_id, {ln["sku"] for ln in lines}):
+        offer = apply_offer(pid, customer_id)
+        if not offer["ok"]:
+            return {"order_id": "", "total_inr": 0.0, "refused": offer["code"], "error": offer["reason"], "reply": offer["reply"]}
+    play_id = offer.get("play_id")
     priced = []
-    offer = apply_offer(play_id, customer_id) if play_id else {"ok": False}
+    if offer.get("mechanic") == "bundle" and offer.get("bundle_sku"):
+        target, partner = offer["sku"], offer["bundle_sku"]
+        if target not in ctx.products or partner not in ctx.products:
+            return {"order_id": "", "total_inr": 0.0, "error": f"unknown sku {partner if target in ctx.products else target}"}
+        full = float(ctx.products[target]["list_price"]) + float(ctx.products[partner]["list_price"])
+        off = round(max(0.0, full - float(offer["bundle_price"])), 2)
+        priced = [{"sku": target, "qty": 1, "price": float(ctx.products[target]["list_price"]), "discount": off}, {"sku": partner, "qty": 1, "price": float(ctx.products[partner]["list_price"]), "discount": 0.0}]
+        lines = [{**ln, "qty": int(ln["qty"]) - (ln["sku"] in (target, partner))} for ln in lines]  # the bundle already holds one of each
+        lines = [ln for ln in lines if ln["qty"] > 0]
     redeemed_ad_hoc: list[dict[str, Any]] = []
     for ln in lines:
         p = ctx.products.get(ln["sku"])
@@ -399,17 +480,9 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
                 disc = round(price * float(ad_hoc["discount_pct"]) / 100.0, 2)
                 redeemed_ad_hoc.append(ad_hoc)
         priced.append({"sku": ln["sku"], "qty": int(ln["qty"]), "price": price, "discount": disc})
-    if offer.get("ok") and offer.get("mechanic") == "bundle" and offer.get("bundle_sku"):
-        skus = {ln["sku"] for ln in priced}
-        if offer["sku"] in skus and offer["bundle_sku"] in skus:
-            full = sum(float(ctx.products[s]["list_price"]) for s in (offer["sku"], offer["bundle_sku"]))
-            off = max(0.0, full - float(offer["bundle_price"]))
-            for ln in priced:
-                if ln["sku"] == offer["sku"]:
-                    ln["discount"] = round(off, 2)
     base_dir = str(ctx.store.base.root) if hasattr(ctx.store, "base") else None
     async with Client(orders_server) as client:
-        res = await client.call_tool("place_order", {"customer_id": customer_id, "node_id": node_id, "lines": priced, "play_id": play_id or None, "data_dir": str(ctx.store.root), "base_dir": base_dir, "ts": ctx.now_iso})
+        res = await client.call_tool("place_order", {"customer_id": customer_id, "node_id": node_id, "lines": priced, "play_id": play_id, "data_dir": str(ctx.store.root), "base_dir": base_dir, "ts": ctx.now_iso})
     data = res.structured_content or json.loads(res.content[0].text)
     data["lines"] = [{"sku": ln["sku"], "name": ctx.products[ln["sku"]]["name"], "qty": ln["qty"], "price": ln["price"], "discount": ln["discount"]} for ln in priced]
     if play_id and offer.get("ok"):
@@ -420,7 +493,7 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
     for ad_hoc in redeemed_ad_hoc:
         ad_hoc["redeemed_at"] = ctx.now_iso
         ctx.store.upsert("ad_hoc_offers", "offer_id", ad_hoc)
-    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"]}
+    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"], "reply": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"])}
 
 
 def record_stop(customer_id: str, channel: str) -> dict:
