@@ -26,7 +26,8 @@ def test_withdrawn_consent_blocks_every_offer_path_without_a_model(sandbox):
 
         after = ct.get_customer_context("CUST-MEENA")
         assert after["consent_marketing"] is False and after["pending_offers"] == []
-        assert ct.apply_offer(play_id, "CUST-MEENA") == {"ok": False, "reason": "no marketing consent on this channel"}
+        refused = ct.apply_offer(play_id, "CUST-MEENA")
+        assert (refused["ok"], refused["reason"], refused["code"]) == (False, "no marketing consent on this channel", "no_consent") and refused["reply"]
         assert ct.negotiate_offer("CUST-MEENA", "SKU-COLA-ZERO-500ML") == {"ok": False, "reason": "no marketing consent on this channel"}
         assert not [o for o in sandbox.read("offers") if o["customer_id"] == "CUST-MEENA"]
     finally:

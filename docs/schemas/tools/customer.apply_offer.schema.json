@@ -40,6 +40,19 @@
           "type": "string",
           "description": "Human-readable: why redemption is refused, or 'eligible' when ok is true."
         },
+        "code": {
+          "type": "string",
+          "enum": ["not_active", "not_treated", "no_consent", "frequency_cap", "already_redeemed"],
+          "description": "Machine-readable refusal reason; present when ok is false."
+        },
+        "reply": {
+          "type": "string",
+          "description": "Customer-facing refusal text composed in code in this turn's reply language (every refusal except not_active). The runtime shows it verbatim."
+        },
+        "play_id": {
+          "type": "string",
+          "description": "The play actually redeemed: the requested id, or the customer's own pending offer when the id was empty or unknown."
+        },
         "mechanic": {
           "type": "string"
         },

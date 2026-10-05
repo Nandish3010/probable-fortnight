@@ -51,6 +51,7 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
     token = set_context(ctx)
     try:
         language = (store.find("customers", customer_id=customer_id) or [{}])[-1].get("language", "en") or "en"
+        ctx.reply_lang = detect_lang(text, language)
         # get_customer_context is a pure, deterministic store lookup (no model involved) that the
         # prompt asked the model to call as its very first tool on every turn -- meaning every
         # single-turn /chat call against the live model paid for two sequential Gemini round trips
