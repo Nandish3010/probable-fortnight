@@ -22,7 +22,6 @@ STRINGS = {
         "in_stock": "{name} is in stock at your store{low}. Best before {bb}. Add it?",
         "oos": "{name} is out at your store right now. Here is what is on the shelf instead:",
         "none": "{name} is out at your store and I could not find a substitute in stock.",
-        "ordered": "Order {order_id} placed: {items}. Total ₹{total:.0f}. Thank you!",
         "stop": "Done. You will not receive offers on chat. Reply if you need anything else.",
         "no": "No problem. Ask me anytime.",
         "refused": "That offer is not available for you: {reason}.",
@@ -39,7 +38,6 @@ STRINGS = {
         "in_stock": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ{low}. ಬಳಕೆಗೆ ಉತ್ತಮ {bb}ರವರೆಗೆ. ಸೇರಿಸಲೇ?",
         "oos": "{name} ಈಗ ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ. ಬದಲಿಗೆ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಇರುವುದು:",
         "none": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಇಲ್ಲ ಮತ್ತು ಬದಲಿ ಸಿಗಲಿಲ್ಲ.",
-        "ordered": "ಆರ್ಡರ್ {order_id} ಆಗಿದೆ: {items}. ಒಟ್ಟು ₹{total:.0f}. ಧನ್ಯವಾದಗಳು!",
         "stop": "ಆಯಿತು. ಚಾಟ್‌ನಲ್ಲಿ ಆಫರ್‌ಗಳು ಬರುವುದಿಲ್ಲ.",
         "no": "ಪರವಾಗಿಲ್ಲ. ಯಾವಾಗ ಬೇಕಾದರೂ ಕೇಳಿ.",
         "refused": "ಆ ಆಫರ್ ನಿಮಗೆ ಲಭ್ಯವಿಲ್ಲ: {reason}.",
@@ -203,8 +201,7 @@ class StubCustomerLlm(BaseLlm):
                     lines.append({"sku": offer["bundle_sku"], "qty": 1})
                 return self._call("place_order", {"customer_id": customer_id, "node_id": node, "lines": lines, "play_id": play_id})
             po = by["place_order"]
-            items = " + ".join(f"{ln['qty']}x {ln['name']}" for ln in po.get("lines") or []) or sku
-            return self._say({"text": s["ordered"].format(order_id=po.get("order_id"), items=items, total=float(po.get("total_inr") or 0)), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
+            return self._say({"text": po.get("reply") or po.get("error", ""), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
         if low in ("no", "not now", "no thanks"):
             return self._say({"text": s["no"]})
         # category button or browse
