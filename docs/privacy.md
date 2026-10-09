@@ -1,8 +1,9 @@
 # Privacy
 
-Half-page threat model for Taal (DECISIONS §2.6, §3.2, §5.6). Framed under India's DPDP Rules
-2025 (Digital Personal Data Protection); [likely on exact rule citations -- verify against the
-final published rules before any real-tenant deployment].
+Half-page threat model for Taal (DECISIONS §2.6, §3.2, §5.6). Framed under India's Digital
+Personal Data Protection Act, 2023 (DPDP Act) and the DPDP Rules, 2025, notified in November 2025;
+the Rules phase in over 18 months, with the main obligations on data fiduciaries applying from
+May 2027.
 
 ## What leaves the tenant
 
@@ -12,9 +13,10 @@ in `infra/deploy.sh`; an optional stock/customer-profile serving cache also exis
 `TAAL_SERVING_CACHE=firestore`, which `infra/deploy.sh` sets only when a maintainer flips
 `ENABLE_SERVING_CACHE` from its hard-coded default of 0 (`infra/deploy.sh:22`), so the cache is
 off in the deployed service today) all live inside the tenant's own Google Cloud project; the only outbound calls are to Vertex AI (Gemini, embeddings)
-for model inference, which Google's Vertex AI terms treat as not used to train foundation models
-by default for enterprise customers [likely -- verify the current Vertex AI data-use terms at
-deploy time, they have changed before]. No customer data is sent to any third party beyond
+for model inference. Google's Vertex AI documentation says "Google won't use your data to train or
+fine-tune any AI/ML models without your prior permission or instruction"
+([data governance](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance)).
+No customer data is sent to any third party beyond
 Google Cloud/Vertex AI. A Looker Studio report over `play_outcomes`, reading BigQuery through the
 owner's own credentials with "anyone with the link" sharing, is designed but not wired into this
 repo (DECISIONS §5.8; see `docs/architecture.md` for what the Outcomes page actually shows). If
@@ -73,9 +75,20 @@ consent filter on the Play Desk (DECISIONS §2.6). This is deliberately "consent
 design": the audience for a marketing play is *never* "everyone at this node with this SKU
 history" -- it is always "everyone at this node with this SKU history AND an active consent row
 for this channel and purpose." Withdrawal is a first-class, immediate action, not a settings-page
-afterthought. This is the DPDP-aligned shape (purpose limitation, consent as a revocable record,
-no dark-pattern re-consent), stated here as a design commitment, not a legal opinion -- a real
-tenant deployment needs its own DPDP compliance review before launch.
+afterthought. Mapped to the Act:
+
+- **Consent tied to a purpose** (DPDP Act s.6(1): consent must be free, specific, informed,
+  unconditional and unambiguous, for a specified purpose, and limited to the data necessary for
+  it): the `purpose` column on `consent`, and the gate's `consent_required` guardrail.
+- **Withdrawal as easy as giving consent** (s.6(4)): "STOP" in the same chat the offer arrived in.
+- **Processing stops on withdrawal** (s.6(6): the fiduciary must cease processing within a
+  reasonable time): `record_stop` writes `withdrawn_at` synchronously and the gate excludes the
+  customer from every later audience.
+- **Erasure** (s.8(7): erase personal data when consent is withdrawn or the purpose is no longer
+  served, unless a law requires retention): applied today to the practitioner feedback dataset
+  (see "Deletion on request" below); the demo tenant's customers are synthetic.
+
+A tenant deployment needs its own DPDP compliance review before launch.
 
 ## Practitioner feedback
 
@@ -107,9 +120,8 @@ Never on the Cloud Run container's disk, and never in the demo tenant or a visit
 an admin token held in Secret Manager.
 
 **How long.** Up to 12 months from submission, then deleted; contact details are deleted as soon
-as the pilot conversation they were given for is over, if that is sooner. [Retention period is
-the team's decision to confirm before the form is shared -- this document states 12 months and
-the consent text on the form says the same; change both together.]
+as the pilot conversation they were given for is over, if that is sooner. The consent text on the
+form (`config/feedback_form.json`) states the same 12 months; change both together.
 
 **Deletion on request.** After submitting, the respondent is shown their `response_id` as a
 reference. Anyone who quotes it (by email to the team) has the response and any contact details
