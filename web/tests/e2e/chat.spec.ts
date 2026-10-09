@@ -14,4 +14,17 @@ test.describe("customer chat", () => {
     await expect(substitution).toContainText("Cola Zero 500ML is out");
     await expect(substitution.getByTestId("english-gloss")).toHaveCount(0);
   });
+
+  test("a quick-reply bubble shows the button label, not the internal action payload", async ({ page }) => {
+    await page.goto("/chat");
+    await page.getByRole("button", { name: "Send" }).click(); // pre-filled "Any offers today?"
+    const log = page.getByTestId("chat-log");
+    const offer = log.locator(".chat-msg--agent").first();
+    await offer.getByRole("button", { name: "Add to cart" }).click();
+
+    await expect(log.locator(".chat-msg--customer").last()).toHaveText("Add to cart");
+    await expect(log.getByText(/add:SKU/)).toHaveCount(0);
+    // the reply to the click still arrives (the mock routes the unchanged payload to its order scenario)
+    await expect(log.locator(".chat-msg--agent")).toHaveCount(2);
+  });
 });

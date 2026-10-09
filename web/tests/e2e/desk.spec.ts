@@ -71,6 +71,15 @@ test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
     await expect(card.getByTestId("plan-live")).toBeEnabled();
     await expect(card.locator(".trace-panel .trace-panel__list > li")).toHaveCount(recordedRows);
 
+    // the live panel is gone, but the streamed trace (tool calls, guardrail attempts) stays under the result
+    await expect(live).not.toBeVisible();
+    const kept = card.getByTestId("live-trace");
+    await expect(kept).toBeVisible();
+    await expect(kept.locator("> details")).toHaveAttribute("open", "");
+    await expect(kept.getByTestId("trace-attempts")).toBeVisible();
+    expect(await kept.locator(".trace-panel__event").count()).toBeGreaterThan(0);
+    await expect(kept.getByText("propose_play").first()).toBeVisible();
+
     // the run's play joins the inbox under a "Live run" tag; the recorded play stays selected
     const inbox = page.getByLabel("Play inbox");
     await expect(inbox.locator(".inbox__live")).toHaveCount(1);

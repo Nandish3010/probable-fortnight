@@ -27,7 +27,7 @@ cross-service latency assumptions in §4.3.
    `TAAL_BATCH_STORE=bigquery`/`TAAL_FORECAST_BACKEND=bigquery_timesfm`; `taal-measure` sets
    `TAAL_BATCH_STORE=bigquery` only -- both default to `local` everywhere else, including the
    deployed `taal-agents` judge-mode serving path, which is never switched. `taal-agents` also gets
-   `TAAL_PLANNER_DEADLINE_S=45` (the on-demand re-plan's deadline before the deterministic-rules
+   `TAAL_PLANNER_DEADLINE_S=90` (the on-demand re-plan's deadline before the deterministic-rules
    fallback runs; the code default is `8.0`, see `agents/planner/run.py`) -- `/chat` is served by
    this same Cloud Run service but never reads this variable at all, only the planner path does.
    A post-deploy check

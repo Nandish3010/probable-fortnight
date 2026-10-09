@@ -54,7 +54,9 @@ export function ChatPanel({
   const active = customers.find((c) => c.customer_id === activeId);
   const displayName = active?.display_name ?? "Meena";
 
-  async function send(text: string) {
+  // `text` is what the API receives; `shown` is what the visitor's bubble says. A quick-reply sends its
+  // internal payload ("add:SKU-...") but the bubble shows the button's label.
+  async function send(text: string, shown: string = text) {
     if (!text.trim()) return;
     if (sending) return;
     setSending(true);
@@ -64,7 +66,7 @@ export function ChatPanel({
         key: `u-${Date.now()}`,
         session_id: sessionId.current,
         role: "customer",
-        text,
+        text: shown,
       },
     ]);
     setInput("");
@@ -130,7 +132,7 @@ export function ChatPanel({
             {m.buttons ? (
               <div className="chat-msg__buttons">
                 {m.buttons.map((b) => (
-                  <button key={b.id} type="button" onClick={() => send(b.id)}>
+                  <button key={b.id} type="button" onClick={() => send(b.id, b.label)}>
                     {b.label}
                   </button>
                 ))}
@@ -142,7 +144,7 @@ export function ChatPanel({
                 <ul>
                   {m.list.rows.map((row) => (
                     <li key={row.id}>
-                      <button type="button" className="chat-msg__list-item" onClick={() => send(row.id)} disabled={sending}>
+                      <button type="button" className="chat-msg__list-item" onClick={() => send(row.id, row.title)} disabled={sending}>
                         <strong>{row.title}</strong>
                         {row.desc ? <span>&nbsp;— {row.desc}</span> : null}
                       </button>

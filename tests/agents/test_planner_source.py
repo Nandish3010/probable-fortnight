@@ -107,6 +107,85 @@ def test_fallback_only_after_deadline_elapses(sandbox, monkeypatch):
     assert calls and calls[0] - t_start >= 0.3
 
 
+class _VirtualClockLoop(asyncio.SelectorEventLoop):
+    """An event loop whose clock jumps to the next scheduled timer, so a 50 s model call runs in
+    milliseconds of wall time while asyncio.wait_for still sees 50 s pass."""
+
+    def __init__(self):
+        super().__init__()
+        self._now = 0.0
+
+    def time(self):
+        return self._now
+
+    def _run_once(self):
+        if not self._ready and self._scheduled:
+            self._now = max(self._now, self._scheduled[0]._when)
+        super()._run_once()
+
+
+def _run_virtual(store, gap_id, **kw):
+    for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
+        store._materialise(t)
+    if not (store.root / "manifest.json").exists():
+        (store.root / "manifest.json").write_bytes((store.base.root / "manifest.json").read_bytes())
+    loop = _VirtualClockLoop()
+    try:
+        return loop.run_until_complete(run.run_planner_async(store.root, gap_id, **kw))
+    finally:
+        loop.close()
+
+
+@pytest.fixture
+def slow_model_50s(monkeypatch):
+    """The stub model takes 50 simulated seconds on its first call (live runs measured 41-48 s)."""
+    original_generate = StubPlannerLlm.generate_content_async
+    calls = []
+
+    async def delayed(self, llm_request, stream=False):
+        if not calls:
+            calls.append(1)
+            await asyncio.sleep(50)
+        async for resp in original_generate(self, llm_request, stream=stream):
+            yield resp
+
+    monkeypatch.setattr(StubPlannerLlm, "generate_content_async", delayed)
+
+
+def test_live_deadline_90s_lets_a_50s_model_run_finish(sandbox, slow_model_50s):
+    out = _run_virtual(sandbox, "gap_tea_ds04", deadline_s=90)
+    assert out["status"] == "proposed" and out["planner_source"] == "model"
+    assert out["fallback_reason"] is None
+
+
+def test_old_45s_deadline_cut_the_same_50s_run_off(sandbox, slow_model_50s):
+    out = _run_virtual(sandbox, "gap_tea_ds04", deadline_s=45)
+    assert out["planner_source"] == "deterministic_fallback"
+    assert out["fallback_reason"] == "deadline exceeded after 45s"
+
+
+def test_a_run_past_90s_still_falls_back(sandbox, monkeypatch):
+    original_generate = StubPlannerLlm.generate_content_async
+
+    async def delayed(self, llm_request, stream=False):
+        await asyncio.sleep(100)
+        async for resp in original_generate(self, llm_request, stream=stream):
+            yield resp
+
+    monkeypatch.setattr(StubPlannerLlm, "generate_content_async", delayed)
+    out = _run_virtual(sandbox, "gap_tea_ds04", deadline_s=90)
+    assert out["planner_source"] == "deterministic_fallback"
+    assert out["fallback_reason"] == "deadline exceeded after 90s"
+
+
+def test_deploy_sets_a_90s_planner_deadline_under_the_request_timeout():
+    from pathlib import Path
+
+    deploy = (Path(__file__).resolve().parents[2] / "infra" / "deploy.sh").read_text()
+    assert "TAAL_PLANNER_DEADLINE_S=90" in deploy
+    assert "--timeout 300" in deploy  # Cloud Run request timeout stays above 90 s + the web's 30 s poll grace
+
+
 def test_no_fallback_when_the_model_responds_in_time(sandbox, monkeypatch):
     calls: list[float] = []
     original_det = run.deterministic_plan

@@ -28,7 +28,15 @@ test.describe("order total equals the offered price", () => {
     await expect(offer).toBeVisible({ timeout: 30_000 });
     expect(numbers(await offer.innerText())).toContain(offered); // the price shown to the customer
 
-    await offer.locator(".chat-msg__buttons button").first().click(); // "Add to cart" (add:<sku>)
+    // The quick-reply posts its payload (add:<sku>) unchanged, but the visitor's bubble shows the button's label.
+    const addButton = offer.locator(".chat-msg__buttons button").first(); // "Add to cart" (add:<sku>)
+    const label = (await addButton.innerText()).trim();
+    const chatPost = page.waitForRequest((r) => r.url().endsWith("/chat") && r.method() === "POST");
+    await addButton.click();
+    expect(JSON.parse((await chatPost).postData() ?? "{}").text).toMatch(/^add:SKU-/);
+    const mine = log.locator(".chat-msg--customer");
+    await expect(mine.last()).toHaveText(label);
+    await expect(log.getByText(/add:SKU-/)).toHaveCount(0);
     const receipt = log.locator(".chat-msg--agent").filter({ hasText: /ORD-/ }).last();
     await expect(receipt).toBeVisible({ timeout: 30_000 });
     const text = await receipt.locator("p").first().innerText();

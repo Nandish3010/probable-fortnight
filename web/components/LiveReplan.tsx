@@ -12,7 +12,7 @@ import type { RerunAccepted, RerunResult, TraceEvent } from "../lib/types";
 const STATUS_POLL_MS = 2000;
 const POLL_GRACE_MS = 30_000;
 
-export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDone: (result: RerunResult) => void }) {
+export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDone: (result: RerunResult, records: TraceEvent[]) => void }) {
   const [records, setRecords] = useState<TraceEvent[]>([]);
   const [elapsedS, setElapsedS] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +30,8 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
     // `make live-test` both run against `next dev`) can tell it belongs to a superseded run and
     // no-op, rather than appending into the NEW run's state.
     let finished = false;
+    // The records seen so far, handed to onDone so the page can keep the trace on screen after this panel unmounts.
+    const collected: TraceEvent[] = [];
     const controller = new AbortController();
     setRecords([]);
     setElapsedS(0);
@@ -48,7 +50,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
           const status = await getRerunStatus(accepted.run_id);
           if (status.status === "done" && status.result) {
             finished = true;
-            onDone(status.result);
+            onDone(status.result, collected);
             return;
           }
           if (status.status === "error") {
@@ -70,6 +72,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
       accepted.run_id,
       (record) => {
         if (controller.signal.aborted) return;
+        collected.push(record);
         setRecords((prev) => [...prev, record]);
       },
       controller.signal,
@@ -77,7 +80,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
       .then((result) => {
         if (controller.signal.aborted || finished) return;
         finished = true;
-        onDone(result);
+        onDone(result, collected);
       })
       .catch(() => {
         if (controller.signal.aborted || finished) return;
@@ -97,8 +100,9 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
   const headerLine =
     accepted.backend === "vertex"
       ? // eval/raw/planner_prompt_v6_2026-09-24/summary.json's real (non-fallback) Gemini runs
-        // took 23,952-43,295ms end to end -- "20-40 s" rounds that range for a judge-facing line.
-        "Gemini is planning — typically 20–40 s"
+        // took 23,952-43,295ms end to end, and a later live check saw 41-48 s;
+        // "30-50 s" covers both for a judge-facing line.
+        "Gemini is planning — typically 30–50 s"
       : "Scripted planner is running (stub backend)";
 
   return (

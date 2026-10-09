@@ -95,7 +95,7 @@ write-off from ₹9,194.12 to ₹8,067.53; Meena's chat then delivers the offer.
 reproduced in `eval/raw/planner_real_traces_2026-09-28/summary.json` and
 `eval/raw/planner_real_traces_2026-09-28/run_04/{play,result}.json`. On the deployed service,
 **Change policy → re-plan** instead runs Gemini live on demand: the Desk streams each tool call and
-guardrail check as it happens, and if no valid play arrives within the configured 45 s deadline
+guardrail check as it happens, and if no valid play arrives within the configured 90 s deadline
 (configured) the deterministic-rules fallback runs instead, badged "Rules (fallback)" with the
 reason shown. A demo gap that has never had a recording made for it (`gap_tea_ds04`) still seeds
 from the scripted stub and is badged "Scripted fixture" -- that branch of the seeding logic is

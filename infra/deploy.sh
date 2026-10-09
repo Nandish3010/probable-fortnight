@@ -206,7 +206,7 @@ else
   echo "   (secret ${FEEDBACK_SECRET} not found: /feedback/results will be disabled)"
 fi
 
-AGENTS_ENV="TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore,TAAL_PLANNER_DEADLINE_S=45"
+AGENTS_ENV="TAAL_MODEL_BACKEND=vertex,TAAL_TENANT_CONFIG=config/tenant.demo.toml,GOOGLE_CLOUD_PROJECT=${PROJECT},TAAL_FEEDBACK_STORE=firestore,TAAL_PLANNER_DEADLINE_S=90"
 if [ "${ENABLE_VERTEX_SESSIONS}" = "1" ]; then
   echo "   chat sessions: Vertex AI Sessions on Agent Engine ${AGENT_ENGINE_ID}"
   AGENTS_ENV="${AGENTS_ENV},TAAL_SESSION_BACKEND=vertex,TAAL_AGENT_ENGINE_ID=${AGENT_ENGINE_ID},TAAL_REGION=${REGION}"
@@ -220,13 +220,13 @@ fi
 # eval/raw/cloud_run_memory_2026-09-28/) and CI's smoke.yml has caught POST /approve 503ing on
 # it in production (runs 36445374014, 36445971526, both against main f48e04e). --concurrency 20,
 # not the 80 default: a judge's approve must never share an instance with dozens of others.
-# --min-instances is left unset (0), matching every other deploy in this script.
+# --min-instances is left unset (0), matching every other deploy in this script. --timeout 300 is Cloud Run's default, pinned: a live re-plan runs up to the 90 s planner deadline + 30 s poll grace (web/components/LiveReplan.tsx), so it must stay above 110 s.
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
   --set-env-vars "${AGENTS_ENV}" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
-  --memory 2Gi --cpu 2 --concurrency 20 \
+  --memory 2Gi --cpu 2 --concurrency 20 --timeout 300 \
   --allow-unauthenticated
 # CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
 # (--set-env-vars above replaces every env var, so the origins must be re-applied on each deploy.)
