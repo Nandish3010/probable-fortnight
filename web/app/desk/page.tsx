@@ -50,7 +50,12 @@ export default function PlayDeskPage() {
     }
   }
 
+  // bumped on every accepted run so the policy editor re-reads the current version (a run under
+  // changed text creates one; a live run under unchanged text does not)
+  const [policyRefresh, setPolicyRefresh] = useState(0);
+
   function handleReplanStart(accepted: RerunAccepted) {
+    setPolicyRefresh((n) => n + 1);
     setRerunResult(null);
     setRerunAccepted(accepted);
   }
@@ -302,7 +307,7 @@ export default function PlayDeskPage() {
 
               <section className="play-card__section">
                 <h4>Policy</h4>
-                <PolicyEditor gapId={selected.gap_id} onReplanStart={handleReplanStart} replanning={rerunAccepted !== null || planStarting} />
+                <PolicyEditor gapId={selected.gap_id} onReplanStart={handleReplanStart} replanning={rerunAccepted !== null || planStarting} refreshKey={policyRefresh} />
               </section>
 
               {rerunResult ? (

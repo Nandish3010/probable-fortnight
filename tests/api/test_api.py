@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import time
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -191,6 +192,33 @@ def test_rerun_with_policy_and_events(client):
     assert result["source"] == ev["source"] == summaries[0]["source"]
     assert client.get("/policy", headers=_h("v-rerun")).json()["policy_version"] == "v2"
     assert client.get("/events/does-not-exist", headers=_h("v-rerun")).status_code == 404
+
+
+def test_live_runs_with_unchanged_policy_text_reuse_the_current_version(client):
+    """"Plan live" posts the policy as it stands: that is not a new policy, so it must not write a
+    version row. Two consecutive runs under identical text leave one version; different text
+    makes exactly one, which the next identical run then reuses."""
+    h = _h("v-reuse-policy")
+    current = client.get("/policy", headers=h).json()
+    assert current["updated_at"] is None  # the tenant default: no policy row written yet
+
+    def live(text):
+        body = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": text}, headers=h).json()
+        assert _poll_rerun(client, body["run_id"], h)["status"] == "done"
+        return body
+
+    first, second = live(current["text"]), live(current["text"])
+    assert first["policy_version"] == second["policy_version"] == current["policy_version"]
+    assert first["run_id"] != second["run_id"]
+    assert client.get("/policy", headers=h).json() == current  # no row appended
+
+    edited = live(_policy_v2())
+    assert edited["policy_version"] != current["policy_version"]
+    again = live(_policy_v2())
+    assert again["policy_version"] == edited["policy_version"]
+    assert client.get("/policy", headers=h).json()["policy_version"] == edited["policy_version"]
+    rows = [r for r in (Path(os.environ["TAAL_SANDBOX_DIR"]) / "v-reuse-policy").glob("policy.*")]
+    assert rows and sum(1 for line in rows[0].read_text().splitlines() if line.strip()) == 1
 
 
 def test_rerun_unknown_gap_is_404_not_202(client):

@@ -455,7 +455,11 @@ async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends
     if not store.find("gaps", gap_id=req.gap_id):
         raise HTTPException(404, f"unknown gap {req.gap_id}")
     vid = visitor_id(request)  # store_for already requires this for a mutating request; never None here
-    version = req.policy_version or f"v{len(store.read('policy')) + 2}"
+    # A run under unchanged policy text (a live run on the policy as it stands) reuses the current
+    # version and writes no row; only different text, or an explicit `policy_version`, makes one.
+    current = _current_policy(store)
+    reuse = req.policy_version is None and req.policy_text.strip() == current["text"].strip()
+    version = current["policy_version"] if reuse else (req.policy_version or f"v{len(store.read('policy')) + 2}")
     salt = uuid4().hex[:8]  # a fresh salt per async run so re-posting the same policy_version never collides with a run still in flight
     run_id = make_run_id(req.gap_id, version, salt)
     with _RUNS_LOCK:
@@ -466,7 +470,8 @@ async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends
         _RUNS[(vid, run_id)] = _RunEntry(visitor_id=vid, status="running", started_at=time.time())
         _INFLIGHT[vid] = run_id
     try:
-        store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
+        if not reuse:
+            store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
         _REPLAN_EXECUTOR.submit(_run_replan_worker, store, vid, req.gap_id, req.policy_text, version, salt, run_id)
     except Exception:
         # Neither the policy append nor the submit actually started a run -- undo the claim above
@@ -498,13 +503,17 @@ def rerun_status(run_id: str, request: Request) -> dict[str, Any]:
     }
 
 
-@app.get("/policy")
-def policy(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+def _current_policy(store: LocalStore) -> dict[str, Any]:
     rows = store.read("policy")
     if rows:
         return rows[-1]
     t = load_tenant()
     return {"policy_version": t.policy_version, "text": t.policy_text.strip(), "updated_at": None}
+
+
+@app.get("/policy")
+def policy(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+    return _current_policy(store)
 
 
 @app.put("/policy")
