@@ -264,8 +264,8 @@ make fixtures   # rebuild committed golden plays, mutations, golden runs, evalse
 make openapi    # regenerate docs/openapi.yaml
 ```
 
-Green `make verify` is the only definition of done (`harness/`: builder and reviewer prompts,
-per-component checklists, `STATUS.md`). Layout and specs: `docs/DECISIONS.md`; data model:
+Green `make verify` is the only definition of done (`harness/`: per-component
+checklists, `STATUS.md`). Layout and specs: `docs/DECISIONS.md`; data model:
 `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`;
 pilot design: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
 

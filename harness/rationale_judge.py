@@ -7,8 +7,7 @@ For each play, sends its `rationale`, `citations`, `guardrails`, `expected_outco
 `target`/`mechanic` fields to Gemini on Vertex AI with the rubric below (structured output: one
 score 1-5 plus a short justification per criterion), following the same
 `genai.Client(vertexai=True)` + `response_schema` pattern already used in
-`agents/capture/vision.py` and the same "build prompt, call Vertex, parse" shape as
-`harness/spec_review.py`.
+`agents/capture/vision.py`.
 
 ## Rubric ("rationale quality", four criteria, each scored 1 (fails) - 5 (excellent))
 

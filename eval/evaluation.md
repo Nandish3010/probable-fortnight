@@ -551,8 +551,7 @@ default. Overall score is the mean of the four criteria; the bar for "clears" is
 
 One live `genai.Client(vertexai=True)` call per play, `gemini-2.5-flash`, temperature 0.0,
 structured JSON output (`response_schema`, the same "typed schema in, `response_mime_type:
-application/json` out" pattern already used in `agents/capture/vision.py`; the overall
-build-prompt/call-Vertex/parse shape follows `harness/spec_review.py`). The judge is given the
+application/json` out" pattern already used in `agents/capture/vision.py`). The judge is given the
 rubric, the play's fields listed above, plus grounding context the Planner itself had access to
 at drafting time but that does not live on the play object: `audience_segment_names` (segment id
 -> human name, from `segments.jsonl`), `node_names` (node id -> human name, from `nodes.jsonl`),
