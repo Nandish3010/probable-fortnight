@@ -26,8 +26,6 @@ TAAL_A11Y_REPORT_DIR=../eval/raw/a11y_2026-09-28 NEXT_PUBLIC_TAAL_MOCK=1 \
 | desktop | /desk | 0 | 26 | 2 | 36 |
 | desktop | /phone | 0 | 24 | 1 | 38 |
 | desktop | /chat | 0 | 23 | 1 | 39 |
-| desktop | /stylist | 0 | 23 | 2 | 38 |
-| desktop | /trends | 0 | 22 | 1 | 40 |
 | desktop | /outcomes | 0 | 24 | 1 | 38 |
 | desktop | /feedback | 0 | 24 | 1 | 38 |
 | desktop | /feedback/results | 0 | 24 | 1 | 38 |
@@ -35,8 +33,6 @@ TAAL_A11Y_REPORT_DIR=../eval/raw/a11y_2026-09-28 NEXT_PUBLIC_TAAL_MOCK=1 \
 | phone (390x844) | /desk | 0 | 26 | 2 | 36 |
 | phone (390x844) | /phone | 0 | 25 | 1 | 37 |
 | phone (390x844) | /chat | 0 | 24 | 1 | 38 |
-| phone (390x844) | /stylist | 0 | 24 | 2 | 37 |
-| phone (390x844) | /trends | 0 | 23 | 1 | 39 |
 | phone (390x844) | /outcomes | 0 | 25 | 1 | 37 |
 | phone (390x844) | /feedback | 0 | 25 | 1 | 37 |
 | phone (390x844) | /feedback/results | 0 | 25 | 1 | 37 |

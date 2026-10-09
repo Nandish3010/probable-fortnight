@@ -27,8 +27,7 @@ from .context import current
 
 def _resolve_node(ctx, node_id: str | None) -> str:
     """The node to act at: the model's own `node_id`/`home_node_id` argument if it names a node
-    that actually exists, else the customer's real home node. Same defensive fix as
-    agents/stylist/tools.py::_resolve_node, for the identical root cause: get_stock,
+    that actually exists, else the customer's real home node. get_stock,
     find_substitutes and list_products all name this parameter "home_node_id" in
     agents/customer/prompts/customer.md but the actual schema field is "node_id" with no
     description -- nothing tells the model to reuse the value get_customer_context already gave

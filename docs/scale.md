@@ -71,8 +71,8 @@ Two optional files sharpen the result:
 Round-trip proof, `make ingest-roundtrip`: the seeded tenant exported to these files
 (`python -m data.ingest.export`) and ingested again gives the same 550 grocery gaps, byte for byte,
 and the same 134,400 forecast rows. Measured on the seeded synthetic tenant, recomputed from
-`eval/raw/ingest_roundtrip_2026-09-27/summary.json`. The 5 apparel `assortment_gap` rows are
-excluded because they come from stylist asks, which are outside this contract. A 2-sku worked
+`eval/raw/ingest_roundtrip_2026-09-27/summary.json`. The 5 `assortment_gap` rows in that dated run are
+excluded because they are outside this contract; the generator no longer produces them. A 2-sku worked
 example lives in `data/samples/`, checked byte-for-byte against the generator by
 `tests/unit/test_ingest.py`.
 

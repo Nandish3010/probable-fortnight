@@ -58,8 +58,7 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
         # (decide-to-call-the-tool, then produce the final reply) even when the model never needed
         # a second tool. Measured live (see eval/evaluation.md, "Customer Agent /chat p95 latency,
         # round two"): a bare "hi" or "any offers?" turn took ~4-6s for exactly two round trips of
-        # ~2-3s each. Fetched here in Python instead (same pattern agents/stylist/chat.py already
-        # uses for its vision reads) and folded into the turn text as an already-done tool result,
+        # ~2-3s each. Fetched here in Python instead and folded into the turn text as an already-done tool result,
         # so a turn that needs no other tool resolves in one round trip instead of two. Only done
         # on the vertex backend: the stub model parses the raw user text with regexes (agents/
         # customer/stub_llm.py) and has no use for -- and would be confused by -- the appended
@@ -71,8 +70,7 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
         # to the customer (see eval/evaluation.md's write-up of the incident). Asking a model not
         # to repeat a block of JSON syntax sitting right in front of it in its own turn is not a
         # reliable guardrail -- context_summary() renders the same facts as one line of plain
-        # prose instead, so there is no JSON left to quote, matching the pattern
-        # agents/stylist/chat.py already used successfully (a short parenthetical description,
+        # prose instead, so there is no JSON left to quote (a short parenthetical description,
         # never a raw dict).
         effective_backend = backend or load_models()["backend"]
         turn_text = text

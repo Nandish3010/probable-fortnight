@@ -20,7 +20,9 @@ inventory-aware chat agent, and measured against a holdout.
 
 Every number below is reproduced from a committed evidence file or a named code constant, not
 typed by hand; see `eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py` for the script that
-reproduced each one.
+reproduced each one. The figures were measured on 2026-09-24, before the apparel path was removed
+from the tree; they include 5 `assortment_gap` rows (₹16,443 of the exposure) that the current
+generator no longer produces.
 
 | What | Number | Label | Source |
 |---|---|---|---|
@@ -45,8 +47,7 @@ photos has not been measured yet.
 |---|---|
 | ![Judge mode landing page](docs/screenshots/judge-mode-landing.png) Judge mode landing | ![The 60-second beat's gap card, approve pending](docs/screenshots/60-second-beat-gap-card.png) 60-second beat: gap card |
 | ![The 60-second beat after Approve, forecast chart moved](docs/screenshots/60-second-beat-approved-chart.png) 60-second beat: approved, chart moved | ![Play Desk with a play's guardrails, counterfactuals and trace](docs/screenshots/play-desk.png) Play Desk |
-| ![Phone view intake table after a sample pallet photo capture](docs/screenshots/phone-view-intake-table.png) Phone view: intake table | ![Stylist chat with a real pairing reply and the sample-garment picker](docs/screenshots/stylist-chat-pairing.png) Stylist chat: pairing + garment picker |
-| ![Outcomes screen with measured and unmeasured plays](docs/screenshots/outcomes-measured.png) Outcomes: measured | |
+| ![Phone view intake table after a sample pallet photo capture](docs/screenshots/phone-view-intake-table.png) Phone view: intake table | ![Outcomes screen with measured and unmeasured plays](docs/screenshots/outcomes-measured.png) Outcomes: measured |
 
 ## The hook
 
@@ -106,8 +107,6 @@ grocery loop:
    `estimator_priors`, keyed by mechanic, category and segment -- the next play of that shape
    starts from what was actually measured, not a static assumption.
 
-The same schema also runs an apparel assortment gap; kept in code, not in the pitch.
-
 The loop closes rather than staying open-ended: the approved play sets a promo flag on its window;
 the re-forecast applies the fitted promo lift (a projection; Measure tests it against the holdout)
 and the chart moves in the 60-second beat, not a side effect the next Sense run has to catch up to.
@@ -160,7 +159,7 @@ fetched and cited.
 ## What it does
 
 1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
-2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; seven gap types -- five grocery write-off-risk types from the forecast (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) plus one grocery demand-signal type from real chat requests (unmet demand) -- with rupees at stake; segments; substitutes. The same schema also runs an apparel assortment gap; kept in code, not in the pitch.
+2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; six gap types -- five grocery write-off-risk types from the forecast (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) plus one grocery demand-signal type from real chat requests (unmet demand) -- with rupees at stake; segments; substitutes.
 3. **Plan**: an ADK Planner Agent (LlmAgent inside a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator; eight guardrails gate it; the Cost Governor decides which gaps are worth a model call.
 4. **Approve**: assignment with a holdout, vernacular copy with the best-before line, offers for treated customers only, the play as a known future regressor, the chart moves.
 5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
@@ -174,7 +173,6 @@ fetched and cited.
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
 | Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
-| Stylist agent | `flash` (+ vision) | dialogue, which pairing to lead with | colour theory, stock, checkout, the assortment_gap this raises -- apparel; kept in code, not in the pitch |
 | Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -191,8 +189,8 @@ fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.m
 | Real | Seeded | Projected |
 |---|---|---|
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
-| Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | Apparel catalogue (~350 SKUs) and ~485 style requests (`tenant_counts.json`) | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
-| Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | Garment and selfie photo fixtures: generated colour swatches, never real photos (`docs/DECISIONS.md` §5.9) | -- |
+| Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
+| Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | -- | -- |
 | The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
 
 ## Related work

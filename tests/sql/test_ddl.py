@@ -4,7 +4,7 @@ import duckdb
 
 from data.bigquery.local import DDL_DIR, table_name, translate_ddl
 
-SMALL = {"products", "nodes", "customers", "affinity", "segments", "estimator_priors", "festival_calendar", "substitutes", "apparel_products"}
+SMALL = {"products", "nodes", "customers", "affinity", "segments", "estimator_priors", "festival_calendar", "substitutes"}
 
 
 def test_every_ddl_applies_on_duckdb():

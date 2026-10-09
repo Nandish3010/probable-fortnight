@@ -34,7 +34,7 @@ from harness.checklists import ROOT
 
 PINNED = ["gap_kaju_ds01", "gap_chips_ds07", "gap_tea_ds04", "gap_quinoa_out02", "gap_cola_ds07"]
 FLOOR = 4
-GAP_TYPES = ["online_sellby_breach", "expiry_writeoff", "stockout_risk", "slow_mover", "rebalance", "assortment_gap"]
+GAP_TYPES = ["online_sellby_breach", "expiry_writeoff", "stockout_risk", "slow_mover", "rebalance"]
 NODE_KINDS = ["dark_store", "outlet"]
 
 

@@ -1,4 +1,4 @@
-"""Shared chat runtime for every chat specialist (customer, stylist).
+"""Shared chat runtime for every chat specialist (customer).
 
 One ADK runner per (store root, backend) and per specialist app. The ADK session is scoped to the
 visitor as well as the customer (`adk_ids`): session_id `<visitor>:<customer_id>:web`, user_id
@@ -67,7 +67,7 @@ def vertex_env(models: dict[str, Any]) -> None:
 
 def chat_generate_config(models: dict[str, Any], thinking_key: str, temperature: float) -> types.GenerateContentConfig:
     """A reply here is a conversational turn, not a plan: it does not need a thinking budget.
-    `config/models.toml` defines `thinking.customer`/`thinking.stylist` (both "low") for exactly
+    `config/models.toml` defines `thinking.customer` ("low") for exactly
     this; without wiring it, chat inherits the model's default dynamic thinking on every turn."""
     config = types.GenerateContentConfig(temperature=temperature)
     level = models.get("thinking", {}).get(thinking_key, "low")
@@ -95,8 +95,7 @@ def parse_envelope(text: str) -> dict[str, Any]:
     return {"text": raw[:4096]}
 
 
-# Defense in depth, not the primary fix: the primary fix is that agents/customer/chat.py and
-# agents/stylist/chat.py no longer inject raw JSON + a "don't quote this" instruction into a
+# Defense in depth, not the primary fix: the primary fix is that agents/customer/chat.py no longer injects raw JSON + a "don't quote this" instruction into a
 # turn's own text (a live reply once echoed exactly that block back to a customer -- see
 # eval/evaluation.md). A model can still occasionally quote a parenthetical context note despite
 # being told not to, so strip anything shaped like one before it ever reaches a customer, rather
@@ -175,7 +174,7 @@ async def forget_persisted_sessions(store: LocalStore, visitor_id: str, app_name
             try:
                 await service.delete_session(app_name=app_name, user_id=user_id, session_id=adk_session_id)
                 deleted += 1
-            except Exception:  # absent under this app (a customer-only visitor has no stylist session)
+            except Exception:  # absent under this app (session absent under this app)
                 pass
     return deleted
 

@@ -61,8 +61,8 @@ def run_tests(cl: Checklist, run: bool = True) -> str:
             if t == 0:
                 notes.append("no tests collected")
             else:
-                verdict = "green" if (f + e) == 0 else "RED"
-                notes.append(f"{verdict}: {t - f - e - s} passed, {f + e} failed, {s} skipped")
+                prefix = "FAILING: " if (f + e) else ""
+                notes.append(f"{prefix}{t - f - e - s} passed, {f + e} failed, {s} skipped")
         else:
             notes.append(f"pytest exit {proc.returncode}, no junit output")
     elif existing:
@@ -108,8 +108,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     rows = [(cl, run_tests(cl, run=not args.no_tests)) for cl in load_all().values()]
     Path(args.out).write_text(render(rows), encoding="utf-8")
-    red = [cl.component for cl, r in rows if r.startswith("RED")]
-    print(f"status: wrote {args.out} ({len(rows)} components{'; RED: ' + ', '.join(red) if red else ''})")
+    red = [cl.component for cl, r in rows if r.startswith("FAILING")]
+    print(f"status: wrote {args.out} ({len(rows)} components{'; FAILING: ' + ', '.join(red) if red else ''})")
     return 0
 
 

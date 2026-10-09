@@ -14,7 +14,7 @@ from agents.planner.stub_llm import StubPlannerLlm
 
 
 def _run(store, gap_id, **kw):
-    for t in ("gaps", "plays", "products", "apparel_products", "apparel_stock", "style_requests", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
+    for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
         store._materialise(t)
     if not (store.root / "manifest.json").exists():
         (store.root / "manifest.json").write_bytes((store.base.root / "manifest.json").read_bytes())

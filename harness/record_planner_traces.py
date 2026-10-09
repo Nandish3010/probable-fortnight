@@ -42,7 +42,7 @@ MAX_CONCURRENCY = 4
 PROMPT = ROOT / "agents" / "planner" / "prompts" / "planner.md"
 CHANGELOG = ROOT / "agents" / "planner" / "prompts" / "CHANGELOG.md"
 # the tables run_planner reads (tests/agents/test_planner.py::_run materialises the same list)
-TABLES = ("gaps", "plays", "products", "apparel_products", "apparel_stock", "style_requests", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy")
+TABLES = ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy")
 
 
 def latest_selection() -> Path:

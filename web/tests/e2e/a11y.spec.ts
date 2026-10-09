@@ -8,7 +8,7 @@ import type { AxeResults } from "axe-core";
 // viewport width -- per the WCAG-violations fix in b0565d1, re-run whenever the UI changes rather
 // than assumed to still hold. Mock mode gives every route real, stable content without needing a
 // running API.
-const ROUTES = ["/", "/desk", "/phone", "/chat", "/stylist", "/trends", "/outcomes", "/feedback", "/feedback/results"];
+const ROUTES = ["/", "/desk", "/phone", "/chat", "/outcomes", "/feedback", "/feedback/results"];
 
 // Opt-in evidence capture: unset in routine runs (dev machines, CI), so `make web-test` never
 // dirties a committed directory. Set to write one JSON file per route+viewport here, e.g.
