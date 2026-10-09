@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces deck deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -70,8 +70,9 @@ api-test:         ## FastAPI contract tests against openapi.yaml
 web-test:         ## typecheck + Playwright judge-mode tests in mock mode (skips if web/node_modules missing)
 	@if [ -d web/node_modules ]; then cd web && npm run typecheck && npm test -- --reporter=line; else echo "web-test: skipped (run make setup)"; fi
 
-docs:             ## README/docs lint: links, quick-start card first, required sections
+docs:             ## README/docs lint: links, quick-start card first, required sections; deck claims cite paths that exist
 	@python3 harness/checks/docs_lint.py
+	@python3 harness/checks/deck_claims.py
 
 status:           ## regenerate STATUS.md from checklists + test results
 	uv run python -m harness.status
@@ -114,6 +115,9 @@ planner-traces:   ## one recorded planner run per selected gap -> eval/raw/plann
 
 eval:             ## planner evalset (stub or vertex per TAAL_MODEL_BACKEND)
 	uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals
+
+deck:             ## render deck/slides.html -> docs/deck.pdf (14 pages) and deck/png/slide_NN.png (needs `make setup`)
+	@python3 deck/build.py
 
 deploy:           ## gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT)
 	@bash infra/deploy.sh

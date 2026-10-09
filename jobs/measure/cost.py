@@ -29,7 +29,7 @@ Tables API, not a guess), real Cloud Run CPU/memory allocation time from Cloud M
 units Cloud Run bills in: vCPU-seconds and GiB-seconds), and real Firestore billable
 read/write units from Cloud Monitoring. Each measured quantity is priced at Google's current
 public list rate (`PUBLIC_RATES` below, each with its source and the date it was checked --
-see `docs/deck_audit.md`/`eval/evaluation.md` for the verification record). This is NOT a
+see `eval/evaluation.md` for the verification record). This is NOT a
 billing-dollar figure: it excludes any negotiated discount, committed-use discount, free-tier
 allowance, or batch/caching discount that may apply, and every result carries
 `methodology: "modeled_from_measured_usage"` so it is never confused with tier 1. A metric

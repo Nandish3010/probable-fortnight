@@ -176,6 +176,13 @@ def build_rows() -> list[Row]:
         r"\*\*Re-measured, same methodology, same message mix, fresh visitor per call\.\*\*(.*?)\n\n",
         "the /chat p95 latency round-two paragraph",
     )
+    # the latest run (28 Sep) is stated first; the 21 Sep run above stays as the earlier run
+    latest = _extract(
+        text,
+        r"\*\*Re-measured again, 28 Sep \(latest\)\.\*\*(.*?)\n\n",
+        "the 28 Sep /chat latency paragraph",
+    )
+    chat_latency = "Latest, 28 Sep: " + latest.replace("**", "") + " Earlier run, 21 Sep: " + chat_latency
     sweep_raw = ROOT / "eval" / "raw" / "sweep_vertex_2026-09-21.txt"
     approve_line = ""
     if sweep_raw.exists():
@@ -184,14 +191,14 @@ def build_rows() -> list[Row]:
             approve_line = m.group(0).strip()
     latency_result = chat_latency
     if approve_line:
-        latency_result += f" Approve latency (includes the re-forecast call), same clean live-Vertex sweep: `{approve_line}`."
+        latency_result += f" Approve latency (includes the re-forecast call), 21 Sep live-Vertex sweep: `{approve_line}` (holdout_n=26 there is the stub-seeded flagship play; since the recorded Gemini play was seeded, approve assigns 316 treated / 36 holdout)."
     flags_on = _extract(
         text,
         r"\*\*Flags-on /chat latency: (.*?)\n\n",
         "the flags-on /chat latency paragraph",
     )
     latency_result += " With `TAAL_SESSION_BACKEND=vertex` + `TAAL_SERVING_CACHE=firestore`: " + flags_on.replace("**", "")
-    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_fix_2026-09-21.json`, `eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`, `eval/raw/sessions_cache_2026-09-27/`"))
+    rows.append(Row("Customer Agent p50/p95 and approve -> re-forecast latency", latency_result, "`eval/raw/customer_latency_2026-09-28/analysis.json`, `eval/raw/customer_latency_fix_2026-09-21.json`, `eval/raw/customer_latency_fix_summary_2026-09-21.json`, `eval/raw/sweep_vertex_2026-09-21.txt`, `eval/raw/sessions_cache_2026-09-27/`"))
 
     # 11. Vision read accuracy on 30 staged photos
     vision = _extract(

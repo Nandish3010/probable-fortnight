@@ -183,9 +183,9 @@ with `python -m jobs.portfolio --out eval/raw/portfolio_<date>.json`
 | Expected waste avoided across all 424 planned plays | ₹706,183.28 |
 
 Of the 555 gaps, the 28-day horizon (`jobs/sense/forecast.py:31`, gated at `jobs/sense/gaps.py:126`
-and `:177`) directly bounds the deadline for 4 of the 7 gap types (`agents/gate/models.py:34-36`)
--- `online_sellby_breach`, `expiry_writeoff`, `slow_mover`, `rebalance`. The other 3
-(`stockout_risk`, `unmet_demand`, `assortment_gap`) use each node's own `lead_time_days` instead
+and `:177`) directly bounds the deadline for 4 of the six gap types Sense produces today (`agents/gate/models.py:34-36`)
+-- `online_sellby_breach`, `expiry_writeoff`, `slow_mover`, `rebalance`. The other 2
+(`stockout_risk`, `unmet_demand`; the 24 Sep run also had the now-removed `assortment_gap`) use each node's own `lead_time_days` instead
 (3 or 5 days in the seeded tenant, `data/generator/generate.py:119`), always inside the 28-day
 window, so "over the 28-day horizon" below describes an upper bound on every gap's deadline in
 this run, not a claim that one code constant gates all seven types identically.
