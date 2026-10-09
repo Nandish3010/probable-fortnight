@@ -95,4 +95,29 @@ test.describe("Arjun: Play Desk", () => {
     await shot(page, "arjun-05-replan");
     await expectNoConsoleErrors(errors);
   });
+
+  test("Plan live runs the planner on the flagship gap and streams it into the trace", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await asVisitor(page, "live-arjun-plan-live");
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    const card = page.getByTestId("play-detail");
+    const recorded = card.locator(".trace-panel");
+    await expect(recorded.getByTestId("trace-attempts")).toBeVisible();
+
+    // hold the SSE response back so the panel is provably visible mid-run (see the policy beat above)
+    await page.route("**/events/*/stream", async (route) => {
+      const response = await route.fetch();
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.fulfill({ response });
+    });
+    await card.getByTestId("plan-live").click();
+    const live = card.getByTestId("live-replan");
+    await expect(live).toBeVisible();
+    await expect(live.getByText(/\d+ s elapsed/)).toBeVisible();
+    await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
+    await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(3);
+    await shot(page, "arjun-06-plan-live");
+    await expectNoConsoleErrors(errors);
+  });
 });

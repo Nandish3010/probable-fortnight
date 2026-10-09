@@ -51,4 +51,24 @@ test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
     const second = attempts.getByTestId("trace-attempt-2");
     await expect(second.getByText("passed all guardrails")).toBeVisible();
   });
+
+  test("Plan live streams a run into the trace, shows the time elapsed, and keeps the recorded trace in place", async ({ page }) => {
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    const card = page.getByTestId("play-detail");
+    await expect(card.locator(".trace-panel").getByTestId("trace-attempts")).toBeVisible();
+    const recordedRows = await card.locator(".trace-panel .trace-panel__list > li").count();
+
+    await card.getByTestId("plan-live").click();
+    await expect(card.getByTestId("plan-live")).toBeDisabled();
+    const live = card.getByTestId("live-replan");
+    await expect(live).toBeVisible();
+    await expect(live.getByText(/\d+ s elapsed/)).toBeVisible();
+    await expect(live.locator(".trace-panel__event").first()).toBeVisible({ timeout: 5_000 });
+    await expect(live.getByTestId("trace-attempts")).toBeVisible({ timeout: 5_000 });
+
+    await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 10_000 });
+    await expect(card.getByTestId("plan-live")).toBeEnabled();
+    await expect(card.locator(".trace-panel .trace-panel__list > li")).toHaveCount(recordedRows);
+  });
 });

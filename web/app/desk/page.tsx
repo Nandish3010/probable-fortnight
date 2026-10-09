@@ -10,7 +10,7 @@ import { LiveReplan } from "../../components/LiveReplan";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { SourceBadge } from "../../components/SourceBadge";
 import { TracePanel } from "../../components/TracePanel";
-import { getGaps, getPlays } from "../../lib/api";
+import { getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
 import { formatDate, inr, pct } from "../../lib/format";
 import type { Gap, Play, RerunAccepted, RerunResult } from "../../lib/types";
 
@@ -30,6 +30,25 @@ export default function PlayDeskPage() {
   // calls onDone, at the same time rerunResult is set) -- the two are otherwise mutually exclusive.
   const [rerunAccepted, setRerunAccepted] = useState<RerunAccepted | null>(null);
   const [rerunResult, setRerunResult] = useState<RerunResult | null>(null);
+
+  const [planStarting, setPlanStarting] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  // "Plan live": the same async run the policy editor starts (POST /rerun, streamed over SSE),
+  // under the policy as it stands -- the planner runs for real on this gap and its tool calls and
+  // guardrail checks stream into the trace below. The recorded run stays the default view.
+  async function handlePlanLive(gapId: string) {
+    setPlanStarting(true);
+    setPlanError(null);
+    try {
+      const policy = await getPolicy();
+      handleReplanStart(await rerun({ gap_id: gapId, policy_text: policy.text }));
+    } catch (e) {
+      setPlanError(e instanceof Error ? e.message : "Could not start a live run.");
+    } finally {
+      setPlanStarting(false);
+    }
+  }
 
   function handleReplanStart(accepted: RerunAccepted) {
     setRerunResult(null);
@@ -71,6 +90,7 @@ export default function PlayDeskPage() {
       setShowWhy(false);
       setRerunAccepted(null);
       setRerunResult(null);
+      setPlanError(null);
     }
   }, [selected]);
 
@@ -255,21 +275,35 @@ export default function PlayDeskPage() {
               <ApprovePanel play={selected} holdoutFraction={holdoutFraction} rationale={rationale} />
 
               <section className="play-card__section">
-                <h4>Trace</h4>
+                <div className="trace-section__head">
+                  <h4>Trace</h4>
+                  <button
+                    type="button"
+                    onClick={() => handlePlanLive(selected.gap_id)}
+                    disabled={planStarting || rerunAccepted !== null}
+                    data-testid="plan-live"
+                  >
+                    {planStarting || rerunAccepted ? "Planning live…" : "Plan live"}
+                  </button>
+                </div>
+                <p className="muted trace-section__hint">
+                  The trace below is the recorded run. <strong>Plan live</strong> runs the planner on this gap now and
+                  streams each tool call and guardrail check as it happens, with the time elapsed.
+                </p>
+                {planError ? <p className="error">{planError}</p> : null}
                 <TracePanel runId={runIdFromTraceRef(selected.trace_ref)} />
+                {rerunAccepted ? (
+                  <div className="trace-section__live">
+                    <h5>Live run</h5>
+                    <LiveReplan accepted={rerunAccepted} onDone={handleReplanDone} />
+                  </div>
+                ) : null}
               </section>
 
               <section className="play-card__section">
                 <h4>Policy</h4>
-                <PolicyEditor gapId={selected.gap_id} onReplanStart={handleReplanStart} replanning={rerunAccepted !== null} />
+                <PolicyEditor gapId={selected.gap_id} onReplanStart={handleReplanStart} replanning={rerunAccepted !== null || planStarting} />
               </section>
-
-              {rerunAccepted ? (
-                <section className="play-card__section">
-                  <h4>Re-planning</h4>
-                  <LiveReplan accepted={rerunAccepted} onDone={handleReplanDone} />
-                </section>
-              ) : null}
 
               {rerunResult ? (
                 <section className="play-card__section" role="status" aria-live="polite">
