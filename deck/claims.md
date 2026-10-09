@@ -54,6 +54,7 @@ Dates are the dates of the measurement, not of the deck.
 | 11 | Forecast backtest, synthetic: WAPE 0.113, MAPE 0.133, 63 rows (20 Sep) | `eval/raw/external_backtest_2026-10-09.json:120-123`; `eval/raw/backtest_rows_2026-09-20.jsonl` |
 | 11 | Public non-grocery dataset backtest WAPE 0.83 | `eval/raw/external_backtest_2026-10-09.json:77`; `eval/external_backtest.md` |
 | 11 | Live eval 2026-10-09: rationale judge 15/15 (same-family judge), ADK response match 38/46, exact trajectory 6/46 | `eval/raw/live_eval_2026-10-09/summary.json:5` |
+| 11 | Live re-plan on the deployed service, 2026-10-09: click-to-done 47.7 / 47.7 / 30.8 s, 7 / 6 / 7 iterations, 2 of 3 fell back to rules at the 45 s deadline | `eval/raw/live_replan_timing_2026-10-09.json`; `eval/raw/planner_live_rerun_2026-10-09/runs.jsonl` |
 | 12 | 7 usable responses; 10 collected, 3 excluded as flagged | `eval/raw/feedback_summary_2026-10-09/summary.md:7-9`; `config/feedback_exclusions.json` |
 | 12 | 3 of 7 write off weekly or daily (2 weekly, 1 daily) | `eval/raw/feedback_summary_2026-10-09/summary.md:72-73` |
 | 12 | 3 of 6 online sellers say the sell-by rule limits what they sell | `eval/raw/feedback_summary_2026-10-09/summary.md:125`; `eval/raw/feedback_summary_2026-10-09/summary.md:60` |

@@ -1062,3 +1062,5 @@ the 4 MB `adk eval` log is not committed; no thought-signature fields were prese
   Sep (empty and fabricated rationale) were not re-run today, and the judge is the same model
   family as the planner, so this is weak evidence of rationale quality; the human-labelled
   agreement subset is still not done.
+- **Live re-plan, deployed service (2026-10-09, after the #66 deploy):** 3 `POST /rerun` for `gap_chips_ds07`, unchanged policy, backend `vertex`, 45 s deadline: click-to-done 47.7 / 47.7 / 30.8 s, 7 / 6 / 7 iterations. **2 of 3 fell back to the rules play** (`deadline exceeded after 45s`); only run 3 was model-planned. All three reported, none repeated.
+  Files: `eval/raw/live_replan_timing_2026-10-09.json`, `eval/raw/planner_live_rerun_2026-10-09/`.
