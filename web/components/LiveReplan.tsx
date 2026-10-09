@@ -97,8 +97,9 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
   const headerLine =
     accepted.backend === "vertex"
       ? // eval/raw/planner_prompt_v6_2026-09-24/summary.json's real (non-fallback) Gemini runs
-        // took 23,952-43,295ms end to end -- "20-40 s" rounds that range for a judge-facing line.
-        "Gemini is planning — typically 20–40 s"
+        // took 23,952-43,295ms end to end, and a later live check saw 41-48 s;
+        // "30-50 s" covers both for a judge-facing line.
+        "Gemini is planning — typically 30–50 s"
       : "Scripted planner is running (stub backend)";
 
   return (

@@ -32,9 +32,9 @@ APP = "taal_planner"
 
 # A live Gemini planner call that exceeds this many seconds falls back to the deterministic draft
 # (deterministic.py) rather than let a demo-facing request run unbounded. The deployed service
-# overrides this default through TAAL_PLANNER_DEADLINE_S (infra/deploy.sh, being changed in the
-# same branch as this file); the async re-plan endpoint no longer holds a request open for the
-# planner, so that override no longer has to fit under a synchronous HTTP response budget.
+# overrides this default through TAAL_PLANNER_DEADLINE_S (infra/deploy.sh sets 90 s for live
+# runs, under taal-agents' 300 s Cloud Run request timeout); the async re-plan endpoint no longer
+# holds a request open for the planner, so that override does not have to fit a synchronous budget.
 DEFAULT_DEADLINE_S = 8.0
 
 # Every play's provenance is one of these four. `resolve_source` below decides which, for a run
