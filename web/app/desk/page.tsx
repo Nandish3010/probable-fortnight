@@ -12,7 +12,8 @@ import { SourceBadge } from "../../components/SourceBadge";
 import { TracePanel } from "../../components/TracePanel";
 import { getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
 import { formatDate, inr, pct } from "../../lib/format";
-import type { Gap, Play, RerunAccepted, RerunResult } from "../../lib/types";
+import { TraceView } from "../../components/traceRows";
+import type { Gap, Play, RerunAccepted, RerunResult, TraceEvent } from "../../lib/types";
 
 function runIdFromTraceRef(traceRef: string): string {
   return traceRef.startsWith("events/") ? traceRef.slice("events/".length) : traceRef;
@@ -30,6 +31,8 @@ export default function PlayDeskPage() {
   // calls onDone, at the same time rerunResult is set) -- the two are otherwise mutually exclusive.
   const [rerunAccepted, setRerunAccepted] = useState<RerunAccepted | null>(null);
   const [rerunResult, setRerunResult] = useState<RerunResult | null>(null);
+  // The finished run's streamed trace, kept visible under the result (LiveReplan unmounts on done).
+  const [liveTrace, setLiveTrace] = useState<TraceEvent[] | null>(null);
 
   const [planStarting, setPlanStarting] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export default function PlayDeskPage() {
   function handleReplanStart(accepted: RerunAccepted) {
     setPolicyRefresh((n) => n + 1);
     setRerunResult(null);
+    setLiveTrace(null);
     setRerunAccepted(accepted);
   }
 
@@ -65,9 +69,10 @@ export default function PlayDeskPage() {
   // is: the recorded play stays selected, and Approve acts on whichever play is selected.
   const [livePlayIds, setLivePlayIds] = useState<Set<string>>(new Set());
 
-  function handleReplanDone(result: RerunResult) {
+  function handleReplanDone(result: RerunResult, records: TraceEvent[]) {
     setRerunAccepted(null);
     setRerunResult(result);
+    setLiveTrace([...records]);
     const livePlay = result.play;
     if (livePlay) {
       setPlays((prev) => [...prev.filter((p) => p.play_id !== livePlay.play_id), livePlay]);
@@ -105,6 +110,7 @@ export default function PlayDeskPage() {
       setShowWhy(false);
       setRerunAccepted(null);
       setRerunResult(null);
+      setLiveTrace(null);
       setPlanError(null);
     }
   }, [selected]);
@@ -355,6 +361,17 @@ export default function PlayDeskPage() {
                       </>
                     )}
                   </div>
+                </section>
+              ) : null}
+
+              {liveTrace && liveTrace.length > 0 ? (
+                <section className="play-card__section" data-testid="live-trace">
+                  <details open>
+                    <summary>
+                      <strong>Live run trace</strong> <span className="muted">· {liveTrace.length} events</span>
+                    </summary>
+                    <TraceView events={liveTrace} label="Finished live run trace" />
+                  </details>
                 </section>
               ) : null}
             </div>

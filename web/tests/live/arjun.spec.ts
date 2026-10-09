@@ -117,6 +117,9 @@ test.describe("Arjun: Play Desk", () => {
     await expect(liveRun.getByText(/\d+ s elapsed/)).toBeVisible();
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
     await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(3);
+    // the streamed trace stays under the result once the run is done
+    await expect(card.getByTestId("live-replan")).toHaveCount(0);
+    await expect(card.getByTestId("live-trace").getByTestId("trace-attempts")).toBeVisible();
     // the live play sits in the inbox under the recorded one; the recorded play is still the one selected
     await expect(page.getByLabel("Play inbox").locator(".inbox__live")).toHaveCount(1);
     await expect(card.getByText(/^play_chips_ds07_v1 · status/)).toBeVisible();
