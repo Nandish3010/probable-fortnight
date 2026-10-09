@@ -19,7 +19,7 @@ const SAMPLE_PHOTOS = [
   { ref: "fixtures/photos/pallet_03.jpg", src: "/samples/pallet_03.jpg", label: "Pallet 3 · sweets" },
   { ref: "fixtures/photos/pallet_04.jpg", src: "/samples/pallet_04.jpg", label: "Pallet 4 · rice & dal" },
   { ref: "fixtures/photos/pallet_05.jpg", src: "/samples/pallet_05.jpg", label: "Pallet 5 · oil" },
-  { ref: "fixtures/photos/pallet_06.jpg", src: "/samples/pallet_06.jpg", label: "Pallet 6 · atta & poha" },
+  { ref: "fixtures/photos/pallet_06.jpg", src: "/samples/pallet_06.jpg", label: "Pallet 6 · atta & poha (date hard to read)" },
   { ref: "fixtures/photos/pallet_08.jpg", src: "/samples/pallet_08.jpg", label: "Pallet 7 · milk & paneer" },
 ];
 

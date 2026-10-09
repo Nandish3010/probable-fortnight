@@ -25,3 +25,11 @@ remains available as a plain image asset if needed elsewhere (e.g. a deck or scr
 
 Filming rule (DECISIONS §5.1): dates fill at least a quarter of the frame; two-pass reading (find the
 label, then read the crop) when a single pass reports a date confidence below 0.7.
+
+Which sample shows the confirm step: `pallet_06` (gallery label "date hard to read"). Its recorded
+read has one clear row (Wheat Atta, every confidence >= 0.7) and one under the threshold (Poha, date
+0.65), so the phone view asks "Is this Poha 500G ...?" and holds "Confirm rows" until it is answered.
+`pallet_01` reads clean. `tests/agents/test_vision.py` pins both. Uploading the same jpg to a live
+Vertex backend (9 Oct 2026, `gemini-2.5-flash`) read both of its dates as unreadable (null date,
+confidence 0.1), so the low-confidence path is not only a property of the hand-recorded rows.
+

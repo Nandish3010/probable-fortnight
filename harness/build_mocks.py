@@ -55,6 +55,8 @@ def main() -> int:
     out["rerun_events"] = _parse_sse(c.get(rerun_accepted["stream_url"]).text)
     out["rerun"] = next((r["data"] for r in out["rerun_events"] if r["event"] == "done"), None)
     out["capture"] = c.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_01.jpg"}).json()
+    # a pallet whose poha date is unclear: one row clears the 0.7 threshold, one is routed to the confirm step
+    out["capture_lowconf"] = c.post("/capture", json={"node_id": "DS-07", "photo_ref": "fixtures/photos/pallet_06.jpg"}).json()
     out["execution"] = c.post("/execution", json={"play_id": "play_chips_ds07_v1", "node_id": "DS-07", "steps_done": ["print_tag"]}).json()
 
     def turns(session: str, texts: list[str], **extra) -> list[dict]:

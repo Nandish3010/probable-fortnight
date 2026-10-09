@@ -29,4 +29,24 @@ test.describe("phone view", () => {
 
     expect(errors).toEqual([]);
   });
+
+  test("a sample with an unclear date routes one row to the confirm step, and Confirm rows waits for the answer", async ({ page }) => {
+    await page.goto("/phone");
+    await page.getByRole("button", { name: "Pallet 6" }).click();
+
+    const table = page.getByTestId("intake-table");
+    await expect(table.getByText("SKU-WHEAT-ATTA-1KG")).toBeVisible();
+    await expect(table.getByText("SKU-POHA-500G")).toBeVisible();
+    // the atta row clears the 70% threshold; the poha row (date 65%) does not and is asked about
+    await expect(table.getByText(/date 65%/)).toBeVisible();
+    await expect(table.locator(".confirm-row")).toHaveCount(1);
+    await expect(table.locator(".confirm-row")).toContainText("Is this Poha 500G");
+
+    const confirm = page.getByRole("button", { name: "Confirm rows" });
+    await expect(confirm).toBeDisabled();
+    await table.locator(".confirm-row").getByRole("button", { name: "Yes" }).click();
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(page.getByText(/Wrote \d+ batch/)).toBeVisible();
+  });
 });
