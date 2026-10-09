@@ -20,7 +20,7 @@ Dates are the dates of the measurement, not of the deck.
 | 3 | Vendor pages read on 2026-10-09 | `README.md:172-176` |
 | 4 | Six gap types | `README.md:205`; `agents/gate/models.py:36-38` |
 | 4 | LoopAgent, max 3 iterations | `agents/planner/agent.py:28` |
-| 4 | Six deterministic planner tools | `agents/planner/tools.py:402` |
+| 4 | Six deterministic planner tools | `agents/planner/tools.py:406` |
 | 4 | Orders through an in-process MCP tool | `README.md:208` |
 | 4 | 95% CI on Measure | `eval/raw/prior_update_2026-09-28.json:36-41` |
 | 4 | Low-confidence rows must be confirmed | `agents/capture/vision.py:25` |
@@ -34,7 +34,7 @@ Dates are the dates of the measurement, not of the deck.
 | 7 | AI.FORECAST benchmarked, local won 45/45 | `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json:58` |
 | 7 | Architecture boxes match the committed diagram | `docs/architecture.md:7-30`; `docs/architecture.svg` |
 | 8 | Gemini 2.5 Flash | `config/models.toml:23` |
-| 8 | LoopAgent max 3; 6 tools; 8 guardrails | `agents/planner/agent.py:28`; `agents/planner/tools.py:402`; `agents/gate/models.py:44-46` |
+| 8 | LoopAgent max 3; 6 tools; 8 guardrails | `agents/planner/agent.py:28`; `agents/planner/tools.py:406`; `agents/gate/models.py:44-46` |
 | 8 | AI.FORECAST and ARIMA_PLUS_XREG benchmarked; local forecaster served | `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`; `eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json` |
 | 8 | GitHub Actions runs verify, then deploys to Cloud Run on every merge to main | `.github/workflows/verify.yml:68-98` |
 | 9 | ₹486 / $5.86 per 30 days, modelled from measured usage | `eval/raw/cost_measurement_2026-09-23.json:309-310` |
