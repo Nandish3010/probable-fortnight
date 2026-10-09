@@ -7,7 +7,7 @@ record of what was decided and when; where it differs from what the deployed cod
 wins.
 
 - The 30%-of-shelf-life-or-45-days rule is FSSAI's advisory to e-commerce food business operators
-  [CITATION: owner to paste primary URL], not a statute. Read "legal deadline", "legally", "by
+  (3 Dec 2024, file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150), paragraph 4), not a statute. Read "legal deadline", "legally", "by
   law" and "legal online sell-by" below as the regulator's advisory, applied as a tenant-set,
   versioned rule. The demo tenant uses the lenient reading (`config/tenant.demo.toml`, `combine =
   "min"`); retailers set their own.
@@ -86,7 +86,7 @@ Users: **Priya, node manager** (phone, voice, camera; the hero of the video); **
   **Superseded 27 Sep 2026:** the demo tenant uses the lenient reading (expiry minus min(30% of
   shelf life, 45 days); config/tenant.demo.toml, rule version v1-either). Retailers set their own
   reading. The rule is the regulator's advisory, applied as a tenant-set, versioned rule, not a
-  statute; source [CITATION: owner to paste primary URL].
+  statute; source: FSSAI advisory of 3 Dec 2024, file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150).
 - `expiry_writeoff`: units projected unsold by physical expiry.
 - `stockout_risk`: forecast over lead time exceeds on-hand + inbound.
 - `rebalance`: at risk at node A, short at node B.

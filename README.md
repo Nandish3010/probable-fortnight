@@ -51,17 +51,19 @@ photos has not been measured yet.
 
 ## The hook
 
-FSSAI, India's food regulator, advises e-commerce food business operators
-[CITATION: owner to paste primary URL] that food delivered online should still have 30% of its
-shelf life or 45 days left at delivery. It is an advisory, not a statute: Taal treats it as the
-regulator's advisory, applied as a tenant-set, versioned rule (`config/tenant.demo.toml`,
-`sellby_rule`) -- a tenant parameter, not hard-coded. A 90-day-shelf-life pack of chips that
-expires in **33 days** can therefore only be sold online for **6** more days under the demo
-tenant's own reading. Forecasting tools treat expiry as the deadline; Taal makes the online
-sell-by cut-off a first-class gap type. The rule is shown on every gap card: the demo tenant uses
-the lenient reading ("either condition satisfies", the earlier of the two cut-offs, which keeps
-bread and milk sellable online); the stricter reading is one switch away and retailers set their
-own.
+FSSAI, India's food regulator, sent e-commerce food business operators an advisory on
+3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf),
+Regulatory Compliance Division, paragraph 4): "FSSAI mandates that products must have a minimum
+shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory,
+not a gazetted rule, and it leaves two things open: 30% of what (total shelf life is the usual
+reading), and whether the two limits are alternatives or cumulative. **The reading below is
+Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule
+(`config/tenant.demo.toml`, `sellby_rule`) rather than hard-coding it. On the demo tenant's
+default, either limit satisfies it (the lenient reading, which keeps bread and milk sellable
+online), so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left
+(30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the
+deadline; Taal makes the online sell-by cut-off a first-class gap type. The rule is shown on
+every gap card; the stricter reading is one switch away and retailers set their own.
 
 Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07, ₹9,200 at stake, online
 sell-by in 6 days. The Desk's trace for this gap is a real, committed Gemini recording, badged
