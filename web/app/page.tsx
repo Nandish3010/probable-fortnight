@@ -119,7 +119,7 @@ export default function LandingPage() {
 
       <footer className="footer">
         <div className="footer__links">
-          <a href="/deck.pdf" target="_blank" rel="noreferrer">
+          <a href="https://github.com/Nandish3010/probable-fortnight/raw/main/docs/deck.pdf" target="_blank" rel="noreferrer">
             Deck
           </a>
           <a href="https://github.com/Nandish3010/probable-fortnight" target="_blank" rel="noreferrer">
