@@ -38,6 +38,8 @@ generator no longer produces.
 | Plays planned | 424 | seeded | `eval/raw/portfolio_2026-09-24.json` (`planned/count`); reproduced in `impact_numbers.json` |
 | Expected margin at the default response prior (5%, `agents/gate/estimator.py:35-36`) -- sales margin ₹206,205 plus write-off avoided (net of transfer cost) ₹141,151 | ₹347,356 total | projected | `eval/raw/portfolio_2026-09-24.json` (`plays[*].expected_outcome.margin_inr`, split by mechanic); transfer-cost formula per the `agents/gate/estimator.py` docstring; reproduced in `impact_numbers.json` |
 | Monthly running cost of this deployment -- usage measured over the trailing 30 days to 2026-09-23, priced at Google's public list rates; not a bill | ₹486 | measured (usage), list-priced; not a bill | `eval/raw/cost_measurement_2026-09-23.json` (`modeled/total_inr`; method "modeled_from_measured_usage": usage quantities measured over the trailing 30 days, priced at Google's public list rates) |
+| Forecast backtest, synthetic tenant -- mean MAPE over 63 tier-origin rows (9 category tiers x 7 rolling origins, 7-day horizon) | 0.133 (tiers 0.107 to 0.221) | seeded | `eval/raw/backtest_rows_2026-09-20.jsonl`; `uv run python -m jobs.sense.backtest` |
+| **Real data** -- same backtest and forecaster on UCI Online Retail II (top 300 SKUs, 8 rolling origins); gap detector: 0 gaps, none computable (no stock or expiry in the data) | MAPE 3.79 (median per-day error 0.78); 0 gaps | measured on public data | `eval/raw/external_backtest_2026-10-09.json`; method and caveats in [`eval/external_backtest.md`](eval/external_backtest.md). Caveat: a UK gift wholesaler, not grocery, with lumpy daily sales; the figure says the method is weak on lumpy daily demand, not what grocery will do |
 | Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md:484` |
 
 ## Screenshots
@@ -291,6 +293,8 @@ narrative behind it: every number names the command that produced it and links t
 committed under `eval/raw/`. Rows §12 asks for that this project genuinely cannot produce yet
 (pilot results, Gemini-as-judge scoring, cost from a billing export, planner throughput timing) say
 so explicitly in the table rather than a guessed number.
+
+The forecaster has also been backtested once on a public retail dataset it was not built around (UCI Online Retail II, not grocery): [`eval/external_backtest.md`](eval/external_backtest.md).
 
 ## Development
 
