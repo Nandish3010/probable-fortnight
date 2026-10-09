@@ -551,6 +551,10 @@ All three profiles run the same code with a tenant config; the difference is tri
 ### 18.6 What this adds to the entry
 One slide (§11 slide 10 already exists; add the profile table and the 2% rule), one line on the Play card ("this play cost ₹1.8 to plan; conversations budgeted ₹40"), the Cost Governor visible as a named agent in the trace, and `docs/scale.md` carrying the measured unit costs. It answers the scalability sub-criterion with numbers and it answers a retail CEO's "what does this cost me" before they ask.
 
+### 18.7 Buyer and pricing basis
+Buyer: the category / supply-chain head. Pricing basis, to be chosen with the first pilot customer and not priced here: (a) per dark store per month, or (b) `pct x rupees rescued`, where rescued is the waste avoided that Measure attributes against the holdout (`jobs/measure/run.py`).
+Payback illustration (seeded portfolio, projected at the default prior): `break_even_fee_per_node_month = expected_margin / nodes - run_cost / nodes` = ₹347,356 / 16 - ₹486 / 16 (`eval/raw/portfolio_2026-09-24.json`, `eval/raw/cost_measurement_2026-09-23.json`); a fee below that leaves the buyer ahead on paper, and the number is replaced by the measured lift after a pilot.
+
 ---
 
 ## 19. Y Combinator Requests for Startups: what maps onto Taal (Spring, Summer and Fall 2026 lists, read via secondary summaries; ycombinator.com was unreachable from this session)

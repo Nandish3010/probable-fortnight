@@ -1034,3 +1034,29 @@ recording, and its Desk trace panel badge reads `Recorded from Gemini · 28 Sep 
 against a raw-data date). The "ten live re-plans" measurement in that section is still not done
 (that is a `/rerun` latency measurement, a different exercise from this one-time seeding recording)
 and its credential-absent framing still applies to it.
+
+## Live model evaluation, dated run (2026-10-09)
+
+One manual run of both live-model evals against Vertex AI, `gemini-2.5-flash` (`config/models.toml`
+`ids.flash`), project `amru-509214`, `asia-south1`. Nothing failed for quota or billing, so no retry
+was needed. Raw files: `eval/raw/live_eval_2026-10-09/` (84 KB; `summary.json` feeds the table row;
+the 4 MB `adk eval` log is not committed; no thought-signature fields were present in the kept files).
+
+- **ADK planner evalsets, live:** 46 evalsets built from recorded real runs (the 4 of 50 gaps that
+  fell back to the deterministic path in the 28 Sep recording have no evalset), criteria from
+  `agents/planner/evalsets/test_config.json`. **The response-match result is 38/46**: in 38 of 46
+  cases Gemini's final response matched the recorded one at or above 0.8. The trajectory metric,
+  `tool_trajectory_avg_score`, is an exact tool-sequence comparison: it fails a case whenever the
+  model retries `propose_play`, or calls `estimate_outcomes` / `check_guardrails`, a different number
+  of times than the recording, even when it lands on essentially the same play. It passes only 6/46,
+  so **6/46 pass both metrics**. Failure classes (`adk_vertex/divergence.json`, 40 failures): 20
+  differ in both the `propose_play` retry count and the estimate/guardrail count, 8 in `propose_play`
+  retries only, 7 in estimate/guardrail counts only, 4 are empty-turn or no-play, 1 is tool order.
+  The 28 Sep run was 7/50 on the trajectory-gated count. So 6/46 mostly measures how consistent
+  Gemini's retry pattern is from run to run (row 6 makes the same point), not whether the planner
+  is right.
+- **Rationale judge, live:** the same 15 plays and rubric as the 21 Sep run, re-judged today:
+  **15/15 clear 4.0, mean 5.0/5** (`rationale_judge.json`). The two negative sanity checks from 21
+  Sep (empty and fabricated rationale) were not re-run today, and the judge is the same model
+  family as the planner, so this is weak evidence of rationale quality; the human-labelled
+  agreement subset is still not done.

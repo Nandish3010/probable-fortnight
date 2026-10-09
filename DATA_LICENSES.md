@@ -1,11 +1,12 @@
 # Data licences
 
-No third-party raw data is stored in this repository. Each external dataset is listed with its
+No third-party raw data is stored in this repository (one derived, aggregated sample is: see the Online Retail II row). Each external dataset is listed with its
 source, terms, the permission status, and the transform script that reproduces our derived tables.
 
 | Dataset | Source | Terms | Permission | Script |
 |---|---|---|---|---|
 | Dunnhumby "The Complete Journey" | dunnhumby Source Files | Research use; permission required for public use | Requested 12 Sept 2026; no reply by 19 Sept. Team decision 20 Sept: use derived department-level coupon-response priors only (never raw rows), at the team's own accepted risk. Not yet ingested -- pending the four source CSVs. | `data/public/transform_complete_journey.py` (derived aggregates only) |
+| UCI "Online Retail II" (Chen, D., 2012, doi:10.24432/C5CG6D) | https://archive.ics.uci.edu/dataset/502/online+retail+ii (zip sha256 `572e3627...e67bfb`) | CC BY 4.0, attribution required | n/a (open licence, no account) | `data/external/online_retail_ii/load.py` builds the committed derived sample `data/external/online_retail_ii/sample/` (daily units and revenue for the top 300 SKUs by country, no invoice or customer fields); the raw workbook is never committed. Used only for the forecast backtest, `eval/external_backtest.md` |
 | Festival calendar | Public holiday calendars | Facts, no licence | n/a | `fixtures/festival_calendar.json` (hand-entered; verify dates before deploy) |
 
 The demo tenant (Kutumb Mart: catalogue, nodes, batches, sales history, customers, consent,
