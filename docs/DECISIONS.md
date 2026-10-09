@@ -408,7 +408,7 @@ taal/
   web/                   # Next.js: phone view, Play Desk, chat, Outcomes, judge mode, replay
   jobs/sense/  jobs/measure/
   tests/                 # unit, property, sql assertions, scripted conversations, playwright (judge mode), golden path e2e
-  harness/               # builder + reviewer prompts, checklists per component (§17.3), spec-review GitHub Action, STATUS.md generator
+  harness/               # checklists per component (§17.3), STATUS.md generator
   fixtures/              # golden plays (valid + mutated), conversations, staged photos, outcome fixtures, demo snapshot
   infra/                 # gcloud shell scripts (services, scheduler, IAM matrix per service account, budgets, min-instances toggle), GitHub Actions (pytest on gate/estimator, schema validation on golden plays)
   eval/                  # backtests, planner evalset results, simulation pass rates, golden runs, latency logs, billing export
