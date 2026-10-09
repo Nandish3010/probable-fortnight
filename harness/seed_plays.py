@@ -15,7 +15,7 @@ import sys
 from agents.planner.run import run_planner_async
 from harness.recorded_traces import seed_from_recording
 
-DEMO_GAPS = ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02", "gap_blazer_ds07"]
+DEMO_GAPS = ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"]
 FLAGSHIP_GAP = "gap_chips_ds07"
 
 

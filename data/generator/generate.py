@@ -1,13 +1,6 @@
 """Seeded synthetic Indian layer for the demo tenant (DECISIONS §3.2). Emits the exact DDL schema
 under data/bigquery/ddl as JSONL tables in TAAL_DATA_DIR (LocalStore), plus manifest.json.
 
-Apparel (DECISIONS §5.9) is generated on separate RNG streams, in its own tables
-(`apparel_products`, `apparel_stock`, `style_requests`), never mixed into `products`: the grocery
-generator, its sell-by/gap pipeline and its byte-identity guarantee are untouched by the stylist
-catalogue or its simulated demand. `data/generator/apparel.py::generate_style_requests` states the
-demand rule for `style_requests`; see its docstring for the details Sense's trends and
-assortment-gap detection actually consume.
-
 Determinism: one `random.Random(seed)`, a fixed `as_of` date, no wall-clock reads, insertion-
 ordered dicts. Two runs with the same seed are byte-identical (tests/unit/test_generator.py).
 
@@ -34,7 +27,6 @@ from agents.gate.config import TenantConfig, load_tenant
 from agents.gate.sellby import online_sellby_date
 from agents.gate.store import LocalStore
 
-from .apparel import generate_apparel, generate_style_requests, seed_style_requests
 from .catalog import (
     CATEGORIES,
     CATEGORY_VELOCITY,
@@ -342,23 +334,10 @@ class Generator:
         customers, consent, affinity = self.customers_consent_affinity(products, nodes)
         orders, lines = self.orders(customers, affinity, products)
         regressors = self.future_regressors(products)
-        # A separate RNG stream, seeded off the same run seed, so the apparel catalogue never
-        # consumes draws from self.rng: every grocery table stays byte-identical run to run and
-        # independent of whether apparel generation runs before or after it.
-        apparel, apparel_stock = generate_apparel(random.Random(f"{self.seed}:apparel"), self.tid, nodes, AS_OF)
-        # Two more RNG streams off the same run seed, again never touching self.rng: one fixed,
-        # planted scenario for the demo anchor (seed_style_requests), plus a rule-based simulation
-        # of ordinary stylist demand across the same 70-day window and customer base the grocery
-        # side uses (generate_style_requests's docstring states the rule). Grocery and the apparel
-        # catalogue stay byte-identical regardless of whether this simulation runs.
-        style_requests = seed_style_requests(self.tid, customers, AS_OF) + generate_style_requests(
-            random.Random(f"{self.seed}:style"), self.tid, customers, nodes, apparel, apparel_stock, AS_OF, HISTORY_DAYS,
-        )
         tables = {
             "products": products, "nodes": nodes, "sales_daily": sales, "inventory_batches": batches, "inbound": inbound,
             "customers": customers, "consent": consent, "affinity": affinity, "orders": orders, "order_lines": lines,
             "future_regressors": regressors, "estimator_priors": self.priors(),
-            "apparel_products": apparel, "apparel_stock": apparel_stock, "style_requests": style_requests,
         }
         for name, rows in tables.items():
             store.write(name, rows)
@@ -373,8 +352,6 @@ class Generator:
                 "stockout_kaju_katli": {"sku": "SKU-KAJU-KATLI-250G", "node_ids": ["DS-01", "DS-03"]},
                 "slow_mover_quinoa": {"sku": "SKU-QUINOA-500G", "node_id": "OUT-02"},
                 "gap_tea_ds04": {"sku": "SKU-DARJEELING-TEA-100G", "node_id": "DS-04", "batch_id": "B-TEA-DS04-01"},
-                "stylist_anchor": {"sku": "APP-KURTA-MUSTARD-W", "node_id": "DS-07"},
-                "gap_blazer_ds07": {"sku": "APP-BLAZER-BLACK-U", "node_id": "DS-07", "supply_node_id": "DS-05 or DS-06"},
             },
         }
         (store.root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")

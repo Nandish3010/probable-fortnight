@@ -35,7 +35,7 @@ class _SpyStore(LocalStore):
 @pytest.fixture
 def spy_store(data_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _SpyStore:
     # data_dir is a SESSION-scoped fixture that returns the real, shared .local/data once it
-    # exists -- this test calls run_sense(), which writes gaps/style_trends/etc. back through the
+    # exists -- this test calls run_sense(), which writes gaps/etc. back through the
     # store, so it must run against its own throwaway copy, never the shared fixture directory
     # other tests (tests/sql especially) depend on staying at its generated values.
     isolated = tmp_path / "data"
@@ -71,7 +71,7 @@ def test_bigquery_timesfm_backend_never_rewrites_forecasts_through_store(spy_sto
 
     forecast_writes = [rows for table, rows in spy_store.write_calls if table == "forecasts"]
     assert forecast_writes == [], "bigquery_timesfm rows are already persisted by 02/04.sql -- store.write('forecasts', ...) must never be called for this backend"
-    # gaps/style_trends still go through the store as normal -- this backend only changes the
+    # gaps still go through the store as normal -- this backend only changes the
     # forecasts write, nothing else about run_sense's own bookkeeping
     assert any(table == "gaps" for table, _ in spy_store.write_calls)
     assert record["model"] == "timesfm"

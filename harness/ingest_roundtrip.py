@@ -8,8 +8,7 @@ Steps (all in a temp dir; nothing touches TAAL_DATA_DIR):
   2. data.ingest.export A -> CSVs (products, inventory_batches, sales, nodes, inbound)
   3. python -m data.ingest on those CSVs -> B                          (runs Sense on B)
   4. diff: every grocery gap row (canonical JSON, evidence included), every forecast row, and every
-     batch's derived online_sellby_date. Apparel assortment_gap rows are reported separately: they
-     come from stylist asks (style_requests, apparel_stock), which are not part of the contract.
+     batch's derived online_sellby_date. Gap types outside the grocery contract are reported separately.
 Exit 0 only when all three diffs are empty.
 """
 from __future__ import annotations

@@ -20,8 +20,7 @@ tests: ["tests/agents/test_customer.py", "tests/agents/test_mcp_orders.py"]
   paid for two sequential live `generateContent` round trips (the model deciding to call
   `get_customer_context`, then a second call to produce the final reply) even on turns that needed
   no other tool -- `get_customer_context` is a pure, deterministic store lookup that gains nothing
-  from being a model-invoked tool call. Fixed by prefetching it in Python (`agents/customer/chat.py`,
-  the same pattern `agents/stylist/chat.py` already uses for its vision reads) and folding the
+  from being a model-invoked tool call. Fixed by prefetching it in Python (`agents/customer/chat.py`) and folding the
   result into the turn text as an already-done tool result, with the prompt told not to call it
   again; a turn needing no other tool now resolves in one round trip instead of two. Re-measured
   with the identical 50-call methodology (same message mix, one fresh `X-Taal-Visitor` per call):

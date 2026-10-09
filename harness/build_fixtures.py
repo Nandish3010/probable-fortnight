@@ -38,53 +38,6 @@ POLICY_V2 = FIX / "policy_v2.txt"
 DEMO_GAPS = ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"]
 FIXED_NOW = datetime(2026, 9, 12, 9, 0, tzinfo=UTC)
 
-# ---------------------------------------------------------------------- stylist photo fixtures
-# 16x16 solid-colour PNG swatches (no third-party image library, ~100 bytes each) standing in for
-# staged garment and selfie photos, in the fixtures/photos/pallet_0N.json style: what the stub
-# vision backend returns for each is the paired *.json, hand-checked, not the pixel data itself.
-_GARMENT_SWATCHES: dict[str, tuple[tuple[int, int, int], dict]] = {
-    "mustard_kurta": ((212, 160, 23), {"garment_type": "kurta", "colour": "mustard", "pattern": "solid", "fabric": "cotton", "confidence": 0.92}),
-    "navy_tshirt": ((31, 42, 68), {"garment_type": "t-shirt", "colour": "navy", "pattern": "solid", "fabric": "cotton", "confidence": 0.88}),
-    "red_floral_dress": ((178, 34, 34), {"garment_type": "dress", "colour": "red", "pattern": "floral", "fabric": "crepe", "confidence": 0.62}),
-}
-_SELFIE_SWATCHES: dict[str, tuple[tuple[int, int, int], dict]] = {
-    "warm_medium": ((201, 152, 105), {"undertone": "warm", "depth": "medium", "confidence": 0.82}),
-    "cool_light": ((234, 202, 187), {"undertone": "cool", "depth": "light", "confidence": 0.78}),
-    "unclear": ((128, 128, 128), {"undertone": None, "depth": None, "confidence": 0.30}),
-}
-
-
-def _write_png(path: Path, rgb: tuple[int, int, int], size: int = 16) -> None:
-    """A minimal, valid, uncompressed-content PNG: one IHDR (8-bit RGB), one IDAT (each scanline
-    filter-type 0 followed by size*3 solid-colour bytes), one IEND. No Pillow/numpy dependency."""
-    import struct
-    import zlib
-
-    def chunk(tag: bytes, data: bytes) -> bytes:
-        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
-
-    ihdr = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
-    raw = b"".join(b"\x00" + bytes(rgb) * size for _ in range(size))
-    idat = zlib.compress(raw, 9)
-    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(png)
-
-
-def _write_garment_swatches() -> int:
-    n = 0
-    for name, (rgb, attrs) in _GARMENT_SWATCHES.items():
-        _write_png(FIX / "photos" / "garments" / f"{name}.png", rgb)
-        _write(FIX / "photos" / "garments" / f"{name}.json", attrs)
-        n += 1
-    for name, (rgb, attrs) in _SELFIE_SWATCHES.items():
-        _write_png(FIX / "photos" / "selfies" / f"{name}.png", rgb)
-        _write(FIX / "photos" / "selfies" / f"{name}.json", attrs)
-        n += 1
-    return n
-
-
-
 def _write(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, indent=2, ensure_ascii=False, sort_keys=False) + "\n", encoding="utf-8")
@@ -182,6 +135,9 @@ def evalset_from_trace(gap_id: str, records: list[dict], summary: dict, trace_re
 def build_evalsets_from_traces(trace_dir: Path) -> int:
     trace_dir = trace_dir.resolve()
     summary = json.loads((trace_dir / "summary.json").read_text(encoding="utf-8"))
+    missing = [row["gap_id"] for row in summary["gaps"] if not (trace_dir / f"{row['gap_id']}.jsonl").exists()]
+    if missing:
+        raise SystemExit(f"{trace_dir}: {len(missing)} trace files missing; the bulky traces ship as the release asset eval-raw-2026-09 (see eval/raw/README.md). Extract it into the repo root first.")
     es = ROOT / "agents" / "planner" / "evalsets"
     shutil.rmtree(es, ignore_errors=True)
     es.mkdir(parents=True, exist_ok=True)
@@ -302,8 +258,6 @@ def main(argv: list[str] | None = None) -> int:
         n = build_evalsets_from_traces(Path(args.evalsets_from_traces))
         print(f"fixtures: {n} evalsets from {args.evalsets_from_traces}")
         return 0
-    n = _write_garment_swatches()
-    print(f"fixtures: {n} stylist photo swatches")
     return asyncio.run(main_async(Path(os.environ.get("TAAL_DATA_DIR", ".local/data")).resolve()))
 
 

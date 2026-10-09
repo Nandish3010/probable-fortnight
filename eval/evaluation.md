@@ -5,6 +5,11 @@ regenerated from this file and `eval/raw/` by `make eval-table` (`python -m
 harness.build_eval_table`) -- never typed by hand. Everything below is this table's source
 material: the dated narrative, the raw commands, and the caveats.
 
+The bulky recorded planner traces (`eval/raw/planner_traces_2026-09-28/<gap_id>.jsonl` and the
+`adk_events.jsonl` files under `eval/raw/planner_real_traces_2026-09-28/`) are published as the release
+asset `eval-raw-2026-09` (URL to be filled after release); see `eval/raw/README.md`. Their summaries stay
+in the tree.
+
 ## Correction, 22 Sep: the live-Vertex and AI.GENERATE_TABLE blockers below were real, are now closed
 
 Everything under "Not measured, and why" that blamed missing Vertex credentials or a missing IAM

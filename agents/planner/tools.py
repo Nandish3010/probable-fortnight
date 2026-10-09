@@ -55,8 +55,8 @@ def audience_customer_ids(ctx: PlannerContext, sku: str, node_ids: list[str], se
     strong affinity to its category), optionally restricted to segments. Order is stable.
 
     `requesting_customer_ids` (assortment_gap's real askers, from gap evidence) are always
-    included regardless of affinity: the affinity table only ever covers grocery skus, so an
-    apparel gap's affinity lookup is always empty, and a customer who is actually the source of
+    included regardless of affinity: the affinity table only ever covers grocery skus, so a
+    sku with no affinity rows yields an empty lookup, and a customer who is actually the source of
     the demand signal is stronger evidence than a modelled score anyway."""
     min_aff = ctx.tenant.thresholds.get("min_affinity", 0.3) if min_affinity is None else min_affinity
     clusters = {ctx.nodes[n]["cluster_id"] for n in node_ids if n in ctx.nodes}
@@ -191,10 +191,7 @@ def get_gap(gap_id: str) -> dict:
 def _bundle_partners(ctx: PlannerContext, sku: str, node_id: str) -> list[dict]:
     """Up to three partner SKUs in stock at the node from a complementary category, highest stock first."""
     category = ctx.products[sku]["category"]
-    # Apparel has no grocery bundle partner (pairing is the Stylist's job, agents/stylist/tools.py:
-    # suggest_pairings) -- an empty list here, not the grocery-wide "snacks" default, so an
-    # assortment_gap play never shows a nonsensical snack-bundle candidate.
-    partner_cats = {"snacks": ["beverages"], "beverages": ["snacks"], "sweets": ["premium_tea", "beverages"], "premium_tea": ["sweets", "bakery"], "staples": ["staples"], "dairy": ["bakery"], "bakery": ["dairy"], "apparel": []}.get(category, ["snacks"])
+    partner_cats = {"snacks": ["beverages"], "beverages": ["snacks"], "sweets": ["premium_tea", "beverages"], "premium_tea": ["sweets", "bakery"], "staples": ["staples"], "dairy": ["bakery"], "bakery": ["dairy"]}.get(category, ["snacks"])
     stock: dict[str, int] = defaultdict(int)
     for b in ctx.store.read("inventory_batches"):
         if b["node_id"] == node_id and b["expiry_date"] and b["expiry_date"] >= ctx.as_of.isoformat():
@@ -218,7 +215,7 @@ def get_candidate_audiences(sku: str, node_ids: list[str], objective: str, gap_i
     """Segments reachable for this sku at these nodes: size before and after the consent filter, mean affinity.
 
     Pass `gap_id` when it is available (get_gap's response) so a gap whose evidence carries
-    `requesting_customer_ids` -- assortment_gap, sourced from real stylist asks with no coverage
+    `requesting_customer_ids` -- assortment_gap, sourced from real customer asks with no coverage
     in the grocery affinity table -- still reaches its real, demonstrated audience instead of an
     empty one."""
     ctx = current()
