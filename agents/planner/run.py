@@ -9,6 +9,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from collections.abc import Callable
@@ -89,10 +90,16 @@ def _event_record(ev: Any, seq: int, t0: float, run_id: str) -> dict[str, Any]:
             if part.text.startswith("DONE"):
                 rec["level"] = "ok"
         if part.function_call:
-            rec["function_call"] = {"name": part.function_call.name, "args": _shrink(dict(part.function_call.args or {}))}
+            args = dict(part.function_call.args or {})
+            rec["function_call"] = {"name": part.function_call.name, "args": _shrink(args)}
+            rationale = (args.get("play") or {}).get("rationale") if part.function_call.name == "propose_play" and isinstance(args.get("play"), dict) else None
+            if rationale:
+                rec["rationale"] = str(rationale)  # the args above cap strings at 400 chars; the rejected wording is shown in full
         if part.function_response:
             resp = dict(part.function_response.response or {})
             rec["function_response"] = {"name": part.function_response.name, "response": _shrink(resp)}
+            if part.function_response.name == "propose_play" and not resp.get("valid"):
+                rec["rejections"] = parse_rejections(resp.get("errors"))
             if part.function_response.name == "check_guardrails" and not resp.get("all_passed", True):
                 rec["level"] = "warn"
             if part.function_response.name == "propose_play":
@@ -100,6 +107,26 @@ def _event_record(ev: Any, seq: int, t0: float, run_id: str) -> dict[str, Any]:
     if ev.actions and ev.actions.escalate:
         rec["escalate"] = True
     return rec
+
+
+_GUARDRAIL_ERROR = re.compile(r"^guardrail (\w+): (.*)$", re.S)
+
+
+def parse_rejections(errors: list[Any] | None) -> list[dict[str, str]]:
+    """propose_play's error strings -> [{guardrail, reason}], one per failure, for the trace panel.
+    "guardrail <rule>: <detail>" names its rule; the other kinds of rejection get a fixed name."""
+    out = []
+    for e in errors or []:
+        text = str(e)
+        if m := _GUARDRAIL_ERROR.match(text):
+            out.append({"guardrail": m.group(1), "reason": m.group(2)})
+        elif text.startswith("runtime invariant: "):
+            out.append({"guardrail": "runtime_invariant", "reason": text.removeprefix("runtime invariant: ")})
+        elif text.startswith("target lot is past"):
+            out.append({"guardrail": "online_sellby", "reason": text})
+        else:
+            out.append({"guardrail": "schema", "reason": text})
+    return out
 
 
 def _shrink(obj: Any, depth: int = 0) -> Any:
@@ -192,7 +219,7 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         msg = _initial_message(ctx, gap_id)
         if on_event is not None:
             on_event("user", msg)
-        seq, iterations, t0 = 1, 0, None
+        seq, iterations, t0, attempts = 1, 0, None, 0
         proposed = None
         usage_totals: dict[str, int] = {}
         deadline = DEFAULT_DEADLINE_S if deadline_s is None else deadline_s
@@ -200,13 +227,17 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         timed_out = False
 
         async def _drain() -> None:
-            nonlocal seq, iterations, t0, proposed
+            nonlocal seq, iterations, t0, proposed, attempts
             async for ev in runner.run_async(user_id="planner", session_id=session.id, new_message=msg):
                 if t0 is None:
                     t0 = ev.timestamp
                 if on_event is not None:
                     on_event("event", ev)
                 rec = _event_record(ev, seq, t0, run_id)
+                if (rec.get("function_call") or rec.get("function_response") or {}).get("name") == "propose_play":
+                    if "function_call" in rec:
+                        attempts += 1  # a propose_play call opens the next attempt; its response carries the same number
+                    rec["attempt"] = attempts
                 ctx.store.append_event(run_id, rec)
                 seq += 1
                 for field, count in (rec.get("usage") or {}).items():

@@ -3,6 +3,7 @@
 // including the terminal `kind: "run_summary"` record (it carries `text`, so it renders as an
 // ordinary text row here), identically.
 import type { TraceEvent } from "../lib/types";
+import { buildAttempts, type Attempt } from "./traceAttempts";
 
 // Short, human-scannable rendering of one value -- never the full nested structure. An array
 // collapses to its length, an object to its key count; only a short scalar is shown in full.
@@ -163,5 +164,76 @@ export function EventRow({ row }: { row: Row }) {
         </details>
       ) : null}
     </li>
+  );
+}
+
+function AttemptItem({ attempt }: { attempt: Attempt }) {
+  const state = attempt.pending ? "pending" : attempt.accepted ? "accepted" : "rejected";
+  return (
+    <li className={`trace-attempt trace-attempt--${state}`} data-testid={`trace-attempt-${attempt.n}`}>
+      <div className="trace-attempt__head">
+        <strong>Attempt {attempt.n}</strong>
+        {state === "rejected" ? (
+          <span className="trace-panel__marker trace-panel__marker--fail">
+            <span aria-hidden>&#9888;</span> rejected
+          </span>
+        ) : state === "accepted" ? (
+          <span className="trace-panel__marker trace-panel__marker--pass">
+            <span aria-hidden>&#10003;</span> passed all guardrails
+          </span>
+        ) : (
+          <span className="trace-panel__marker trace-panel__marker--pending">checking guardrails…</span>
+        )}
+        <span className="trace-panel__offset">+{attempt.offsetMs}ms</span>
+      </div>
+      {attempt.rejections.map((r, i) => (
+        <p key={i} className="trace-attempt__reason">
+          <code className="trace-panel__code">{r.guardrail}</code> {r.reason}
+        </p>
+      ))}
+      {attempt.rationale ? (
+        <details className="trace-panel__raw" open={state === "accepted" || undefined}>
+          <summary>{state === "accepted" ? "Accepted rationale" : state === "rejected" ? "Rejected rationale" : "Draft rationale"}</summary>
+          <p className="trace-attempt__rationale">{attempt.rationale}</p>
+          {attempt.rationaleCut ? <p className="muted">Recorded without the rest of this text (the trace keeps the first 400 characters).</p> : null}
+        </details>
+      ) : null}
+    </li>
+  );
+}
+
+// What the planner tried, one entry per propose_play call: why a draft was rejected (which
+// guardrail, what it said, the wording that failed) and the one that passed. Renders nothing for a
+// trace with no propose_play call (a governor skip, a rules fallback).
+export function AttemptList({ events }: { events: TraceEvent[] }) {
+  const attempts = buildAttempts(events);
+  if (attempts.length === 0) return null;
+  const rejected = attempts.filter((a) => !a.pending && !a.accepted).length;
+  return (
+    <section className="trace-attempts" aria-label="Guardrail attempts" data-testid="trace-attempts">
+      <h5 className="trace-attempts__title">
+        Guardrail attempts · {attempts.length} proposed{rejected ? `, ${rejected} rejected` : ""}
+      </h5>
+      <ol className="trace-attempts__list">
+        {attempts.map((a) => (
+          <AttemptItem key={a.n} attempt={a} />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+// The shared body of a trace: the attempt summary above the full event timeline. TracePanel feeds
+// it a finished (or replayed) run's events, LiveReplan the records streaming in.
+export function TraceView({ events, label, tabIndex }: { events: TraceEvent[]; label: string; tabIndex?: number }) {
+  return (
+    <>
+      <AttemptList events={events} />
+      <ol className="trace-panel__list" tabIndex={tabIndex} aria-label={label}>
+        {annotate(events).map((row) => (
+          <EventRow key={row.event.seq} row={row} />
+        ))}
+      </ol>
+    </>
   );
 }

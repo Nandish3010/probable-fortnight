@@ -36,6 +36,14 @@ test.describe("Arjun: Play Desk", () => {
     // The real recorded run's own rejections were all cite_or_drop (an uncited number in the
     // rationale), not margin_floor -- that was the old scripted stub's story.
     await expect(card.getByText(/guardrail cite_or_drop|cite_or_drop/).first()).toBeVisible();
+    // ... and the panel lists each of those attempts: three rejected by cite_or_drop with the
+    // reason and the wording that failed, then the one that passed.
+    const attempts = card.locator(".trace-panel").getByTestId("trace-attempts");
+    await expect(attempts.locator(".trace-attempt--rejected")).toHaveCount(3);
+    await expect(attempts.locator(".trace-attempt--rejected").first().locator("code")).toHaveText("cite_or_drop");
+    await expect(attempts.locator(".trace-attempt--rejected").first()).toContainText("uncited numbers in rationale");
+    await expect(attempts.locator(".trace-attempt--accepted")).toHaveCount(1);
+    await shot(page, "arjun-03b-attempts");
 
     // replay reproduces the same panel state as the live run, event for event (snapshot diff)
     const trace = card.locator(".trace-panel__list");

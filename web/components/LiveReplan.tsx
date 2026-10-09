@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getRerunStatus, streamRerun } from "../lib/api";
-import { annotate, EventRow } from "./traceRows";
+import { TraceView } from "./traceRows";
 import type { RerunAccepted, RerunResult, TraceEvent } from "../lib/types";
 
 // If the SSE stream itself fails (dropped connection, proxy timeout, ...), fall back to polling
@@ -88,7 +88,6 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accepted.run_id]);
 
-  const rows = annotate(records);
   const headerLine =
     accepted.backend === "vertex"
       ? // eval/raw/planner_prompt_v6_2026-09-24/summary.json's real (non-fallback) Gemini runs
@@ -102,11 +101,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
       <p className="muted live-replan__timing">
         {elapsedS} s elapsed · falls back to rules after {Math.round(accepted.deadline_s)} s
       </p>
-      <ol className="trace-panel__list" aria-label="Live re-plan trace">
-        {rows.map((row) => (
-          <EventRow key={row.event.seq} row={row} />
-        ))}
-      </ol>
+      <TraceView events={records} label="Live re-plan trace" />
       {error ? (
         <p className="error" data-testid="live-replan-error">
           {error}

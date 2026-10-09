@@ -32,4 +32,23 @@ test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
     const resultSection = card.locator(".play-card__section").filter({ hasText: "Re-plan result" });
     await expect(resultSection.getByText("Scripted fixture")).toBeVisible();
   });
+
+  test("trace panel lists every propose_play attempt: the rejection with its guardrail, reason and rationale, then the pass", async ({ page }) => {
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    const attempts = page.getByTestId("play-detail").locator(".trace-panel").getByTestId("trace-attempts");
+    await expect(attempts).toBeVisible();
+
+    const first = attempts.getByTestId("trace-attempt-1");
+    await expect(first.locator(".trace-panel__marker--fail")).toContainText("rejected");
+    await expect(first.locator("code")).toHaveText("margin_floor");
+    await expect(first.getByText(/net margin 1\.96%/)).toBeVisible();
+    const rejected = first.locator("details");
+    await expect(rejected).not.toHaveAttribute("open", "");
+    await rejected.locator("summary").click();
+    await expect(rejected.getByText(/Masala Chips 200G at Dark store 07/)).toBeVisible();
+
+    const second = attempts.getByTestId("trace-attempt-2");
+    await expect(second.getByText("passed all guardrails")).toBeVisible();
+  });
 });

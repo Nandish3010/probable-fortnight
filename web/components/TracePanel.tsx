@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getEvents } from "../lib/api";
 import { SourceBadge } from "./SourceBadge";
-import { annotate, EventRow } from "./traceRows";
+import { TraceView } from "./traceRows";
 import type { EventsResponse, TraceEvent } from "../lib/types";
 
 export function TracePanel({ runId }: { runId: string }) {
@@ -51,7 +51,6 @@ export function TracePanel({ runId }: { runId: string }) {
   // fallback only); fall back to the events response's own recorded_at when the run itself has
   // none (e.g. a trace with no run_summary at all).
   const runSummary = events.find((e) => e.kind === "run_summary");
-  const rows = annotate(events).slice(0, visibleCount);
 
   return (
     <div className="trace-panel">
@@ -62,11 +61,7 @@ export function TracePanel({ runId }: { runId: string }) {
           {replaying ? "Replaying (4x)…" : "Replay at 4x"}
         </button>
       </div>
-      <ol className="trace-panel__list" tabIndex={0} aria-label={`Agent trace for run ${runId}`}>
-        {rows.map((row) => (
-          <EventRow key={row.event.seq} row={row} />
-        ))}
-      </ol>
+      <TraceView events={events.slice(0, visibleCount)} label={`Agent trace for run ${runId}`} tabIndex={0} />
     </div>
   );
 }
