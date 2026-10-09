@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from data.external.online_retail_ii.load import keep_line, sample_to_tables, serial_to_date
-from harness.external_backtest import run
+from harness.external_backtest import run, synthetic_reference
 
 ROOT = Path(__file__).resolve().parents[2]
 SAMPLE = ROOT / "data" / "external" / "online_retail_ii" / "sample"
@@ -37,6 +37,13 @@ def test_absent_fields_stay_none():
 def test_committed_numbers_reproduce():
     committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_*.json")).read_text())
     now = run(SAMPLE, "check")
-    for k in ("mean_mape", "mean_bias", "n_origins", "forecast_method_counts", "spread_behind_the_mean"):
+    for k in ("mean_mape", "wape", "mean_bias", "n_origins", "forecast_method_counts", "spread_behind_the_mean"):
         assert now[k] == committed[k]
     assert now["gap_detector"]["gaps_total"] == 0
+
+
+def test_synthetic_reference_reproduces_both_metrics():
+    committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_*.json")).read_text())["synthetic_reference"]
+    now = synthetic_reference()
+    assert (now["mean_mape"], now["wape"]) == (committed["mean_mape"], committed["wape"])
+    assert now["mean_mape"] == committed["committed_2026-09-20"]["mean_mape"]  # tree still reproduces the 20 Sep MAPE

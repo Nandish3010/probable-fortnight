@@ -28,19 +28,26 @@ daily demand per SKU is lumpy. There is no expiry, no stock and no cost.
   lead time, promo flag (`on_promo` is `False` = unknown, so the promo coefficient is never fitted).
 - `uv run python -m harness.external_backtest` calls `jobs.sense.backtest.run_backtest` unchanged:
   rolling origin every 7 days, 7-day horizon, 8 origins (2011-10-14 to 2011-12-02), `SeriesModel`
-  refit on data before each origin, MAPE over series-days with a sale (actual > 0). No new metric.
+  refit on data before each origin, MAPE over series-days with a sale (actual > 0). A second metric,
+  pooled WAPE (sum of absolute errors over sum of actuals across the same scored series-days), is
+  computed from the same slots by re-walking them (`slot_metrics`, which asserts it reproduces
+  `run_backtest`'s MAPE) and is reported next to MAPE, never instead of it.
   `tests/unit/test_external_backtest.py` re-runs it from the committed sample and checks the numbers.
 
 ## Numbers
 
-| | Real: Online Retail II | Synthetic tenant (`eval/raw/backtest_rows_2026-09-20.jsonl`) |
+| | Real: Online Retail II | Synthetic tenant (seeded, recomputed; `synthetic_reference` in the raw JSON) |
 |---|---|---|
 | Series | 300 SKUs | SKU x cluster series, 9 category tiers |
 | Origins | 8 | 7 |
 | Mean MAPE over origins | **3.79** | 0.133 (tiers 0.107 to 0.221) |
+| **WAPE** (pooled over scored series-days) | **0.83** | 0.113 |
 | Mean bias | +3.50 | +0.023 |
+| Scored series-days | 10,809 | 43,742 |
 | Per-origin MAPE range | 3.20 to 4.32 | n/a |
 
+- The synthetic column is recomputed from the seeded tenant in the current tree (seed 20260912) with
+  the same code, so both metrics are comparable; its MAPE still equals the 20 Sep committed 0.133.
 - Behind the 3.79: over 10,809 scored series-days the median absolute percentage error is 0.78, 42%
   of them exceed 100%, yet the mean forecast is 51.4 units/day against 53.2 actual. The mean is
   driven by days with small actuals (a few units) forecast against a level set by wholesale days;
@@ -54,9 +61,23 @@ daily demand per SKU is lumpy. There is no expiry, no stock and no cost.
   inventory and returned 0 of each of the six types. No stock level or expiry was synthesised to get
   a count.
 
+### Why MAPE and WAPE differ here
+
+MAPE averages a ratio per series-day, so every scored day counts the same whatever its size: a day
+with 2 units sold against a forecast of 20 contributes 900% and a day with 500 units sold against
+520 contributes 4%. On lumpy wholesale demand many days are small and the forecast level is set by
+the large days, so a minority of small-actual days drives the mean to 3.79 (42% of scored days
+exceed 100% error, median 0.78). WAPE divides the total absolute error by the total units sold, so it
+is weighted by volume and the small days barely move it: 0.83 means the daily SKU forecasts are off
+by about 83% of the units actually sold. MAPE therefore says the forecaster often badly overshoots
+quiet days; WAPE says how much volume it misplaces, and that is still poor (0.113 on the synthetic
+tenant). The aggregate level is about right (mean forecast 51.4 against 53.2 actual units a day), so
+the weakness is the daily shape of lumpy demand, not the level. Both metrics score only days with a
+sale, so neither penalises forecasting a sale on a day with none.
+
 ## Caveats
 
-- A MAPE of 3.79 says the forecaster is poor at daily, per-SKU prediction on lumpy wholesale demand.
+- A MAPE of 3.79 and a WAPE of 0.83 say the forecaster is poor at daily, per-SKU prediction on lumpy wholesale demand.
   Whether grocery dark-store demand behaves better is untested here; this is evidence about the
   method on data it was not built around, not about the pilot.
 - The synthetic figure is low partly because the generator draws demand from a process the model

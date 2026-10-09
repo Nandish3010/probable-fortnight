@@ -1,7 +1,7 @@
 {
   "dataset": "UCI Online Retail II (CC BY 4.0), top 300 SKUs by units, node = country, one cluster",
   "forecaster": "jobs.sense.forecast.SeriesModel (local_seasonal_xreg), unchanged",
-  "metric": "jobs.sense.backtest.run_backtest: rolling origin, 7-day horizon, MAPE over days with actual > 0",
+  "metric": "jobs.sense.backtest.run_backtest: rolling origin, 7-day horizon, MAPE over days with actual > 0; wape = sum|forecast - actual| / sum(actual) over the same scored series-days, pooled",
   "series": 300,
   "sales_rows": 130028,
   "nodes": 43,
@@ -74,9 +74,11 @@
   "mean_mape": 3.7861,
   "mean_bias": 3.5028,
   "series_weighted_mape": 3.7861,
+  "wape": 0.826,
   "spread_behind_the_mean": {
     "scored_series_days": 10809,
     "mean_ape_rewalk": 3.7861,
+    "wape": 0.826,
     "median_ape": 0.776,
     "share_ape_over_100pct": 0.419,
     "mean_actual_units": 53.2,
@@ -113,10 +115,21 @@
     ]
   },
   "synthetic_reference": {
-    "source": "eval/raw/backtest_rows_2026-09-20.jsonl",
+    "source": "data.generator seed 20260912, current tree",
     "n_rows": 63,
     "mean_mape": 0.1331,
     "mean_bias": 0.0231,
-    "series_weighted_mape": 0.1272
+    "series_weighted_mape": 0.1272,
+    "wape": 0.1133,
+    "scored_series_days": 43742,
+    "median_ape": 0.1,
+    "share_ape_over_100pct": 0.002,
+    "committed_2026-09-20": {
+      "source": "eval/raw/backtest_rows_2026-09-20.jsonl",
+      "n_rows": 63,
+      "mean_mape": 0.1331,
+      "mean_bias": 0.0231,
+      "series_weighted_mape": 0.1272
+    }
   }
 }
