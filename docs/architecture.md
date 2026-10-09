@@ -105,7 +105,7 @@ Rendered copy for the README: [`architecture.svg`](architecture.svg), from this 
 
 | Path | Budget | Notes |
 |---|---|---|
-| Customer Agent turn | < 3 s p50 / under 7 s p95 | Flash, streaming; stock from the visitor's local store (`LocalStore`/`OverlayStore`), or the Firestore serving cache when `TAAL_SERVING_CACHE=firestore` (`infra/deploy.sh` sets it only when `ENABLE_SERVING_CACHE=1`, hard-coded to 0 at `infra/deploy.sh:22`, so it is off in the deployed service); substitutes precomputed; no per-turn memory calls |
+| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash, streaming; stock from the visitor's local store (`LocalStore`/`OverlayStore`), or the Firestore serving cache when `TAAL_SERVING_CACHE=firestore` (`infra/deploy.sh` sets it only when `ENABLE_SERVING_CACHE=1`, hard-coded to 0 at `infra/deploy.sh:22`, so it is off in the deployed service); substitutes precomputed; no per-turn memory calls |
 | Vision intake (one photo) | < 8 s | Gemini image understanding, strict output schema |
 | Planner, one gap | 20-60 s | nightly batch, or streamed on an on-demand re-run |
 | Approve → re-forecast | < 15 s | Approve re-runs the local seasonal-xreg forecaster (`jobs/sense/forecast.py`) for the play's SKU, in process; BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path |
