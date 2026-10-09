@@ -48,7 +48,7 @@ Rendered copy for the README: [`architecture.svg`](architecture.svg), from this 
    `TAAL_FORECAST_BACKEND=local|bigquery_timesfm` and `TAAL_BATCH_STORE=local|bigquery`.
    `bigquery_timesfm` (BigQuery `AI.FORECAST`) was verified live for real (25,060 rows across 895
    series; no covariate parameter; a real SQL bug found and fixed) -- evidence under
-   `eval/raw/bigquery_ai_forecast_2026-09-27/`. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster. `TAAL_BATCH_STORE=bigquery` (writes through
+   `eval/raw/bigquery_ai_forecast_2026-09-27/`. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the judge-facing path uses the local forecaster; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by the judge-facing path. `TAAL_BATCH_STORE=bigquery` (writes through
    `BigQueryStore`) is written and unit-tested; `forecasts` writes were verified safe in a live dry
    run after a real data-loss bug was found and fixed (a tenant-wide `DELETE` on a history table),
    and a separate bug in the same write path (an unscoped BigQuery load silently reordering and

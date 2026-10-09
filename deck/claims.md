@@ -29,6 +29,8 @@ Dates are the dates of the measurement, not of the deck.
 | 6 | Four proposals, three rejected by cite-or-drop, fourth passes all eight guardrails | `eval/raw/planner_real_traces_2026-09-28/run_04/result.json`; `README.md:81-95` |
 | 6 | Screenshots (Play Desk trace, customer chat with English gloss) | `deck/img/trace-attempts.png`; `deck/img/chat-gloss.png` |
 | 7 | Scheduler 20:00 and 20:30 UTC | `infra/deploy.sh:320`; `infra/deploy.sh:350` |
+| 7 | Nightly `taal-sense` job runs AI.FORECAST (TimesFM) into BigQuery | `infra/deploy.sh:309`; `jobs/sense/run.py:50-58` |
+| 7 | Judge-facing path reads the frozen local snapshot and uses the local forecaster; nightly output is not read by it | `services/api/sandbox.py:45-51`; `infra/deploy.sh:294-298` |
 | 7 | AI.FORECAST benchmarked, local won 45/45 | `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json:58` |
 | 7 | Architecture boxes match the committed diagram | `docs/architecture.md:7-30`; `docs/architecture.svg` |
 | 8 | Gemini 2.5 Flash | `config/models.toml:23` |

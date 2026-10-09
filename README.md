@@ -233,7 +233,7 @@ fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.m
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
 | Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
 | Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | -- | -- |
-| The nightly BigQuery jobs exist. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (`eval/incidents_2026-09-27.md`, `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+| The nightly BigQuery jobs exist. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the judge-facing path uses the local forecaster; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by the judge-facing path (`eval/incidents_2026-09-27.md`, `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
 
 ## Not in this submission
 
@@ -249,7 +249,7 @@ Two outside references anchor design decisions here, rather than left as unverif
   and deployed on GKE, drawing on BigQuery as a data source, which the story credits with up to a
   30% improvement in demand-forecast accuracy; the story's own worked example is seasonal
   inventory (gaming consoles). Taal's own forecaster is different: the local seasonal-xreg
-  forecaster (`jobs/sense/forecast.py`). We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (see
+  forecaster (`jobs/sense/forecast.py`). We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the judge-facing path uses the local forecaster; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by the judge-facing path (see
   [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md)).
 - **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
   for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
