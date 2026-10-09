@@ -40,7 +40,11 @@ generator no longer produces.
 | Monthly running cost of this deployment -- usage measured over the trailing 30 days to 2026-09-23, priced at Google's public list rates; not a bill | ₹486 | measured (usage), list-priced; not a bill | `eval/raw/cost_measurement_2026-09-23.json` (`modeled/total_inr`; method "modeled_from_measured_usage": usage quantities measured over the trailing 30 days, priced at Google's public list rates) |
 | Forecast backtest, synthetic tenant -- mean MAPE over 63 tier-origin rows (9 category tiers x 7 rolling origins, 7-day horizon) | 0.133 (tiers 0.107 to 0.221) | seeded | `eval/raw/backtest_rows_2026-09-20.jsonl`; `uv run python -m jobs.sense.backtest` |
 | **Real data** -- same backtest and forecaster on UCI Online Retail II (top 300 SKUs, 8 rolling origins); gap detector: 0 gaps, none computable (no stock or expiry in the data) | MAPE 3.79 (median per-day error 0.78); 0 gaps | measured on public data | `eval/raw/external_backtest_2026-10-09.json`; method and caveats in [`eval/external_backtest.md`](eval/external_backtest.md). Caveat: a UK gift wholesaler, not grocery, with lumpy daily sales; the figure says the method is weak on lumpy daily demand, not what grocery will do |
-| Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md:484` |
+| Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md` section 18.7 |
+
+Buyer and pricing basis: the buyer is the category / supply-chain head, who owns write-off; the basis is either a fee per dark store per month or a percentage of rupees rescued measured against the holdout (`fee = pct x rupees rescued vs holdout`). No price point is set until a pilot measures that lift.
+
+Payback illustration, synthetic and projected, not a quote: break-even fee per node per month = projected margin per node - run cost per node = ₹347,356 / 16 nodes - ₹486 / 16 nodes, about ₹21,710 - ₹30.
 
 ## Screenshots
 
