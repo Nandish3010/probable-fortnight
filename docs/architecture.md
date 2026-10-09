@@ -8,7 +8,7 @@ latency budget in §4.3; none of the numbers here are pilot results (see `docs/p
 ```mermaid
 flowchart LR
   subgraph Capture
-    Phone[Phone view\ncamera + mic]
+    Phone[Phone view\ncamera]
   end
 
   subgraph BigQuery[BigQuery: taal dataset]
@@ -35,7 +35,7 @@ flowchart LR
   Firestore[(Firestore: practitioner feedback, deployed.\nServing cache for stock / customer profiles behind\nflag TAAL_SERVING_CACHE, off by default)]
   Sessions[(Vertex AI Sessions on Agent Engine\nflag TAAL_SESSION_BACKEND, off by default)]
 
-  Phone -- "1 photo/voice" --> AgentsSvc
+  Phone -- "1 photo" --> AgentsSvc
   AgentsSvc -- "inventory_batches write" --> BigQuery
   Sales --> Forecasts --> Gaps
   Gaps -- "2 nightly Sense" --> Planner
@@ -58,7 +58,7 @@ flowchart LR
 
 ## Request paths (numbered to match the video beats)
 
-1. **Capture.** Phone view uploads a photo (or a spoken confirmation) to `taal-agents`; Vision
+1. **Capture.** Phone view uploads a photo to `taal-agents`; Vision
    intake writes confirmed rows to `taal.inventory_batches` with `source='photo'`.
 2. **Sense → Plan.** The nightly `taal-sense` job (or an on-demand re-run) computes forecasts and
    gaps, then fans out gaps to the Planner Agent, which proposes plays. `taal-agents`'s own
@@ -68,7 +68,7 @@ flowchart LR
    `TAAL_FORECAST_BACKEND=local|bigquery_timesfm` and `TAAL_BATCH_STORE=local|bigquery`.
    `bigquery_timesfm` (BigQuery `AI.FORECAST`) was verified live for real (25,060 rows across 895
    series; no covariate parameter; a real SQL bug found and fixed) -- evidence under
-   `eval/raw/bigquery_ai_forecast_2026-09-27/`. `TAAL_BATCH_STORE=bigquery` (writes through
+   `eval/raw/bigquery_ai_forecast_2026-09-27/`. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster. `TAAL_BATCH_STORE=bigquery` (writes through
    `BigQueryStore`) is written and unit-tested; `forecasts` writes were verified safe in a live dry
    run after a real data-loss bug was found and fixed (a tenant-wide `DELETE` on a history table),
    and a separate bug in the same write path (an unscoped BigQuery load silently reordering and
@@ -83,7 +83,7 @@ flowchart LR
    batch path is now verified end-to-end against a staging clone of `taal`** (a full `jobs.sense`
    run: 533 gaps across all 6 real gap types, all rebalance gaps carrying `counterpart_gap_id`,
    prior forecast runs untouched); it has not yet been run for real against `taal` itself.
-3. **Approve.** A human (Play Desk or voice) approves a play; `taal-agents` writes
+3. **Approve.** A human approves a play in the Play Desk; `taal-agents` writes
    `play_assignments`, then sets a promo flag (`on_promo=True`) on the play's SKU/clusters inside
    the play window in `future_regressors` (`services/api/approve.py:128-138`). Approve re-runs the
    local seasonal-xreg forecaster (`jobs/sense/forecast.py`) for the play's SKU, in process; the
@@ -125,9 +125,8 @@ flowchart LR
 
 | Path | Budget | Notes |
 |---|---|---|
-| Customer Agent turn | < 3 s p50 / < 6 s p95 | Flash, streaming; stock from the visitor's local store (`LocalStore`/`OverlayStore`), or the Firestore serving cache when `TAAL_SERVING_CACHE=firestore` (`infra/deploy.sh` sets it only when `ENABLE_SERVING_CACHE=1`, hard-coded to 0 at `infra/deploy.sh:22`, so it is off in the deployed service); substitutes precomputed; no per-turn memory calls |
+| Customer Agent turn | < 3 s p50 / under 7 s p95 | Flash, streaming; stock from the visitor's local store (`LocalStore`/`OverlayStore`), or the Firestore serving cache when `TAAL_SERVING_CACHE=firestore` (`infra/deploy.sh` sets it only when `ENABLE_SERVING_CACHE=1`, hard-coded to 0 at `infra/deploy.sh:22`, so it is off in the deployed service); substitutes precomputed; no per-turn memory calls |
 | Vision intake (one photo) | < 8 s | Gemini image understanding, strict output schema |
-| Voice turn, first audio | < 2 s | Gemini Live API; recorded for the video regardless of live status at the finale |
 | Planner, one gap | 20-60 s | nightly batch, or streamed on an on-demand re-run |
 | Approve → re-forecast | < 15 s | Approve re-runs the local seasonal-xreg forecaster (`jobs/sense/forecast.py`) for the play's SKU, in process; BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path |
 | Sense job (full nightly run) | minutes | never a live request path |

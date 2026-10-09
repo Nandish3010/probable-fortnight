@@ -196,7 +196,6 @@ Sources: [Blue Yonder](https://blueyonder.com/resources/automate-fresh-food-pric
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
 | Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
-| Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
 `TAAL_MODEL_BACKEND=stub` (the default and what CI runs) replaces Gemini with scripted models that
@@ -214,7 +213,12 @@ fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.m
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
 | Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
 | Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | -- | -- |
-| The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+| The nightly BigQuery jobs exist. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (`eval/incidents_2026-09-27.md`, `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+
+## Not in this submission
+
+Voice (Gemini Live) is not part of this submission: it exists only as a documented stub with no
+tests, and the phone view's microphone button is disabled.
 
 ## Related work
 
@@ -225,9 +229,8 @@ Two outside references anchor design decisions here, rather than left as unverif
   and deployed on GKE, drawing on BigQuery as a data source, which the story credits with up to a
   30% improvement in demand-forecast accuracy; the story's own worked example is seasonal
   inventory (gaming consoles). Taal's own forecaster is different: the local seasonal-xreg
-  forecaster (`jobs/sense/forecast.py`) in the served demo, and BigQuery `AI.FORECAST` (TimesFM) in
-  the nightly job -- verified live once, see
-  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
+  forecaster (`jobs/sense/forecast.py`). We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (see
+  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md)).
 - **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
   for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
   2026) -- its title names a real, open problem: forecasting demand for discounted, soon-to-expire

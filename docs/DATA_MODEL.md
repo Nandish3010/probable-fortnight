@@ -27,7 +27,8 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 - `cluster_id` -- forecast grain; nodes in a cluster share one series: `local_seasonal_xreg`
   by default (`jobs/sense/forecast.py:34`, what `services/api/approve.py` and the seeded image
   run), or TimesFM in BigQuery when `TAAL_FORECAST_BACKEND=bigquery_timesfm` is set on the
-  nightly job (`jobs/sense/forecast_bigquery.py`). `ARIMA_PLUS_XREG` SQL also exists
+  nightly job (`jobs/sense/forecast_bigquery.py`); the local model beat it 45/45 in the head-to-head backtest
+  (`eval/incidents_2026-09-27.md`), so the served path stays local. `ARIMA_PLUS_XREG` SQL also exists
   (`data/bigquery/sense/03_forecast_arima_xreg.sql`) and was verified once by hand
   (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`), but no job runs it
 
