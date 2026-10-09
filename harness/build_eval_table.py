@@ -16,6 +16,7 @@ the raw evidence it summarises.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -229,6 +230,12 @@ def build_rows() -> list[Row]:
         NOT_MEASURED, not_measured[key],
     ))
 
+    # 15. Dated live-model run of the ADK evalsets and the rationale judge (one row per dated run,
+    # newest last), read from eval/raw/live_eval_<date>/summary.json.
+    for f in sorted((ROOT / "eval" / "raw").glob("live_eval_*/summary.json")):
+        d = json.loads(f.read_text(encoding="utf-8"))
+        rows.append(Row(f"Live model evaluation, {d['date']} ({d['model']})", d["result"], d["source"]))
+
     return rows
 
 
@@ -251,8 +258,8 @@ def render(rows: list[Row]) -> str:
     measured = sum(1 for r in rows if NOT_MEASURED not in r.result)
     lines += [
         "",
-        f"{measured} of {len(rows)} rows carry a real measurement (13 from DECISIONS §12, plus row 14,",
-        "this branch's own addition); the rest are explicitly marked unmeasured above (see",
+        f"{measured} of {len(rows)} rows carry a real measurement (13 from DECISIONS §12, plus row 14",
+        "and the dated live-run rows, this branch's own additions); the rest are explicitly marked unmeasured above (see",
         "`eval/evaluation.md` for why). Nothing here is a guess.",
         "",
     ]
