@@ -172,7 +172,7 @@ def _initial_message(ctx: PlannerContext, gap_id: str) -> types.Content:
     return types.Content(role="user", parts=[types.Part(text=text)])
 
 
-async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "", deadline_s: float | None = None, on_event: Callable[[str, Any], None] | None = None) -> dict[str, Any]:
+async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, backend: str | None = None, salt: str = "", deadline_s: float | None = None, play_id: str | None = None, on_event: Callable[[str, Any], None] | None = None) -> dict[str, Any]:
     """`on_event`, when given, is called with ("user", <initial Content>) once and then ("event",
     <ADK Event>) for every event, unshrunk -- the trace recorder (harness/record_planner_traces.py)
     uses it to keep full tool args, responses and token usage. None changes nothing."""
@@ -182,7 +182,7 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
     model_label = models["ids"]["flash"] if resolved_backend == "vertex" else "stub-planner"
     probe = PlannerContext.build(data_dir, run_id="probe", policy_text=policy_text, policy_version=policy_version, tenant=tenant)
     run_id = make_run_id(gap_id, probe.policy_version, salt)
-    ctx = PlannerContext.build(data_dir, run_id=run_id, policy_text=policy_text, policy_version=policy_version, tenant=tenant)
+    ctx = PlannerContext.build(data_dir, run_id=run_id, policy_text=policy_text, policy_version=policy_version, tenant=tenant, play_id=play_id)
     gap_rows = ctx.store.find("gaps", gap_id=gap_id)
     if not gap_rows:
         raise KeyError(f"unknown gap {gap_id}")

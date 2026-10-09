@@ -194,31 +194,52 @@ def test_rerun_with_policy_and_events(client):
     assert client.get("/events/does-not-exist", headers=_h("v-rerun")).status_code == 404
 
 
-def test_live_runs_with_unchanged_policy_text_reuse_the_current_version(client):
+def test_live_runs_with_unchanged_policy_text_reuse_the_version_but_not_the_recorded_play(client):
     """"Plan live" posts the policy as it stands: that is not a new policy, so it must not write a
     version row. Two consecutive runs under identical text leave one version; different text
-    makes exactly one, which the next identical run then reuses."""
+    makes exactly one, which the next identical run then reuses. And a run under a reused
+    version files its play under its own id (play_<gap>_<version>_live, _live2, ...), so the
+    recorded play is never overwritten."""
     h = _h("v-reuse-policy")
+    gap, recorded_id = "gap_chips_ds07", "play_chips_ds07_v1"
+    recorded = client.get(f"/plays/{recorded_id}", headers=h).json()
+    assert recorded["source"] == "recorded_gemini"
     current = client.get("/policy", headers=h).json()
     assert current["updated_at"] is None  # the tenant default: no policy row written yet
 
     def live(text):
-        body = client.post("/rerun", json={"gap_id": "gap_tea_ds04", "policy_text": text}, headers=h).json()
-        assert _poll_rerun(client, body["run_id"], h)["status"] == "done"
-        return body
+        body = client.post("/rerun", json={"gap_id": gap, "policy_text": text}, headers=h).json()
+        done = _poll_rerun(client, body["run_id"], h)
+        assert done["status"] == "done"
+        return body, done["result"]
 
-    first, second = live(current["text"]), live(current["text"])
+    (first, r1), (second, r2) = live(current["text"]), live(current["text"])
     assert first["policy_version"] == second["policy_version"] == current["policy_version"]
     assert first["run_id"] != second["run_id"]
     assert client.get("/policy", headers=h).json() == current  # no row appended
 
-    edited = live(_policy_v2())
-    assert edited["policy_version"] != current["policy_version"]
-    again = live(_policy_v2())
-    assert again["policy_version"] == edited["policy_version"]
+    assert r1["play"]["play_id"] == "play_chips_ds07_v1_live" and r2["play"]["play_id"] == "play_chips_ds07_v1_live2"
+    assert client.get(f"/plays/{recorded_id}", headers=h).json() == recorded  # the recorded play is untouched
+    for r in (r1, r2):
+        live_play = client.get(f"/plays/{r['play']['play_id']}", headers=h).json()
+        assert live_play["play_id"] != recorded_id and live_play["source"] != "recorded_gemini"
+        assert live_play["trace_ref"] == f"events/{r['run_id']}" != recorded["trace_ref"]
+    ids = [p["play_id"] for p in client.get("/plays", headers=h).json() if p["gap_id"] == gap]
+    assert ids == [recorded_id, "play_chips_ds07_v1_live", "play_chips_ds07_v1_live2"]
+
+    (edited, e1), (again, e2) = live(_policy_v2()), live(_policy_v2())
+    assert edited["policy_version"] == again["policy_version"] != current["policy_version"]
     assert client.get("/policy", headers=h).json()["policy_version"] == edited["policy_version"]
-    rows = [r for r in (Path(os.environ["TAAL_SANDBOX_DIR"]) / "v-reuse-policy").glob("policy.*")]
+    assert e1["play"]["play_id"].endswith(f"_{edited['policy_version']}") and e2["play"]["play_id"] == e1["play"]["play_id"] + "_live"
+    rows = list((Path(os.environ["TAAL_SANDBOX_DIR"]) / "v-reuse-policy").glob("policy.*"))
     assert rows and sum(1 for line in rows[0].read_text().splitlines() if line.strip()) == 1
+    assert client.get(f"/plays/{recorded_id}", headers=h).json() == recorded
+
+    # Approve acts on the play it is given: the live one approves without touching the recorded one
+    approved = client.post("/approve", json={"play_id": r1["play"]["play_id"]}, headers=h)
+    assert approved.status_code == 200 and approved.json()["play_id"] == r1["play"]["play_id"]
+    assert client.get(f"/plays/{recorded_id}", headers=h).json() == recorded
+    assert client.get(f"/plays/{r1['play']['play_id']}", headers=h).json()["status"] == "approved"
 
 
 def test_rerun_unknown_gap_is_404_not_202(client):

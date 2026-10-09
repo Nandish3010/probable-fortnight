@@ -351,13 +351,13 @@ async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(s
     return {k: v for k, v in out.items() if k != "events"} | {"source": "live", "plan_source": out.get("source")}
 
 
-async def _plan_overlay(store: OverlayStore, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, salt: str = "") -> dict[str, Any]:
+async def _plan_overlay(store: OverlayStore, gap_id: str, policy_text: str | None = None, policy_version: str | None = None, salt: str = "", play_id: str | None = None) -> dict[str, Any]:
     """Planner against a visitor overlay: run with the overlay as the store root by materialising the tables it reads."""
     for t in ("gaps", "plays", "products", "nodes", "customers", "affinity", "consent", "segments", "estimator_priors", "play_assignments", "inventory_batches", "inbound", "order_lines", "play_outcomes", "sense_runs", "policy"):
         store._materialise(t)
     if not (store.root / "manifest.json").exists():
         (store.root / "manifest.json").write_bytes((store.base.root / "manifest.json").read_bytes())
-    return await run_planner_async(store.root, gap_id, policy_text=policy_text, policy_version=policy_version, salt=salt)
+    return await run_planner_async(store.root, gap_id, policy_text=policy_text, policy_version=policy_version, salt=salt, play_id=play_id)
 
 
 @app.post("/approve", response_model=ApproveResponseOut)
@@ -425,7 +425,7 @@ def _finish_run(vid: str, run_id: str, status: str, result: dict[str, Any]) -> N
             del _INFLIGHT[vid]
 
 
-def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: str, version: str, salt: str, run_id: str) -> None:
+def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: str, version: str, salt: str, run_id: str, play_id: str | None = None) -> None:
     """Runs on a `_REPLAN_EXECUTOR` thread, never on the API's event loop (DECISIONS: this is CPU-
     bound tool work, not I/O). Mirrors the two sync call shapes /plan already uses: an OverlayStore
     goes through `_plan_overlay` (materialise, then plan) via `asyncio.run`; a bare LocalStore goes
@@ -434,9 +434,9 @@ def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: st
     never writes one of its own -- doing so would duplicate it."""
     try:
         if isinstance(store, OverlayStore):
-            out = asyncio.run(_plan_overlay(store, gap_id, policy_text, version, salt=salt))
+            out = asyncio.run(_plan_overlay(store, gap_id, policy_text, version, salt=salt, play_id=play_id))
         else:
-            out = run_planner(store.root, gap_id, policy_text=policy_text, policy_version=version, salt=salt)
+            out = run_planner(store.root, gap_id, policy_text=policy_text, policy_version=version, salt=salt, play_id=play_id)
     except Exception as e:
         # A short message only -- never a stack trace, and never anything from the environment.
         _finish_run(vid, run_id, "error", {"run_id": run_id, "status": "error", "error": str(e)[:300]})
@@ -447,6 +447,12 @@ def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: st
         "planner_source": out.get("planner_source"), "fallback_reason": out.get("fallback_reason"),
     }
     _finish_run(vid, run_id, "done", result)
+
+
+def _live_play_id(store: LocalStore, gap_id: str, version: str) -> str:
+    taken = {r["play_id"] for r in store.find("plays", gap_id=gap_id)}
+    base = f"play_{gap_id.removeprefix('gap_')}_{version}_live"
+    return next(pid for n in range(1, 1000) if (pid := base if n == 1 else f"{base}{n}") not in taken)
 
 
 @app.post("/rerun", response_model=RerunAccepted, status_code=202)
@@ -460,6 +466,9 @@ async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends
     current = _current_policy(store)
     reuse = req.policy_version is None and req.policy_text.strip() == current["text"].strip()
     version = current["policy_version"] if reuse else (req.policy_version or f"v{len(store.read('policy')) + 2}")
+    # A reused version would file the play under the recorded play's id and overwrite it, so a live
+    # run gets its own: play_<gap>_<version>_live, then _live2, _live3, ...
+    play_id = _live_play_id(store, req.gap_id, version) if reuse else None
     salt = uuid4().hex[:8]  # a fresh salt per async run so re-posting the same policy_version never collides with a run still in flight
     run_id = make_run_id(req.gap_id, version, salt)
     with _RUNS_LOCK:
@@ -472,7 +481,7 @@ async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends
     try:
         if not reuse:
             store.append("policy", [{"policy_version": version, "text": req.policy_text, "updated_at": _iso(_now())}])
-        _REPLAN_EXECUTOR.submit(_run_replan_worker, store, vid, req.gap_id, req.policy_text, version, salt, run_id)
+        _REPLAN_EXECUTOR.submit(_run_replan_worker, store, vid, req.gap_id, req.policy_text, version, salt, run_id, play_id)
     except Exception:
         # Neither the policy append nor the submit actually started a run -- undo the claim above
         # so this visitor is not stuck seeing 409 ("already running") for a run that never runs,

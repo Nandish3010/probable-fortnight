@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { asVisitor, collectConsoleErrors, expectNoConsoleErrors, shot } from "./helpers";
+import { API, asVisitor, collectConsoleErrors, expectNoConsoleErrors, shot, visitorHeaders } from "./helpers";
 
 test.describe("Arjun: Play Desk", () => {
   test("inbox, play card, trace, why, edit, approve, policy re-plan", async ({ page }) => {
@@ -112,11 +112,17 @@ test.describe("Arjun: Play Desk", () => {
       await route.fulfill({ response });
     });
     await card.getByTestId("plan-live").click();
-    const live = card.getByTestId("live-replan");
-    await expect(live).toBeVisible();
-    await expect(live.getByText(/\d+ s elapsed/)).toBeVisible();
+    const liveRun = card.getByTestId("live-replan");
+    await expect(liveRun).toBeVisible();
+    await expect(liveRun.getByText(/\d+ s elapsed/)).toBeVisible();
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
     await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(3);
+    // the live play sits in the inbox under the recorded one; the recorded play is still the one selected
+    await expect(page.getByLabel("Play inbox").locator(".inbox__live")).toHaveCount(1);
+    await expect(card.getByText(/^play_chips_ds07_v1 · status/)).toBeVisible();
+    const live = await (await page.request.get(`${API}/plays/play_chips_ds07_v1_live`, { headers: visitorHeaders("live-arjun-plan-live") })).json();
+    expect(live.play_id).toBe("play_chips_ds07_v1_live");
+    expect((await (await page.request.get(`${API}/plays/play_chips_ds07_v1`, { headers: visitorHeaders("live-arjun-plan-live") })).json()).source).toBe("recorded_gemini");
     await shot(page, "arjun-06-plan-live");
     await expectNoConsoleErrors(errors);
   });

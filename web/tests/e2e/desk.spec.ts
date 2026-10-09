@@ -70,5 +70,14 @@ test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 10_000 });
     await expect(card.getByTestId("plan-live")).toBeEnabled();
     await expect(card.locator(".trace-panel .trace-panel__list > li")).toHaveCount(recordedRows);
+
+    // the run's play joins the inbox under a "Live run" tag; the recorded play stays selected
+    const inbox = page.getByLabel("Play inbox");
+    await expect(inbox.locator(".inbox__live")).toHaveCount(1);
+    await expect(card.getByText(/^play_chips_ds07_v1 · status/)).toBeVisible();
+    // ... and selecting it shows that play, which Approve then acts on
+    await inbox.locator(".inbox__item").filter({ has: page.locator(".inbox__live") }).click();
+    await expect(card.getByText(/^play_tea_ds04_v2 · status/)).toBeVisible();
+    await expect(card.getByRole("button", { name: "Approve" })).toBeVisible();
   });
 });

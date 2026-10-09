@@ -60,9 +60,19 @@ export default function PlayDeskPage() {
     setRerunAccepted(accepted);
   }
 
+  // Plays a run on this page produced, shown in the inbox under the recorded one (same gap, so the
+  // same rupees at stake and a stable sort keeps them after it). The selection is left where it
+  // is: the recorded play stays selected, and Approve acts on whichever play is selected.
+  const [livePlayIds, setLivePlayIds] = useState<Set<string>>(new Set());
+
   function handleReplanDone(result: RerunResult) {
     setRerunAccepted(null);
     setRerunResult(result);
+    const livePlay = result.play;
+    if (livePlay) {
+      setPlays((prev) => [...prev.filter((p) => p.play_id !== livePlay.play_id), livePlay]);
+      setLivePlayIds((prev) => new Set(prev).add(livePlay.play_id));
+    }
   }
 
   useEffect(() => {
@@ -117,6 +127,7 @@ export default function PlayDeskPage() {
                 onClick={() => setSelectedId(p.play_id)}
               >
                 <strong>{g?.evidence.sku_name ?? p.target.sku}</strong>
+                {livePlayIds.has(p.play_id) ? <span className="chip inbox__live">Live run</span> : null}
                 <div className="muted">{p.target.node_ids.join(", ")} · {p.mechanic}</div>
                 <div>{inr(g?.rupees_at_stake ?? 0)} at stake</div>
               </button>
