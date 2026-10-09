@@ -27,7 +27,8 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 - `cluster_id` -- forecast grain; nodes in a cluster share one series: `local_seasonal_xreg`
   by default (`jobs/sense/forecast.py:34`, what `services/api/approve.py` and the seeded image
   run), or TimesFM in BigQuery when `TAAL_FORECAST_BACKEND=bigquery_timesfm` is set on the
-  nightly job (`jobs/sense/forecast_bigquery.py`). `ARIMA_PLUS_XREG` SQL also exists
+  nightly job (`jobs/sense/forecast_bigquery.py`); the local model beat it 45/45 in the head-to-head backtest
+  (`eval/incidents_2026-09-27.md`), so the served path stays local. `ARIMA_PLUS_XREG` SQL also exists
   (`data/bigquery/sense/03_forecast_arima_xreg.sql`) and was verified once by hand
   (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`), but no job runs it
 
@@ -189,11 +190,13 @@ if a name in this file and the DDL ever disagree, the DDL wins and this file is 
 
 ## The sell-by rule
 
-FSSAI's advisory to e-commerce food business operators (December 2024) is reported to read:
-delivered food must have **"30 percent or 45 days before expiry at the time of delivery"** -- as
-reported, and not yet checked against the primary source [CITATION: owner to paste primary URL].
-It is the regulator's advisory, not a statute, and its wording is ambiguous about whether it means
-the *later* or the *earlier* of the two cut-offs. Taal implements `sellby_rule` as a tenant-set,
+FSSAI's advisory to e-commerce food business operators (3 Dec 2024, file no.
+RCD-13/1/2024-Regulatory-FSSAI(E-13150), paragraph 4;
+[PDF](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf))
+says: "FSSAI mandates that products must have a minimum shelf life of 30% or at least 45 days
+before expiry, at the time of delivery." It is an advisory, not a statute, and it does not say
+whether the two limits are alternatives (the *earlier* cut-off applies) or cumulative (the
+*later*); that choice is Taal's configurable default, not FSSAI text. Taal implements `sellby_rule` as a tenant-set,
 versioned policy parameter applying that advisory (`config/tenant.demo.toml [sellby_rule]`,
 `agents/gate/sellby.py`); the demo tenant's reading is the **lenient** one (rule version
 `v1-either`, `combine = "min"`): `online_sellby_date = expiry_date - min(30% of shelf_life_days,

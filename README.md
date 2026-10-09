@@ -12,9 +12,17 @@ inventory-aware chat agent, and measured against a holdout.
 - Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
 - Click **Run the 60-second beat**, then **Approve**: the approved play sets a promo flag on its window in `future_regressors`, and the re-forecast moves the chart. Projection: the play's promo lift applied to its window. Measure tests it against 26 held-back customers (seeded; `eval/raw/flagship_facts_2026-09-27.json`, `approve.holdout_n`).
 - Then **Chat as Meena**: the offer arrives in Kannada with the best-before date; ask for Cola Zero and get what is actually on her shelf.
-- Video (under 3 min): _pending_ · Deck: [`docs/deck.pdf`](docs/deck.pdf)
+- Deck: [`docs/deck.pdf`](docs/deck.pdf)
 - Live vs replay: every panel carries a LIVE/REPLAY (or REAL PILOT/SYNTHETIC) badge -- the play card itself keeps its `REPLAY · policy <version>` badge -- except the Desk's trace panel and its re-plan result, which instead carry one of four provenance badges -- `Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)`, or `Live · Gemini` -- naming exactly where that trace or run came from. Sense is nightly and replayed; approve, chat, capture and execution are live calls. **Change policy → re-plan** is itself a live, streamed call on the deployed service: it runs Gemini, streams each tool call and guardrail check as they happen, and ends badged with whichever of the four provenance kinds the run actually produced.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
+
+## Team
+
+<!-- add 1-3 more members before submission -->
+
+| Name | Role |
+|---|---|
+| Nandish | Lead, product and engineering |
 
 ## Impact in numbers
 
@@ -51,17 +59,19 @@ photos has not been measured yet.
 
 ## The hook
 
-FSSAI, India's food regulator, advises e-commerce food business operators
-[CITATION: owner to paste primary URL] that food delivered online should still have 30% of its
-shelf life or 45 days left at delivery. It is an advisory, not a statute: Taal treats it as the
-regulator's advisory, applied as a tenant-set, versioned rule (`config/tenant.demo.toml`,
-`sellby_rule`) -- a tenant parameter, not hard-coded. A 90-day-shelf-life pack of chips that
-expires in **33 days** can therefore only be sold online for **6** more days under the demo
-tenant's own reading. Forecasting tools treat expiry as the deadline; Taal makes the online
-sell-by cut-off a first-class gap type. The rule is shown on every gap card: the demo tenant uses
-the lenient reading ("either condition satisfies", the earlier of the two cut-offs, which keeps
-bread and milk sellable online); the stricter reading is one switch away and retailers set their
-own.
+FSSAI, India's food regulator, sent e-commerce food business operators an advisory on
+3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf),
+Regulatory Compliance Division, paragraph 4): "FSSAI mandates that products must have a minimum
+shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory,
+not a gazetted rule, and it leaves two things open: 30% of what (total shelf life is the usual
+reading), and whether the two limits are alternatives or cumulative. **The reading below is
+Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule
+(`config/tenant.demo.toml`, `sellby_rule`) rather than hard-coding it. On the demo tenant's
+default, either limit satisfies it (the lenient reading, which keeps bread and milk sellable
+online), so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left
+(30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the
+deadline; Taal makes the online sell-by cut-off a first-class gap type. The rule is shown on
+every gap card; the stricter reading is one switch away and retailers set their own.
 
 Demo gap `gap_chips_ds07`: 368 units of Masala Chips at dark store DS-07, ₹9,200 at stake, online
 sell-by in 6 days. The Desk's trace for this gap is a real, committed Gemini recording, badged
@@ -85,6 +95,13 @@ guardrail check as it happens, and if no valid play arrives within the configure
 reason shown. A demo gap that has never had a recording made for it (`gap_tea_ds04`) still seeds
 from the scripted stub and is badged "Scripted fixture" -- that branch of the seeding logic is
 still exercised, just not by the flagship gap anymore.
+
+## Architecture
+
+![Taal architecture: taal-web and taal-agents on Cloud Run, Gemini on Vertex AI, a per-visitor sandbox, an MCP order endpoint, Firestore, and nightly BigQuery jobs started by Cloud Scheduler](docs/architecture.svg)
+
+Two paths: a per-visitor sandbox serves judges, and nightly Cloud Run jobs run on BigQuery
+(source and request paths in [`docs/architecture.md`](docs/architecture.md)).
 
 ## Why this generalizes: one decision loop, not a promo bot
 
@@ -140,21 +157,42 @@ consent check after it, is code. **The copy validator checks the percentage and 
 date, not rupee amounts** in the text (`jobs/sense/copy.py:168`); a bundle price the model misstates
 in words would pass it.
 
-## How this differs, by product category
+## How this differs from named vendors
 
-What each category does on the three things this build is designed around. A named product would
-appear in a row only with a fetched public documentation page behind each cell. None does: on
-2026-09-27 every vendor documentation site tried was refused by this build environment's network
-policy, so nothing about any named product could be checked, and no cell here says what any vendor
-does or does not do. The Taal row cites code and tests; the category rows are open until a page is
-fetched and cited.
+Taal differs by what it plans to, not by what it forecasts: the online sell-by cut-off, with a
+holdout and a forecast write-back per play. We did not find these three together in any public
+vendor documentation; that is a statement about public pages, not a claim about what vendors can
+do.
 
-| | Treats the online sell-by cut-off as the deadline | Holdout on every play by default | An approved action is fed back into the forecast |
-|---|---|---|---|
-| **Taal** | Yes: each lot's `online_sellby_date` comes from the tenant's versioned rule (`agents/gate/sellby.py:24`), and a dark-store lot's deadline is that date, not expiry (`jobs/sense/gaps.py`, `deadline = sellby if ...`); `tests/unit/test_sellby.py`, `tests/unit/test_ingest.py` | Yes: `holdout_required` is one of the eight rules every play must pass (`agents/gate/guardrails.py:157`); tenant floor `min_holdout_fraction = 0.05`; `tests/unit/test_guardrails.py:98` | Yes: approve writes the play into `future_regressors` and re-forecasts the series (`services/api/approve.py:144`); `tests/sql/test_forecast.py:23` |
-| Markdown-optimisation tools | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched |
-| Demand-planning suites | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched |
-| CX / marketing agents | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched | not verified: public documentation checked on 2026-09-27 could not be fetched |
+Columns: (a) plans to an online sell-by cut-off; (b) holdout or control group on every promotion;
+(c) the promotion is written back into the forecast as a covariate; (d) India or quick-commerce.
+Vendor cells come from public pages and search results read on 2026-10-09; the Taal row cites
+code and tests.
+
+| | (a) Online sell-by | (b) Holdout | (c) Forecast write-back | (d) India / quick-commerce |
+|---|---|---|---|---|
+| **Taal** | Yes: each lot's `online_sellby_date` comes from the tenant's versioned rule (`agents/gate/sellby.py:24`), and a dark-store lot's deadline is that date, not expiry (`jobs/sense/gaps.py`, `deadline = sellby if ...`); `tests/unit/test_sellby.py`, `tests/unit/test_ingest.py` | Yes: `holdout_required` is one of the eight rules every play must pass (`agents/gate/guardrails.py:157`); tenant floor `min_holdout_fraction = 0.05`; `tests/unit/test_guardrails.py:98` | Yes: approve writes the play into `future_regressors` and re-forecasts the series (`services/api/approve.py:144`); `tests/sql/test_forecast.py:23` | Built for Indian quick-commerce dark stores; the tenant is seeded, no live retailer yet |
+| Blue Yonder | Unclear | Unclear | Unclear | Partial |
+| RELEX | Partial | Unclear | Partial | Partial |
+| Wasteless | No | Unclear | Unclear | Unclear |
+| Afresh | No | Unclear | Unclear | No |
+| Flashfood | No | No | No | No |
+
+**Yes / Partial / No** are our reading of the vendor pages (Partial: part of the criterion, or one
+of its markets). **Unclear** means the public pages and search results were silent; it does not
+mean the feature is absent, and enterprise suites keep deeper documentation behind sales access.
+No for Wasteless means it prices in-store from the expiry date; for Afresh (store ordering
+software) and Flashfood (a consumer surplus marketplace) it means a different product category,
+not a gap in a competing planner. RELEX (c) is Yes for promotions and Unclear for markdowns;
+RELEX (d) is quick-commerce customers outside India (Getir, Flink), none found in India.
+
+Pricing: enterprise planning suites are quote-based; we found no public per-store price.
+
+Sources: [Blue Yonder](https://blueyonder.com/resources/automate-fresh-food-pricing-with-pricing-real-time),
+[RELEX](https://www.relexsolutions.com/resources/markdown-optimization/)
+([promotions](https://www.relexsolutions.com/resources/promotion-forecasting-and-replenishment/)),
+[Wasteless](https://www.wasteless.com/), [Afresh](https://www.afresh.com/),
+[Flashfood](https://www.flashfood.com/).
 
 ## What it does
 
@@ -173,7 +211,6 @@ fetched and cited.
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
 | Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
-| Voice | `live` | intent, spoken summary | approve (explicit tool call after confirmation); stub in this build |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
 `TAAL_MODEL_BACKEND=stub` (the default and what CI runs) replaces Gemini with scripted models that
@@ -191,7 +228,12 @@ fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.m
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
 | Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
 | Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | -- | -- |
-| The nightly BigQuery jobs exist; `AI.FORECAST` verified live once -- see [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+| The nightly BigQuery jobs exist. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (`eval/incidents_2026-09-27.md`, `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+
+## Not in this submission
+
+Voice (Gemini Live) is not part of this submission: it exists only as a documented stub with no
+tests, and the phone view's microphone button is disabled.
 
 ## Related work
 
@@ -202,9 +244,8 @@ Two outside references anchor design decisions here, rather than left as unverif
   and deployed on GKE, drawing on BigQuery as a data source, which the story credits with up to a
   30% improvement in demand-forecast accuracy; the story's own worked example is seasonal
   inventory (gaming consoles). Taal's own forecaster is different: the local seasonal-xreg
-  forecaster (`jobs/sense/forecast.py`) in the served demo, and BigQuery `AI.FORECAST` (TimesFM) in
-  the nightly job -- verified live once, see
-  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
+  forecaster (`jobs/sense/forecast.py`). We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the served path uses the local forecaster (see
+  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md)).
 - **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
   for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
   2026) -- its title names a real, open problem: forecasting demand for discounted, soon-to-expire
