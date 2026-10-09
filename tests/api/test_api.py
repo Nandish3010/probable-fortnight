@@ -226,11 +226,19 @@ def test_live_runs_with_unchanged_policy_text_reuse_the_version_but_not_the_reco
         assert live_play["trace_ref"] == f"events/{r['run_id']}" != recorded["trace_ref"]
     ids = [p["play_id"] for p in client.get("/plays", headers=h).json() if p["gap_id"] == gap]
     assert ids == [recorded_id, "play_chips_ds07_v1_live", "play_chips_ds07_v1_live2"]
+    # the holdout seed is code, derived from the final play id: distinct plays never share one
+    plays = {p["play_id"]: p for p in client.get("/plays", headers=h).json() if p["gap_id"] == gap}
+    live_ids = ["play_chips_ds07_v1_live", "play_chips_ds07_v1_live2"]
+    assert len({plays[i]["holdout"]["seed"] for i in [recorded_id, *live_ids]}) == 3
+    # every play that went through propose_play carries seed-<its id>; the recorded play keeps the
+    # seed it was recorded with (re-seeding it would change which customers are treated)
+    assert all(p["holdout"]["seed"] == f"seed-{pid}" for pid, p in plays.items() if pid != recorded_id)
 
     (edited, e1), (again, e2) = live(_policy_v2()), live(_policy_v2())
     assert edited["policy_version"] == again["policy_version"] != current["policy_version"]
     assert client.get("/policy", headers=h).json()["policy_version"] == edited["policy_version"]
     assert e1["play"]["play_id"].endswith(f"_{edited['policy_version']}") and e2["play"]["play_id"] == e1["play"]["play_id"] + "_live"
+    assert all(p["holdout"]["seed"] == f"seed-{p['play_id']}" for p in (e1["play"], e2["play"]))
     rows = list((Path(os.environ["TAAL_SANDBOX_DIR"]) / "v-reuse-policy").glob("policy.*"))
     assert rows and sum(1 for line in rows[0].read_text().splitlines() if line.strip()) == 1
     assert client.get(f"/plays/{recorded_id}", headers=h).json() == recorded
