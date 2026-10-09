@@ -14,7 +14,7 @@ import re
 import statistics
 import uuid
 from collections import defaultdict
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from mcp.client import Client
@@ -158,6 +158,25 @@ def context_summary(context: dict, turn_language: str | None = None) -> str:
     return "; ".join(bits)
 
 
+def offer_summary_en(offer: dict[str, Any], names: dict[str, str]) -> str:
+    """One English sentence for an offer row (sku, mechanic, mechanic_params, best_before_date),
+    from its structured fields alone -- the gloss template for a reply that delivers the offer."""
+    params = offer.get("mechanic_params") or {}
+    name = names.get(offer.get("sku") or "", offer.get("sku") or "this item")
+    mechanic = offer.get("mechanic")
+    if mechanic == "bundle":
+        what = f"{name} with {names.get(params.get('bundle_sku') or '', 'a partner item')} for ₹{float(params.get('bundle_price') or 0):g}"
+    elif mechanic == "coupon":
+        what = f"{float(params.get('discount_pct') or 0):g}% off {name}"
+    elif mechanic == "outlet_markdown":
+        what = f"{float(params.get('markdown_pct') or 0):g}% off {name} in store"
+    else:
+        what = f"{name} offer"
+    bb = offer.get("best_before_date")
+    when = f" Best before {date.fromisoformat(bb).strftime('%d %b %Y')}." if bb else ""
+    return f"Offer: {what}.{when}"
+
+
 def _stock_info(ctx, sku: str, node_id: str) -> dict:
     """Pure lookup, no side effects. Shared by get_stock (which records the demand signal on top),
     find_substitutes and _customer_memory, so checking on a customer's behalf internally never
@@ -258,7 +277,7 @@ def _reply_lang(ctx, customer_id: str) -> str:
 
 def _refused(ctx, customer_id: str, code: str, reason: str) -> dict:
     """A refusal with its customer-facing text composed here (`reply`), never by the model."""
-    return {"ok": False, "code": code, "reason": reason, "reply": REFUSAL.get(_reply_lang(ctx, customer_id), REFUSAL["en"])[code]}
+    return {"ok": False, "code": code, "reason": reason, "reply": REFUSAL.get(_reply_lang(ctx, customer_id), REFUSAL["en"])[code], "reply_en": REFUSAL["en"][code]}
 
 
 def apply_offer(play_id: str, customer_id: str) -> dict:
@@ -408,11 +427,11 @@ ORDER_CONFIRMATION = {
 }
 
 
-def _confirmation(ctx, customer_id: str, order_id: str, total: float, lines: list[dict[str, Any]]) -> str:
+def _confirmation(ctx, customer_id: str, order_id: str, total: float, lines: list[dict[str, Any]], lang: str | None = None) -> str:
     """The customer-facing receipt, composed here from the order record (never by the model) so it
     can never disagree with what was placed. The runtime shows it verbatim (agents/chat_runtime.py)."""
     items = " + ".join(f"{ln['qty']} x {ln['name']}" if ln["qty"] > 1 else ln["name"] for ln in lines)
-    return ORDER_CONFIRMATION.get(_reply_lang(ctx, customer_id), ORDER_CONFIRMATION["en"]).format(items=items, order_id=order_id, total=f"{total:.2f}".rstrip("0").rstrip("."))
+    return ORDER_CONFIRMATION.get(lang or _reply_lang(ctx, customer_id), ORDER_CONFIRMATION["en"]).format(items=items, order_id=order_id, total=f"{total:.2f}".rstrip("0").rstrip("."))
 
 
 def _offer_play(ctx, customer_id: str, play_id: str, skus: set[str]) -> str | None:
@@ -452,7 +471,7 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
     if pid := _offer_play(ctx, customer_id, play_id, {ln["sku"] for ln in lines}):
         offer = apply_offer(pid, customer_id)
         if not offer["ok"]:
-            return {"order_id": "", "total_inr": 0.0, "refused": offer["code"], "error": offer["reason"], "reply": offer["reply"]}
+            return {"order_id": "", "total_inr": 0.0, "refused": offer["code"], "error": offer["reason"], "reply": offer["reply"], "reply_en": offer["reply_en"]}
     play_id = offer.get("play_id")
     priced = []
     if offer.get("mechanic") == "bundle" and offer.get("bundle_sku"):
@@ -492,7 +511,7 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
     for ad_hoc in redeemed_ad_hoc:
         ad_hoc["redeemed_at"] = ctx.now_iso
         ctx.store.upsert("ad_hoc_offers", "offer_id", ad_hoc)
-    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"], "reply": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"])}
+    return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"], "reply": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"]), "reply_en": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"], lang="en")}
 
 
 def record_stop(customer_id: str, channel: str) -> dict:

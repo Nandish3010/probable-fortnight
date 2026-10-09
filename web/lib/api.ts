@@ -41,6 +41,7 @@ import mockPolicy from "../mocks/policy.json";
 import mockRerun from "../mocks/rerun.json";
 import mockRerunEvents from "../mocks/rerun_events.json";
 import mockCapture from "../mocks/capture.json";
+import mockCaptureLowConf from "../mocks/capture_lowconf.json";
 import mockExecution from "../mocks/execution.json";
 import mockOutcomes from "../mocks/outcomes.json";
 import mockPriorUpdate from "../mocks/prior_update.json";
@@ -292,7 +293,9 @@ export async function getEvents(runId: string): Promise<EventsResponse> {
 export async function capture(req: CaptureRequest): Promise<VisionIntakeResult> {
   if (isMockMode()) {
     await delay(1400);
-    const base = mockCapture as unknown as VisionIntakeResult;
+    // Pallet 6 is the one sample with a row under the confidence threshold (the confirm step);
+    // every other sample, and an upload, reads as the high-confidence Pallet 1.
+    const base = (req.photo_ref?.endsWith("pallet_06.jpg") ? mockCaptureLowConf : mockCapture) as unknown as VisionIntakeResult;
     return { ...base, node_id: req.node_id, photo_ref: req.photo_ref ?? base.photo_ref };
   }
   return request<VisionIntakeResult>("/capture", { method: "POST", body: JSON.stringify(req) });

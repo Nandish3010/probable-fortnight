@@ -151,6 +151,11 @@ export function ChatPanel({
                 </ul>
               </div>
             ) : null}
+            {m.role === "agent" && m.english_gloss ? (
+              <p className="chat-msg__gloss" lang="en" data-testid="english-gloss">
+                {m.english_gloss}
+              </p>
+            ) : null}
             {m.citations && m.citations.length > 0 ? (
               <p className="chat-msg__citations muted">cited: {m.citations.map((c) => c.ref).join(", ")}</p>
             ) : null}

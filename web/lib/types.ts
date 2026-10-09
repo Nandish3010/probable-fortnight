@@ -271,6 +271,8 @@ export interface ChatEnvelope {
   role: ChatRole;
   text: string; // <= 4096
   language?: string;
+  // One line restating a reply in another language, "English: ..." (<= 280); absent for English.
+  english_gloss?: string;
   buttons?: ChatButton[]; // <= 3
   list?: ChatList;
   citations?: ChatCitation[];
@@ -428,6 +430,14 @@ export interface TraceEvent {
   // the individual event that reported it, or (run_summary only) the run's total.
   usage?: Record<string, number>;
   elapsed_ms?: number;
+  // propose_play records only (agents/planner/run.py). `attempt` numbers the planner's tries (a call
+  // and its response share one number). `rationale` on the call is the full wording, where the
+  // call's own args cap every string at 400 characters. `rejections` on a failed response names
+  // each failing guardrail and why. Traces recorded earlier lack all three; traceAttempts.ts
+  // derives what it can from the call args and the response's error strings.
+  attempt?: number;
+  rationale?: string;
+  rejections?: { guardrail: string; reason: string }[];
 }
 
 export interface EventsResponse {

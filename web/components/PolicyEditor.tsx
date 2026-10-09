@@ -9,6 +9,7 @@ export function PolicyEditor({
   gapId,
   onReplanStart,
   replanning,
+  refreshKey = 0,
 }: {
   gapId: string;
   /** Hands the 202-accepted run to the Desk, which starts <LiveReplan> for it. */
@@ -16,6 +17,9 @@ export function PolicyEditor({
   /** True for the whole run (POST /rerun through the stream's "done" frame), driven by the Desk
    * -- not just this component's own brief POST request, which `submitting` below covers. */
   replanning: boolean;
+  /** Changes whenever a run starts from anywhere (e.g. the Desk's Plan live): re-reads the current
+   * version for the label, which a run may have just created. The editor's own text is left alone. */
+  refreshKey?: number;
 }) {
   const [text, setText] = useState("");
   const [version, setVersion] = useState("");
@@ -28,6 +32,10 @@ export function PolicyEditor({
       setVersion(doc.policy_version);
     });
   }, []);
+
+  useEffect(() => {
+    if (refreshKey > 0) getPolicy().then((doc) => setVersion(doc.policy_version));
+  }, [refreshKey]);
 
   async function handleReplan() {
     setSubmitting(true);

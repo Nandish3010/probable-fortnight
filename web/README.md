@@ -30,7 +30,7 @@ NEXT_PUBLIC_TAAL_MOCK=1 npm run dev
 Every mock file mirrors the TypeScript contracts in `lib/types.ts` exactly (`Play`, `Gap`,
 `ChatEnvelope`, `ApproveResponse`, `Outcome`, …). Chat answers in mock mode depend on the
 message text: "offers" returns the bundle offer (en + kn, with the best-before date),
-"Cola Zero" returns the out-of-stock substitution list, "STOP" returns the opt-out
+"Cola Zero" returns the out-of-stock substitution list; a reply in Kannada carries an `english_gloss` line shown under the bubble, "STOP" returns the opt-out
 confirmation, anything else returns a generic prompt.
 
 ## Commands
@@ -50,8 +50,8 @@ never installed by this project (`playwright install` must not be run here).
 | Route | What it shows |
 |---|---|
 | `/` | Judge-mode landing: top band + reset, "Run the 60-second beat" (gap card → pre-proposed play → Approve → forecast chart), "Chat as Meena" panel, three cards to Play Desk / Phone view / Outcomes, footer with the what-is-simulated box, tenant size and health strip. |
-| `/desk` | Play Desk: inbox ranked by rupees at stake, the full play card (target, mechanic, audience, bilingual copy, expected outcome with CI, counterfactual bars, guardrails, "Why this play?" drawer, editable rationale, holdout slider, Approve), the trace panel (replay at 4x from the event log) and the policy editor ("Change policy → re-plan"). |
-| `/phone` | Priya's capture flow: node selector, sample pallet photos (plus an experimental own-upload), the vision intake table with confirmation questions, the gap card for that node, Approve, and the post-approve execution checklist. Mic button is present but disabled. |
+| `/desk` | Play Desk: inbox ranked by rupees at stake, the full play card (target, mechanic, audience, bilingual copy, expected outcome with CI, counterfactual bars, guardrails, "Why this play?" drawer, editable rationale, holdout slider, Approve), the trace panel (the recorded run, replayed at 4x from its event log, with one card per guardrail attempt: the failing guardrail, its reason and the rejected rationale, then the attempt that passed), a **Plan live** button beside it that runs the planner now and streams its tool calls and guardrail checks into the same panel with the time elapsed, and the policy editor ("Change policy → re-plan"). |
+| `/phone` | Priya's capture flow: node selector, sample pallet photos (plus an experimental own-upload), the vision intake table with confirmation questions (Pallet 6 has a row under the 0.7 confidence threshold, so it shows the confirm step), the gap card for that node, Approve, and the post-approve execution checklist. Mic button is present but disabled. |
 | `/chat` | Full-page version of the Meena chat panel used in the landing hero. |
 | `/outcomes` | Per-play treated vs holdout table, lift with CI when measured (never shown for `unmeasured`), waste avoided, the CEO number ("net margin recovered per ₹1 of discount vs holdout"), the data-label badge, and the Looker link. |
 

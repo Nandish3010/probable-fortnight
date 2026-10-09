@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { asVisitor, collectConsoleErrors, expectNoConsoleErrors, shot } from "./helpers";
+import { API, asVisitor, collectConsoleErrors, expectNoConsoleErrors, shot, visitorHeaders } from "./helpers";
 
 test.describe("Arjun: Play Desk", () => {
   test("inbox, play card, trace, why, edit, approve, policy re-plan", async ({ page }) => {
@@ -36,6 +36,14 @@ test.describe("Arjun: Play Desk", () => {
     // The real recorded run's own rejections were all cite_or_drop (an uncited number in the
     // rationale), not margin_floor -- that was the old scripted stub's story.
     await expect(card.getByText(/guardrail cite_or_drop|cite_or_drop/).first()).toBeVisible();
+    // ... and the panel lists each of those attempts: three rejected by cite_or_drop with the
+    // reason and the wording that failed, then the one that passed.
+    const attempts = card.locator(".trace-panel").getByTestId("trace-attempts");
+    await expect(attempts.locator(".trace-attempt--rejected")).toHaveCount(3);
+    await expect(attempts.locator(".trace-attempt--rejected").first().locator("code")).toHaveText("cite_or_drop");
+    await expect(attempts.locator(".trace-attempt--rejected").first()).toContainText("uncited numbers in rationale");
+    await expect(attempts.locator(".trace-attempt--accepted")).toHaveCount(1);
+    await shot(page, "arjun-03b-attempts");
 
     // replay reproduces the same panel state as the live run, event for event (snapshot diff)
     const trace = card.locator(".trace-panel__list");
@@ -85,6 +93,37 @@ test.describe("Arjun: Play Desk", () => {
     const replanResult = card.locator(".play-card__section").filter({ hasText: "Re-plan result" });
     await expect(replanResult).toHaveAttribute("role", "status");
     await shot(page, "arjun-05-replan");
+    await expectNoConsoleErrors(errors);
+  });
+
+  test("Plan live runs the planner on the flagship gap and streams it into the trace", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await asVisitor(page, "live-arjun-plan-live");
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    const card = page.getByTestId("play-detail");
+    const recorded = card.locator(".trace-panel");
+    await expect(recorded.getByTestId("trace-attempts")).toBeVisible();
+
+    // hold the SSE response back so the panel is provably visible mid-run (see the policy beat above)
+    await page.route("**/events/*/stream", async (route) => {
+      const response = await route.fetch();
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.fulfill({ response });
+    });
+    await card.getByTestId("plan-live").click();
+    const liveRun = card.getByTestId("live-replan");
+    await expect(liveRun).toBeVisible();
+    await expect(liveRun.getByText(/\d+ s elapsed/)).toBeVisible();
+    await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
+    await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(3);
+    // the live play sits in the inbox under the recorded one; the recorded play is still the one selected
+    await expect(page.getByLabel("Play inbox").locator(".inbox__live")).toHaveCount(1);
+    await expect(card.getByText(/^play_chips_ds07_v1 · status/)).toBeVisible();
+    const live = await (await page.request.get(`${API}/plays/play_chips_ds07_v1_live`, { headers: visitorHeaders("live-arjun-plan-live") })).json();
+    expect(live.play_id).toBe("play_chips_ds07_v1_live");
+    expect((await (await page.request.get(`${API}/plays/play_chips_ds07_v1`, { headers: visitorHeaders("live-arjun-plan-live") })).json()).source).toBe("recorded_gemini");
+    await shot(page, "arjun-06-plan-live");
     await expectNoConsoleErrors(errors);
   });
 });

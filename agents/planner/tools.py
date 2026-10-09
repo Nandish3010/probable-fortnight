@@ -356,6 +356,10 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
         play["created_at"] = now.isoformat(timespec="seconds").replace("+00:00", "Z")
         play["status"] = "proposed"
         play["policy_version"] = ctx.policy_version
+        if ctx.play_id:
+            play["play_id"] = ctx.play_id
+        if isinstance(play.get("holdout"), dict) and play.get("play_id"):
+            play["holdout"]["seed"] = f"seed-{play['play_id']}"  # from the final id, never the model's text
         play["trace_ref"] = f"events/{ctx.run_id}"
         play.pop("approved_at", None)
         play.pop("approved_by", None)

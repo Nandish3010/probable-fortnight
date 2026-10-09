@@ -24,11 +24,14 @@ class PlannerContext:
     policy_text: str
     policy_version: str
     run_id: str
+    # When set, propose_play files the play under this id whatever id the model wrote: a live run
+    # under an unchanged policy version must not overwrite the recorded play (services/api).
+    play_id: str | None = None
     products: dict[str, dict[str, Any]] = field(default_factory=dict)
     nodes: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
-    def build(cls, data_dir: str | Path, run_id: str, policy_text: str | None = None, policy_version: str | None = None, tenant: TenantConfig | None = None) -> PlannerContext:
+    def build(cls, data_dir: str | Path, run_id: str, policy_text: str | None = None, policy_version: str | None = None, tenant: TenantConfig | None = None, play_id: str | None = None) -> PlannerContext:
         store = LocalStore(data_dir)
         tenant = tenant or load_tenant()
         manifest_path = store.root / "manifest.json"
@@ -36,7 +39,7 @@ class PlannerContext:
         policy = store.read("policy")
         current = policy[-1] if policy else {"policy_version": tenant.policy_version, "text": tenant.policy_text}
         ctx = cls(
-            store=store, tenant=tenant, as_of=as_of, run_id=run_id,
+            store=store, tenant=tenant, as_of=as_of, run_id=run_id, play_id=play_id,
             policy_text=policy_text if policy_text is not None else current["text"],
             policy_version=policy_version or current["policy_version"],
         )

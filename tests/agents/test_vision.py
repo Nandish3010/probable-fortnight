@@ -63,3 +63,35 @@ def test_supplying_a_hand_entered_date_commits_the_row(sandbox):
     result = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
     assert len(result["written"]) == len(res["rows"]) and result["skipped"] == []
     assert all(b["expiry_date"] == "2026-12-01" for b in result["written"])
+
+
+def _gallery_refs():
+    """The photo_refs the phone view offers as samples (web/app/phone/page.tsx SAMPLE_PHOTOS)."""
+    import re
+
+    page = (ROOT / "web" / "app" / "phone" / "page.tsx").read_text(encoding="utf-8")
+    return re.findall(r'ref: "(fixtures/photos/pallet_\d+\.jpg)"', page)
+
+
+def test_the_phone_gallery_has_a_sample_with_a_row_under_the_threshold(base_store):
+    refs = _gallery_refs()
+    assert len(refs) >= 7
+    low = [r for r in refs if any(row["needs_confirmation"] for row in intake(base_store, "DS-07", photo_ref=r, backend="stub")["rows"])]
+    assert "fixtures/photos/pallet_06.jpg" in low  # the one labelled "date hard to read"
+    assert "fixtures/photos/pallet_01.jpg" not in low  # the first sample reads clean
+
+
+def test_pallet_06_routes_its_unclear_row_to_confirm_and_holds_it_back_until_answered(sandbox):
+    res = intake(sandbox, "DS-07", photo_ref="fixtures/photos/pallet_06.jpg", backend="stub")
+    clear, unclear = res["rows"]
+    assert (clear["needs_confirmation"], unclear["needs_confirmation"]) == (False, True)
+    assert min(unclear["sku_confidence"], unclear["date_confidence"], unclear["count_confidence"]) < CONFIDENCE_THRESHOLD <= min(clear["sku_confidence"], clear["date_confidence"], clear["count_confidence"])
+    assert "Poha" in unclear["confirmation_question"] and res["pass"] == "two_pass"
+
+    held = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert [b["sku"] for b in held["written"]] == [clear["sku_guess"]]
+    assert held["skipped"] == [{"sku_guess": unclear["sku_guess"], "reason": "not confirmed"}]
+    unclear["confirmed"] = True
+    both = commit_rows(sandbox, "DS-07", res["rows"], res["photo_ref"], "2026-09-12T09:00:00Z")
+    assert len(both["written"]) == 2 and both["skipped"] == []
+
