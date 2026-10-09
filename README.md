@@ -18,11 +18,10 @@ inventory-aware chat agent, and measured against a holdout.
 
 ## Team
 
-<!-- add 1-3 more members before submission -->
-
 | Name | Role |
 |---|---|
 | Nandish | Lead, product and engineering |
+| Rinu | Co-builder |
 
 ## Impact in numbers
 
