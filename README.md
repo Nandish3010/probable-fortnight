@@ -12,9 +12,17 @@ inventory-aware chat agent, and measured against a holdout.
 - Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
 - Click **Run the 60-second beat**, then **Approve**: the approved play sets a promo flag on its window in `future_regressors`, and the re-forecast moves the chart. Projection: the play's promo lift applied to its window. Measure tests it against 26 held-back customers (seeded; `eval/raw/flagship_facts_2026-09-27.json`, `approve.holdout_n`).
 - Then **Chat as Meena**: the offer arrives in Kannada with the best-before date; ask for Cola Zero and get what is actually on her shelf.
-- Video (under 3 min): _pending_ · Deck: [`docs/deck.pdf`](docs/deck.pdf)
+- Deck: [`docs/deck.pdf`](docs/deck.pdf)
 - Live vs replay: every panel carries a LIVE/REPLAY (or REAL PILOT/SYNTHETIC) badge -- the play card itself keeps its `REPLAY · policy <version>` badge -- except the Desk's trace panel and its re-plan result, which instead carry one of four provenance badges -- `Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)`, or `Live · Gemini` -- naming exactly where that trace or run came from. Sense is nightly and replayed; approve, chat, capture and execution are live calls. **Change policy → re-plan** is itself a live, streamed call on the deployed service: it runs Gemini, streams each tool call and guardrail check as they happen, and ends badged with whichever of the four provenance kinds the run actually produced.
 - Reset: **Reset demo data** restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
+
+## Team
+
+<!-- add 1-3 more members before submission -->
+
+| Name | Role |
+|---|---|
+| Nandish | Lead, product and engineering |
 
 ## Impact in numbers
 
@@ -87,6 +95,13 @@ guardrail check as it happens, and if no valid play arrives within the configure
 reason shown. A demo gap that has never had a recording made for it (`gap_tea_ds04`) still seeds
 from the scripted stub and is badged "Scripted fixture" -- that branch of the seeding logic is
 still exercised, just not by the flagship gap anymore.
+
+## Architecture
+
+![Taal architecture: taal-web and taal-agents on Cloud Run, Gemini on Vertex AI, a per-visitor sandbox, an MCP order endpoint, Firestore, and nightly BigQuery jobs started by Cloud Scheduler](docs/architecture.svg)
+
+Two paths: a per-visitor sandbox serves judges, and nightly Cloud Run jobs run on BigQuery
+(source and request paths in [`docs/architecture.md`](docs/architecture.md)).
 
 ## Why this generalizes: one decision loop, not a promo bot
 

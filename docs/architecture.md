@@ -6,55 +6,35 @@ latency budget in §4.3; none of the numbers here are pilot results (see `docs/p
 ## Services and data flow
 
 ```mermaid
-flowchart LR
-  subgraph Capture
-    Phone[Phone view\ncamera]
-  end
+flowchart TB
+  Browser(["Browser<br/>Play Desk, chat,<br/>phone camera view"])
+  Web["taal-web<br/>Cloud Run · Next.js"]
+  Agents["taal-agents<br/>Cloud Run · FastAPI + Google ADK<br/>Planner, Customer and Vision agents"]
+  Gemini["Gemini 2.5 Flash on Vertex AI<br/>planner · customer agent · vision"]
+  MCP["MCP order endpoint<br/>place_order, in-process"]
+  Sandbox[("Per-visitor sandbox<br/>pinned-clock JSONL snapshot,<br/>copy-on-write per judge; reset restores it")]
+  Firestore[("Firestore<br/>practitioner feedback (live);<br/>serving cache behind an off-by-default flag")]
+  Sessions[("Vertex AI Sessions<br/>Agent Engine; off-by-default flag")]
+  Sched["Cloud Scheduler<br/>20:00 / 20:30 UTC"]
+  Jobs["taal-sense · taal-measure<br/>Cloud Run Jobs, nightly"]
+  BQ[("BigQuery (dataset taal)<br/>forecasts, gaps, plays, outcomes;<br/>AI.GENERATE_TABLE writes offer copy")]
 
-  subgraph BigQuery[BigQuery: taal dataset]
-    Sales[sales_daily / inventory_batches / inbound]
-    Forecasts[forecasts / future_regressors]
-    Gaps[gaps]
-    Plays[plays / play_assignments]
-    Outcomes[play_outcomes / estimator_priors]
-  end
+  Browser <--> Web
+  Web <--> Agents
+  Agents --> Gemini
+  Agents --> Sandbox
+  Agents --> MCP --> Sandbox
+  Agents --> Firestore
+  Agents -.-> Sessions
+  Sched --> Jobs --> BQ
 
-  subgraph AgentsSvc[taal-agents (Cloud Run, ADK)]
-    Planner[Planner Agent]
-    Approve[Approve + assignment]
-    Customer[Customer Agent]
-  end
-
-  subgraph Web[taal-web (Cloud Run, Next.js)]
-    PlayDesk[Play Desk]
-    Chat[Customer web chat]
-    Judge[Judge mode]
-  end
-
-  LocalSnap[(Per-visitor local store:\nLocalStore / OverlayStore over the\nfrozen, pinned-clock snapshot)]
-  Firestore[(Firestore: practitioner feedback, deployed.\nServing cache for stock / customer profiles behind\nflag TAAL_SERVING_CACHE, off by default)]
-  Sessions[(Vertex AI Sessions on Agent Engine\nflag TAAL_SESSION_BACKEND, off by default)]
-
-  Phone -- "1 photo" --> AgentsSvc
-  AgentsSvc -- "inventory_batches write" --> BigQuery
-  Sales --> Forecasts --> Gaps
-  Gaps -- "2 nightly Sense" --> Planner
-  Planner -- "propose_play" --> Plays
-  Plays -- "3 Approve" --> Approve
-  Approve -- "assignment + re-forecast" --> Forecasts
-  AgentsSvc -. "deploy-time mirror of the served snapshot, off in deployed service" .-> Firestore
-  LocalSnap -- "4 stock/offers" --> Customer
-  Firestore -. "stock/profile cache (only when the visitor has not changed them), off in deployed service" .-> Customer
-  Customer -. "sessions keyed visitor:customer, off in deployed service" .-> Sessions
-  Customer -- "orders" --> LocalSnap
-  BigQuery -- "5 nightly Measure" --> Outcomes
-  Outcomes -. "Looker Studio: designed (DECISIONS 5.8), not wired in this repo" .-> PlayDesk
-  PlayDesk --- Web
-  Chat --- Web
-  Judge --- Web
-  AgentsSvc --- PlayDesk
-  AgentsSvc --- Chat
+  classDef off stroke-dasharray: 5 5,color:#666
+  class Sessions off
 ```
+
+Rendered copy for the README: [`architecture.svg`](architecture.svg), from this block with
+`npx -y @mermaid-js/mermaid-cli -i <block.mmd> -o docs/architecture.svg` (flowchart
+`htmlLabels: false`, `neutral` theme).
 
 ## Request paths (numbered to match the video beats)
 
