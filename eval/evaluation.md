@@ -287,11 +287,13 @@ calls returned 200 (no envelope-validation 500 this run, unlike the first measur
 handling, not touched by this fix, and simply did not trigger on this particular run of live model
 output; it is not claimed fixed here). Latencies over all 50 calls (seconds): p50 **4.401**
 (was 5.195), **p95 5.752** (was 7.202), min 2.966, max 6.465, mean 4.403.
-**This now clears the "p95 < 6s" bar.** Command: same ad hoc script pattern as before, this time
+Command: same ad hoc script pattern as before, this time
 saved at run time (`/chat` against the running server, one `X-Taal-Visitor` per call, cycling
 through the identical 15-message pool the first measurement used); raw per-call data:
 `eval/raw/customer_latency_fix_2026-09-21.json`, summary:
 `eval/raw/customer_latency_fix_summary_2026-09-21.json`.
+
+**Re-measured again, 28 Sep (latest).** Same method (local API process on `TAAL_MODEL_BACKEND=vertex`, 50 `POST /chat` calls as Meena, one fresh visitor per call, the same 15-message pool): 50/50 calls returned 200; p50 **4.563 s**, p95 **6.478 s**, min 3.23 s, max 12.35 s. The p95 is 0.48 s over the 6 s budget; 3 of the 50 calls took more than 7 s, none on the same message twice. The 21 Sep run above (p50 4.401 s, p95 5.752 s) is the earlier run; no prompt or model setting was changed for the 28 Sep run (`methodology_note` in the raw file). Raw: `eval/raw/customer_latency_2026-09-28/analysis.json` (per-message split) and `calls.json`.
 
 **Honest limits of this fix.** It removes exactly one universal round trip (the `get_customer_context`
 call every first turn used to make), which is a full win for turns that needed no other tool (plain
@@ -674,11 +676,11 @@ a person and cannot be checked off by this session.
 
 ## Real BigQuery `ARIMA_PLUS_XREG` forecast, one series (2026-09-23)
 
-**Why this exists.** The deck audit (`docs/deck_audit.md`) found the deck claiming BigQuery
+**Why this exists.** An earlier deck audit (since retired with the deck it audited) found the deck claiming BigQuery
 `AI.FORECAST`/`ARIMA_PLUS_XREG` power Sense, when in fact `jobs/sense/forecast.py` runs a local
 Python seasonal model (`model: "local_seasonal_xreg"`) and the SQL under `data/bigquery/sense/`
 had never been executed -- exactly what README.md already discloses. Rather than only soften the
-deck's wording, the minimum credible version from that audit's Phase 3 was attempted: load one
+deck's wording, the minimum credible version was attempted: load one
 real series into BigQuery and actually run the existing SQL.
 
 **Two real bugs found and fixed by running it, not by reading it.** `data/bigquery/sense/

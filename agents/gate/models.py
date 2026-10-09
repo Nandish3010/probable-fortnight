@@ -32,6 +32,7 @@ PlayStatus = Literal[
     "proposed", "approved", "modified", "rejected", "running", "measured", "unmeasured"
 ]
 PlanSource = Literal["recorded_gemini", "scripted_stub", "deterministic_rules", "live_gemini"]
+# assortment_gap stays in the enum for schema compatibility; Sense no longer produces it (six gap types).
 GapType = Literal[
     "online_sellby_breach", "expiry_writeoff", "stockout_risk", "rebalance", "slow_mover", "unmet_demand", "assortment_gap"
 ]
