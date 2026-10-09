@@ -271,6 +271,8 @@ export interface ChatEnvelope {
   role: ChatRole;
   text: string; // <= 4096
   language?: string;
+  // One line restating a reply in another language, "English: ..." (<= 280); absent for English.
+  english_gloss?: string;
   buttons?: ChatButton[]; // <= 3
   list?: ChatList;
   citations?: ChatCitation[];

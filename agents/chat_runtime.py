@@ -36,6 +36,31 @@ _VALIDATOR = jsonschema.Draft202012Validator(ENVELOPE_SCHEMA, format_checker=jso
 KANNADA_RE = re.compile(r"[ಀ-೿]")
 
 
+GLOSS_PREFIX = "English: "
+GLOSS_MAX = 280
+_KN_DIGITS = str.maketrans("೦೧೨೩೪೫೬೭೮೯", "0123456789")
+_NUMBER_RE = re.compile(r"\d+(?:\.\d+)?")
+
+
+def is_non_english(text: str) -> bool:
+    return bool(KANNADA_RE.search(text))
+
+
+def _numbers(text: str) -> set[float]:
+    return {float(n) for n in _NUMBER_RE.findall(text.translate(_KN_DIGITS))}
+
+
+def gloss_ok(gloss: str, text: str) -> bool:
+    """A gloss may only restate the reply: every number in it (a price, a date, a count) must also
+    be in the reply. One that adds a figure the reply never stated is dropped, not shown."""
+    return _numbers(gloss) <= _numbers(text)
+
+
+def with_gloss_prefix(gloss: str) -> str:
+    gloss = gloss.strip()
+    return (gloss if gloss.startswith(GLOSS_PREFIX) else GLOSS_PREFIX + gloss)[:GLOSS_MAX]
+
+
 def now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
@@ -127,7 +152,30 @@ def clamp(env: dict[str, Any]) -> dict[str, Any]:
     else:
         env.pop("citations", None)
     env["text"] = _strip_internal_leak(str(env.get("text", "")))[:4096]
+    gloss = env.get("english_gloss")
+    gloss = _strip_internal_leak(gloss) if isinstance(gloss, str) else ""
+    if gloss:
+        env["english_gloss"] = with_gloss_prefix(gloss)
+    else:
+        env.pop("english_gloss", None)
     return env
+
+
+def resolve_gloss(env: dict[str, Any], tool_gloss: str | None, fallback: Callable[[dict[str, Any]], str | None] | None) -> None:
+    """Settle `env["english_gloss"]` for a finished, clamped envelope, in place. Only a reply in
+    another language gets one. Order: the English twin a tool composed next to its own receipt or
+    refusal, else the model's gloss -- either kept only if it adds no number the reply lacks -- else
+    the code's template from the structured fields (`fallback`, e.g. the offer being delivered)."""
+    model_gloss = env.pop("english_gloss", None)
+    if not is_non_english(env["text"]):
+        return
+    for candidate in (tool_gloss, model_gloss):
+        if candidate and gloss_ok(candidate, env["text"]):
+            env["english_gloss"] = with_gloss_prefix(candidate)
+            return
+    templated = fallback(env) if fallback else None
+    if templated:
+        env["english_gloss"] = with_gloss_prefix(templated)
 
 
 def _log_timing(session_id: str, latency_ms: int, session_io: list[float]) -> None:
@@ -182,8 +230,9 @@ async def forget_persisted_sessions(store: LocalStore, visitor_id: str, app_name
 class ChatRuntime:
     """Runner cache, session bookkeeping and the turn loop for one specialist app."""
 
-    def __init__(self, app_name: str, agent_name: str, build_agent: Callable[[LocalStore, str | None], LlmAgent]):
+    def __init__(self, app_name: str, agent_name: str, build_agent: Callable[[LocalStore, str | None], LlmAgent], gloss_fallback: Callable[[LocalStore, str, dict[str, Any]], str | None] | None = None):
         self.app_name = app_name
+        self._gloss_fallback = gloss_fallback
         self.agent_name = agent_name
         self._build_agent = build_agent
         self._runners: dict[str, InMemoryRunner | Runner] = {}
@@ -239,7 +288,7 @@ class ChatRuntime:
                 store.append("conversations", [{"tenant_id": tenant.tenant_id, "session_id": session_id, "customer_id": customer_id, "channel": channel, "play_id": None, "started_at": now}])
         msg = types.Content(role="user", parts=[types.Part(text=f"customer_id={customer_id} {text}".strip())])
         tool_calls: list[dict[str, Any]] = list(extra_tool_calls or [])
-        final_text, reply = "", ""
+        final_text, reply, reply_en = "", "", ""
         async for ev in runner.run_async(user_id=adk_user_id, session_id=session.id, new_message=msg):
             for part in (ev.content.parts if ev.content and ev.content.parts else []):
                 if part.function_call:
@@ -247,6 +296,7 @@ class ChatRuntime:
                 if part.function_response:
                     tool_calls.append({"name": part.function_response.name, "result_ref": f"{session_id}#{len(tool_calls)}"})
                     reply = (part.function_response.response or {}).get("reply") or reply
+                    reply_en = (part.function_response.response or {}).get("reply_en") or reply_en
                 if part.text and ev.author == self.agent_name:
                     final_text = part.text
         latency_ms = int((time.perf_counter() - t0) * 1000)
@@ -255,6 +305,8 @@ class ChatRuntime:
         if reply:
             # A tool-composed receipt or refusal (place_order, apply_offer) replaces whatever the model wrote: amounts and refusals come from code.
             env["text"] = reply
+        fallback = (lambda e: self._gloss_fallback(store, customer_id, e)) if self._gloss_fallback else None
+        resolve_gloss(env, reply_en, fallback)
         envelope = {"session_id": session_id, "message_id": f"{session_id}-{int(time.time() * 1000)}", "role": "agent", "language": language, **env, "tool_calls": [{"name": t["name"], **({"args": t["args"]} if "args" in t else {}), **({"result_ref": t["result_ref"]} if "result_ref" in t else {})} for t in tool_calls][:20], "latency_ms": latency_ms, "ts": now}
         _VALIDATOR.validate(envelope)
         store.append("messages", [

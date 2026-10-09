@@ -33,10 +33,20 @@ from agents.gate.store import LocalStore
 
 from .agent import build_customer_agent
 from .context import CustomerContext, reset_context, set_context
-from .tools import context_summary, get_customer_context
+from .tools import context_summary, get_customer_context, offer_summary_en
 
 APP = "taal_customer"
-RUNTIME = ChatRuntime(APP, "customer", lambda store, backend: build_customer_agent({p["name"].lower(): p["sku"] for p in store.read("products")}, backend))
+
+
+def _offer_gloss(store: LocalStore, customer_id: str, env: dict[str, Any]) -> str | None:
+    """The gloss template when a non-English reply carries no usable one: the offer the reply cites
+    (a `play` citation), summarised in English from the offer's own structured fields."""
+    plays = {c["ref"] for c in env.get("citations") or [] if c["type"] == "play"}
+    offers = [o for o in store.read("offers") if o["customer_id"] == customer_id and o["play_id"] in plays]
+    return offer_summary_en(offers[-1], {p["sku"]: p["name"] for p in store.read("products")}) if offers else None
+
+
+RUNTIME = ChatRuntime(APP, "customer", lambda store, backend: build_customer_agent({p["name"].lower(): p["sku"] for p in store.read("products")}, backend), gloss_fallback=_offer_gloss)
 _now = now_iso
 _parse_envelope = parse_envelope
 _clamp = clamp

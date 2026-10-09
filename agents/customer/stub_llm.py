@@ -119,16 +119,22 @@ class StubCustomerLlm(BaseLlm):
     def _detect_lang(text: str, fallback: str) -> str:
         return detect_lang(text, fallback)
 
-    def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str) -> LlmResponse:
+    def _browse_reply(self, res: dict[str, Any], q: str, s: dict[str, str], lab: dict[str, str], node: str, lang: str = "en") -> LlmResponse:
+        def say(key: str, payload: dict[str, Any]) -> LlmResponse:
+            payload = {"text": s[key].format(q=q), **payload}
+            if lang != "en":
+                payload["english_gloss"] = STRINGS["en"][key].format(q=q)
+            return self._say(payload)
+
         products = res.get("products") or []
         if products:
             rows = [{"id": f"add:{p['sku']}", "title": p["name"][:24], "desc": f"₹{float(p.get('list_price') or 0):.0f}{' · few left' if p.get('availability') == 'few_left' else ''}"[:72]} for p in products[:10]]
-            return self._say({"text": s["matches"].format(q=q), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in products[:3]]})
+            return say("matches", {"list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{p['sku']}@{node}"} for p in products[:3]]})
         cats = res.get("categories") or []
         if q:
-            return self._say({"text": s["nomatch"].format(q=q)})
+            return say("nomatch", {})
         rows = [{"id": f"cat:{c}", "title": c.replace("_", " ").title()[:24]} for c in cats[:10]]
-        return self._say({"text": s["browse"], "list": {"title": lab["cats"][:60], "rows": rows}})
+        return say("browse", {"list": {"title": lab["cats"][:60], "rows": rows}})
 
     def _sku_in(self, text: str) -> str | None:
         """Exact product mention: the full name without its pack size (e.g. 'cola zero', 'masala chips')."""
@@ -178,6 +184,15 @@ class StubCustomerLlm(BaseLlm):
         lang = self._detect_lang(text, ctx.get("language") or "en")
         s, lab = STRINGS.get(lang, STRINGS["en"]), LABELS.get(lang, LABELS["en"])
         name = ctx.get("display_name") or customer_id
+
+        def say(key: str, payload: dict[str, Any] | None = None, **fmt: Any) -> LlmResponse:
+            """Reply with STRINGS[lang][key]; in another language also carry the English wording
+            of the same line as `english_gloss`, as the live prompt asks of the model."""
+            payload = {"text": s[key].format(**fmt), **(payload or {})}
+            if lang != "en":
+                payload["english_gloss"] = STRINGS["en"][key].format(**fmt)
+            return self._say(payload)
+
         node = ctx["home_node_id"]
         low = text.lower()
         offers = ctx.get("pending_offers") or []
@@ -185,7 +200,7 @@ class StubCustomerLlm(BaseLlm):
         if low.strip() in ("stop", "stop.", "unsubscribe"):
             if "record_stop" not in by:
                 return self._call("record_stop", {"customer_id": customer_id, "channel": "web_chat"})
-            return self._say({"text": s["stop"]})
+            return say("stop")
         # add / order
         if low.startswith("add:") or (low.split()[:1] in (["add"], ["order"], ["yes"]) and (offers or "get_stock" in by)):
             sku = low.split(":", 1)[1].strip().upper() if low.startswith("add:") else (offers[0].get("sku") if offers else by.get("get_stock", {}).get("sku"))
@@ -193,7 +208,7 @@ class StubCustomerLlm(BaseLlm):
             if play_id and "apply_offer" not in by:
                 return self._call("apply_offer", {"play_id": play_id, "customer_id": customer_id})
             if play_id and not by["apply_offer"].get("ok"):
-                return self._say({"text": s["refused"].format(reason=by["apply_offer"].get("reason", ""))})
+                return say("refused", reason=by["apply_offer"].get("reason", ""))
             if "place_order" not in by:
                 lines = [{"sku": sku, "qty": 1}]
                 offer = by.get("apply_offer") or {}
@@ -203,13 +218,13 @@ class StubCustomerLlm(BaseLlm):
             po = by["place_order"]
             return self._say({"text": po.get("reply") or po.get("error", ""), "citations": [{"type": "play", "ref": play_id}] if play_id else []})
         if low in ("no", "not now", "no thanks"):
-            return self._say({"text": s["no"]})
+            return say("no")
         # category button or browse
         if low.startswith("cat:") or BROWSE_RE.search(low):
             q = low.split(":", 1)[1].strip() if low.startswith("cat:") else (self._browse_query_word(text) or "")
             if "list_products" not in by:
                 return self._call("list_products", {"query": q, "node_id": node})
-            return self._browse_reply(by["list_products"], q, s, lab, node)
+            return self._browse_reply(by["list_products"], q, s, lab, node, lang)
         # product question
         sku = self._sku_in(text)
         if not sku and not GREETING_RE.search(low):
@@ -219,21 +234,21 @@ class StubCustomerLlm(BaseLlm):
             if q:
                 if "list_products" not in by:
                     return self._call("list_products", {"query": q, "node_id": node})
-                return self._browse_reply(by["list_products"], q, s, lab, node)
+                return self._browse_reply(by["list_products"], q, s, lab, node, lang)
         if sku:
             if "get_stock" not in by:
                 return self._call("get_stock", {"sku": sku, "node_id": node})
             st = by["get_stock"]
             if st.get("availability") != "out_of_stock":
-                low = s["low_stock"] if st.get("availability") == "few_left" else ""
-                return self._say({"text": s["in_stock"].format(name=st.get("name", sku), low=low, bb=_fmt_date(st.get("expiry_date"))), "buttons": [{"id": f"add:{sku}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": st.get("batch_id") or f"{sku}@{node}"}]})
+                low_stock = s["low_stock"] if st.get("availability") == "few_left" else ""
+                return say("in_stock", {"buttons": [{"id": f"add:{sku}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": st.get("batch_id") or f"{sku}@{node}"}]}, name=st.get("name", sku), low=low_stock, bb=_fmt_date(st.get("expiry_date")))
             if "find_substitutes" not in by:
                 return self._call("find_substitutes", {"sku": sku, "node_id": node})
             subs = by["find_substitutes"].get("result", by["find_substitutes"]) if isinstance(by["find_substitutes"], dict) else by["find_substitutes"]
             if not subs:
-                return self._say({"text": s["none"].format(name=st.get("name", sku))})
+                return say("none", name=st.get("name", sku))
             rows = [{"id": f"add:{r['sku']}", "title": r["name"][:24], "desc": f"₹{float(r.get('list_price') or 0):.0f}{' · few left' if r.get('availability') == 'few_left' else ''}"[:72]} for r in subs[:10]]
-            return self._say({"text": s["oos"].format(name=st.get("name", sku)), "list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]})
+            return say("oos", {"list": {"title": lab["subs"][:60], "rows": rows}, "citations": [{"type": "stock", "ref": f"{sku}@{node}"}] + [{"type": "stock", "ref": f"{r['sku']}@{node}"} for r in subs[:3]]}, name=st.get("name", sku))
         # a bare discount/offer question ("any discounts?", "can I get a discount?") with
         # nothing pending: say so against what she was just looking at. A question that asks
         # across the whole catalogue ("which product has the most discount today?") does NOT
@@ -242,7 +257,7 @@ class StubCustomerLlm(BaseLlm):
         # through to the offers/greeting reply instead, which is accurate either way.
         if not offers and last_context and "discount" in low and not GENERAL_DISCOUNT_RE.search(low):
             shown = ", ".join(p.get("name", p.get("sku", "")) for p in last_context[:3])
-            return self._say({"text": s["no_discount"].format(q=shown), "citations": [{"type": "stock", "ref": p["sku"]} for p in last_context[:3] if p.get("sku")]})
+            return say("no_discount", {"citations": [{"type": "stock", "ref": p["sku"]} for p in last_context[:3] if p.get("sku")]}, q=shown)
         # offers / greeting
         if offers and (GREETING_RE.search(low) or not text):
             o = offers[0]
@@ -252,7 +267,7 @@ class StubCustomerLlm(BaseLlm):
         if not offers and (GREETING_RE.search(low) or not text):
             back = next((m for m in ctx.get("memory") or [] if m.get("sku") and m.get("now_in_stock")), None)
             if back:
-                return self._say({"text": s["back_in_stock"].format(name=back["name"]), "buttons": [{"id": f"add:{back['sku']}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": back["sku"]}]})
+                return say("back_in_stock", {"buttons": [{"id": f"add:{back['sku']}", "label": lab["add"]}, {"id": "no", "label": lab["no"]}], "citations": [{"type": "stock", "ref": back["sku"]}]}, name=back["name"])
         if GREETING_RE.search(low) or not text:
-            return self._say({"text": s["greet"].format(name=name)})
-        return self._say({"text": s["unknown"]})
+            return say("greet", name=name)
+        return say("unknown")
