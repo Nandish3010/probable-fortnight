@@ -116,7 +116,7 @@ planner-traces:   ## one recorded planner run per selected gap -> eval/raw/plann
 eval:             ## planner evalset (stub or vertex per TAAL_MODEL_BACKEND)
 	uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals
 
-deck:             ## render deck/slides.html -> docs/deck.pdf (14 pages) and deck/png/slide_NN.png (needs `make setup`)
+deck:             ## render deck/slides.html -> docs/deck.pdf (17 pages) and deck/png/slide_NN.png (needs `make setup`)
 	@python3 deck/build.py
 
 deploy:           ## gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT)

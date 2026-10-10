@@ -1,0 +1,75 @@
+{
+  "measured_at": "2026-10-10",
+  "api": "https://taal-agents-2obkp776ca-el.a.run.app",
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "deadline_s": 90.0,
+  "n": 3,
+  "policy": "unchanged (read from GET /policy with the same visitor header and posted as is)",
+  "runs": [
+    {
+      "run": 1,
+      "gap_id": "gap_tea_ds04",
+      "run_id": "run_tea_ds04_v1_a04f0b9a",
+      "visitor_header": "liverun5529fa0b42",
+      "time_to_202_s": 0.23,
+      "poll_click_to_done_s": 31.8,
+      "server_elapsed_ms": 30344,
+      "status": "proposed",
+      "source": "live_gemini",
+      "planner_source": "model",
+      "iterations": 1,
+      "fallback_reason": null,
+      "started_at": "2026-10-10T14:59:14Z",
+      "finished_at": "2026-10-10T14:59:44Z"
+    },
+    {
+      "run": 2,
+      "gap_id": "gap_chips_ds07",
+      "run_id": "run_chips_ds07_v1_6d90bd5b",
+      "visitor_header": "liverun3c57bb435b",
+      "time_to_202_s": 0.37,
+      "poll_click_to_done_s": 32.1,
+      "server_elapsed_ms": 27452,
+      "status": "proposed",
+      "source": "live_gemini",
+      "planner_source": "model",
+      "iterations": 1,
+      "fallback_reason": null,
+      "started_at": "2026-10-10T14:59:46Z",
+      "finished_at": "2026-10-10T15:00:13Z"
+    },
+    {
+      "run": 3,
+      "gap_id": "gap_chips_ds07",
+      "run_id": "run_chips_ds07_v1_7e08094d",
+      "visitor_header": "liverun3bd442fcdb",
+      "time_to_202_s": 0.23,
+      "poll_click_to_done_s": 33.3,
+      "server_elapsed_ms": 29630,
+      "status": "proposed",
+      "source": "live_gemini",
+      "planner_source": "model",
+      "iterations": 1,
+      "fallback_reason": null,
+      "started_at": "2026-10-10T15:00:18Z",
+      "finished_at": "2026-10-10T15:00:48Z"
+    }
+  ],
+  "summary": {
+    "fallback_n": 0,
+    "model_planned_n": 3,
+    "server_elapsed_s": [
+      30.3,
+      27.5,
+      29.6
+    ],
+    "poll_click_to_done_s": [
+      31.8,
+      32.1,
+      33.3
+    ]
+  },
+  "method": "curl only, no credentials. For each run a fresh X-Taal-Visitor header was generated; GET /policy, then POST /rerun {gap_id, policy_text} (202 with run_id), then GET /rerun/{run_id} every 5 s for up to 120 s until status != running. poll_click_to_done_s is wall-clock from just before the POST to the first poll that saw a finished status, so it is rounded up to the 5 s poll interval; server_elapsed_ms is the planner's own elapsed time from the done payload. Order: gap_tea_ds04, gap_chips_ds07, gap_chips_ds07. All three runs are reported, none repeated.",
+  "compare_before_fix": "eval/raw/live_replan_timing_2026-10-09.json (9 Oct, gemini-2.5-flash, 45 s deadline: 47.7 / 47.7 / 30.8 s, 2 of 3 fell back to rules)"
+}

@@ -156,8 +156,12 @@ def build_rows() -> list[Row]:
     ))
 
     # 7. Gemini-as-judge rationale score + 15-item human-labelled agreement
-    key = next(k for k in not_measured if "Gemini-as-judge" in k)
-    rows.append(Row("Gemini-as-judge rationale score + 15-item human-labelled agreement", NOT_MEASURED, not_measured[key]))
+    rows.append(Row(
+        "Gemini-as-judge rationale score + 15-item human-labelled agreement",
+        "Rationale judge run 2026-10-09: 15/15 (same-family judge, so weak evidence; see row 15). The "
+        "15-item human labelling is not done, so judge-human agreement is not measured.",
+        "`harness/rationale_judge.py`, `eval/raw/live_eval_2026-10-09/summary.json`",
+    ))
 
     # 8. Agent Simulation guardrail pass rate over ~200 personas
     metric, result, command, raw = producible[9]
@@ -191,7 +195,7 @@ def build_rows() -> list[Row]:
             approve_line = m.group(0).strip()
     latency_result = chat_latency
     if approve_line:
-        latency_result += f" Approve latency (includes the re-forecast call), 21 Sep live-Vertex sweep: `{approve_line}` (holdout_n=26 there is the stub-seeded flagship play; since the recorded Gemini play was seeded, approve assigns 316 treated / 36 holdout)."
+        latency_result += f" Approve latency (includes the re-forecast call), 21 Sep live-Vertex sweep: `{approve_line}` (holdout_n=26 there is the earlier stub-seeded flagship play; with the 10 Oct recorded Gemini play seeded, approve assigns 323 treated / 29 holdout)."
     flags_on = _extract(
         text,
         r"\*\*Flags-on /chat latency: (.*?)\n\n",
@@ -228,13 +232,15 @@ def build_rows() -> list[Row]:
     rows.append(Row("Cost from the billing export with Gemini tokens per play", NOT_MEASURED, not_measured[key]))
 
     # 14. Not a DECISIONS §12 row -- this branch's own addition, appended rather than replacing one
-    # of the 13 above. No cloud credential in this build container (see eval/evaluation.md's "Not
-    # measured, and why" table and its "Planner: recorded traces and live re-plan" section) means
-    # neither the recorded real-Gemini traces nor the live re-plan sweep this would need exist yet.
-    key = next(k for k in not_measured if "Planner live re-plan latency" in k)
+    # of the 13 above. Measured on the deployed service on 10 Oct (3 runs), plus the 9 Oct run before the fix.
     rows.append(Row(
-        "Planner live re-plan latency (p50/p95) and fallback rate at the 45 s deadline",
-        NOT_MEASURED, not_measured[key],
+        "Planner live re-plan latency and fallback rate at the 90 s deadline",
+        "Measured 10 Oct on the deployed service, 3 runs (Tea, Chips, Chips): server-side elapsed 30.3 / 27.5 / "
+        "29.6 s, 3 of 3 model-planned, 0 fallbacks, 1 loop iteration each. n=3 is too few for a p95. Before the "
+        "fix, 9 Oct: 47.7 / 47.7 / 30.8 s, 2 of 3 fell back to rules at a 45 s deadline. The 5 recorded real-model "
+        "runs of 10 Oct took 21.8 to 27.6 s (all proposed, 0 fallbacks).",
+        "`eval/raw/live_replan_timing_2026-10-10.json`, `eval/raw/live_replan_timing_2026-10-09.json`, "
+        "`eval/raw/planner_real_traces_2026-10-10/summary.json`",
     ))
 
     # 15. Dated live-model run of the ADK evalsets and the rationale judge (one row per dated run,

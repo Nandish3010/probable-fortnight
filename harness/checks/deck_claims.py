@@ -33,7 +33,7 @@ def check() -> list[str]:
                 last = max(int(x) for x in re.findall(r"\d+", lines))
                 if last > len(f.read_text(encoding="utf-8", errors="replace").splitlines()):
                     problems.append(f"claims.md:{n}: {cite} is past the end of the file")
-    missing = set(range(1, 15)) - slides_seen
+    missing = set(range(1, 18)) - slides_seen
     if missing:
         problems.append(f"claims.md has no rows for slide(s) {sorted(missing)}")
     return problems

@@ -18,7 +18,7 @@ await page.goto(pathToFileURL(path.join(here, "slides.html")).href, { waitUntil:
 await page.evaluate(() => document.fonts.ready);
 const slides = page.locator("section.slide");
 const n = await slides.count();
-if (n !== 14) throw new Error(`expected 14 slides, found ${n}`);
+if (n !== 17) throw new Error(`expected 17 slides, found ${n}`);
 for (let i = 0; i < n; i++) {
   await slides.nth(i).screenshot({ path: path.join(pngDir, `slide_${String(i + 1).padStart(2, "0")}.png`) });
 }
