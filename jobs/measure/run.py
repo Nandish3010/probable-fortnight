@@ -4,8 +4,10 @@
 
 responders   = customers in the arm with an order line carrying play_id, or the target sku at a
                target node, inside [window.start, window.end]
-lift         = treated response rate - holdout response rate
-CI           = normal approximation, 95%: lift +- 1.96 * sqrt(p_t(1-p_t)/n_t + p_h(1-p_h)/n_h)
+lift         = treated response rate - holdout response rate, a difference in percentage points
+               (stored as a fraction; `lift_summary` gives the pp figures), not a relative lift
+CI           = 95%, Newcombe hybrid score (Wilson interval on each arm, combined; _lift_ci_newcombe)
+inconclusive = the CI contains zero, or fewer than MIN_RESPONDERS treated responders
 status       = measured only if treated customers >= holdout.min_treated_n AND holdout customers >= 1;
                otherwise unmeasured and no lift/CI is written (§17.5: a lift without a holdout fails the job)
 priors       = Beta-Binomial update with exact treated responder / non-responder counts
@@ -48,6 +50,21 @@ Z95 = 1.959964
 # The one line the nightly job logs when the BigQuery store holds no plays (docs/architecture.md,
 # Measure). harness/nightly_report.py looks for this exact text in the execution's log.
 NO_PLAYS_IN_BIGQUERY = "0 plays to measure: judge-mode approvals are per-visitor sandboxes and are never written to BigQuery by design"
+
+
+MIN_RESPONDERS = 5
+
+
+def lift_summary(lift: float | None, ci_low: float | None, ci_high: float | None, responders: int) -> dict[str, Any]:
+    """Percentage-point view of a measured lift plus the `inconclusive` flag. `lift` is the
+    treated-minus-holdout response-rate difference (a fraction); the *_pp fields are the same
+    numbers x 100. Inconclusive when the 95% CI crosses zero or treated responders < MIN_RESPONDERS."""
+    if lift is None or ci_low is None or ci_high is None:
+        return {"lift_unit": "percentage_points", "lift_pp": None, "ci_low_pp": None, "ci_high_pp": None, "inconclusive": True}
+    return {
+        "lift_unit": "percentage_points", "lift_pp": round(lift * 100, 3), "ci_low_pp": round(ci_low * 100, 3), "ci_high_pp": round(ci_high * 100, 3),
+        "inconclusive": bool(ci_low <= 0.0 <= ci_high or responders < MIN_RESPONDERS),
+    }
 
 
 class MeasureError(RuntimeError):

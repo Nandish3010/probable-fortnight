@@ -38,7 +38,7 @@ from typing import Any
 from agents.gate.config import load_tenant
 from agents.gate.estimator import update_prior
 from agents.gate.store import LocalStore, OverlayStore, load_catalogue
-from jobs.measure.run import run_measure
+from jobs.measure.run import lift_summary, run_measure
 from services.api.approve import approve
 
 FLAGSHIP_PLAY_ID = "play_chips_ds07_v1"
@@ -129,7 +129,7 @@ def build(data_dir: str | Path, play_id: str = FLAGSHIP_PLAY_ID) -> dict[str, An
         "after": {"alpha": float(after_row["alpha"]), "beta": float(after_row["beta"]), "n_measured": int(after_row["n_measured"])},
         "treated_n": int(treated["customers"]), "holdout_n": int(holdout["customers"]),
         "responders": {"treated": int(treated["responders"]), "holdout": int(holdout["responders"])},
-        "status": treated["status"], "lift": treated["lift"], "ci": {"low": treated["ci_low"], "high": treated["ci_high"], "level": 0.95, "method": "Newcombe hybrid score (jobs/measure/run.py)"},
+        "status": treated["status"], "lift": treated["lift"], **lift_summary(treated["lift"], treated["ci_low"], treated["ci_high"], int(treated["responders"])), "ci": {"low": treated["ci_low"], "high": treated["ci_high"], "level": 0.95, "method": "Newcombe hybrid score (jobs/measure/run.py)"},
         "approved_at": _iso(APPROVED_AT), "measured_at": MEASURED_AT,
         "applied_to_live_estimator": False,
         "note": "Computed by harness.prior_update_demo in a throwaway sandbox; the base tenant's estimator_priors are not changed, so no other play's estimate moves.",

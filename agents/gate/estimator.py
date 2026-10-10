@@ -253,7 +253,15 @@ def estimate(play_draft: dict[str, Any], ctx: EstimatorContext) -> dict[str, Any
         "measured_n": int(n_measured),
         "estimator_version": ctx.estimator_version,
     }
-    return {"expected_outcome": expected_outcome, "counterfactuals": counterfactuals(play_draft, ctx)}
+    cfs = counterfactuals(play_draft, ctx)
+    # Net of this play against writing the lot off: margin earned minus the lot still written off.
+    # A transfer's margin already contains the waste it avoids (margin = waste_avoided - transfer
+    # cost), so the avoided waste is counted once there; every other mechanic's margin is sales
+    # margin only and the avoided waste is added on top.
+    margin_r, waste_r = expected_outcome["margin_inr"], expected_outcome["waste_avoided_inr"]  # from the published, rounded figures
+    net = margin_r - cfs["do_nothing_inr"] if mechanic == "transfer_plus_nudge" else margin_r - (cfs["do_nothing_inr"] - waste_r)
+    cfs["play_net_inr"] = _r2(net)
+    return {"expected_outcome": expected_outcome, "counterfactuals": cfs}
 
 
 def counterfactuals(play_draft: dict[str, Any], ctx: EstimatorContext) -> dict[str, float]:

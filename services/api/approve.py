@@ -15,7 +15,7 @@ from agents.gate.assignment import assign
 from agents.gate.config import TenantConfig, load_models
 from agents.gate.store import LocalStore, load_catalogue
 from agents.planner.context import PlannerContext
-from agents.planner.tools import audience_customer_ids
+from agents.planner.tools import eligible_audience
 from jobs.sense.copy import generate_copy, generate_copy_bigquery, validate_copy
 from jobs.sense.forecast import forecast, series_for
 
@@ -117,11 +117,10 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     # grocery affinity table (agents/planner/tools.py::get_candidate_audiences has the same
     # fallback for the planner's own audience-sizing call) -- re-derive it here too, since approve
     # recomputes the audience fresh rather than trusting whatever the play declared.
-    requesting = (gap.get("evidence") or {}).get("requesting_customer_ids")
-    ids = audience_customer_ids(pctx, play["target"]["sku"], play["target"]["node_ids"], play["audience"]["segment_ids"], requesting_customer_ids=requesting)
-    consented = {r["customer_id"] for r in store.read("consent") if r["purpose"] == "marketing" and not r.get("withdrawn_at")}
+    # The same filtered list the gate sized the play from (agents/planner/tools.py::eligible_audience),
+    # so treated + holdout always equals the play's audience.size_after_consent.
+    ids, eligible = eligible_audience(pctx, play)
     subscribers = {c["customer_id"] for c in store.read("customers") if play["target"]["sku"] in (c.get("subscription_skus") or [])}
-    eligible = [c for c in ids if c in consented and (play["mechanic"] not in ("coupon", "outlet_markdown", "bundle") or c not in subscribers)]
     rows = assign(play, eligible, assigned_at=now_iso)
     for r in rows:
         r["tenant_id"] = tenant.tenant_id

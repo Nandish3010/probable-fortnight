@@ -1,0 +1,162 @@
+{
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-09-18T23:59:59Z"
+  },
+  "target": {
+    "deadline_date": "2026-09-18",
+    "deadline_type": "online_sellby",
+    "node_ids": [
+      "DS-07"
+    ],
+    "units": 368,
+    "sku": "SKU-MASALA-CHIPS-200G",
+    "batch_ids": [
+      "B-CHIPS-DS07-01"
+    ]
+  },
+  "objective": "clear_online_sellby",
+  "play_id": "play_chips_ds07_v1",
+  "gap_id": "gap_chips_ds07",
+  "mechanic_params": {
+    "bundle_sku": "SKU-COCONUT-WATER-1L",
+    "bundle_price": 55
+  },
+  "mechanic": "bundle",
+  "rationale": "This play targets the available audience with a bundle of Masala Chips and Coconut Water to clear the online sell-by gap at DS-07. The bundle price of 55.00 INR yields an expected margin of 117.46 INR, avoiding 605.44 INR of waste. A holdout is maintained to measure the play's performance. Alternatives like coupons and transfers were rejected due to lower or negative expected margins.",
+  "citations": [
+    {
+      "ref": "gap_chips_ds07",
+      "type": "gap"
+    },
+    {
+      "type": "estimator",
+      "ref": "est-v1"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+    }
+  ],
+  "expected_outcome": {
+    "units": 24.22,
+    "margin_inr": 117.46,
+    "waste_avoided_inr": 605.44,
+    "discount_cost_inr": 242.18,
+    "ci_low": 1.31,
+    "ci_high": 70.65,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "alternatives": [
+    {
+      "mechanic": "transfer_plus_nudge",
+      "expected_units": 24.36,
+      "rejected_because": "negative expected margin",
+      "expected_margin_inr": -127.12,
+      "mechanic_params": {
+        "transfer_units": 368,
+        "transfer_to_node": "OUT-03"
+      }
+    },
+    {
+      "expected_units": 24.22,
+      "mechanic_params": {
+        "discount_pct": 10
+      },
+      "mechanic": "coupon",
+      "expected_margin_inr": 48.44,
+      "rejected_because": "lower expected margin than the bundle play"
+    }
+  ],
+  "copy": {
+    "variants": [],
+    "copy_status": "pending",
+    "language_set": [
+      "en"
+    ]
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 8.82% (net price 55.00, cost 50.15) vs snacks floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 352 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 426 -> 352"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-MASALA-CHIPS-200G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-MASALA-CHIPS-200G at DS-07"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "3 number(s) in rationale all cited; 4 citation(s) resolve"
+    }
+  ],
+  "counterfactuals": {
+    "do_nothing_inr": 9200.0,
+    "blanket_markdown_inr": 8188.78,
+    "blanket_markdown_pct": 20.0,
+    "play_net_inr": -8477.1
+  },
+  "holdout": {
+    "min_treated_n": 20,
+    "fraction": 0.1,
+    "seed": "seed-play_chips_ds07_v1"
+  },
+  "channel": "web_chat",
+  "audience": {
+    "size_before_consent": 426,
+    "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_6"
+    ],
+    "size_after_consent": 352,
+    "purpose": "marketing",
+    "filters": {}
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_chips_ds07_v1_516ca1ac",
+  "cost": {
+    "plan_cost_inr": 3.94,
+    "conversation_budget_inr": 45.76,
+    "pct_of_rupees_at_stake": 0.54
+  },
+  "source": "live_gemini"
+}

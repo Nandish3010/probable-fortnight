@@ -97,3 +97,17 @@ def test_ci_bounds_monotone_in_audience():
     b = estimate({"mechanic": "coupon", "mechanic_params": {"discount_pct": 10}, "audience": {"segment_ids": ["s"]}}, ctx(audience=1000))["expected_outcome"]
     assert b["units"] > a["units"] and b["ci_high"] > a["ci_high"]
     assert not math.isnan(b["ci_low"])
+
+
+def test_transfer_play_net_counts_avoided_waste_once():
+    c = ctx(audience=300, units_at_risk=100)
+    cf = estimate({"mechanic": "transfer_plus_nudge", "mechanic_params": {"transfer_units": 100}, "audience": {"segment_ids": ["seg_1"]}}, c)
+    eo, cfs = cf["expected_outcome"], cf["counterfactuals"]
+    # margin already includes the waste avoided, so net = margin - do_nothing (not margin - (do_nothing - waste))
+    assert cfs["play_net_inr"] == round(eo["margin_inr"] - cfs["do_nothing_inr"], 2)
+
+
+def test_non_transfer_play_net_adds_avoided_waste():
+    out = estimate({"mechanic": "coupon", "mechanic_params": {"discount_pct": 15}, "audience": {"segment_ids": ["seg_1"]}}, ctx())
+    eo, cfs = out["expected_outcome"], out["counterfactuals"]
+    assert cfs["play_net_inr"] == round(eo["margin_inr"] - (cfs["do_nothing_inr"] - eo["waste_avoided_inr"]), 2)
