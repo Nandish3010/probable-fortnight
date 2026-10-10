@@ -121,6 +121,7 @@ class Counterfactuals(_Strict):
     do_nothing_inr: float = Field(ge=0)
     blanket_markdown_inr: float = Field(ge=0)
     blanket_markdown_pct: float = Field(ge=0, le=100)
+    play_net_inr: float | None = None
 
 
 class Holdout(_Strict):

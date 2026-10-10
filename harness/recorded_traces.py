@@ -13,6 +13,7 @@ included).
 """
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -177,6 +178,14 @@ def validate_recording(data_dir: str | Path, rec: Recording) -> tuple[bool, list
             gap = pt._gap(ctx, play["gap_id"])
         except KeyError as e:
             return False, [f"unknown gap {e}"]
+
+        derived = copy.deepcopy(play)
+        pt.apply_derived_audience(ctx, derived)
+        if derived["channel"] != play["channel"]:
+            reasons.append(f"channel: recorded {play['channel']!r}, derived {derived['channel']!r} from the mechanic")
+        for key in ("size_before_consent", "size_after_consent"):
+            if derived["audience"][key] != play["audience"][key]:
+                reasons.append(f"audience.{key}: recorded {play['audience'][key]!r}, tools derive {derived['audience'][key]!r}")
 
         guardrail_check = check_guardrails(play, pt._guardrail_context(ctx, play))
         if not guardrail_check["all_passed"]:
