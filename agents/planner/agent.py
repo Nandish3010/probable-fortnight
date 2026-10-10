@@ -17,6 +17,7 @@ from google.adk.models.registry import LLMRegistry
 from google.genai import types
 
 from agents.gate.config import TenantConfig, load_models, load_tenant
+from agents.vertex_models import thinking_config, vertex_model
 
 from .stub_llm import StubPlannerLlm
 from .tools import TOOLS
@@ -29,13 +30,6 @@ MAX_ITERATIONS = 3
 LLMRegistry.register(StubPlannerLlm)
 
 
-def _vertex_model_id(models: dict) -> str:
-    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "TRUE")
-    if models["vertex"].get("location") and not os.environ.get("GOOGLE_CLOUD_LOCATION"):
-        os.environ["GOOGLE_CLOUD_LOCATION"] = models["vertex"]["location"]
-    return models["ids"]["flash"]
-
-
 def build_model(tenant: TenantConfig, policy_text: str, run_id: str, as_of: str, backend: str | None = None) -> str | BaseLlm:
     models = load_models()
     backend = backend or models["backend"]
@@ -46,19 +40,13 @@ def build_model(tenant: TenantConfig, policy_text: str, run_id: str, as_of: str,
             languages=list(tenant.languages), as_of=as_of, run_id=run_id, policy_text=policy_text,
         )
     if backend == "vertex":
-        return _vertex_model_id(models)
+        return vertex_model(models)  # the primary alone, or a FallbackModel over primary + ids.fallback
     raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")
 
 
 def _thinking_config(model_id: str, level: str) -> types.ThinkingConfig | None:
-    try:
-        if model_id.startswith("gemini-3"):
-            return types.ThinkingConfig(thinking_level=level)  # type: ignore[attr-defined]
-        # Gemini 2.5 rejects thinking_level outright (400 INVALID_ARGUMENT); it takes a token
-        # budget instead. 0 disables thinking on 2.5 Flash.
-        return types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(level, 1024))
-    except Exception:  # older google-genai without ThinkingConfig: keep default
-        return None
+    """`thinking_level` for Gemini 3, a token budget for Gemini 2.5 (agents/vertex_models.py)."""
+    return thinking_config(model_id, level)
 
 
 def _has_estimates(llm_request) -> bool:
@@ -75,12 +63,44 @@ def _has_estimates(llm_request) -> bool:
     return False
 
 
-def _route_thinking_callback(model_id: str, route_level: str, final_level: str):
+NUDGE = "Your previous turn returned no usable content. Do not think at length: call propose_play now with the best candidate from the estimates, then reply DONE <play_id>."
+
+
+class _TurnHealth:
+    """Remembers whether the model's last turn came back empty or errored. ADK turns a content-less
+    response into an event carrying error_code, the LoopAgent repeats the identical request, and the
+    next request holds nothing that says the turn failed -- so the flag is kept here."""
+
+    def __init__(self) -> None:
+        self.last_turn_empty = False
+        self.empty_turns = 0
+
+
+def is_empty_response(llm_response) -> bool:
+    if getattr(llm_response, "error_code", None):
+        return True
+    parts = (llm_response.content.parts if llm_response.content and llm_response.content.parts else [])
+    return not any(p.text or p.function_call for p in parts)
+
+
+def _route_thinking_callback(model_id: str, route_level: str, final_level: str, health: _TurnHealth | None = None):
     def _callback(callback_context, llm_request):  # noqa: ARG001 -- ADK callback signature
-        level = final_level if _has_estimates(llm_request) else route_level
+        retrying = health is not None and health.last_turn_empty
+        level = route_level if retrying else (final_level if _has_estimates(llm_request) else route_level)
         config = _thinking_config(model_id, level)
         if config is not None:
             llm_request.config.thinking_config = config
+        if retrying:
+            llm_request.contents.append(types.Content(role="user", parts=[types.Part(text=NUDGE)]))
+        return None
+
+    return _callback
+
+
+def _record_turn_callback(health: _TurnHealth):
+    def _callback(callback_context, llm_response):  # noqa: ARG001 -- ADK callback signature
+        health.last_turn_empty = is_empty_response(llm_response)
+        health.empty_turns += int(health.last_turn_empty)
         return None
 
     return _callback
@@ -93,11 +113,13 @@ def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, r
     route_level = thinking.get("planner_route", "low")
     final_level = thinking.get("planner_final", "medium")
     config = types.GenerateContentConfig(temperature=0.2)
-    before_model_callback = None
+    before_model_callback = after_model_callback = None
     if (backend or models["backend"]) == "vertex":
         model_id = models["ids"]["flash"]
         config.thinking_config = _thinking_config(model_id, route_level)
-        before_model_callback = _route_thinking_callback(model_id, route_level, final_level)
+        health = _TurnHealth()
+        before_model_callback = _route_thinking_callback(model_id, route_level, final_level, health)
+        after_model_callback = _record_turn_callback(health)
     planner = LlmAgent(
         name="planner",
         description="Designs one demand-shaping play for a supply gap under the tenant policy.",
@@ -106,6 +128,7 @@ def build_planner(tenant: TenantConfig, policy_text: str, policy_version: str, r
         tools=list(TOOLS),
         generate_content_config=config,
         before_model_callback=before_model_callback,
+        after_model_callback=after_model_callback,
     )
     return LoopAgent(name="planner_loop", description="Plan, check guardrails, revise up to three times.", sub_agents=[planner], max_iterations=MAX_ITERATIONS)
 

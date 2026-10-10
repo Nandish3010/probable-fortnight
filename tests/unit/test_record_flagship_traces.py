@@ -78,7 +78,7 @@ def test_allow_stub_runs_are_independent_and_summary_matches_the_files(tmp_path,
         assert key in summary, f"summary.json missing {key!r}"
     assert summary["gap_id"] == GAP_ID and summary["backend"] == "stub" and summary["model"] == "stub-planner"
     assert summary["prompt_version"].startswith("v") and len(summary["prompt_sha256"]) == 64
-    assert summary["thinking"] == {"planner_route": "low", "planner_final": "medium", "customer": "low"}
+    assert summary["thinking"] == {"planner_route": "low", "planner_final": "low", "customer": "low"}
     assert len(summary["runs"]) == 2 and summary["aggregate"]["n_runs"] == 2
 
     for i, run_summary in enumerate(summary["runs"], start=1):

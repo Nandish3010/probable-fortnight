@@ -8,35 +8,38 @@ backend = "stub"
 
 [vertex]
 project_env = "GOOGLE_CLOUD_PROJECT"
-location = "asia-south1"          # fallback: asia-southeast1 or us if a service is unavailable
+location = "asia-south1"          # `ids.flash` runs here, and BigQuery (services/api/approve.py) uses it as its region. Never "global".
+fallback_location = "global"      # `ids.fallback` is served only from the global endpoint (404 in asia-south1 and us-central1).
 
 [ids]
-# Verified 20 Sep 2026 by a real generateContent call against
-# https://asia-south1-aiplatform.googleapis.com/.../publishers/google/models/<id>:generateContent
-# in project amru-509214 -- not guessed. `flash` is read by agents/planner/agent.py,
-# agents/customer/agent.py, agents/capture/vision.py, AND (as of 21 Sep 2026) by the BigQuery
-# AI.GENERATE_TABLE remote model `taal.<flash id>_remote` used for copy generation
-# (jobs/sense/copy.py::generate_copy_bigquery, services/api/approve.py) -- flash_lite was the
-# originally intended model for that call, but it 404s in asia-south1 (see below) where the
-# BigQuery dataset lives, and moving the dataset to us-central1 just to keep flash-lite was
-# judged not worth it. `live` and `fallback` below remain unwired.
-flash = "gemini-2.5-flash"          # planner, vision, chat, copy generation. Confirmed live in asia-south1.
-# flash-lite and pro respond in us-central1 but 404 in asia-south1 -- Vertex model
-# availability is per-region and asia-south1 is narrower than us-central1 as of this check.
-flash_lite = "gemini-2.5-flash-lite"  # NOT wired to any code path (superseded by `flash` for copy generation; see above). NOT verified in asia-south1 (404); works in us-central1.
+# Verified 10 Oct 2026 by real on-demand generateContent calls in project amru-509214 (REST, publishers/google/
+# models/<id>:generateContent in asia-south1, global and us-central1); evidence in
+# eval/raw/model_verification_2026-10-10.json. gemini-2.5-flash retires on Vertex on 20 Oct 2026. `flash` is read
+# by agents/planner/agent.py, agents/customer/agent.py, agents/capture/vision.py AND by the BigQuery
+# AI.GENERATE_TABLE remote model `taal.<flash id>_remote` that infra/deploy.sh recreates on every deploy
+# (jobs/sense/copy.py, services/api/approve.py). `fallback` is retried (agents/vertex_models.py) only when `flash`
+# answers 404, 429 or 5xx. `live` remains unwired.
+# deck/claims.md cites the `flash` line below by number; keep it on line 23.
+flash = "gemini-3.5-flash"          # planner, vision, chat, copy generation. 200 in asia-south1 and global (404 in us-central1); thinking_level minimal/low/medium/high; image input works.
+flash_lite = "gemini-3.1-flash-lite"  # NOT wired to any code path. 200 on global only (404 in asia-south1 and us-central1).
 live = "gemini-2.0-flash-live-preview-04-09"  # voice session. NOT verified -- Live API uses a websocket endpoint this check does not exercise.
-fallback = "gemini-2.5-flash"       # same as flash for now; a real fallback needs a distinct, separately-verified model.
+fallback = "gemini-3.5-flash-lite"  # a different model from `flash`, served only from the global endpoint (see [vertex] fallback_location); thinking_level minimal/low/medium/high; image input works.
 
 [thinking]
 planner_route = "low"
-planner_final = "medium"
+planner_final = "low"   # was "medium"; 10 Oct: post-estimate turns returned empty content (see agents/planner/agent.py retry-aware callback). Revisit with a live A/B on gemini-3.5-flash.
 customer = "low"
 
 # List prices used ONLY for the Cost Governor's estimates (DECISIONS §18.4); the billing export
 # replaces them with measured cost. Estimates, not quotes.
+# 10 Oct 2026: Gemini 3.5 Flash, Standard PayGo, non-global endpoint (asia-south1, where `ids.flash` runs):
+# $1.65 per 1M input tokens and $9.90 per 1M output tokens (reasoning included); cached input $0.165;
+# Flex/Batch half. Source: https://cloud.google.com/vertex-ai/generative-ai/pricing (Standard Model tab).
+# The global endpoint is $1.50 / $9.00; the page marks some non-global rows promotional (50% credits
+# back), which is not modelled here. Before 10 Oct these were 0.75 / 3.75.
 [pricing]
-usd_per_million_input = 0.75
-usd_per_million_output = 3.75
+usd_per_million_input = 1.65
+usd_per_million_output = 9.90
 cached_input_discount = 0.9
 batch_discount = 0.5
 inr_per_usd = 83.0

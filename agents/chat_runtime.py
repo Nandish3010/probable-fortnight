@@ -27,8 +27,9 @@ from google.adk.agents import LlmAgent
 from google.adk.runners import InMemoryRunner, Runner
 from google.genai import types
 
-from agents.gate.config import ROOT, TenantConfig
+from agents.gate.config import ROOT, TenantConfig, load_models
 from agents.gate.store import LocalStore
+from agents.vertex_models import ModelUnavailable, failover_error, thinking_config
 from agents.vertex_sessions import SESSION_IO_MS, build_session_service
 
 ENVELOPE_SCHEMA = json.loads((ROOT / "docs" / "schemas" / "chat_envelope.schema.json").read_text(encoding="utf-8"))
@@ -83,27 +84,15 @@ def detect_lang(text: str, fallback: str) -> str:
     return fallback
 
 
-def vertex_env(models: dict[str, Any]) -> None:
-    """Point google-genai at Vertex AI for the project/location in config/models.toml."""
-    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "TRUE")
-    if models["vertex"].get("location") and not os.environ.get("GOOGLE_CLOUD_LOCATION"):
-        os.environ["GOOGLE_CLOUD_LOCATION"] = models["vertex"]["location"]
-
-
 def chat_generate_config(models: dict[str, Any], thinking_key: str, temperature: float) -> types.GenerateContentConfig:
     """A reply here is a conversational turn, not a plan: it does not need a thinking budget.
     `config/models.toml` defines `thinking.customer` ("low") for exactly
     this; without wiring it, chat inherits the model's default dynamic thinking on every turn."""
     config = types.GenerateContentConfig(temperature=temperature)
     level = models.get("thinking", {}).get(thinking_key, "low")
-    model_id = models["ids"]["flash"]
-    try:
-        if model_id.startswith("gemini-3"):
-            config.thinking_config = types.ThinkingConfig(thinking_level=level)  # type: ignore[attr-defined]
-        else:
-            config.thinking_config = types.ThinkingConfig(thinking_budget={"low": 0, "medium": 1024, "high": 4096}.get(level, 0))
-    except Exception:  # older google-genai without ThinkingConfig: keep default
-        pass
+    thinking = thinking_config(models["ids"]["flash"], level, default_budget=0)
+    if thinking is not None:
+        config.thinking_config = thinking
     return config
 
 
@@ -289,16 +278,24 @@ class ChatRuntime:
         msg = types.Content(role="user", parts=[types.Part(text=f"customer_id={customer_id} {text}".strip())])
         tool_calls: list[dict[str, Any]] = list(extra_tool_calls or [])
         final_text, reply, reply_en = "", "", ""
-        async for ev in runner.run_async(user_id=adk_user_id, session_id=session.id, new_message=msg):
-            for part in (ev.content.parts if ev.content and ev.content.parts else []):
-                if part.function_call:
-                    tool_calls.append({"name": part.function_call.name, "args": dict(part.function_call.args or {})})
-                if part.function_response:
-                    tool_calls.append({"name": part.function_response.name, "result_ref": f"{session_id}#{len(tool_calls)}"})
-                    reply = (part.function_response.response or {}).get("reply") or reply
-                    reply_en = (part.function_response.response or {}).get("reply_en") or reply_en
-                if part.text and ev.author == self.agent_name:
-                    final_text = part.text
+        try:
+            async for ev in runner.run_async(user_id=adk_user_id, session_id=session.id, new_message=msg):
+                for part in (ev.content.parts if ev.content and ev.content.parts else []):
+                    if part.function_call:
+                        tool_calls.append({"name": part.function_call.name, "args": dict(part.function_call.args or {})})
+                    if part.function_response:
+                        tool_calls.append({"name": part.function_response.name, "result_ref": f"{session_id}#{len(tool_calls)}"})
+                        reply = (part.function_response.response or {}).get("reply") or reply
+                        reply_en = (part.function_response.response or {}).get("reply_en") or reply_en
+                    if part.text and ev.author == self.agent_name:
+                        final_text = part.text
+        except Exception as e:
+            # With a distinct ids.fallback the agent's model is a FallbackModel (agents/vertex_models.py),
+            # so an availability error that reaches here means the fallback failed too (or none is
+            # configured): the API answers 503 model_unavailable, not an unhandled 500.
+            if failover_error(e):
+                raise ModelUnavailable(load_models()["ids"]["flash"], detail=str(e)[:200]) from e
+            raise
         latency_ms = int((time.perf_counter() - t0) * 1000)
         _log_timing(session_id, latency_ms, session_io)
         env = clamp(parse_envelope(final_text))

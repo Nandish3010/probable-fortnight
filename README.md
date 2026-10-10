@@ -297,7 +297,7 @@ committed under `eval/raw/`. Rows §12 asks for that this project genuinely cann
 (pilot results, Gemini-as-judge scoring, cost from a billing export, planner throughput timing) say
 so explicitly in the table rather than a guessed number.
 
-Dated live-model run (2026-10-09, `gemini-2.5-flash` on Vertex): ADK planner evalsets response match 38/46 (exact tool-trajectory match 6/46, which fails on retry-order variance), rationale judge 15/15 at mean 5.0; see the last row of [`eval/evaluation_table.md`](eval/evaluation_table.md) and `eval/raw/live_eval_2026-10-09/`.
+Dated live-model run (2026-10-09, `gemini-2.5-flash` on Vertex): ADK planner evalsets response match 38/46 (exact tool-trajectory match 6/46, which fails on retry-order variance), rationale judge 15/15 at mean 5.0; see the last row of [`eval/evaluation_table.md`](eval/evaluation_table.md) and `eval/raw/live_eval_2026-10-09/`. From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` on the global endpoint as its fallback; both were verified with real calls (`eval/raw/model_verification_2026-10-10.json`). The runs above predate the switch.
 
 The forecaster has also been backtested once on a public retail dataset it was not built around (UCI Online Retail II, not grocery): [`eval/external_backtest.md`](eval/external_backtest.md).
 

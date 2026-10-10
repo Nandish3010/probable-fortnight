@@ -115,7 +115,7 @@ PYEOF
 # worth it (services/api/README or infra/README has the reasoning).
 COPY_MODEL="$(python3 -c "import tomllib; print(tomllib.load(open('${ROOT_DIR}/config/models.toml','rb'))['ids']['flash'])")"
 # BigQuery splits a single backtick-quoted identifier on '.', so a model id with dots in it
-# (gemini-2.5-flash) mis-parses `taal.gemini-2.5-flash_remote` as more path segments than
+# (gemini-3.5-flash) mis-parses `taal.gemini-3.5-flash_remote` as more path segments than
 # intended -- confirmed by actually running this CREATE MODEL statement and reading the error
 # ("Dataset ...taal.gemini-2 was not found"), not guessed. Sanitize the resource name; the
 # literal id still goes into OPTIONS(endpoint=...) unsanitized, matching jobs/sense/copy.py.
@@ -221,15 +221,24 @@ fi
 # it in production (runs 36445374014, 36445971526, both against main f48e04e). --concurrency 20,
 # not the 80 default: a judge's approve must never share an instance with dozens of others.
 # --min-instances is left unset (0), matching every other deploy in this script. --timeout 300 is Cloud Run's default, pinned: a live re-plan runs up to the 90 s planner deadline + 30 s poll grace (web/components/LiveReplan.tsx), so it must stay above 110 s.
+# --set-env-vars replaces every env var, which used to drop TAAL_ALLOWED_ORIGINS for the minutes
+# until the update at the end of this script (browser preflights failed with 400 meanwhile). Carry
+# the origins of the running revision into the same call; "^@^" because the value has commas.
+PREV_ORIGINS="$(gcloud run services describe taal-agents --project "${PROJECT}" --region "${REGION}" --format=json 2>/dev/null \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); env=d['spec']['template']['spec']['containers'][0].get('env',[]); print(next((e.get('value','') for e in env if e.get('name')=='TAAL_ALLOWED_ORIGINS'),''))" 2>/dev/null || true)"
+AGENTS_ENV_AT="${AGENTS_ENV//,/@}"
+if [ -n "${PREV_ORIGINS}" ]; then
+  AGENTS_ENV_AT="${AGENTS_ENV_AT}@TAAL_ALLOWED_ORIGINS=${PREV_ORIGINS}"
+fi
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
-  --set-env-vars "${AGENTS_ENV}" \
+  --set-env-vars "^@^${AGENTS_ENV_AT}" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
   --memory 2Gi --cpu 2 --concurrency 20 --timeout 300 \
   --allow-unauthenticated
 # CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
-# (--set-env-vars above replaces every env var, so the origins must be re-applied on each deploy.)
+# (The deploy above carries the running revision's origins; this call refreshes them from taal-web's URLs.)
 
 # Serving-cache mirror: from the SAME seeded snapshot and TAAL_NOW the taal-agents image serves
 # (the Dockerfile bakes both), as a one-off job on that image -- never from the nightly BigQuery

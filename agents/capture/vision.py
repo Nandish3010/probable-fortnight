@@ -21,6 +21,7 @@ import jsonschema
 from agents.gate.config import ROOT, load_models, load_tenant
 from agents.gate.sellby import online_sellby_date
 from agents.gate.store import LocalStore
+from agents.vertex_models import generate_with_failover
 
 CONFIDENCE_THRESHOLD = 0.7
 SCHEMA = json.loads((ROOT / "docs" / "schemas" / "vision_intake.schema.json").read_text(encoding="utf-8"))
@@ -96,11 +97,13 @@ def _is_remote_uri(ref: str | None) -> bool:
     return bool(ref) and ref.startswith(("gs://", "https://", "http://"))
 
 
-def _vertex_rows(photo_ref: str | None, image_data_url: str | None, node_id: str, catalogue: list[str], model_id: str) -> dict[str, Any]:
-    from google import genai
+def _vertex_rows(photo_ref: str | None, image_data_url: str | None, node_id: str, catalogue: list[str], models: dict[str, Any]) -> dict[str, Any]:
+    """One Gemini read of the photo (plus a second pass on unreadable dates). The primary model
+    answers; on an availability error (404, 429, 5xx) the call is retried on `ids.fallback`
+    (agents/vertex_models.py), and the result's `model_id` is the model that actually answered.
+    Raises ModelUnavailable when both fail."""
     from google.genai import types
 
-    client = genai.Client(vertexai=True)
     schema = _GEMINI_ROWS_SCHEMA
     if image_data_url:
         header, b64 = image_data_url.split(",", 1)
@@ -111,16 +114,18 @@ def _vertex_rows(photo_ref: str | None, image_data_url: str | None, node_id: str
     else:
         raise ValueError(f"vertex vision needs an uploaded image or a gs://, https:// photo_ref; got {photo_ref!r}")
     prompt = PROMPT + "\nCatalogue SKUs: " + ", ".join(catalogue[:400])
-    resp = client.models.generate_content(model=model_id, contents=[part, prompt], config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.0))
+    config = types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.0)
+    level = models.get("thinking", {}).get("vision")  # optional; absent keeps the model's default
+    resp, used = generate_with_failover(models, [part, prompt], config, thinking_level=level)
     rows = json.loads(resp.text)["rows"]
     if any(r["date_confidence"] < CONFIDENCE_THRESHOLD for r in rows):
-        second = client.models.generate_content(model=model_id, contents=[part, prompt + "\nSecond pass: look only at the printed date labels, one per block, and re-read the dates."], config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=0.0))
+        second, used = generate_with_failover(models, [part, prompt + "\nSecond pass: look only at the printed date labels, one per block, and re-read the dates."], config, start=used, thinking_level=level)
         by_sku = {r["sku_guess"]: r for r in json.loads(second.text)["rows"]}
         for r in rows:
             s = by_sku.get(r["sku_guess"])
             if s and s["date_confidence"] > r["date_confidence"]:
                 r["best_before_date"], r["date_confidence"] = s["best_before_date"], s["date_confidence"]
-    return {"photo_ref": photo_ref or "upload", "node_id": node_id, "rows": rows}
+    return {"photo_ref": photo_ref or "upload", "node_id": node_id, "rows": rows, "model_id": used}
 
 
 def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_data_url: str | None = None, backend: str | None = None) -> dict[str, Any]:
@@ -130,8 +135,7 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     names = {p["sku"]: p["name"] for p in products}
     recorded = photo_ref and not image_data_url and (FIXTURES / f"{photo_ref.rsplit('/', 1)[-1].rsplit('.', 1)[0]}.json").exists()
     if backend == "vertex" and not recorded:
-        result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models["ids"]["flash"])
-        result["model_id"] = models["ids"]["flash"]
+        result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models)
     elif backend == "vertex":
         # The three staged pallets have no image file in the repo, only their recorded Gemini reads
         # (fixtures/photos/README.md); the phone view labels them REPLAY. Only a real upload is live.

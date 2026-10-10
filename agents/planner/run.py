@@ -8,6 +8,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import re
 import sys
@@ -20,6 +21,7 @@ from google.adk.runners import InMemoryRunner, Runner
 from google.genai import types
 
 from agents.gate.config import load_models, load_tenant
+from agents.vertex_models import failover_error, status_of
 from agents.vertex_sessions import build_session_service
 
 from . import drafting, governor
@@ -29,6 +31,7 @@ from .context import PlannerContext, reset_context, set_context
 from .deterministic import deterministic_plan
 
 APP = "taal_planner"
+log = logging.getLogger(__name__)
 
 # A live Gemini planner call that exceeds this many seconds falls back to the deterministic draft
 # (deterministic.py) rather than let a demo-facing request run unbounded. The deployed service
@@ -82,6 +85,12 @@ def _event_record(ev: Any, seq: int, t0: float, run_id: str) -> dict[str, Any]:
             rec["usage"] = usage
     if ev.model_version:
         rec["model_version"] = ev.model_version
+    if getattr(ev, "error_code", None) or getattr(ev, "error_message", None):
+        rec["error_code"] = str(ev.error_code) if ev.error_code else None
+        rec["error_message"] = (ev.error_message or "")[:300]
+        rec["level"] = "error"
+    if getattr(ev, "finish_reason", None):
+        rec["finish_reason"] = str(getattr(ev.finish_reason, "value", ev.finish_reason))
     for part in (ev.content.parts if ev.content and ev.content.parts else []):
         if part.text:
             rec["text"] = part.text
@@ -225,6 +234,8 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         deadline = DEFAULT_DEADLINE_S if deadline_s is None else deadline_s
         deadline = float(os.environ.get("TAAL_PLANNER_DEADLINE_S", deadline))
         timed_out = False
+        model_error: Exception | None = None
+        error_events: list[str] = []
 
         async def _drain() -> None:
             nonlocal seq, iterations, t0, proposed, attempts
@@ -234,6 +245,9 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
                 if on_event is not None:
                     on_event("event", ev)
                 rec = _event_record(ev, seq, t0, run_id)
+                if rec.get("error_code") or rec.get("error_message"):
+                    error_events.append(str(rec.get("error_code") or rec.get("error_message")))
+                    log.warning("planner %s: model turn failed error_code=%s finish_reason=%s message=%s", run_id, rec.get("error_code"), rec.get("finish_reason"), rec.get("error_message"))
                 if (rec.get("function_call") or rec.get("function_response") or {}).get("name") == "propose_play":
                     if "function_call" in rec:
                         attempts += 1  # a propose_play call opens the next attempt; its response carries the same number
@@ -252,6 +266,13 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
             await asyncio.wait_for(_drain(), timeout=deadline)
         except TimeoutError:
             timed_out = True
+        except Exception as e:
+            # The model (the primary and, when one is configured, ids.fallback -- see
+            # agents/vertex_models.py) answered 404, 429 or 5xx. Treat it like the deadline: the
+            # deterministic draft below still gives the visitor a play, labelled as such.
+            if not failover_error(e):
+                raise
+            model_error = e
 
         play = None
         if proposed:
@@ -260,7 +281,15 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
         planner_source = "model"
         fallback_reason = None
         if play is None:
-            fallback_reason = f"deadline exceeded after {deadline:g}s" if timed_out else f"no_play after {iterations} iteration(s)"
+            if timed_out:
+                fallback_reason = f"deadline exceeded after {deadline:g}s"
+            elif model_error is not None:
+                fallback_reason = f"model unavailable (HTTP {status_of(model_error)}) after {iterations} iteration(s)"
+            else:
+                fallback_reason = f"no_play after {iterations} iteration(s)"
+                if error_events:
+                    fallback_reason += f"; {len(error_events)} model turn(s) returned an error ({', '.join(sorted(set(error_events)))})"
+            log.warning("planner %s: falling back to the deterministic draft: %s", run_id, fallback_reason)
             ctx.store.append_event(run_id, {"seq": seq, "run_id": run_id, "invocation_id": "", "author": "planner_fallback", "timestamp": time.time(), "ts_offset_ms": int((time.time() - started) * 1000), "text": f"{fallback_reason}; falling back to the deterministic draft", "level": "warn"})
             seq += 1
             play = deterministic_plan(ctx, gap_id)
@@ -287,6 +316,8 @@ async def run_planner_async(data_dir: str | Path, gap_id: str, policy_text: str 
             "elapsed_ms": elapsed_ms, "fallback_reason": fallback_reason, "backend": resolved_backend, "model": model_label,
             "text": text,
         }
+        if error_events:
+            summary["error_events"] = len(error_events)
         if usage_totals:
             summary["usage"] = usage_totals
         ctx.store.append_event(run_id, summary)
