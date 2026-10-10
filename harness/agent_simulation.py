@@ -48,6 +48,7 @@ os.environ.setdefault("TAAL_MODEL_BACKEND", "vertex")
 
 from agents.customer.chat import run_chat_async  # noqa: E402
 from agents.gate.assignment import assign_arm  # noqa: E402
+from agents.gate.config import load_models  # noqa: E402
 from agents.gate.store import LocalStore  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -408,7 +409,7 @@ async def main_async(n: int, concurrency: int, out_path: Path) -> dict[str, Any]
     summary = {
         "generated_at": now_iso(),
         "backend": backend,
-        "model": os.environ.get("TAAL_MODEL_ID", "gemini-2.5-flash (config/models.toml ids.flash)"),
+        "model": os.environ.get("TAAL_MODEL_ID", f"{load_models()['ids']['flash']} (config/models.toml ids.flash)"),
         "n_personas": n_total,
         "n_pass": n_pass,
         "pass_rate": round(n_pass / n_total, 4) if n_total else 0.0,

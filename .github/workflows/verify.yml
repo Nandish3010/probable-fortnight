@@ -73,6 +73,7 @@ jobs:
     # used for the first manual deploy.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # a hung gcloud stream once held this job for 52 min
     needs: verify
     environment: production
     concurrency:

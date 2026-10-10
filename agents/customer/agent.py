@@ -8,8 +8,9 @@ from google.adk.agents import LlmAgent
 from google.adk.models.registry import LLMRegistry
 from google.genai import types
 
-from agents.chat_runtime import chat_generate_config, vertex_env
+from agents.chat_runtime import chat_generate_config
 from agents.gate.config import load_models
+from agents.vertex_models import vertex_model
 
 from .stub_llm import StubCustomerLlm
 from .tools import TOOLS
@@ -28,8 +29,7 @@ def build_customer_agent(catalog: dict[str, str], backend: str | None = None) ->
     if backend == "stub":
         model = StubCustomerLlm(catalog=catalog)
     elif backend == "vertex":
-        vertex_env(models)
-        model = models["ids"]["flash"]
+        model = vertex_model(models)  # the primary alone, or a FallbackModel over primary + ids.fallback
         config = chat_generate_config(models, "customer", temperature=0.3)
     else:
         raise ValueError(f"unknown TAAL_MODEL_BACKEND {backend!r}")

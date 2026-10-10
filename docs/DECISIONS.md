@@ -43,6 +43,13 @@ wins.
   recorded traces are unchanged; the re-record happens in a later step. The same defect hit
   `run_02` and `run_03` and the 24 Sep prompt-v6 round. A figure present nowhere in the play
   (the 24 Sep `9.744%`) is still rejected.
+- **10 Oct 2026 update (model):** `gemini-2.5-flash` retires on Vertex AI on **20 Oct 2026**
+  ([model versions and lifecycle](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions)); the
+  "16 Oct" in §4.4 below is wrong. The deployed app now pins `ids.flash = gemini-3.5-flash` (asia-south1, on-demand) and
+  `ids.fallback = gemini-3.5-flash-lite` (global endpoint only, `[vertex] fallback_location`), both verified with real
+  calls (`eval/raw/model_verification_2026-10-10.json`). A call the primary answers with 404, 429 or 5xx is retried once
+  on the fallback (`agents/vertex_models.py`); if both fail, `/chat` and `/capture` answer 503 `model_unavailable` and
+  the planner falls back to its deterministic draft.
 - Claims that no forecasting tool or competitor sees the online sell-by date read as: "Forecasting
   tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap
   type."
@@ -215,7 +222,7 @@ Customer Agent turn under 3 s p50 / 6 s p95 (Flash streaming; stock from Firesto
 **Superseded 27 Sep 2026:** see the as-built note at the top.
 
 ### 4.4 Pinning and environment (week 1, owner B)
-`google-adk` pinned to an exact 2.x release (2.0 broke 1.x APIs; tutorials are mostly 1.x [Certain]); model IDs pinned in config, never defaults (ADK changed its default model and `gemini-2.5-flash` shuts down 16 Oct 2026 [Certain]); candidate IDs: `gemini-3.8-flash` for text/vision/planner [Certain that it launched 2 Sept 2026 per one reviewer; verify in Model Garden], `gemini-3.1-flash-live-preview` for voice [Likely]; a fallback text model ID in config; Agent Engine instance created and its ID in env; region decision recorded; Vertex quota increases requested; Secret Manager for all keys; budget alerts at $50/$100/$200; `uv.lock` committed.
+`google-adk` pinned to an exact 2.x release (2.0 broke 1.x APIs; tutorials are mostly 1.x [Certain]); model IDs pinned in config, never defaults (ADK changed its default model and `gemini-2.5-flash` shuts down 16 Oct 2026 [Certain] (superseded, see as-built note: the date is 20 Oct 2026)); candidate IDs: `gemini-3.8-flash` for text/vision/planner [Certain that it launched 2 Sept 2026 per one reviewer; verify in Model Garden], `gemini-3.1-flash-live-preview` for voice [Likely]; a fallback text model ID in config; Agent Engine instance created and its ID in env; region decision recorded; Vertex quota increases requested; Secret Manager for all keys; budget alerts at $50/$100/$200; `uv.lock` committed.
 
 ### 4.5 Cost caps
 Gemini only via Vertex. Flash everywhere. No Vertex AI Vector Search endpoints, no AlloyDB, no Looker Core [Certain on cost traps]. **Superseded 21 Sep 2026: the team decided min-instances=0 (scale-to-zero) for the whole judging window instead of min-instances=1** -- request-based billing (CPU throttled outside requests) already applies by default and was confirmed live on both public services; idle cost for min-instances=1 across the full window was judged not worth it against the cold-start cost (see eval/evaluation.md for measured cold-start numbers). `infra/min_instances.sh on` remains available for a specific demo day if ever wanted. Copy generation only for approved plays.

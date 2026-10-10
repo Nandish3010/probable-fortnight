@@ -215,3 +215,25 @@ Real answers from practitioner interviews are stored in Firestore (`feedback_res
 
 Read the admin token for the results page with
 `gcloud secrets versions access latest --secret taal-feedback-admin-token --project <project>`.
+
+## Model IDs re-verified 10 Oct 2026 (replaces the 20 Sep result above)
+
+`gemini-2.5-flash` retires on Vertex AI on 20 Oct 2026. Real on-demand `generateContent` calls in
+`amru-509214` (evidence: `eval/raw/model_verification_2026-10-10.json`; the 20 Sep note that the
+`gemini-3.x` IDs did not exist no longer holds):
+
+| model | asia-south1 | global | us-central1 | thinking_level | image input |
+|---|---|---|---|---|---|
+| `gemini-3.5-flash` | 200 (997 ms) | 200 (1596 ms) | 404 | minimal, low, medium, high | 200 |
+| `gemini-3.5-flash-lite` | 404 | 200 (1079 ms) | 404 | minimal, low, medium, high | 200 |
+| `gemini-3.1-flash-lite` | 404 | 200 (1140 ms) | 404 | minimal, low, medium, high | 200 |
+| `gemini-3.8-flash` | 404 | 200 (1022 ms) | 404 | low, medium, high (minimal is a 400) | 200 |
+| `gemini-2.5-flash` (retiring) | 200 | 200 | 200 | budget only | n/a |
+
+Pinned: `ids.flash = gemini-3.5-flash` in asia-south1 (the region of BigQuery, Firestore and
+sessions, so `[vertex].location` stays a region), and `ids.fallback = gemini-3.5-flash-lite`, served
+only from the global endpoint (`[vertex].fallback_location = "global"`). `infra/deploy.sh` reads
+`ids.flash` and recreates the BigQuery remote model `taal.gemini-3_5-flash_remote` with
+`CREATE OR REPLACE MODEL` on every deploy; whether `AI.GENERATE_TABLE` accepts that endpoint in
+asia-south1 is not verified here and is checked by the post-deploy smoke (copy on `/approve` must
+not be the templated fallback). The BigQuery path has no model fallback.

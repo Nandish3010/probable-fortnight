@@ -10,7 +10,7 @@ flowchart TB
   Browser(["Browser<br/>Play Desk, chat,<br/>phone camera view"])
   Web["taal-web<br/>Cloud Run · Next.js"]
   Agents["taal-agents<br/>Cloud Run · FastAPI + Google ADK<br/>Planner, Customer and Vision agents"]
-  Gemini["Gemini 2.5 Flash on Vertex AI<br/>planner · customer agent · vision"]
+  Gemini["Gemini 3.5 Flash on Vertex AI<br/>planner · customer agent · vision"]
   MCP["MCP order endpoint<br/>place_order, in-process"]
   Sandbox[("Per-visitor sandbox<br/>pinned-clock JSONL snapshot,<br/>copy-on-write per judge; reset restores it")]
   Firestore[("Firestore<br/>practitioner feedback (live);<br/>serving cache behind an off-by-default flag")]

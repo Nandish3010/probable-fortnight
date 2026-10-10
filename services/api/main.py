@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import logging
 import os
 import threading
 import time
@@ -21,7 +22,7 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from agents.capture.vision import commit_rows, intake
@@ -29,6 +30,7 @@ from agents.customer.chat import run_chat_async
 from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore, OverlayStore, load_catalogue
 from agents.planner.run import DEFAULT_DEADLINE_S, make_run_id, run_planner, run_planner_async
+from agents.vertex_models import RETRY_AFTER_S, ModelUnavailable, model_ids
 from jobs.measure.run import run_measure
 from services.feedback import intake as feedback_intake
 from services.feedback.store import build_store as build_feedback_store
@@ -42,6 +44,7 @@ from .health_probes import firestore_check, sessions_check
 from .sandbox import base_dir, store_for, visitor_id
 
 VERSION = "0.1.0"
+log = logging.getLogger(__name__)
 app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
 # allow_origin_regex=r"https?://.*" with allow_credentials=True used to reflect literally any
 # calling origin back with credentials enabled -- any site can make a credentialed
@@ -200,6 +203,20 @@ class PolicyUpdate(BaseModel):
     policy_version: str
 
 
+# ----------------------------------------------------------------------------- model outage
+
+@app.exception_handler(ModelUnavailable)
+async def _model_unavailable(request: Request, exc: ModelUnavailable) -> JSONResponse:
+    """The primary model and ids.fallback both failed with an availability error (404 retired or
+    not served here, 429, 5xx). A structured, retryable 503 instead of an unhandled 500. Raised by
+    /chat (agents/chat_runtime.py) and /capture (agents/capture/vision.py); /plan and /rerun fall
+    back to the deterministic draft instead (agents/planner/run.py)."""
+    return JSONResponse(status_code=503, content={"error": "model_unavailable", "model": exc.model, "retry_after_s": exc.retry_after_s}, headers={"Retry-After": str(exc.retry_after_s)})
+
+
+_MODEL_503 = {503: {"description": "Every configured model is unavailable; retry after `retry_after_s`.", "content": {"application/json": {"example": {"error": "model_unavailable", "model": "<ids.flash>", "retry_after_s": RETRY_AFTER_S}}}}}
+
+
 # ----------------------------------------------------------------------------- routes
 
 # A generous per-visitor cap on the model-calling endpoints only (POST /plan, /rerun, /chat --
@@ -236,13 +253,14 @@ def _check_vertex(backend: str, models: dict[str, Any]) -> dict[str, Any]:
         return {"ok": True, "detail": f"stub backend; no live Vertex call (model id if live: {model_id})"}
     if not model_id:
         return {"ok": False, "detail": "no model id configured under config/models.toml [ids].flash"}
+    fallback_id = model_ids(models)[1]
     try:
         import google.auth
 
         _, project = google.auth.default()
         if not project:
             return {"ok": False, "detail": "google.auth.default() resolved no project"}
-        return {"ok": True, "detail": f"credentials + project resolved (project={project}, model={model_id}); generateContent not called by this check"}
+        return {"ok": True, "detail": f"credentials + project resolved (project={project}, model={model_id}, fallback={fallback_id or 'none'}); generateContent not called by this check"}
     except Exception as e:
         return {"ok": False, "detail": f"vertex credentials not resolvable: {e}"}
 
@@ -281,6 +299,9 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
     return {
         "status": status, "version": VERSION, "checks": checks, "backend": backend,
+        # The model a failed call is retried on (config/models.toml ids.fallback); null when none is
+        # configured. Additive: every earlier field is unchanged.
+        "model_fallback": model_ids(models)[1] if models["ids"].get("flash") else None,
         "tenant": {"tenant_id": tenant.tenant_id, "name": "Kutumb Mart", "skus": len(store.read("products")), "nodes": len(store.read("nodes")), "customers": len(store.read("customers"))},
         "last_sense_run_at": last and last["as_of"], "last_sense_run_minutes": last and round(last["timing_ms"]["total"] / 60000, 2), "last_sense_run_id": last and last["run_id"],
         "sellby_rule": tenant.sellby_rule.version,
@@ -438,6 +459,7 @@ def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: st
         else:
             out = run_planner(store.root, gap_id, policy_text=policy_text, policy_version=version, salt=salt, play_id=play_id)
     except Exception as e:
+        log.exception("re-plan %s for %s failed", run_id, gap_id)
         # A short message only -- never a stack trace, and never anything from the environment.
         _finish_run(vid, run_id, "error", {"run_id": run_id, "status": "error", "error": str(e)[:300]})
         return
@@ -621,15 +643,13 @@ def events_stream(run_id: str, request: Request, speed: float = Query(4.0, ge=0.
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
-@app.post("/chat")
+@app.post("/chat", responses=_MODEL_503)
 async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
     # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
     # messages); wide enough that no legitimate judge session is at risk of tripping it.
     _rate_limit(request, "chat", max_calls=60, window_s=900)
     envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), visitor_id=visitor_id(request))
     if "application/json" in (request.headers.get("accept") or ""):
-        from fastapi.responses import JSONResponse
-
         return JSONResponse(envelopes)
 
     async def gen():
@@ -656,7 +676,7 @@ async def reset(request: Request, store: LocalStore = Depends(store_for)) -> dic
     return {"ok": False, "namespace": "base", "restored_from": None, "detail": "no visitor id: the base tenant is never reset through the API"}
 
 
-@app.post("/capture")
+@app.post("/capture", responses=_MODEL_503)
 def capture(req: CaptureRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     if not req.photo_ref and not req.image_data_url:
         raise HTTPException(422, "photo_ref or image_data_url required")
