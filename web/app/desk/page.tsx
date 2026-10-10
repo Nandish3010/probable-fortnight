@@ -6,6 +6,7 @@ import { ErrorCard } from "../../components/ErrorCard";
 import { Icon } from "../../components/icons";
 import { InboxRow } from "../../components/InboxRow";
 import { LiveReplan } from "../../components/LiveReplan";
+import { ModelChip } from "../../components/ModelChip";
 import { PlayCard } from "../../components/PlayCard";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { SourceBadge } from "../../components/SourceBadge";
@@ -445,7 +446,8 @@ export default function PlayDeskPage() {
                             {typeof rerunResult.iterations === "number" ? (
                               <span className="muted"> {rerunResult.iterations} iteration{rerunResult.iterations === 1 ? "" : "s"}</span>
                             ) : null}
-                            {typeof rerunResult.elapsed_ms === "number" ? <span className="muted"> · {(rerunResult.elapsed_ms / 1000).toFixed(1)} s</span> : null}
+                            {" "}
+                            <ModelChip latencyMs={rerunResult.elapsed_ms} plainTimeWithoutModel />
                           </p>
                         </>
                       )}

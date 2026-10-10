@@ -52,7 +52,10 @@ test.describe("phone view", () => {
     await confirm.click();
     await expect(page.getByText(/Wrote \d+ batch/)).toBeVisible();
 
-    // Neither pallet SKU raised a gap, so the card below is the node's biggest open gap. Say so.
+    // Neither pallet SKU raised a gap: the page says so instead of showing the node's top gap.
+    await expect(page.getByTestId("phone-no-risk")).toContainText("No sell-by risk for these items");
+    await expect(page.getByTestId("gap-fallback-note")).toHaveCount(0);
+    await page.getByRole("button", { name: "See the node's biggest open gap" }).click();
     await expect(page.getByTestId("gap-fallback-note")).toHaveText(
       "None of the photographed items raised a gap. Showing the node's biggest open gap instead.",
     );
@@ -64,5 +67,6 @@ test.describe("phone view", () => {
     await page.getByRole("button", { name: "Confirm rows" }).click();
     await expect(page.getByTestId("why-now")).toContainText("₹9,200");
     await expect(page.getByTestId("gap-fallback-note")).toHaveCount(0);
+    await expect(page.getByTestId("phone-no-risk")).toHaveCount(0);
   });
 });

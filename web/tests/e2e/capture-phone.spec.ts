@@ -170,14 +170,28 @@ test.describe("phone view: the table", () => {
 });
 
 test.describe("phone view: the gap after Confirm", () => {
-  test("a gap that is not from the photo is labelled as the fallback gap", async ({ page }) => {
+  test("no photographed item at risk: a clear result card, and the node's biggest gap only behind a button", async ({ page }) => {
     await capturePallet(page, "Pallet 6");
     await page.getByTestId("intake-table").locator(".confirm-row").getByRole("button", { name: "Yes" }).click();
     await page.getByRole("button", { name: "Confirm rows" }).click();
+    const card = page.getByTestId("phone-no-risk");
+    await expect(card.getByRole("heading", { name: "No sell-by risk for these items" })).toBeFocused();
+    await expect(card).toContainText("Nothing you photographed is close to its online sell-by date, so Taal has no play to propose.");
+    // no unrelated gap or number until it is asked for
+    await expect(page.getByTestId("why-now")).toHaveCount(0);
+    await expect(page.getByText("Fallback gap", { exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("gap-fallback-note")).toHaveCount(0);
+    await card.getByRole("button", { name: "See the node's biggest open gap" }).click();
     await expect(page.getByText("Fallback gap", { exact: true })).toBeVisible();
     await expect(page.getByTestId("gap-fallback-note")).toHaveText(
       "None of the photographed items raised a gap. Showing the node's biggest open gap instead.",
     );
+    await expect(card.getByRole("button", { name: "See the node's biggest open gap" })).toHaveCount(0);
+    // the Spot step was recorded when the rows were confirmed
+    const spot = await page.evaluate(() =>
+      Object.keys(localStorage).filter((k) => k.startsWith("taal_progress:")).map((k) => JSON.parse(localStorage.getItem(k) ?? "{}").spot),
+    );
+    expect(spot).toContain(true);
   });
 
   test("a gap from the photo carries no fallback label", async ({ page }) => {
@@ -201,6 +215,9 @@ test.describe("phone view: no horizontal overflow at 360 px", () => {
     await assertNoHorizontalOverflow(page);
     await page.getByTestId("intake-table").locator(".confirm-row").getByRole("button", { name: "Yes" }).click();
     await page.getByRole("button", { name: "Confirm rows" }).click();
+    await page.getByTestId("phone-no-risk").waitFor();
+    await assertNoHorizontalOverflow(page);
+    await page.getByRole("button", { name: "See the node's biggest open gap" }).click();
     await page.getByTestId("gap-fallback-note").waitFor();
     await assertNoHorizontalOverflow(page);
   });
@@ -241,6 +258,11 @@ for (const scheme of ["light", "dark"] as const) {
       expect(r.violations, "captured: " + JSON.stringify(r.violations, null, 2)).toEqual([]);
       await page.getByTestId("intake-table").locator(".confirm-row").getByRole("button", { name: "Yes" }).click();
       await page.getByRole("button", { name: "Confirm rows" }).click();
+      await page.getByTestId("phone-no-risk").waitFor();
+      await page.waitForTimeout(300);
+      r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      expect(r.violations, "no risk: " + JSON.stringify(r.violations, null, 2)).toEqual([]);
+      await page.getByRole("button", { name: "See the node's biggest open gap" }).click();
       await page.getByTestId("gap-fallback-note").waitFor();
       await page.waitForTimeout(300);
       r = await new AxeBuilder({ page }).withTags(TAGS).analyze();

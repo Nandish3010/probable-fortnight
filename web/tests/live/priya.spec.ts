@@ -45,12 +45,36 @@ test.describe("Priya: phone view", () => {
     for (let i = 0; i < n; i++) await labels.nth(i).click();
     await expect(page.locator(".execution-steps input:checked")).toHaveCount(n);
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText(/exec_play_chips_ds07_v1|Recorded|recorded/)).toBeVisible();
+    await expect(page.getByText("Execution recorded.")).toBeVisible();
     await shot(page, "priya-05-execution");
 
     // microphone is a documented stub
     const mic = page.getByRole("button", { name: /mic|voice/i });
     if (await mic.count()) await expect(mic.first()).toBeDisabled();
+    await expectNoConsoleErrors(errors);
+  });
+
+  test("pallet 6 (atta and poha): no sell-by risk card, and the node's biggest gap only behind a button", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await asVisitor(page, "live-priya-norisk");
+    await page.goto("/phone");
+    await page.getByRole("button", { name: "Pallet 6" }).click();
+    const table = page.getByTestId("intake-table");
+    await expect(table).toBeVisible();
+    await table.locator(".confirm-row").getByRole("button", { name: "Yes" }).click();
+    await page.getByRole("button", { name: "Confirm rows" }).click();
+
+    const card = page.getByTestId("phone-no-risk");
+    await expect(card.getByRole("heading", { name: "No sell-by risk for these items" })).toBeFocused();
+    await expect(card).toContainText("Nothing you photographed is close to its online sell-by date, so Taal has no play to propose.");
+    await expect(page.getByTestId("why-now")).toHaveCount(0);
+    await expect(page.getByText("Fallback gap", { exact: true })).toHaveCount(0);
+    await shot(page, "priya-06-no-risk");
+
+    await card.getByRole("button", { name: "See the node's biggest open gap" }).click();
+    await expect(page.getByText("Fallback gap", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("gap-fallback-note")).toBeVisible();
+    await shot(page, "priya-07-fallback-gap");
     await expectNoConsoleErrors(errors);
   });
 });

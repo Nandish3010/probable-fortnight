@@ -9,7 +9,7 @@ import { GapCard } from "./GapCard";
 import { GuardrailList } from "./GuardrailList";
 import { RecoveredFigure } from "./RecoveredFigure";
 import { SourceBadge } from "./SourceBadge";
-import { formatDate, inr, inrSigned } from "../lib/format";
+import { count, formatDate, inr, inrSigned } from "../lib/format";
 import { playImpact } from "../lib/impact";
 import { GAP_TYPE_LABEL, label, labelList } from "../lib/labels";
 import { audienceEstimate, mechanicSentence, whyNow, whyNowInput } from "../lib/playText";
@@ -304,7 +304,7 @@ export function PlayCard({
             discount cost {inr(expected.discount_cost_inr)}
           </p>
           <p className={styles.minor}>
-            Range {inr(expected.ci_low)}–{inr(expected.ci_high)} · prior n {expected.prior_n} · measured n{" "}
+            Estimate range: {count(expected.ci_low)} to {count(expected.ci_high)} units · prior n {expected.prior_n} · measured n{" "}
             {expected.measured_n} · {expected.estimator_version}
           </p>
           {play.cost ? (

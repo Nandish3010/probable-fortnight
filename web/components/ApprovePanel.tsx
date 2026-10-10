@@ -16,6 +16,7 @@ import { inr } from "../lib/format";
 import { audienceChain, playImpact } from "../lib/impact";
 import { prefersReducedMotion } from "../lib/motion";
 import { describeReply } from "../lib/previewReply";
+import { firstName, treatedCustomerFor } from "../lib/treatedPersona";
 import { recordApproved, reportSandboxGone } from "../lib/progressStore";
 import type { ApproveResponse, ChatEnvelope, DemoCustomer, Play } from "../lib/types";
 import styles from "./ApprovePanel.module.css";
@@ -32,7 +33,9 @@ import { RecoveredFigure } from "./RecoveredFigure";
 
 /** How long the Meena preview waits for /chat before it says "Preview unavailable". */
 export const PREVIEW_TIMEOUT_MS = 8000;
-/** The persona's name until the demo-customer list says otherwise. */
+/** What the preview calls the customer until the demo-customer list says who the offer reaches. */
+const PENDING_NAME = "the customer";
+/** The name of the default demo customer, used only when the list cannot be read. */
 const FALLBACK_NAME = "Meena";
 
 const COUNT_UP = { delayMs: 0, durationMs: 900 } as const;
@@ -81,6 +84,9 @@ export function ApprovePanel({
   const [toastOpen, setToastOpen] = useState(false);
   const [preview, setPreview] = useState<PreviewState>({ status: "idle" });
   const [customer, setCustomer] = useState<DemoCustomer | null>(null);
+  // False until the customer list has answered (or timed out), so the preview never names someone
+  // before the play's own audience has been looked up.
+  const [customerKnown, setCustomerKnown] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -103,7 +109,7 @@ export function ApprovePanel({
   const showButton = phase === "idle" || phase === "submitting" || phase === "error";
   const motionOn = state.animate;
   const approvedTime = clockTime(state.approvedAt);
-  const customerName = customer?.display_name ?? FALLBACK_NAME;
+  const customerName = customer ? firstName(customer) : customerKnown ? FALLBACK_NAME : PENDING_NAME;
 
   // ---- request ----
 
@@ -238,41 +244,44 @@ export function ApprovePanel({
     previewAbort.current = ctl;
     setPreview({ status: "loading" });
 
-    const customerP = getDemoCustomers(play.play_id)
-      .then((list) => list.find((c) => c.customer_id === DEMO_CUSTOMER_ID) ?? null)
-      .catch(() => null);
-
-    const reply = new Promise<ChatEnvelope>((resolve, reject) => {
-      sendChat(
-        { session_id: `${DEMO_CUSTOMER_ID}:web`, text: DEMO_MESSAGE },
-        (envelope) => {
-          if (envelope.role === "agent" && envelope.text) resolve(envelope);
-        },
-        { timeoutMs: PREVIEW_TIMEOUT_MS, signal: ctl.signal },
-      ).then(() => reject(new Error("no reply")), reject);
-    });
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
-        ctl.abort();
-        reject(new Error("timeout"));
-      }, PREVIEW_TIMEOUT_MS);
-    });
+    (async () => {
+      // Who gets this play's offer: a customer from the play's own audience (never a holdout one).
+      // Meena is only in the chips audience, so asking her after a Tea approve would show "no offers".
+      // The list is quick; if it does not answer in time the default demo customer is asked instead.
+      const list = await Promise.race([getDemoCustomers(play.play_id).catch(() => null), sleep(1500)]);
+      if (previewAbort.current !== ctl) return;
+      const cust = list ? treatedCustomerFor(play, list) : null;
+      setCustomer(cust);
+      setCustomerKnown(true);
+      const customerId = cust?.customer_id ?? DEMO_CUSTOMER_ID;
 
-    Promise.race([reply, timeout])
-      .then(async (envelope) => {
-        clearTimeout(timer);
-        // The customer record only adds the language and the holdout role; do not wait long for it.
-        const cust = await Promise.race([customerP, sleep(1500)]);
-        if (previewAbort.current !== ctl) return; // a newer request replaced this one
-        if (cust) setCustomer(cust);
-        const { language, offAudience } = describeReply(envelope, cust);
-        setPreview({ status: "ready", envelope, language, offAudience });
-      })
-      .catch(() => {
-        clearTimeout(timer);
-        if (previewAbort.current === ctl) setPreview({ status: "failed" });
+      const reply = new Promise<ChatEnvelope>((resolve, reject) => {
+        sendChat(
+          { session_id: `${customerId}:web`, text: DEMO_MESSAGE },
+          (envelope) => {
+            if (envelope.role === "agent" && envelope.text) resolve(envelope);
+          },
+          { timeoutMs: PREVIEW_TIMEOUT_MS, signal: ctl.signal },
+        ).then(() => reject(new Error("no reply")), reject);
       });
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          ctl.abort();
+          reject(new Error("timeout"));
+        }, PREVIEW_TIMEOUT_MS);
+      });
+      const envelope = await Promise.race([reply, timeout]);
+      clearTimeout(timer);
+      if (previewAbort.current !== ctl) return; // a newer request replaced this one
+      const { language, offAudience } = describeReply(envelope, cust);
+      setPreview({ status: "ready", envelope, language, offAudience });
+    })().catch(() => {
+      clearTimeout(timer);
+      if (previewAbort.current === ctl) setPreview({ status: "failed" });
+    });
+    // `play` is read for its target stores; the play id identifies a new request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [play.play_id]);
 
   useEffect(() => {
@@ -288,7 +297,8 @@ export function ApprovePanel({
   // ---- follow-ups ----
 
   function chatAsCustomer() {
-    if (!requestChat("prefill", DEMO_MESSAGE)) router.push(chatUrlFor("prefill"));
+    const id = customer?.customer_id;
+    if (!requestChat("prefill", DEMO_MESSAGE, id)) router.push(chatUrlFor("prefill", id));
   }
   function seeHoldout() {
     if (!requestChat("holdout", DEMO_MESSAGE)) router.push(chatUrlFor("holdout"));
