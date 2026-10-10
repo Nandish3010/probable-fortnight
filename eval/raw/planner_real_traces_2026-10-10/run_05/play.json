@@ -1,0 +1,173 @@
+{
+  "mechanic": "bundle",
+  "rationale": "This play targets six high-affinity segments with a bundle of Masala Chips and Cola Classic at fifty rupees to clear the online sell-by gap before the deadline. The bundle mechanic is preferred by policy over blanket markdowns and yields a positive expected margin of 126.42 rupees while avoiding 605.44 rupees of waste. Alternative bundle partners and transfer options were evaluated but rejected due to lower or negative expected margins.",
+  "play_id": "play_chips_ds07_v1",
+  "window": {
+    "end": "2026-09-18T23:59:59Z",
+    "start": "2026-09-12T00:00:00Z"
+  },
+  "expected_outcome": {
+    "units": 24.22,
+    "margin_inr": 126.42,
+    "waste_avoided_inr": 605.44,
+    "discount_cost_inr": 121.09,
+    "ci_low": 1.31,
+    "ci_high": 70.65,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "channel": "web_chat",
+  "mechanic_params": {
+    "bundle_sku": "SKU-COLA-CLASSIC-250ML",
+    "bundle_price": 50
+  },
+  "alternatives": [
+    {
+      "mechanic_params": {
+        "bundle_price": 55,
+        "bundle_sku": "SKU-COCONUT-WATER-1L"
+      },
+      "expected_margin_inr": 117.46,
+      "expected_units": 24.22,
+      "mechanic": "bundle",
+      "rejected_because": "lower expected margin than the Cola Classic bundle"
+    },
+    {
+      "mechanic_params": {
+        "bundle_price": 50,
+        "bundle_sku": "SKU-ORANGE-JUICE-500ML"
+      },
+      "expected_units": 24.22,
+      "rejected_because": "lower expected margin than the Cola Classic bundle",
+      "mechanic": "bundle",
+      "expected_margin_inr": 106.32
+    },
+    {
+      "expected_units": 24.36,
+      "mechanic": "transfer_plus_nudge",
+      "mechanic_params": {
+        "transfer_units": 368,
+        "transfer_to_node": "OUT-03"
+      },
+      "rejected_because": "negative expected margin",
+      "expected_margin_inr": -127.12
+    }
+  ],
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_chips_ds07"
+    },
+    {
+      "ref": "est-v1",
+      "type": "estimator"
+    },
+    {
+      "ref": "v1",
+      "type": "policy"
+    },
+    {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+    }
+  ],
+  "copy": {
+    "copy_status": "pending",
+    "language_set": [
+      "en"
+    ],
+    "variants": []
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 10.44% (net price 50.00, cost 44.78) vs snacks floor 8.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 352 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 426 -> 352"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-MASALA-CHIPS-200G in audience"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-MASALA-CHIPS-200G at DS-07"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "2 number(s) in rationale all cited; 4 citation(s) resolve"
+    }
+  ],
+  "target": {
+    "units": 368,
+    "node_ids": [
+      "DS-07"
+    ],
+    "deadline_type": "online_sellby",
+    "sku": "SKU-MASALA-CHIPS-200G",
+    "deadline_date": "2026-09-18",
+    "batch_ids": [
+      "B-CHIPS-DS07-01"
+    ]
+  },
+  "gap_id": "gap_chips_ds07",
+  "holdout": {
+    "seed": "seed-play_chips_ds07_v1",
+    "fraction": 0.1,
+    "min_treated_n": 20
+  },
+  "audience": {
+    "purpose": "marketing",
+    "size_before_consent": 426,
+    "filters": {},
+    "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_6"
+    ],
+    "size_after_consent": 352
+  },
+  "objective": "clear_online_sellby",
+  "counterfactuals": {
+    "do_nothing_inr": 9200.0,
+    "blanket_markdown_inr": 8188.78,
+    "blanket_markdown_pct": 20.0,
+    "play_net_inr": -8468.14
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_chips_ds07_v1_67483238",
+  "cost": {
+    "plan_cost_inr": 3.94,
+    "conversation_budget_inr": 45.76,
+    "pct_of_rupees_at_stake": 0.54
+  },
+  "source": "live_gemini"
+}
