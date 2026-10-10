@@ -45,7 +45,7 @@ test.describe("Priya: phone view", () => {
     for (let i = 0; i < n; i++) await labels.nth(i).click();
     await expect(page.locator(".execution-steps input:checked")).toHaveCount(n);
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText(/exec_play_chips_ds07_v1|Recorded|recorded/)).toBeVisible();
+    await expect(page.getByText("Execution recorded.")).toBeVisible();
     await shot(page, "priya-05-execution");
 
     // microphone is a documented stub

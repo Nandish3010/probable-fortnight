@@ -125,7 +125,7 @@ test.describe("Screenshots: Priya phone intake, gap card, approve, execution", (
     const n = await labels.count();
     for (let i = 0; i < n; i++) await labels.nth(i).click();
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText(/exec_play_chips_ds07_v1|Recorded|recorded/)).toBeVisible();
+    await expect(page.getByText("Execution recorded.")).toBeVisible();
     await shot(page, "priya-05-execution");
   });
 });
