@@ -1,0 +1,46 @@
+{
+  "measured_at": "2026-10-09T17:27:07Z",
+  "api": "https://taal-agents-2obkp776ca-el.a.run.app",
+  "gap_id": "gap_chips_ds07",
+  "backend": "vertex",
+  "n": 3,
+  "deadline_s": 45.0,
+  "policy": "unchanged (read from GET /policy, posted as is)",
+  "runs": [
+    {
+      "run": 1,
+      "run_id": "run_chips_ds07_v1_b639c120",
+      "click_to_done_s": 47.7,
+      "iterations": 7,
+      "planner_source": "deterministic_fallback",
+      "source": "deterministic_rules",
+      "fallback_reason": "deadline exceeded after 45s",
+      "total_tokens": 56672
+    },
+    {
+      "run": 2,
+      "run_id": "run_chips_ds07_v1_250d3ab4",
+      "click_to_done_s": 47.7,
+      "iterations": 6,
+      "planner_source": "deterministic_fallback",
+      "source": "deterministic_rules",
+      "fallback_reason": "deadline exceeded after 45s",
+      "total_tokens": 40939
+    },
+    {
+      "run": 3,
+      "run_id": "run_chips_ds07_v1_661017c2",
+      "click_to_done_s": 30.8,
+      "iterations": 7,
+      "planner_source": "model",
+      "source": "live_gemini",
+      "fallback_reason": null,
+      "total_tokens": 53236
+    }
+  ],
+  "fallback_n": 2,
+  "p50_wall_s": 47.688,
+  "p95_wall_s": 47.721,
+  "note": "All three runs reported; none repeated. Runs 1 and 2 hit the 45 s planner deadline and returned the deterministic-rules play; run 3 returned a model-planned play. Raw per-run records: eval/raw/planner_live_rerun_2026-10-09/runs.jsonl. Three probe POSTs made before the three runs, to confirm the new build was live (play id ends _live), are not part of the sample.",
+  "method": "p50/p95 are nearest-rank (sort ascending, take the ceil(p/100*n)-th value, 1-indexed) over each run's time_to_done_s -- client wall-clock seconds from the moment POST /rerun was sent to the 'event: done' SSE message. fallback_rate is the share of runs whose done payload's source is 'deterministic_rules'. mean_tokens is the mean of each run's run_summary usage.total_token_count (from GET /events/{run_id}), over the runs that reported one."
+}

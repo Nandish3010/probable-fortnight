@@ -1,4 +1,4 @@
-"""Render deck/slides.html to docs/deck.pdf (14 pages) and deck/png/slide_NN.png (1920x1080).
+"""Render deck/slides.html to docs/deck.pdf (17 pages) and deck/png/slide_NN.png (1920x1080).
 
 Needs web/node_modules (`make setup`) and a Chromium that Playwright can find
 (`cd web && npx playwright install chromium`). Fonts come from Google Fonts; offline, the

@@ -6,6 +6,14 @@ video narration. Every number below is either read directly from
 `agents/gate/estimator.py`'s own formulas (see its module docstring) applied to that play's
 inputs. Nothing here is estimated by eye.
 
+**Which play this is.** The worked example below is the committed fixture play (a scripted stub:
+Coconut Water bundle at ₹61, 315 consented customers), kept because every figure is reproducible
+from the fixture file. It is not the play the live demo shows. The live chips play is the recorded
+Gemini run of 10 Oct (`eval/raw/planner_real_traces_2026-10-10/run_05/`): Masala Chips with Cola
+Classic 250ML at ₹50, 352 consented customers (323 treated, 29 holdout), expected margin ₹126.42.
+Its net is -₹8,468.14 against -₹8,188.78 for a blanket 20% markdown, so the blanket markdown still
+wins on that lot by about ₹279; the beat gap, Tea (`gap_tea_ds04`), beats it by ₹4,493.
+
 ## Inputs (all cited)
 
 | Quantity | Value | Source |

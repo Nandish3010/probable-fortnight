@@ -317,7 +317,7 @@ taal/
   README.md              # judge quick-start card at the top (URL, what to click in 90 s, replay vs live), architecture diagram (Mermaid, week 1),
                          # setup, one-command demo/deploy, data disclosure + what-is-simulated box, consent/privacy + threat model, how-Gen-AI-is-used table,
                          # Antigravity/AI Studio/Vertex evidence, cost sheet (demo scale and 100k customers), scale story (Cloud Tasks fan-out)
-  LICENSE (Apache-2.0)   DATA_LICENSES.md
+  LICENSE (MIT)   DATA_LICENSES.md
   docs/                  # DECISIONS.md (design decisions and "what we tried that did not work"), schemas/play.schema.json, openapi.yaml (approve, rerun, chat SSE, reset, capture),
                          # architecture.png (+ Mermaid source collapsed), scale.md (measured throughput, tokens/play, extrapolation, tenant model, three-CSV contract, "what breaks first"),
                          # pilot.md (pre-registered metric, holdout, recruitment, consent text, anonymised outcomes), screenshots/, demo-script.md, deck outline, interview notes,
@@ -424,7 +424,7 @@ reading.
 ---
 
 ## 11a. README top fold (what a reviewer sees without scrolling)
-1. Title line + one-sentence positioning + badges (CI green, Apache-2.0, "Cloud Run: healthy").
+1. Title line + one-sentence positioning + badges (CI green, MIT, "Cloud Run: healthy").
 2. **Judge quick-start card** in a box: live URL · "click Run the 60-second beat, then Approve" · video link (2:40) · deck link · two lines on what is live vs replay · reset note. This is the first 15 lines of the file.
 3. One row of three captioned screenshots (phone gap card; chart bending after approve; Outcomes with the CEO number).
 4. `docs/architecture.png`, with the Mermaid source in a collapsed details block.
