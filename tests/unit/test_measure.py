@@ -72,3 +72,15 @@ def test_wilson_ci_matches_known_reference_values():
     low, high = _wilson_interval(15, 148)
     assert low == pytest.approx(0.0624, abs=1e-3)
     assert high == pytest.approx(0.1605, abs=1e-3)
+
+
+def test_lift_summary_reports_percentage_points_and_inconclusive():
+    from jobs.measure.run import lift_summary
+
+    crosses = lift_summary(0.0229, -0.093, 0.061, 16)
+    assert crosses["lift_unit"] == "percentage_points" and crosses["lift_pp"] == 2.29 and crosses["inconclusive"] is True
+    clear = lift_summary(0.10, 0.04, 0.16, 20)
+    assert clear["inconclusive"] is False and clear["ci_low_pp"] == 4.0
+    few = lift_summary(0.10, 0.04, 0.16, 4)
+    assert few["inconclusive"] is True
+    assert lift_summary(None, None, None, 0)["inconclusive"] is True

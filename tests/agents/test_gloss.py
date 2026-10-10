@@ -97,11 +97,11 @@ def test_kannada_offer_delivery_gets_the_template_gloss(meena, sandbox):
     rows = sandbox.read("offers")
     for o in rows:
         if o["customer_id"] == meena:
-            o["text"] = "ಮಸಾಲಾ ಚಿಪ್ಸ್ ಜೊತೆ ಕೋಕನಟ್ ವಾಟರ್ ₹58.5ಕ್ಕೆ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026ರವರೆಗೆ."
+            o["text"] = "ಮಸಾಲಾ ಚಿಪ್ಸ್ ಜೊತೆ ಕೋಕನಟ್ ವಾಟರ್ ₹61ಕ್ಕೆ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026ರವರೆಗೆ."
     sandbox.write("offers", rows)
     env = _chat(sandbox, meena, "")
     assert env["text"].startswith("ಮಸಾಲಾ")
-    assert env["english_gloss"] == "English: Offer: Masala Chips 200G with Coconut Water 1L for ₹58.5. Best before 15 Oct 2026."
+    assert env["english_gloss"] == "English: Offer: Masala Chips 200G with Coconut Water 1L for ₹61. Best before 15 Oct 2026."
 
 
 def test_stub_model_glosses_its_kannada_replies(meena, sandbox):
@@ -119,13 +119,15 @@ def test_kannada_receipt_and_refusal_carry_their_english_twin_from_the_tool(meen
     tok = set_context(ctx)
     try:
         out = asyncio.run(place_order(meena, "DS-07", [{"sku": "SKU-MASALA-CHIPS-200G", "qty": 1}], PLAY))
-        assert out["reply"].startswith("ಆರ್ಡರ್") and "58.5" in out["reply"]
-        assert out["reply_en"] == f"Your order for Masala Chips 200G + Coconut Water 1L has been placed. Your order ID is {out['order_id']} and the total is ₹58.5."
+        assert out["reply"].startswith("ಆರ್ಡರ್") and "61" in out["reply"]
+        assert out["reply_en"] == f"Your order for Masala Chips 200G + Coconut Water 1L has been placed. Your order ID is {out['order_id']} and the total is ₹61."
         again = asyncio.run(place_order(meena, "DS-07", [{"sku": "SKU-MASALA-CHIPS-200G", "qty": 1}], PLAY))
         assert again["reply"].startswith("ಈ ಆಫರ್") and again["reply_en"] == "This offer has already been used on your account."
     finally:
         reset_context(tok)
 
 
-def test_english_reply_from_a_kannada_customer_has_no_gloss(meena, sandbox):
-    assert "english_gloss" not in _chat(sandbox, meena, "hello")
+def test_english_reply_from_a_kannada_customer_has_no_gloss(sandbox):
+    # no approved play, so no pending offer is delivered in Kannada first: the reply is plain English
+    reset_sessions()
+    assert "english_gloss" not in _chat(sandbox, "CUST-MEENA", "hello")

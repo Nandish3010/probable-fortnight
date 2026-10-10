@@ -123,6 +123,9 @@ def finish_draft(draft: dict[str, Any], gap: dict[str, Any], estimate: dict[str,
     """Attach estimator output, citations, alternatives and a rationale whose every number is cited."""
     eo, cf = estimate["expected_outcome"], estimate["counterfactuals"]
     d = dict(draft)
+    if estimate.get("audience"):  # the tools' own audience and channel (estimate_outcomes), not the draft's first guess
+        d["audience"] = {**d["audience"], **estimate["audience"]}
+        d["channel"] = estimate.get("channel", d["channel"])
     d["expected_outcome"] = eo
     d["counterfactuals"] = cf
     names = {a["segment_id"]: a["name"] for a in audiences}

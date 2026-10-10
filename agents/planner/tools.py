@@ -6,6 +6,7 @@ sets `guardrails_all_passed` in session state and escalates to end the LoopAgent
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 from collections import defaultdict
@@ -48,6 +49,46 @@ def _recent_play_counts(ctx: PlannerContext) -> dict[str, int]:
         if a["arm"] == "treated" and a["assigned_at"][:10] >= cutoff:
             counts[a["customer_id"]] += 1
     return counts
+
+
+def derive_channel(draft: dict[str, Any]) -> str:
+    """Channel is server-owned: a shelf markdown at the outlet is the only non-personal play;
+    every other mechanic is a personal offer and goes out on web_chat."""
+    return "outlet" if draft.get("mechanic") == "outlet_markdown" else "web_chat"
+
+
+def eligible_audience(ctx: PlannerContext, draft: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """(candidates, eligible): the customers the segments reach, then those left after the
+    web_chat marketing-consent, frequency-cap and subscription filters. The one definition of
+    "audience after consent": the gate sizes the play from it and Approve assigns from it."""
+    gap = _gap(ctx, draft["gap_id"])
+    sku, node_ids = draft["target"]["sku"], draft["target"]["node_ids"]
+    requesting = (gap.get("evidence") or {}).get("requesting_customer_ids")
+    ids = audience_customer_ids(ctx, sku, node_ids, draft["audience"].get("segment_ids"), requesting_customer_ids=requesting)
+    cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
+    eligible = gr.filter_audience_by_consent(ids, _consented(ctx, "web_chat"))
+    eligible = gr.filter_audience_by_frequency_cap(eligible, _recent_play_counts(ctx), cap)
+    if draft.get("mechanic") in DISCOUNT_MECHANICS:
+        subscribers = frozenset(c["customer_id"] for c in ctx.store.read("customers") if sku in (c.get("subscription_skus") or []))
+        eligible = gr.filter_audience_by_subscription(eligible, subscribers)
+    return ids, list(eligible)
+
+
+def apply_derived_audience(ctx: PlannerContext, draft: dict[str, Any]) -> None:
+    """Overwrite channel and audience sizes with the tools' own values, whatever the model wrote."""
+    ids, eligible = eligible_audience(ctx, draft)
+    draft["channel"] = derive_channel(draft)
+    draft["audience"]["size_before_consent"] = len(ids)
+    draft["audience"]["size_after_consent"] = len(eligible)
+
+
+def rederive_play(ctx: PlannerContext, play: dict[str, Any]) -> None:
+    """Re-derive channel, audience size and the estimate figures with the deterministic tools,
+    overwriting what the planner model stated. Guardrails run after this on the corrected play."""
+    apply_derived_audience(ctx, play)
+    est = estimate(play, _estimator_context(ctx, play))
+    play["expected_outcome"] = est["expected_outcome"]
+    play["counterfactuals"] = est["counterfactuals"]
 
 
 def audience_customer_ids(ctx: PlannerContext, sku: str, node_ids: list[str], segment_ids: list[str] | None = None, min_affinity: float | None = None, requesting_customer_ids: list[str] | None = None) -> list[str]:
@@ -124,24 +165,18 @@ def _guardrail_context(ctx: PlannerContext, draft: dict[str, Any]) -> gr.Guardra
     product = _product(ctx, sku)
     params = draft.get("mechanic_params") or {}
     partner = ctx.products.get(params.get("bundle_sku") or "", {})
-    ids = audience_customer_ids(ctx, sku, node_ids, draft["audience"].get("segment_ids"))
-    consented = _consented(ctx, "web_chat" if draft.get("channel") != "outlet" else "outlet")
-    recent = _recent_play_counts(ctx)
-    cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
-    subscribers = frozenset(c["customer_id"] for c in ctx.store.read("customers") if sku in (c.get("subscription_skus") or []))
-    # audience after the consent, frequency-cap and subscription filters is what the gate sees.
-    # Consequence, stated plainly rather than left implicit: on this runtime path,
-    # rule_consent_required / rule_frequency_cap / rule_subscription_protect verify that this
-    # filter step ran correctly (a real, catchable bug there would fail them) -- they do not
-    # screen a raw, unfiltered candidate audience, since one never reaches check_guardrails here.
-    # "8 of 8 passed" on a Play card means these three passed *that* check, not that an
-    # arbitrary audience was tested and found clean. See
+    # The audience the gate sees is the same filtered list Approve will assign from
+    # (eligible_audience), always on web_chat consent: an outlet-channel draft is not exempt from
+    # the frequency-cap and subscription checks, and no longer sees an empty outlet consent table.
+    # Consequence, stated plainly: rule_consent_required / rule_frequency_cap /
+    # rule_subscription_protect verify that this filter step ran correctly -- they do not screen a
+    # raw, unfiltered candidate audience. See
     # tests/unit/test_guardrails.py::test_consent_frequency_subscription_rules_can_genuinely_fail
     # for proof each rule's own logic can reject a violating audience when one is given.
-    filtered = gr.filter_audience_by_consent(ids, consented)
-    filtered = gr.filter_audience_by_frequency_cap(filtered, recent, cap)
-    if draft.get("mechanic") in DISCOUNT_MECHANICS:
-        filtered = gr.filter_audience_by_subscription(filtered, subscribers)
+    _, filtered = eligible_audience(ctx, draft)
+    consented = _consented(ctx, "web_chat")
+    recent = _recent_play_counts(ctx)
+    subscribers = frozenset(c["customer_id"] for c in ctx.store.read("customers") if sku in (c.get("subscription_skus") or []))
     stockout = frozenset(g["sku"] for g in ctx.store.read("gaps") if g["type"] == "stockout_risk" and g["node_id"] in node_ids)
     gap_ids = {g["gap_id"] for g in ctx.store.read("gaps")}
     forecast_runs = {r["run_id"] for r in ctx.store.read("sense_runs")}
@@ -305,7 +340,13 @@ def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
     if problems:
         return _draft_error(problems)
     try:
-        return estimate(play_draft, _estimator_context(ctx, play_draft))
+        draft = copy.deepcopy(play_draft)
+        apply_derived_audience(ctx, draft)  # the model's own audience figure is never trusted
+        out = estimate(draft, _estimator_context(ctx, draft))
+        # what the estimate was computed on, so the model sees the real audience, not its own guess
+        out["audience"] = {"size_before_consent": draft["audience"]["size_before_consent"], "size_after_consent": draft["audience"]["size_after_consent"]}
+        out["channel"] = draft["channel"]
+        return out
     except KeyError as e:
         return {"error": f"estimate_outcome: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
@@ -327,7 +368,9 @@ def check_guardrails(play_draft: dict) -> dict:
     if problems:
         return _draft_error(problems)
     try:
-        return gr.check(play_draft, _guardrail_context(ctx, play_draft))
+        draft = copy.deepcopy(play_draft)
+        apply_derived_audience(ctx, draft)
+        return gr.check(draft, _guardrail_context(ctx, draft))
     except KeyError as e:
         return {"error": f"check_guardrails: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
@@ -369,6 +412,11 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
             Play.model_validate(play)
         except Exception as e:  # pydantic drift is a contract failure, surfaced as an error
             errors.append(f"model: {e}")
+    if not errors:
+        try:
+            rederive_play(ctx, play)
+        except KeyError as e:
+            errors.append(f"unknown reference {e}")
     if not errors:
         gap = _gap(ctx, play["gap_id"])
         sellby_passed = bool(gap["evidence"].get("sellby_passed")) or (gap["deadline_type"] == "online_sellby" and gap["deadline_date"] < ctx.as_of.isoformat())

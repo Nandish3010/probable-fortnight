@@ -31,7 +31,7 @@ from agents.gate.config import load_models, load_tenant
 from agents.gate.store import LocalStore, OverlayStore, load_catalogue
 from agents.planner.run import DEFAULT_DEADLINE_S, make_run_id, run_planner, run_planner_async
 from agents.vertex_models import RETRY_AFTER_S, ModelUnavailable, model_ids
-from jobs.measure.run import run_measure
+from jobs.measure.run import lift_summary, run_measure
 from services.feedback import intake as feedback_intake
 from services.feedback.store import build_store as build_feedback_store
 from services.feedback.store import feedback_backend
@@ -726,6 +726,7 @@ def outcomes(store: LocalStore = Depends(store_for)) -> list[dict[str, Any]]:
         o[r["arm"]] = arm
         if r["arm"] == "treated" and r["status"] == "measured":
             o.update({"lift": r["lift"], "ci_low": r["ci_low"], "ci_high": r["ci_high"], "waste_avoided_inr": r["waste_avoided"], "margin_per_discount_rupee": r["net_margin_per_discount_inr"], "waste_kg_est": r["waste_kg_est"], "co2e_kg_est": r["co2e_kg_est"]})
+            o.update(lift_summary(r["lift"], r["ci_low"], r["ci_high"], int(r["responders"])))
     out = list(by_play.values())
     for o in out:
         o.setdefault("treated", {"customers": 0, "responders": 0, "units": 0, "revenue_inr": 0, "margin_inr": 0, "discount_cost_inr": 0})
