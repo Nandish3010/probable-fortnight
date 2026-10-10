@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PersonaBar } from "./PersonaBar";
 import { Stepper } from "./Stepper";
 import { stepForPath } from "../lib/progress";
 
@@ -12,20 +13,23 @@ export default function TopNav() {
   const pathname = usePathname();
   const current = stepForPath(pathname);
   return (
-    <header className="top-nav">
-      <div className="top-nav__inner">
-        <Link href="/" className="top-nav__brand" aria-label="Taal, home">
-          <span className="top-nav__mark" aria-hidden="true" />
-          Taal
-        </Link>
-        {current ? (
-          <Stepper current={current} />
-        ) : (
-          <Link href="/" className="top-nav__back">
-            Back to demo
+    <>
+      <header className="top-nav">
+        <div className="top-nav__inner">
+          <Link href="/" className="top-nav__brand" aria-label="Taal, home">
+            <span className="top-nav__mark" aria-hidden="true" />
+            Taal
           </Link>
-        )}
-      </div>
-    </header>
+          {current ? (
+            <Stepper current={current} />
+          ) : (
+            <Link href="/" className="top-nav__back">
+              Back to demo
+            </Link>
+          )}
+        </div>
+      </header>
+      <PersonaBar />
+    </>
   );
 }

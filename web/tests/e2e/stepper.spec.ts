@@ -124,14 +124,16 @@ test.describe("the stepper in the nav", () => {
 });
 
 test.describe("ticks are derived, not stored on the server", () => {
-  test("Approve ticks from /plays, which unlocks Offer; Plan is implied; the measured example counts once approved", async ({ page }) => {
+  test("Approve ticks from /plays, which unlocks Offer; Plan is implied; a measured example that is not the visitor's does not count", async ({ page }) => {
     await approveHero(page);
     await expect(step(page, "approve")).toHaveAttribute("data-done", "true");
     await expect(step(page, "approve").locator('[data-icon="check"]')).toHaveCount(1); // current and done: ring plus tick
     await expect(step(page, "plan")).toHaveAttribute("data-state", "done");
     await expect(step(page, "offer")).toHaveAttribute("data-state", "next");
     await expect(step(page, "offer").locator('[data-part="caption"]')).toHaveText("Meena");
-    await expect(step(page, "measure")).toHaveAttribute("data-state", "done"); // /outcomes has a measured row
+    // /outcomes holds only the seeded measured examples, none of them this visitor's play: Measure is not done
+    await expect(step(page, "measure")).toHaveAttribute("data-state", "next");
+    await expect(step(page, "measure")).toHaveAttribute("data-done", "false");
     await expect(step(page, "spot")).toHaveAttribute("data-state", "next"); // never visited
   });
 

@@ -16,6 +16,7 @@ import {
   deriveProgress,
   readCrumbs,
   withApproved,
+  withFastForwarded,
   writeCrumbs,
   type ApiFacts,
   type Crumbs,
@@ -150,6 +151,11 @@ export function recordApproved(play: { play_id: string; gap_id: string }) {
   writeCrumbs(storage(), getVisitorId(), crumbs);
   emit(snapshotOf(crumbs, { ...snapshot.api, plays: markApproved(snapshot.api.plays), approveNotFound: false }, true));
   void refreshProgress();
+}
+
+/** The fast-forward sequence finished for this play: its button is single-use from now on. */
+export function recordFastForwarded(playId: string) {
+  update((c) => withFastForwarded(c, playId));
 }
 
 /** Approve (or a read) answered 404 for a play the visitor had approved: the sandbox is gone. */

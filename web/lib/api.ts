@@ -37,6 +37,7 @@ import type {
 import { ApiError, errorFromResponse, toApiError } from "./apiError";
 import { mockApproveFor, mockJson } from "./mockData";
 import { mockDelayMs, mockGate } from "./mockFaults";
+import { clearMockMeasure, mockMeasure, mockMeasuredRows, rememberMockOrder } from "./mockMeasure";
 import { getVisitorId } from "./visitor";
 
 export { ApiError, toApiError } from "./apiError";
@@ -461,7 +462,7 @@ export async function getOutcomes(): Promise<Outcome[]> {
   if (isMockMode()) {
     await mockGate("/outcomes");
     await delay(150);
-    return (await mockJson("outcomes")) as unknown as Outcome[];
+    return [...((await mockJson("outcomes")) as unknown as Outcome[]), ...mockMeasuredRows()];
   }
   return apiFetch<Outcome[]>("/outcomes");
 }
@@ -484,7 +485,9 @@ export async function postMeasure(): Promise<MeasureResponse> {
   if (isMockMode()) {
     await mockGate("/measure");
     await delay(600);
-    const rows = (await mockJson("outcomes")) as unknown as Outcome[];
+    const fixture = (await mockJson("outcomes")) as unknown as Outcome[];
+    // Plays the visitor approved and ordered for are measured too (a SYNTHETIC row; lib/mockMeasure.ts).
+    const rows = [...fixture, ...(await mockMeasure(mockApprovedIds(), fixture))];
     return {
       plays: rows.length,
       measured: rows.filter((r) => r.status === "measured").length,
@@ -503,6 +506,7 @@ export async function resetDemoData(): Promise<ResetResponse> {
     await delay(300);
     try {
       window.localStorage.removeItem(MOCK_APPROVED_KEY);
+      clearMockMeasure();
     } catch {
       // nothing stored
     }
@@ -537,6 +541,7 @@ export async function sendChat(
   if (isMockMode()) {
     await mockGate("/chat");
     const envelopes = await pickMockScenario(req);
+    rememberMockOrder(req.session_id, req.text);
     const extra = mockDelayMs("/chat", 0);
     for (const envelope of envelopes) {
       const latency = envelope.latency_ms ?? 900;

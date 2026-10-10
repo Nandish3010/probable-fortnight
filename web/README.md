@@ -80,6 +80,34 @@ window has ended and `POST /approve` answers 409. Live screenshots land in `eval
 | `/feedback`, `/feedback/results` | The practitioner survey and its results. |
 | `/dev/play-card` | A gallery of the `PlayCard` states for development. |
 
+## Persona bar, guided tour and fast-forward (the cut-line items)
+
+- **Persona bar** (`components/PersonaBar.tsx`, `lib/personas.ts`): a thin row under the nav on the five
+  screens saying who the screen is for (Arjun, demand planner on `/`, `/desk`, `/outcomes`; Priya, node
+  manager on `/phone`; Meena, customer on `/chat`) with an inline-SVG initial avatar (decorative) and "View as"
+  chips for the other two. Chips are plain links ("View as Priya, node manager"), 44 px tall; under 480 px the
+  role text goes and "This screen is for" becomes "For". No images.
+- **Guided tour** (`components/Tour.tsx`, `lib/tour.ts`): four coach-marks on the landing, anchored with
+  `data-tour` attributes (`why-now`, `proof`, `approve`, `step-offer`), shown once per visitor
+  (`localStorage` key `taal_tour:<visitor id>`, cleared by Reset demo data), started 0.5 s after the decision
+  card is on screen, with "Skip tour", Esc, a focus trap only while open, focus returned on close, a polite live
+  region per step, and a "Take the tour" button in the legend row. The popover is placed from the anchor and
+  Approve rectangles (`placePopover`) and flips so it never intersects an Approve button or its decision row.
+  **Phones** get the same card, tighter, placed by the same rule (above the sticky Approve bar); there is no
+  separate bottom sheet. Kill switch: `localStorage.taal_tour_off = "1"` stops the automatic start (the link
+  still works); both Playwright configs set it so the first-visit popover does not sit on unrelated flows, and
+  `tests/e2e/tour.spec.ts` starts from an empty storage state instead.
+- **Fast-forward one day** (`components/FastForwardPanel.tsx`, `lib/fastForward.ts`): on Outcomes, when the
+  visitor has approved a play and none of their plays is measured, a SYNTHETIC panel runs three honest steps with
+  real elapsed times, using existing client calls only: `getDemoCustomers` (the treated persona), `sendChat` with
+  the `add:<sku>` quick reply (the order), `postMeasure`. The result lands in the summary card (Inconclusive badge
+  when the range crosses zero, the difference in points, "1 treated customer ordered", and the sentence that one
+  order proves nothing). A chat failure shows the ErrorCard with Retry and leaves nothing placed; an order placed
+  with a failed Measure says so and offers only Run Measure. Single use per play (`fastForwarded` in the progress
+  crumbs, cleared by Reset). In mock mode `lib/mockMeasure.ts` stands in for the sandbox (a mocked order, then a
+  computed SYNTHETIC measured row). The stepper's Measure step now turns done only for a measured row of a play
+  the visitor approved.
+
 ## The LIVE / REPLAY convention
 
 Every panel that shows a result carries a `Badge` (`components/Badge.tsx`):
@@ -175,6 +203,7 @@ components/
                           ForecastChart, RecoveredFigure (count-up), MeenaPreview (the real /chat reply).
   DecisionFeed            under 768 px: ranks gaps, renders PlayCards in feed mode, sticky Approve bar,
                           "Next decision". It only composes PlayCard; it has no Approve logic of its own.
+  PersonaBar, Tour, FastForwardPanel   the cut-line items (see "Persona bar, guided tour and fast-forward")
   Stepper                 the five-step nav (Spot, Plan, Approve, Offer, Measure) in the top bar; reads
                           lib/progressStore (crumbs in localStorage + /plays + /outcomes), never the server.
   ChatPanel / MeenaPreview  chat bubbles; the preview is the Approve result's phone frame.
@@ -220,6 +249,7 @@ copy deck and the interaction-state table in sections 8 and 9. The three-person 
 - `lib/types.ts` — the TypeScript contracts (imported, not redefined).
 - `lib/api.ts` — the API client; `apiFetch`, mock/live switch, SSE parsing for `/chat`.
 - `lib/apiError.ts`, `lib/errorCopy.ts`, `lib/mockData.ts`, `lib/mockFaults.ts`, `lib/recorded.ts` — see "Errors" above.
+- `lib/personas.ts`, `lib/tour.ts`, `lib/fastForward.ts`, `lib/mockMeasure.ts` — the cut-line items' pure logic.
 - `lib/impact.ts`, `lib/labels.ts`, `lib/guardrails.ts`, `lib/lang.ts` — the figure, the names, the checks, the language detection.
 - `lib/visitor.ts`, `lib/format.ts` — visitor id; rupee, date, duration and percentage-point formats.
 - `mocks/*.json` — fixtures for every route, consistent with `lib/types.ts`.

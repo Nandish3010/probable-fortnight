@@ -188,12 +188,13 @@ export function PlayCard({
       <p
         className={styles.whyNow}
         data-testid="why-now"
+        data-tour="why-now"
         title={why.deadlineAbsolute ? `Deadline: ${why.deadlineAbsolute}` : undefined}
       >
         {why.text}
       </p>
 
-      <section className={styles.figure} aria-label="What the play recovers">
+      <section className={styles.figure} aria-label="What the play recovers" data-tour="proof">
         <RecoveredFigure impact={impact} testId="recovered-figure" />
         <p className={styles.honesty} data-testid="honesty-line">
           A projection, not a measurement. About {audience.holdout.toLocaleString("en-IN")} customers are held back so the
@@ -201,7 +202,7 @@ export function PlayCard({
         </p>
       </section>
 
-      <section className={styles.section} aria-label="Compared with the alternatives">
+      <section className={styles.section} aria-label="Compared with the alternatives" data-tour="proof">
         <CounterfactualBars
           counterfactuals={play.counterfactuals}
           expectedOutcome={play.expected_outcome}

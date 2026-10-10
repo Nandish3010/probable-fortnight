@@ -9,7 +9,7 @@
 //   Approve  /plays has a play for the hero gap with status "approved" (crumbs bridge the gap
 //            while /plays has not answered, and disagree with it after a sandbox restart)
 //   Offer    crumb, written by the chat after a reply; only counts once Approve is done
-//   Measure  /outcomes has a measured row; only counts once Approve is done
+//   Measure  /outcomes has a measured row for a play the visitor approved; only counts once Approve is done
 // The crumbs live in localStorage under a key namespaced by the visitor id, so two visitors on one
 // browser profile do not read each other's progress, and "Reset demo data" clears them.
 
@@ -63,9 +63,13 @@ export interface Crumbs {
   plan: boolean;
   offer: boolean;
   approved: ApprovedCrumb[];
+  /** Plays whose "fast-forward one day" sequence (E2) has already run in this session. Written by
+   * the Outcomes page and cleared by Reset with the rest of the crumbs; it makes the button
+   * single-use. */
+  fastForwarded: string[];
 }
 
-export const EMPTY_CRUMBS: Crumbs = { spot: false, plan: false, offer: false, approved: [] };
+export const EMPTY_CRUMBS: Crumbs = { spot: false, plan: false, offer: false, approved: [], fastForwarded: [] };
 
 export const CRUMB_KEY_PREFIX = "taal_progress:";
 
@@ -86,7 +90,8 @@ export function parseCrumbs(raw: string | null | undefined): Crumbs {
             !!a && typeof a === "object" && typeof (a as ApprovedCrumb).play_id === "string" && typeof (a as ApprovedCrumb).gap_id === "string",
         )
       : [];
-    return { spot: v.spot === true, plan: v.plan === true, offer: v.offer === true, approved };
+    const fastForwarded = Array.isArray(v.fastForwarded) ? v.fastForwarded.filter((x): x is string => typeof x === "string") : [];
+    return { spot: v.spot === true, plan: v.plan === true, offer: v.offer === true, approved, fastForwarded };
   } catch {
     return EMPTY_CRUMBS;
   }
@@ -100,6 +105,12 @@ export function serializeCrumbs(c: Crumbs): string {
 export function withApproved(c: Crumbs, a: ApprovedCrumb): Crumbs {
   if (c.approved.some((x) => x.play_id === a.play_id)) return c;
   return { ...c, approved: [...c.approved, a] };
+}
+
+/** Records that the fast-forward ran for a play (once per play id). */
+export function withFastForwarded(c: Crumbs, playId: string): Crumbs {
+  if (c.fastForwarded.includes(playId)) return c;
+  return { ...c, fastForwarded: [...c.fastForwarded, playId] };
 }
 
 /** The minimal Storage surface used here, so tests can pass a Map-backed fake. */
@@ -141,7 +152,7 @@ export function clearCrumbs(storage: CrumbStorage | null, visitorId: string): vo
 /** What the API said, as far as the stepper cares. null means "not known (yet)". */
 export interface ApiFacts {
   plays: ReadonlyArray<{ play_id: string; gap_id: string; status: string }> | null;
-  outcomes: ReadonlyArray<{ status: string }> | null;
+  outcomes: ReadonlyArray<{ status: string; play_id?: string }> | null;
   /** /plays answered 404: the sandbox this browser used is gone. */
   playsNotFound: boolean;
   /** The approve call itself answered 404 for a play the visitor had approved. */
@@ -185,7 +196,12 @@ export function deriveProgress(heroGapId: string, crumbs: Crumbs, api: ApiFacts)
   const restarted = contradicted || gone;
 
   const approve = approvedByApi || (heroCrumb && plays === null && !api.playsNotFound && !api.approveNotFound);
-  const measured = api.outcomes?.some((o) => o.status === "measured") ?? false;
+  // Measure is done only by a measured row for a play THIS visitor approved: the seeded examples
+  // that ship measured (and every other visitor's rows) say nothing about this session. A row with no
+  // play id (a test fixture) counts as before.
+  const approvedIds = new Set<string>(crumbs.approved.map((a) => a.play_id));
+  for (const p of plays ?? []) if (isApproved(p.status)) approvedIds.add(p.play_id);
+  const measured = api.outcomes?.some((o) => o.status === "measured" && (o.play_id === undefined || approvedIds.has(o.play_id))) ?? false;
 
   return {
     spot: crumbs.spot,

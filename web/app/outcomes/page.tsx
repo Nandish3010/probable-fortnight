@@ -5,12 +5,14 @@ import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
 import { Details } from "../../components/Details";
 import { ErrorCard } from "../../components/ErrorCard";
+import { FastForwardPanel } from "../../components/FastForwardPanel";
 import { getOutcomes, getPlays, getPriorUpdate, isMockMode, postMeasure } from "../../lib/api";
 import { toApiError, type ApiError } from "../../lib/apiError";
 import { Skeleton } from "../../components/Skeleton";
 import { count, dayMonth, inr, formatDateTime, liftInPoints, pct, pointsFromPp } from "../../lib/format";
 import { GAP_TYPE_LABEL, label } from "../../lib/labels";
 import { isApproved } from "../../lib/progress";
+import { FF_EXPLAINER, sampleSizeLine } from "../../lib/fastForward";
 import { refreshProgress, useProgress } from "../../lib/progressStore";
 import { recordedOutcomes } from "../../lib/recorded";
 import type { MeasureResponse, Outcome, Play, PortfolioSummary, PriorUpdate } from "../../lib/types";
@@ -233,8 +235,11 @@ function SummaryCard({
   measuring,
   onRun,
   measureResult,
+  fastForwarded,
 }: {
   outcome: Outcome | undefined;
+  /** The measured row came from the fast-forward demonstration (E2): say how little it proves. */
+  fastForwarded: boolean;
   /** Plain name of an approved play with no measured row yet, when there is one. */
   approvedName: string | null;
   loaded: boolean;
@@ -243,7 +248,9 @@ function SummaryCard({
   measureResult: MeasureResponse | null;
 }) {
   const crossesZero = outcome ? (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0 : false;
-  const inconclusive = outcome ? outcome.inconclusive === true : false;
+  // A fast-forwarded row whose range crosses zero is inconclusive by definition, even from an API that
+  // does not send the flag.
+  const inconclusive = outcome ? outcome.inconclusive === true || (fastForwarded && crossesZero) : false;
   const lift = outcome ? outcome.lift_pp ?? (outcome.lift != null ? outcome.lift * 100 : null) : null;
   const lo = outcome ? outcome.ci_low_pp ?? (outcome.ci_low != null ? outcome.ci_low * 100 : null) : null;
   const hi = outcome ? outcome.ci_high_pp ?? (outcome.ci_high != null ? outcome.ci_high * 100 : null) : null;
@@ -287,10 +294,20 @@ function SummaryCard({
             {outcome.treated.responders === 0 && outcome.holdout.responders === 0
               ? " Nobody in either group ordered yet, so this is a null result, not a failure: there is nothing to compare."
               : ""}
-            {inconclusive || crossesZero
+            {(inconclusive || crossesZero) && !fastForwarded
               ? ` The range crosses zero, so ${count(outcome.treated.customers + outcome.holdout.customers)} customers are too few to tell a real effect from noise.`
               : ""}
           </p>
+          {fastForwarded ? (
+            <div className={styles.ffResult} data-testid="ff-result">
+              <p className={styles.runNote} data-testid="ff-sample-size">
+                <Badge kind="synthetic" detail="fast-forwarded day" /> {sampleSizeLine(outcome)}
+              </p>
+              <p className={styles.runNote} data-testid="ff-explainer">
+                {FF_EXPLAINER}
+              </p>
+            </div>
+          ) : null}
         </>
       ) : (
         <div data-testid="summary-empty">
@@ -333,6 +350,7 @@ export default function OutcomesPage() {
   const [featuredError, setFeaturedError] = useState<ApiError | null>(null);
   const [priorError, setPriorError] = useState<ApiError | null>(null);
   const [usingRecorded, setUsingRecorded] = useState(false);
+  const [allPlays, setAllPlays] = useState<Play[]>([]);
 
   async function loadOutcomes() {
     setOutcomesError(null);
@@ -350,6 +368,16 @@ export default function OutcomesPage() {
       setFeaturedPlay(plays.find((p) => p.play_id === FEATURED_PLAY_ID) ?? plays[0] ?? null);
     } catch (e) {
       setFeaturedError(toApiError(e, "/plays"));
+    }
+  }
+
+  // Every play in the sandbox, to find the one the visitor approved for the fast-forward panel. If
+  // this read fails the panel is simply not offered; Run Measure still is.
+  async function loadAllPlays() {
+    try {
+      setAllPlays(await getPlays());
+    } catch {
+      setAllPlays([]);
     }
   }
 
@@ -373,6 +401,7 @@ export default function OutcomesPage() {
     loadOutcomes();
     loadFeatured();
     loadPrior();
+    loadAllPlays();
   }, []);
 
   async function runMeasure() {
@@ -416,6 +445,12 @@ export default function OutcomesPage() {
         ? label("sku", featuredPlay.target.sku)
         : "a play";
 
+  // E2: the visitor approved a play and nothing of theirs is measured (or the fast-forward just ran).
+  const recency = [...progress.crumbs.approved.map((a) => a.play_id).reverse(), ...approvedIds];
+  const ffPlay = recency.map((id) => allPlays.find((p) => p.play_id === id)).find((p): p is Play => Boolean(p));
+  const ffDone = ffPlay ? progress.crumbs.fastForwarded.includes(ffPlay.play_id) : false;
+  const showFastForward = outcomes !== null && ffPlay !== undefined && (!myOutcome || ffDone);
+
   return (
     <main id="main-content" tabIndex={-1} className="page">
       <div className="card__header">
@@ -434,7 +469,17 @@ export default function OutcomesPage() {
         measuring={measuring}
         onRun={runMeasure}
         measureResult={measureResult}
+        fastForwarded={myOutcome ? progress.crumbs.fastForwarded.includes(myOutcome.play_id) : false}
       />
+      {showFastForward && ffPlay ? (
+        <FastForwardPanel
+          play={ffPlay}
+          done={ffDone}
+          onFinished={async () => {
+            await Promise.all([loadOutcomes(), refreshProgress()]);
+          }}
+        />
+      ) : null}
       {measureError ? (
         <ErrorCard
           error={measureError}

@@ -11,12 +11,15 @@ import { Icon } from "../components/icons";
 import { PlayCard } from "../components/PlayCard";
 import { ResetDialog } from "../components/ResetDialog";
 import { StateLegend } from "../components/StateLegend";
+import { Tour } from "../components/Tour";
 import { getGaps, getPlays, resetDemoData } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { formatDemoDate } from "../lib/format";
 import { HERO_GAP_ID } from "../lib/hero";
 import { clearProgress } from "../lib/progressStore";
 import { recordedGaps, recordedPlays } from "../lib/recorded";
+import { clearTourSeen } from "../lib/tour";
+import { getVisitorId } from "../lib/visitor";
 import { isPhoneNow, useIsPhone } from "../lib/useMediaQuery";
 import { useServerNow } from "../lib/useServerNow";
 import type { Gap, Play } from "../lib/types";
@@ -119,6 +122,11 @@ export default function LandingPage() {
       const res = await resetDemoData();
       setResetNote(`Reset done for visitor ${res.namespace.slice(0, 8)}…`);
       clearProgress();
+      try {
+        clearTourSeen(window.localStorage, getVisitorId());
+      } catch {
+        // storage blocked: nothing to clear
+      }
       setFeedKey((k) => k + 1);
       setFeedPlay(null);
       setBeatStarted(false);
@@ -138,6 +146,8 @@ export default function LandingPage() {
   }
 
   const beatReady = beatStarted && !beatError && gap && play;
+  // The tour starts once a decision card is on screen: the beat card from 768 px up, the loaded feed below.
+  const tourReady = phone ? feedPlay !== null : Boolean(beatReady);
 
   // The button that started the beat is gone once the card mounts, which would drop keyboard focus
   // on <body>. Put it on the card's title instead (unless the visitor already moved on to another
@@ -163,6 +173,7 @@ export default function LandingPage() {
             {serverNow ? `Demo date: ${formatDemoDate(serverNow)}.` : "Demo mode."} Nothing you do here persists.
           </p>
           <StateLegend />
+          <Tour ready={tourReady} onNeedBeat={beatStarted ? undefined : runTheBeat} />
         </div>
       </section>
 

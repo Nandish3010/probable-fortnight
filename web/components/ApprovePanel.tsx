@@ -323,6 +323,7 @@ export function ApprovePanel({
             disabled={phase === "submitting"}
             aria-busy={phase === "submitting"}
             data-testid="approve-button"
+            data-tour="approve"
           >
             {phase === "submitting" ? "Approving…" : "Approve"}
           </button>

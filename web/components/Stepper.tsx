@@ -37,6 +37,7 @@ export function Stepper({ current, progress }: { current: StepId | null; progres
                 aria-current={view.state === "current" ? "step" : undefined}
                 aria-label={stepAccessibleName(step, view)}
                 title={title}
+                data-tour={step.id === "offer" ? "step-offer" : undefined}
               >
                 <span className={styles.dot} data-part="dot" aria-hidden="true">
                   {view.state === "done" || (view.state === "current" && view.done) ? (
