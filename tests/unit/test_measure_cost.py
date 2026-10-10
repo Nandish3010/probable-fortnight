@@ -180,8 +180,12 @@ def test_run_modeled_cost_measurement_prices_real_measured_usage(monkeypatch):
 
     result = cost_module.run_modeled_cost_measurement("proj", days=30, dataset="taal")
     assert result["methodology"] == "modeled_from_measured_usage"
-    # 1M input @ $0.30/M + 0.5M output @ $2.50/M = 0.30 + 1.25 = 1.55 USD from Gemini alone
-    assert result["lines"]["vertex_ai_gemini"]["usd"] == pytest.approx(1.55, abs=1e-6)
+    # 1M input + 0.5M output tokens, priced from config/models.toml [pricing] (not a hard-coded model rate)
+    from agents.gate.config import load_models
+
+    pricing = load_models()["pricing"]
+    expected = pricing["usd_per_million_input"] + 0.5 * pricing["usd_per_million_output"]
+    assert result["lines"]["vertex_ai_gemini"]["usd"] == pytest.approx(expected, abs=1e-4)
     assert result["lines"]["firestore"]["usd"] == 0.0
     assert result["unavailable_lines"] == []
     assert result["cost_per_play_inr"] is not None

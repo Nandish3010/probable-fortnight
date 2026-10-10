@@ -55,6 +55,8 @@ import sys
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from agents.gate.config import load_models
+
 GENAI_SERVICE_MATCH = ["Vertex AI", "Generative AI", "Gemini"]
 
 # Public GCP list rates used by tier 2. Each was checked against Google's own pricing pages
@@ -62,10 +64,9 @@ GENAI_SERVICE_MATCH = ["Vertex AI", "Generative AI", "Gemini"]
 # returned truncated content to this session's fetch tool; rates below were corroborated across
 # multiple independent 2026 pricing summaries citing the same figures, and Cloud Run's own docs
 # confirm asia-south1 is a Tier 1 region for pricing purposes). These are LIST prices with no
-# discount applied -- see the module docstring's tier-2 caveat.
+# discount applied -- see the module docstring's tier-2 caveat. Gemini token rates are not listed
+# here: they come from config/models.toml [pricing] (the model in use), so they move with ids.flash.
 PUBLIC_RATES = {
-    "vertex_gemini_2_5_flash_input_usd_per_million_tokens": 0.30,
-    "vertex_gemini_2_5_flash_output_usd_per_million_tokens": 2.50,
     "bigquery_on_demand_usd_per_tib_scanned": 6.25,
     "bigquery_active_storage_usd_per_gb_month": 0.02,
     "cloud_run_usd_per_vcpu_second": 0.000024,
@@ -237,7 +238,8 @@ def run_modeled_cost_measurement(project: str, days: int, dataset: str) -> dict[
     tok_in = _sum_delta_metric(mon, project, "aiplatform.googleapis.com/publisher/online_serving/token_count", start, now, 'metric.label."type"="input"')
     tok_out = _sum_delta_metric(mon, project, "aiplatform.googleapis.com/publisher/online_serving/token_count", start, now, 'metric.label."type"="output"')
     if tok_in["available"] and tok_out["available"]:
-        cost = (tok_in["total"] / 1e6) * r["vertex_gemini_2_5_flash_input_usd_per_million_tokens"] + (tok_out["total"] / 1e6) * r["vertex_gemini_2_5_flash_output_usd_per_million_tokens"]
+        pricing = load_models()["pricing"]
+        cost = (tok_in["total"] / 1e6) * float(pricing["usd_per_million_input"]) + (tok_out["total"] / 1e6) * float(pricing["usd_per_million_output"])
         lines["vertex_ai_gemini"] = {"input_tokens": tok_in["total"], "output_tokens": tok_out["total"], "usd": round(cost, 4), "detail": {"input": tok_in, "output": tok_out}}
         total_usd += cost
     else:
