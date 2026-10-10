@@ -1,6 +1,10 @@
 // Taal API client. Talks to the real backend (docs/openapi.yaml) unless
-// NEXT_PUBLIC_TAAL_MOCK=1, in which case every route is served from the
-// static fixtures under web/mocks/*.json (bundled at build time).
+// NEXT_PUBLIC_TAAL_MOCK=1, in which case every route is served from the static
+// fixtures under web/mocks/*.json (loaded on demand by lib/mockData.ts, only in mock mode).
+//
+// Every real request goes through apiFetch()/apiFetchRaw(): one AbortController per request, a
+// per-endpoint timeout, and a typed ApiError (lib/apiError.ts) so no caller can be left on a
+// spinner that never ends. components/ErrorCard.tsx renders those errors.
 import type {
   ApproveRequest,
   DemoCustomer,
@@ -30,36 +34,36 @@ import type {
   TraceEvent,
   VisionIntakeResult,
 } from "./types";
+import { ApiError, errorFromResponse, toApiError } from "./apiError";
+import { mockApproveFor, mockJson } from "./mockData";
+import { mockDelayMs, mockGate } from "./mockFaults";
 import { getVisitorId } from "./visitor";
 
-import mockHealth from "../mocks/health.json";
-import mockGaps from "../mocks/gaps.json";
-import mockPlays from "../mocks/plays.json";
-import mockApprove from "../mocks/approve.json";
-import mockEvents from "../mocks/events.json";
-import mockPolicy from "../mocks/policy.json";
-import mockRerun from "../mocks/rerun.json";
-import mockRerunEvents from "../mocks/rerun_events.json";
-import mockCapture from "../mocks/capture.json";
-import mockCaptureLowConf from "../mocks/capture_lowconf.json";
-import mockExecution from "../mocks/execution.json";
-import mockOutcomes from "../mocks/outcomes.json";
-import mockPriorUpdate from "../mocks/prior_update.json";
-import mockCustomersDemo from "../mocks/customers_demo.json";
-import mockChat from "../mocks/chat.json";
-import mockFeedbackForm from "../mocks/feedback_form.json";
-// The summary a zero-response store produces (summarize([]) output): mock mode never shows
-// simulated feedback numbers, not even to a demo viewer.
-import mockFeedbackSummary from "../mocks/feedback_summary.json";
+export { ApiError, toApiError } from "./apiError";
+export type { ApiErrorKind } from "./apiError";
+
+// Test hook, honoured only in a build made with NEXT_PUBLIC_TAAL_MOCK=1 (a production build folds
+// the check to false and drops this): localStorage "taal_force_live" = "1" makes the app use the
+// real request path (apiFetch) against the URL in "taal_api_url" instead of the fixtures, so a
+// browser test can aim the real wrapper at an unreachable or fake origin (blocked-origin.spec.ts).
+function liveOverride(key: string): string | null {
+  if (process.env.NEXT_PUBLIC_TAAL_MOCK !== "1") return null;
+  try {
+    return typeof window === "undefined" ? null : window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
 
 export function isMockMode(): boolean {
-  return process.env.NEXT_PUBLIC_TAAL_MOCK === "1";
+  if (process.env.NEXT_PUBLIC_TAAL_MOCK !== "1") return false;
+  return liveOverride("taal_force_live") !== "1";
 }
 
 function apiBase(): string {
   // Strip a trailing slash so `${apiBase()}${path}` (path always starts with "/") never
   // produces a double slash, which 404s against FastAPI's exact route paths.
-  const base = process.env.NEXT_PUBLIC_TAAL_API_URL ?? "http://localhost:8080";
+  const base = liveOverride("taal_api_url") ?? process.env.NEXT_PUBLIC_TAAL_API_URL ?? "http://localhost:8080";
   return base.replace(/\/+$/, "");
 }
 
@@ -67,50 +71,118 @@ async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Thrown by request() on a non-ok response; `status` lets a caller (e.g. rerun() below, on 409)
-// give a clearer message than the generic one this carries.
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
+// ---------- the one request wrapper ----------
+
+export const DEFAULT_TIMEOUT_MS = 10_000;
+
+// First match wins. /rerun and /plan answer 202 quickly today, but a planner call is allowed to
+// take most of two minutes, so they get the longest budget; a chat turn or a photo read is
+// allowed 20 s; everything else (a read) is expected back in 10.
+const TIMEOUTS: ReadonlyArray<readonly [RegExp, number]> = [
+  [/^\/approve(\/|$)/, 60_000],
+  [/^\/(plan|rerun)(\/|$)/, 100_000],
+  [/^\/chat(\/|$)/, 20_000],
+  [/^\/capture(\/|$)/, 20_000],
+  [/^\/measure(\/|$)/, 30_000],
+];
+
+export function timeoutFor(path: string): number {
+  const pathname = path.split("?")[0];
+  return TIMEOUTS.find(([re]) => re.test(pathname))?.[1] ?? DEFAULT_TIMEOUT_MS;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export interface RequestOptions {
+  /** Overrides the per-endpoint timeout. */
+  timeoutMs?: number;
+  /** A caller's own abort (e.g. unmount). It is rethrown as an AbortError, not mapped to an ApiError. */
+  signal?: AbortSignal;
+}
+
+async function runRequest<T>(
+  path: string,
+  init: RequestInit | undefined,
+  opts: RequestOptions | undefined,
+  // Runs while the timer is still armed: for JSON the body read is timed too, for a stream it is
+  // the identity so a long stream is not cut by the header timeout.
+  consume: (res: Response) => Promise<T>,
+): Promise<T> {
+  const endpoint = path.split("?")[0];
   const headers = new Headers(init?.headers);
   headers.set("X-Taal-Visitor", getVisitorId());
   if (init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const res = await fetch(`${apiBase()}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new ApiError(`${path} -> ${res.status}`, res.status);
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, opts?.timeoutMs ?? timeoutFor(path));
+  const outer = opts?.signal;
+  const onOuterAbort = () => controller.abort();
+  if (outer) {
+    if (outer.aborted) controller.abort();
+    else outer.addEventListener("abort", onOuterAbort, { once: true });
   }
-  return (await res.json()) as T;
+
+  try {
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}${path}`, { ...init, headers, credentials: "include", signal: controller.signal });
+    } catch (e) {
+      if (timedOut) throw new ApiError({ kind: "timeout", endpoint });
+      if (outer?.aborted) throw e;
+      // A TypeError: CORS block, refused connection, DNS failure, offline.
+      throw new ApiError({ kind: "network", endpoint, message: e instanceof Error ? e.message : undefined });
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw errorFromResponse(endpoint, res.status, body, res.headers.get("Retry-After"));
+    }
+    try {
+      return await consume(res);
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      if (timedOut) throw new ApiError({ kind: "timeout", endpoint });
+      if (outer?.aborted) throw e;
+      throw toApiError(e, endpoint);
+    }
+  } finally {
+    clearTimeout(timer);
+    outer?.removeEventListener("abort", onOuterAbort);
+  }
+}
+
+/** Fetch + status check + JSON, with a timeout and a typed ApiError. */
+export function apiFetch<T>(path: string, init?: RequestInit, opts?: RequestOptions): Promise<T> {
+  return runRequest<T>(path, init, opts, async (res) => (await res.json()) as T);
+}
+
+/** Same checks, but hands back the Response once its headers arrive (for streams). The timeout
+ * covers the wait for headers only. */
+export function apiFetchRaw(path: string, init?: RequestInit, opts?: RequestOptions): Promise<Response> {
+  return runRequest<Response>(path, init, opts, async (res) => res);
 }
 
 // ---------- health ----------
 
 export async function getHealth(): Promise<HealthResponse> {
   if (isMockMode()) {
+    await mockGate("/health");
     await delay(120);
-    return mockHealth as HealthResponse;
+    return (await mockJson("health")) as HealthResponse;
   }
-  return request<HealthResponse>("/health");
+  return apiFetch<HealthResponse>("/health");
 }
 
 // ---------- gaps ----------
 
 export async function getGaps(params?: { node_id?: string; limit?: number }): Promise<Gap[]> {
   if (isMockMode()) {
+    await mockGate("/gaps");
     await delay(150);
-    const all = mockGaps as Gap[];
+    const all = (await mockJson("gaps")) as Gap[];
     if (params?.node_id) {
       return all
         .filter((g) => g.node_id === params.node_id)
@@ -121,31 +193,60 @@ export async function getGaps(params?: { node_id?: string; limit?: number }): Pr
   const q = new URLSearchParams();
   if (params?.node_id) q.set("node_id", params.node_id);
   q.set("limit", String(params?.limit ?? 1000));
-  return request<Gap[]>(`/gaps?${q.toString()}`);
+  return apiFetch<Gap[]>(`/gaps?${q.toString()}`);
 }
 
 // ---------- plays ----------
 
+// Mock mode keeps what the visitor approved, like the real sandbox does, so /plays reports it as
+// approved afterwards. Cleared by Reset. (A test simulates a restarted server by removing this key.)
+const MOCK_APPROVED_KEY = "taal_mock_approved";
+
+function mockApprovedIds(): string[] {
+  try {
+    const raw = typeof window === "undefined" ? null : window.localStorage.getItem(MOCK_APPROVED_KEY);
+    const v = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberMockApproval(playId: string) {
+  try {
+    const ids = mockApprovedIds();
+    if (!ids.includes(playId)) window.localStorage.setItem(MOCK_APPROVED_KEY, JSON.stringify([...ids, playId]));
+  } catch {
+    // Storage blocked: the play then simply stays "proposed" in mock mode.
+  }
+}
+
 export async function getPlays(params?: { gap_id?: string }): Promise<Play[]> {
   if (isMockMode()) {
+    await mockGate("/plays");
     await delay(150);
-    const all = mockPlays as unknown as Play[];
+    const approvedIds = mockApprovedIds();
+    const all = ((await mockJson("plays")) as unknown as Play[]).map((p) =>
+      approvedIds.includes(p.play_id) ? { ...p, status: "approved" as const, approved_at: p.approved_at ?? new Date().toISOString() } : p,
+    );
     if (params?.gap_id) return all.filter((p) => p.gap_id === params.gap_id);
     return all;
   }
   const qs = params?.gap_id ? `?gap_id=${encodeURIComponent(params.gap_id)}` : "";
-  return request<Play[]>(`/plays${qs}`);
+  return apiFetch<Play[]>(`/plays${qs}`);
 }
 
 // ---------- approve ----------
 
 export async function approve(req: ApproveRequest): Promise<ApproveResponse> {
   if (isMockMode()) {
-    await delay(1100);
-    const base = mockApprove as unknown as ApproveResponse;
-    return { ...base, play_id: req.play_id };
+    await mockGate("/approve");
+    await delay(mockDelayMs("/approve", 1100));
+    const res = await mockApproveFor(req.play_id);
+    rememberMockApproval(req.play_id);
+    return res;
   }
-  return request<ApproveResponse>("/approve", { method: "POST", body: JSON.stringify(req) });
+  return apiFetch<ApproveResponse>("/approve", { method: "POST", body: JSON.stringify(req) });
 }
 
 // ---------- rerun (policy change -> re-plan) ----------
@@ -157,8 +258,9 @@ export async function approve(req: ApproveRequest): Promise<ApproveResponse> {
 
 export async function rerun(req: RerunRequest): Promise<RerunAccepted> {
   if (isMockMode()) {
+    await mockGate("/rerun");
     await delay(300);
-    const base = mockRerun as unknown as RerunResult;
+    const base = (await mockJson("rerun")) as unknown as RerunResult;
     const runId = base.run_id;
     return {
       run_id: runId,
@@ -172,10 +274,15 @@ export async function rerun(req: RerunRequest): Promise<RerunAccepted> {
     };
   }
   try {
-    return await request<RerunAccepted>("/rerun", { method: "POST", body: JSON.stringify(req) });
+    return await apiFetch<RerunAccepted>("/rerun", { method: "POST", body: JSON.stringify(req) });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 409) {
-      throw new Error("A re-plan is already running for this visitor. Wait for it to finish, then try again.");
+    if (e instanceof ApiError && e.kind === "conflict") {
+      throw new ApiError({
+        kind: "conflict",
+        endpoint: e.endpoint,
+        status: e.status,
+        message: "A re-plan is already running for this visitor. Wait for it to finish, then try again.",
+      });
     }
     throw e;
   }
@@ -224,7 +331,8 @@ export async function streamRerun(
   signal?: AbortSignal,
 ): Promise<RerunResult> {
   if (isMockMode()) {
-    const frames = mockRerunEvents as unknown as { event: string; data: unknown }[];
+    await mockGate(`/events/${runId}/stream`);
+    const frames = (await mockJson("rerun_events")) as unknown as { event: string; data: unknown }[];
     let result: RerunResult | null = null;
     for (const frame of frames) {
       if (signal?.aborted) break;
@@ -235,15 +343,12 @@ export async function streamRerun(
         onRecord(frame.data as TraceEvent);
       }
     }
-    return result ?? (mockRerun as unknown as RerunResult);
+    return result ?? ((await mockJson("rerun")) as unknown as RerunResult);
   }
 
-  const res = await fetch(`${apiBase()}/events/${encodeURIComponent(runId)}/stream`, {
-    credentials: "include",
-    headers: { "X-Taal-Visitor": getVisitorId() },
-    signal,
-  });
-  if (!res.ok) throw new ApiError(`/events/${runId}/stream -> ${res.status}`, res.status);
+  // The header timeout (10 s) applies to the response starting; the stream itself runs as long
+  // as the run does.
+  const res = await apiFetchRaw(`/events/${encodeURIComponent(runId)}/stream`, undefined, { signal });
 
   let result: RerunResult | null = null;
   await consumeSseStream(res, (eventName, data) => {
@@ -260,45 +365,49 @@ export async function streamRerun(
 
 export async function getRerunStatus(runId: string): Promise<RerunStatus> {
   if (isMockMode()) {
+    await mockGate(`/rerun/${runId}`);
     await delay(150);
-    const result = mockRerun as unknown as RerunResult;
+    const result = (await mockJson("rerun")) as unknown as RerunResult;
     const now = new Date().toISOString();
     return { run_id: runId, status: "done", started_at: now, finished_at: now, result };
   }
-  return request<RerunStatus>(`/rerun/${encodeURIComponent(runId)}`);
+  return apiFetch<RerunStatus>(`/rerun/${encodeURIComponent(runId)}`);
 }
 
 // ---------- policy ----------
 
 export async function getPolicy(): Promise<PolicyDoc> {
   if (isMockMode()) {
+    await mockGate("/policy");
     await delay(100);
-    return mockPolicy as unknown as PolicyDoc;
+    return (await mockJson("policy")) as unknown as PolicyDoc;
   }
-  return request<PolicyDoc>("/policy");
+  return apiFetch<PolicyDoc>("/policy");
 }
 
 // ---------- events / trace ----------
 
 export async function getEvents(runId: string): Promise<EventsResponse> {
   if (isMockMode()) {
+    await mockGate(`/events/${runId}`);
     await delay(150);
-    return mockEvents as unknown as EventsResponse;
+    return (await mockJson("events")) as unknown as EventsResponse;
   }
-  return request<EventsResponse>(`/events/${encodeURIComponent(runId)}`);
+  return apiFetch<EventsResponse>(`/events/${encodeURIComponent(runId)}`);
 }
 
 // ---------- capture (phone view) ----------
 
 export async function capture(req: CaptureRequest): Promise<VisionIntakeResult> {
   if (isMockMode()) {
+    await mockGate("/capture");
     await delay(1400);
     // Pallet 6 is the one sample with a row under the confidence threshold (the confirm step);
     // every other sample, and an upload, reads as the high-confidence Pallet 1.
-    const base = (req.photo_ref?.endsWith("pallet_06.jpg") ? mockCaptureLowConf : mockCapture) as unknown as VisionIntakeResult;
+    const base = (await mockJson(req.photo_ref?.endsWith("pallet_06.jpg") ? "capture_lowconf" : "capture")) as unknown as VisionIntakeResult;
     return { ...base, node_id: req.node_id, photo_ref: req.photo_ref ?? base.photo_ref };
   }
-  return request<VisionIntakeResult>("/capture", { method: "POST", body: JSON.stringify(req) });
+  return apiFetch<VisionIntakeResult>("/capture", { method: "POST", body: JSON.stringify(req) });
 }
 
 export interface CaptureConfirmSkip {
@@ -319,48 +428,53 @@ export interface CaptureConfirmResponse {
 // silently dropped.
 export async function captureConfirm(req: { node_id: string; photo_ref: string; rows: unknown[] }): Promise<CaptureConfirmResponse> {
   if (isMockMode()) {
+    await mockGate("/capture/confirm");
     await delay(200);
     return { ok: true, written: req.rows.length, batches: [], skipped: [], gaps_refreshed: 0 };
   }
-  return request<CaptureConfirmResponse>("/capture/confirm", { method: "POST", body: JSON.stringify(req) });
+  return apiFetch<CaptureConfirmResponse>("/capture/confirm", { method: "POST", body: JSON.stringify(req) });
 }
 
 // ---------- execution ----------
 
 export async function execution(req: ExecutionRequest): Promise<ExecutionResponse> {
   if (isMockMode()) {
+    await mockGate("/execution");
     await delay(300);
-    return mockExecution as ExecutionResponse;
+    return (await mockJson("execution")) as ExecutionResponse;
   }
-  return request<ExecutionResponse>("/execution", { method: "POST", body: JSON.stringify(req) });
+  return apiFetch<ExecutionResponse>("/execution", { method: "POST", body: JSON.stringify(req) });
 }
 
 // ---------- outcomes ----------
 
 export async function getDemoCustomers(playId = "play_chips_ds07_v1"): Promise<DemoCustomer[]> {
   if (isMockMode()) {
+    await mockGate("/customers/demo");
     await delay(150);
-    return mockCustomersDemo as unknown as DemoCustomer[];
+    return (await mockJson("customers_demo")) as unknown as DemoCustomer[];
   }
-  return request<DemoCustomer[]>(`/customers/demo?play_id=${encodeURIComponent(playId)}`);
+  return apiFetch<DemoCustomer[]>(`/customers/demo?play_id=${encodeURIComponent(playId)}`);
 }
 
 export async function getOutcomes(): Promise<Outcome[]> {
   if (isMockMode()) {
+    await mockGate("/outcomes");
     await delay(150);
-    return mockOutcomes as unknown as Outcome[];
+    return (await mockJson("outcomes")) as unknown as Outcome[];
   }
-  return request<Outcome[]>("/outcomes");
+  return apiFetch<Outcome[]>("/outcomes");
 }
 
 // Built once with the tenant and served from the base data dir, so it is the same for every
 // visitor and "Reset demo data" does not change it.
 export async function getPriorUpdate(): Promise<PriorUpdate> {
   if (isMockMode()) {
+    await mockGate("/outcomes/prior-update");
     await delay(150);
-    return mockPriorUpdate as unknown as PriorUpdate;
+    return (await mockJson("prior_update")) as unknown as PriorUpdate;
   }
-  return request<PriorUpdate>("/outcomes/prior-update");
+  return apiFetch<PriorUpdate>("/outcomes/prior-update");
 }
 
 // Joins play_assignments to order_lines for every approved play and writes play_outcomes; the
@@ -368,8 +482,9 @@ export async function getPriorUpdate(): Promise<PriorUpdate> {
 // sandbox has an approved play with zero outcomes until Measure runs at least once.
 export async function postMeasure(): Promise<MeasureResponse> {
   if (isMockMode()) {
+    await mockGate("/measure");
     await delay(600);
-    const rows = mockOutcomes as unknown as Outcome[];
+    const rows = (await mockJson("outcomes")) as unknown as Outcome[];
     return {
       plays: rows.length,
       measured: rows.filter((r) => r.status === "measured").length,
@@ -377,24 +492,30 @@ export async function postMeasure(): Promise<MeasureResponse> {
       computed_at: new Date().toISOString(),
     };
   }
-  return request<MeasureResponse>("/measure", { method: "POST" });
+  return apiFetch<MeasureResponse>("/measure", { method: "POST" });
 }
 
 // ---------- reset ----------
 
 export async function resetDemoData(): Promise<ResetResponse> {
   if (isMockMode()) {
+    await mockGate("/reset");
     await delay(300);
+    try {
+      window.localStorage.removeItem(MOCK_APPROVED_KEY);
+    } catch {
+      // nothing stored
+    }
     return { ok: true, namespace: getVisitorId(), restored_from: "snapshot:mock" };
   }
-  return request<ResetResponse>("/reset", { method: "POST" });
+  return apiFetch<ResetResponse>("/reset", { method: "POST" });
 }
 
 // ---------- chat ----------
 
-function pickMockScenario(req: ChatRequest): ChatEnvelope[] {
+async function pickMockScenario(req: ChatRequest): Promise<ChatEnvelope[]> {
   const t = req.text.toLowerCase();
-  const chat = mockChat as unknown as Record<string, ChatEnvelope[]>;
+  const chat = (await mockJson("chat")) as unknown as Record<string, ChatEnvelope[]>;
   if (t.includes("stop")) return chat.stop;
   if (t.startsWith("add:") || t.startsWith("add ") || t.startsWith("order")) return chat.order;
   if (t.includes("cola") || t.includes("zero")) return chat.cola_zero;
@@ -406,31 +527,28 @@ function pickMockScenario(req: ChatRequest): ChatEnvelope[] {
 
 // Streams chat envelopes one at a time via a callback, mirroring the SSE
 // framing of the real endpoint (`data: <ChatEnvelope JSON>` per line).
+// A 503 {"error":"model_unavailable","retry_after_s":30} from the real endpoint (or the same
+// fault injected in mock mode, lib/mockFaults.ts) arrives as an ApiError of kind model_unavailable.
 export async function sendChat(
   req: ChatRequest,
   onEnvelope: (envelope: ChatEnvelope, latencyMs: number) => void,
+  opts?: RequestOptions,
 ): Promise<void> {
   if (isMockMode()) {
-    const envelopes = pickMockScenario(req);
+    await mockGate("/chat");
+    const envelopes = await pickMockScenario(req);
+    const extra = mockDelayMs("/chat", 0);
     for (const envelope of envelopes) {
       const latency = envelope.latency_ms ?? 900;
-      await delay(Math.min(latency, 1600));
+      await delay(Math.min(latency, 1600) + extra);
+      if (opts?.signal?.aborted) return;
       onEnvelope({ ...envelope, session_id: req.session_id, ts: new Date().toISOString() }, latency);
     }
     return;
   }
 
   const started = Date.now();
-  const res = await fetch(`${apiBase()}/chat`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Taal-Visitor": getVisitorId(),
-    },
-    body: JSON.stringify(req),
-  });
-  if (!res.ok) throw new Error(`/chat -> ${res.status}`);
+  const res = await apiFetchRaw("/chat", { method: "POST", body: JSON.stringify(req) }, opts);
 
   const contentType = res.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
@@ -484,7 +602,7 @@ export class FeedbackError extends Error {
 export async function getFeedbackForm(): Promise<FeedbackForm> {
   if (isMockMode()) {
     await delay(80);
-    return mockFeedbackForm as unknown as FeedbackForm;
+    return (await mockJson("feedback_form")) as unknown as FeedbackForm;
   }
   const res = await fetch(`${apiBase()}/feedback/form`);
   if (!res.ok) throw new FeedbackError("The form could not be loaded. Please refresh the page.", res.status);
@@ -526,7 +644,7 @@ export async function submitFeedback(body: FeedbackSubmission): Promise<Feedback
 export async function getFeedbackSummary(token: string): Promise<FeedbackSummary> {
   if (isMockMode()) {
     await delay(150);
-    return mockFeedbackSummary as unknown as FeedbackSummary;
+    return (await mockJson("feedback_summary")) as unknown as FeedbackSummary;
   }
   const res = await fetch(`${apiBase()}/feedback/summary`, { headers: { Authorization: `Bearer ${token}` } });
   if (res.status === 401) throw new FeedbackError("That token was not accepted.", 401);

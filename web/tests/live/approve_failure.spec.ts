@@ -3,7 +3,8 @@ import { asVisitor, collectConsoleErrors, expectNoConsoleErrors } from "./helper
 
 // ApprovePanel.tsx's failure note used to repeat "(live call failed)" twice in one sentence, and
 // lived inside the branch that only renders once `result` is set -- so a genuine POST /approve
-// failure (`result` never gets set) could never actually show it. lib/api.ts's approve() only
+// failure (`result` never gets set) could never actually show it. It is now an ErrorCard
+// ("Something went wrong" for a 500) with a Retry button. lib/api.ts's approve() only
 // reaches the network at all outside mock mode, so this can only be exercised against the real
 // stack (`make live-test`), never the e2e mock suite.
 //
@@ -41,16 +42,18 @@ test.describe("Approve: a failed live call surfaces its message exactly once", (
     await expect(error).toBeVisible({ timeout: 15_000 });
     expect(intercepted).toBeGreaterThan(0);
 
-    // Stated once: the bug this guards against repeated "live call failed" twice in one sentence.
+    // Stated once: the bug this guards against repeated the failure twice in one sentence.
     const text = await error.innerText();
-    expect(text.match(/live call failed/gi)?.length ?? 0).toBe(1);
+    expect(text.match(/something went wrong/gi)?.length ?? 0).toBe(1);
+    expect(text).not.toMatch(/live call failed/i);
     await expect(card.getByTestId("approve-error")).toHaveCount(1);
 
     // The call genuinely failed -- no result panel ever appeared alongside the failure note.
     await expect(card.getByTestId("approve-result")).toHaveCount(0);
 
-    // The button is still there: a judge can retry once the injected failure is gone.
+    // The button is still there, and the card offers Retry: a judge can retry once the injected failure is gone.
     await expect(card.getByRole("button", { name: "Approve" })).toBeVisible();
+    await expect(error.getByRole("button", { name: "Retry" })).toBeVisible();
 
     // Any console error other than our own injected 500 is still a real defect.
     await expectNoConsoleErrors(errors.filter((e) => !EXPECTED_INJECTED_500.test(e)));

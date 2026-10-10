@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getHealth } from "../lib/api";
-import { formatDateTime } from "../lib/format";
+import { count, dayMonth, formatDateTime, formatDuration } from "../lib/format";
 import type { HealthResponse } from "../lib/types";
 
 const CHECK_ORDER = ["bigquery", "firestore", "vertex", "sessions"];
@@ -63,12 +63,14 @@ export function TenantLine() {
   }, []);
   if (!health?.tenant) return null;
   const { skus, nodes, customers } = health.tenant;
-  const minutesAgo = health.last_sense_run_minutes;
-  const ranAt = health.last_sense_run_at ? formatDateTime(health.last_sense_run_at) : undefined;
+  const minutes = health.last_sense_run_minutes;
+  const rawAt = health.last_sense_run_at;
+  // A bare date ("2026-09-12") is shown as "12 Sep"; a full timestamp keeps its time.
+  const ranAt = rawAt ? (/^\d{4}-\d{2}-\d{2}$/.test(rawAt) ? dayMonth(rawAt) : formatDateTime(rawAt)) : undefined;
   return (
     <p className="tenant-line">
-      {skus} SKUs, {nodes} nodes, {customers.toLocaleString("en-IN")} customers
-      {minutesAgo !== undefined && ranAt ? ` — last Sense run as of ${ranAt} took ${minutesAgo} min` : null}
+      {skus} SKUs, {nodes} nodes, {count(customers)} customers
+      {minutes !== undefined && ranAt ? ` — last stock scan as of ${ranAt} took ${formatDuration(minutes * 60)}` : null}
     </p>
   );
 }

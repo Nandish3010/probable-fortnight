@@ -38,7 +38,8 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : {},
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    // Specs named *-phone.spec.ts are about the phone layout and run on the Pixel 7 project only.
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /-phone\.spec\.ts/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(phone|feedback)\.spec\.ts/ },
   ],
   webServer: {

@@ -1,0 +1,232 @@
+/* A phone frame holding the first real chat reply. 300 px wide on desktop, the card's width on a phone. */
+.frame {
+  width: 100%;
+  max-width: 300px;
+  min-width: 0;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: 28px;
+  background: var(--surface-alt);
+  box-shadow: var(--shadow-card);
+}
+
+.frame[data-motion="on"] {
+  animation: slideIn 350ms var(--ease) 600ms both;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .frame {
+    max-width: 100%;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.notch {
+  width: 56px;
+  height: 5px;
+  margin: 0 auto var(--space-3);
+  border-radius: 4px;
+  background: var(--border-strong);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: var(--fw-semibold);
+}
+
+/* Fixed minimum height: the loading, ready and failed states share one box, so the frame never
+   changes height when the reply lands. */
+.screen {
+  min-height: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bubble {
+  padding: var(--space-3);
+  border-radius: 16px 16px 16px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  min-width: 0;
+  animation: fade 200ms var(--ease) both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tag {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--state-fallback-bd);
+  background: var(--state-fallback-bg);
+  color: var(--state-fallback-fg);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.text {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.rule {
+  margin: var(--space-2) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.gloss {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.toggle {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.caption {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  color: var(--text-muted);
+}
+
+.waiting {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  color: var(--text-muted);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: 16px 16px 16px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.skeleton span {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--surface-alt);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton span:nth-child(2) {
+  width: 85%;
+}
+
+.skeleton span:nth-child(3) {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.failed {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+.retry {
+  align-self: flex-start;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton span {
+    animation: none;
+  }
+}

@@ -75,7 +75,7 @@ export default function FeedbackResultsPage() {
   }
 
   return (
-    <main className="page feedback results">
+    <main id="main-content" tabIndex={-1} className="page feedback results">
       <h1>Practitioner feedback: results</h1>
       {!summary ? (
         <form onSubmit={load} className="card">

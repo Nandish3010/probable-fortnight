@@ -1,0 +1,127 @@
+.wrap {
+  width: 100%;
+  max-width: 100%;
+  margin-block: var(--space-3);
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.chart {
+  display: block;
+  max-width: none;
+}
+
+.window {
+  fill: color-mix(in srgb, var(--accent) 10%, transparent);
+  stroke: color-mix(in srgb, var(--accent) 30%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.line {
+  fill: none;
+}
+
+.baseline {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+
+.play {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.lift {
+  fill: color-mix(in srgb, var(--accent) 16%, transparent);
+  stroke: none;
+}
+
+/* 12 px at rendered size: the SVG is drawn 1:1 with CSS pixels. */
+.label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  fill: var(--text-muted);
+}
+
+.labelPlay {
+  fill: var(--accent-strong);
+  font-weight: 600;
+}
+
+.labelBase {
+  fill: var(--text-muted);
+  font-weight: 600;
+}
+
+.leader {
+  stroke: var(--accent-strong);
+  stroke-width: 1;
+}
+
+.leaderDot {
+  fill: var(--accent-strong);
+}
+
+/* The Approve sequence. Delays are measured from when the chart mounts, 600 ms after the response
+   (design_spec.md 6.2 has the line at 500 and the lift at 900 after the response; the body mounts at 600 here, so 100 and 500 ms after mount keep their spacing). */
+.animate .baselineIn {
+  animation: fade 200ms var(--ease) both;
+}
+
+.animate .playIn {
+  stroke-dasharray: 1;
+  animation: draw 700ms var(--ease) 100ms both;
+}
+
+.animate .liftIn {
+  animation: fade 400ms var(--ease) 500ms both;
+}
+
+.animate .labelIn {
+  animation: fade 400ms var(--ease) 500ms both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate .baselineIn,
+  .animate .playIn,
+  .animate .liftIn,
+  .animate .labelIn {
+    animation: none;
+  }
+
+  .animate .playIn {
+    stroke-dasharray: none;
+  }
+}

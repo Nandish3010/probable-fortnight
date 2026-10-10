@@ -19,7 +19,7 @@ test.describe("Priya: phone view", () => {
     // (eval/evaluation.md, "Regenerated the three demo pallet fixtures"): the third row read as
     // the real, valid SKU SKU-BANANA-CHIPS-200G rather than the originally intended -100G, and
     // no row needs a confirmation question before confirming.
-    await expect(table.getByText("SKU-BANANA-CHIPS-200G")).toBeVisible();
+    await expect(table.locator(".sku-name", { hasText: "Banana Chips 200G" })).toBeVisible(); // SKU-BANANA-CHIPS-200G, named; the id is inside the row's disclosure
     await shot(page, "priya-02-intake");
     const confirmed = page.waitForResponse((r) => r.url().endsWith("/capture/confirm"));
     await page.getByRole("button", { name: "Confirm rows" }).click();
@@ -31,8 +31,8 @@ test.describe("Priya: phone view", () => {
     expect(body.batches.every((b: { source: string; online_sellby_date: string; expiry_date: string }) => b.source === "photo" && b.online_sellby_date <= b.expiry_date)).toBeTruthy();
     const gaps = await (await page.request.get(`${API}/gaps?node_id=DS-07&limit=500`, { headers: visitorHeaders("live-priya") })).json();
     expect(gaps.some((g: { gap_id: string }) => g.gap_id === "gap_chips_ds07")).toBeTruthy();
-    await expect(page.getByText("₹9,200")).toBeVisible();
-    await expect(page.getByText(/6 days/)).toBeVisible();
+    await expect(page.getByTestId("why-now")).toContainText("₹9,200");
+    await expect(page.locator(".gap-card__stats .stat__value").nth(2)).toHaveText("6d"); // the demo tenant's clock is pinned
     await shot(page, "priya-03-gap-card");
 
     await page.getByRole("button", { name: "Approve" }).click();

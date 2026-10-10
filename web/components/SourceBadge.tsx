@@ -36,6 +36,6 @@ export function SourceBadge({
     case "live_gemini":
       return <Badge kind="live-gemini" detail={detail} title={title} />;
     default:
-      return <Badge kind="replay" detail={detail} title={title ?? "Unknown provenance"} />;
+      return <Badge kind="replay" detail={detail} title={title} />;
   }
 }

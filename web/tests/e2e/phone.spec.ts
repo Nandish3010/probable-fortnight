@@ -13,15 +13,18 @@ test.describe("phone view", () => {
 
     const table = page.getByTestId("intake-table");
     await expect(table).toBeVisible();
-    await expect(table.getByText("SKU-MASALA-CHIPS-200G")).toBeVisible();
-    await expect(table.getByText("SKU-SALTED-CHIPS-200G")).toBeVisible();
-    await expect(table.getByText("SKU-BANANA-CHIPS-200G")).toBeVisible();
+    // product names, not sku ids; the id of each row is inside its "id" disclosure
+    await expect(table.getByText("Masala Chips 200G", { exact: true })).toBeVisible();
+    await expect(table.getByText("Salted Chips 200G", { exact: true })).toBeVisible();
+    await expect(table.getByText("Banana Chips 200G", { exact: true })).toBeVisible();
+    await table.locator("tbody tr").first().locator("summary").click();
+    await expect(table.locator("tbody tr").first()).toContainText("SKU-MASALA-CHIPS-200G");
 
     // This real, live-Gemini-verified pallet photo reads with high confidence on every row, so
     // there is no confirmation question to answer before confirming.
     await page.getByRole("button", { name: "Confirm rows" }).click();
 
-    await expect(page.getByText("₹9,200")).toBeVisible();
+    await expect(page.getByTestId("why-now")).toContainText("₹9,200");
 
     await page.getByRole("button", { name: "Approve" }).click();
 
@@ -35,8 +38,8 @@ test.describe("phone view", () => {
     await page.getByRole("button", { name: "Pallet 6" }).click();
 
     const table = page.getByTestId("intake-table");
-    await expect(table.getByText("SKU-WHEAT-ATTA-1KG")).toBeVisible();
-    await expect(table.getByText("SKU-POHA-500G")).toBeVisible();
+    await expect(table.getByText("Wheat Atta 1KG", { exact: true })).toBeVisible();
+    await expect(table.getByText("Poha 500G", { exact: true })).toBeVisible();
     // the atta row clears the 70% threshold; the poha row (date 65%) does not and is asked about
     await expect(table.getByText(/date 65%/)).toBeVisible();
     await expect(table.locator(".confirm-row")).toHaveCount(1);
@@ -48,5 +51,18 @@ test.describe("phone view", () => {
     await expect(confirm).toBeEnabled();
     await confirm.click();
     await expect(page.getByText(/Wrote \d+ batch/)).toBeVisible();
+
+    // Neither pallet SKU raised a gap, so the card below is the node's biggest open gap. Say so.
+    await expect(page.getByTestId("gap-fallback-note")).toHaveText(
+      "None of the photographed items raised a gap. Showing the node's biggest open gap instead.",
+    );
+  });
+
+  test("when a photographed SKU did raise the gap, there is no fallback note", async ({ page }) => {
+    await page.goto("/phone");
+    await page.getByRole("button", { name: "Pallet 1" }).click();
+    await page.getByRole("button", { name: "Confirm rows" }).click();
+    await expect(page.getByTestId("why-now")).toContainText("₹9,200");
+    await expect(page.getByTestId("gap-fallback-note")).toHaveCount(0);
   });
 });

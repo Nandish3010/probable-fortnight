@@ -102,7 +102,7 @@ test.describe("customer picker: differentiation", () => {
 
     // switch to the holdout customer: a fresh conversation, no offer, ever
     await select.selectOption({ label: await select.locator("option", { hasText: "holdout" }).textContent() as string });
-    await expect(log.getByText("Send a message to start.")).toBeVisible();
+    await expect(log.getByText('No messages yet. Try "Any offers today?"')).toBeVisible();
     await say(page, "Any offers today?");
     await expect(log.locator(".chat-msg--agent").first()).toBeVisible({ timeout: 15_000 });
     await expect(log.getByText(/58\.5/)).toHaveCount(0);

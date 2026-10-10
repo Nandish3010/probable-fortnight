@@ -1,0 +1,138 @@
+.steps {
+  margin-top: var(--space-3);
+  min-width: 0;
+}
+
+/* The list folds to nothing (grid row 1fr to 0fr) as the summary line takes over. */
+.fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 240ms var(--ease), opacity 240ms var(--ease);
+}
+
+.foldInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.folded {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  min-width: 0;
+}
+
+.mark {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.markDone {
+  background: var(--state-pass-bg);
+  border: 1px solid var(--state-pass-bd);
+  color: var(--state-pass-fg);
+  animation: tick 160ms var(--ease) both;
+}
+
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A static 12 px dot that pulses: "this is in progress", not a progress bar. */
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+.label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.state {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.timer {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  color: var(--state-pass-fg);
+  font-weight: var(--fw-medium);
+  animation: fade 240ms var(--ease) both;
+}
+
+.summary svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

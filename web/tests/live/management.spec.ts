@@ -8,7 +8,7 @@ test.describe("Management: outcomes", () => {
     await asVisitor(page, vid);
     await page.goto("/outcomes");
     await expect(page.getByRole("heading", { name: "Outcomes" })).toBeVisible();
-    await expect(page.getByText(/No plays measured yet/)).toBeVisible();
+    await expect(page.getByTestId("outcome-summary")).toContainText("Nothing is measured in your session yet. Approve a play, then Run Measure.");
     // Built once with the tenant: present before this visitor measures anything, and unchanged after.
     const priorLine = page.locator(".prior-update").getByText(/Estimator prior: Beta\(1,19\) → Beta\(17,319\) · SYNTHETIC orders/);
     await expect(priorLine).toBeVisible();
@@ -24,9 +24,10 @@ test.describe("Management: outcomes", () => {
     // until a visitor clicks it.
     await page.getByRole("button", { name: "Run Measure" }).click();
     await expect(page.getByText(/measured, .* unmeasured/)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("SKU-MASALA-CHIPS-200G").first()).toBeVisible();
+    await expect(page.getByText("Masala Chips 200G").first()).toBeVisible();
     await expect(page.getByText("SYNTHETIC").first()).toBeVisible();
-    await expect(page.getByText(/Looker \(n\/a\)/).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Looker/ })).toHaveCount(0);
+    await expect(page.getByTestId("outcome-summary")).toContainText("Response-rate difference");
     await expect(priorLine).toBeVisible();
     const outs = await (await page.request.get(`${API}/outcomes`, { headers: h })).json();
     const chips = outs.find((o: { play_id: string }) => o.play_id === "play_chips_ds07_v1");

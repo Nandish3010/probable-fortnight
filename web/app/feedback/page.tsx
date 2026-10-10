@@ -139,7 +139,7 @@ export default function FeedbackPage() {
 
   if (done && form) {
     return (
-      <main className="page feedback">
+      <main id="main-content" tabIndex={-1} className="page feedback">
         <div className="card feedback__thanks">
           <h1 ref={thanksRef} tabIndex={-1}>
             {form.thank_you}
@@ -153,7 +153,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main className="page feedback">
+    <main id="main-content" tabIndex={-1} className="page feedback">
       <h1>{form?.title ?? "Practitioner feedback"}</h1>
       {params.mode === "interview" ? (
         <p className="feedback__banner">Interview mode: a team member is filling this in during a call.</p>

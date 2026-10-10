@@ -119,6 +119,10 @@ export interface Counterfactuals {
   do_nothing_inr: number;
   blanket_markdown_inr: number;
   blanket_markdown_pct: number;
+  /** Optional (API change in the economics branch; absent in older payloads and mocks): the play's
+   * signed net against writing the lot off (margin minus the lot still written off, counting a
+   * transfer's avoided waste once). lib/impact.ts uses it when present and derives it otherwise. */
+  play_net_inr?: number;
 }
 
 export interface Holdout {
@@ -324,6 +328,8 @@ export interface HealthResponse {
   /** The server's own clock (ISO datetime; pinned to TAAL_NOW for the demo tenant). Use this,
    * never the browser's local clock, for any day-countdown math against seeded deadline dates. */
   server_now?: string;
+  /** Optional: the model id that serves when the primary is unavailable (e.g. "gemini-3.5-flash-lite"). */
+  model_fallback?: string;
 }
 
 export interface ForecastPoint {
@@ -355,10 +361,21 @@ export interface ApproveRequest {
 export interface ApproveResponse {
   play_id: string;
   status: PlayStatus;
-  assignment: { treated_n: number; holdout_n: number; seed: string };
+  assignment: {
+    treated_n: number;
+    holdout_n: number;
+    seed: string;
+    fraction?: number;
+    /** Optional: customers who were consented and not excluded, i.e. treated_n + holdout_n. */
+    eligible_n?: number;
+    /** Optional: active subscribers left out of a discount mechanic's audience. */
+    excluded_subscribers?: number;
+  };
   forecast: Forecast;
   source: Source;
   note?: string;
+  /** When the play was approved (ISO), if the API says. Read-only: the UI never sends it. */
+  approved_at?: string;
 }
 
 export interface RerunRequest {
@@ -501,6 +518,14 @@ export interface Outcome {
   lift?: number | null;
   ci_low?: number | null;
   ci_high?: number | null;
+  /** Optional percentage-point views of lift / ci_low / ci_high (API change in the economics
+   * branch). `lift` itself is a difference of response rates as a fraction (0.023 = 2.3 points). */
+  lift_unit?: "percentage_points";
+  lift_pp?: number | null;
+  ci_low_pp?: number | null;
+  ci_high_pp?: number | null;
+  /** Optional: true when the interval crosses zero or too few treated customers responded. */
+  inconclusive?: boolean;
   waste_avoided_inr?: number | null;
   margin_per_discount_rupee?: number | null; // the CEO number; null when no discount was given
   waste_kg_est?: number | null;

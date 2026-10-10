@@ -25,23 +25,26 @@ test.describe("live regions: Desk approve result", () => {
     await card.getByRole("button", { name: "Approve" }).click();
     const result = page.getByTestId("approve-result");
     await expect(result).toBeVisible({ timeout: 15_000 });
-    await expect(result).toHaveAttribute("role", "status");
+    // The result block is not itself a live region any more: the panel's one persistent region
+    // (#approve-live) announces the outcome, so the same words are not read twice.
+    await expect(result).not.toHaveAttribute("role", "status");
+    await expect(page.locator("#approve-live")).toHaveAttribute("role", "status");
+    await expect(page.locator("#approve-live")).toContainText("Approved. Recovered versus doing nothing", { timeout: 15_000 });
 
     // Focus lands on the result heading, not just "somewhere" -- the concrete a11y contract.
     const heading = result.getByRole("heading", { name: /Approved/ });
     await expect(heading).toBeFocused();
 
     const snapshot = await result.ariaSnapshot();
-    expect(snapshot.trim().startsWith("- status")).toBe(true);
+    expect(snapshot).not.toContain("- status");
     expect(snapshot).toContain("heading");
 
-    // The forecast chart is a labelled image (role=img + aria-label, ForecastChart.tsx), so the
-    // status region's announcement carries its one-line label, never the SVG's raw <text> axis
-    // labels or dates -- those are presentational children of an img and do not get their own
-    // accessibility-tree nodes.
+    // The forecast chart is a labelled image (role=img + aria-label, ForecastChart.tsx) with a text
+    // summary, never the SVG's raw <text> labels or dates -- those are presentational children of an
+    // img and do not get their own accessibility-tree nodes.
     expect(snapshot).toContain("Forecast chart");
-    expect(snapshot).not.toContain("baseline p50");
-    expect(snapshot).not.toContain("with play (units/day)");
+    expect(snapshot).not.toContain("Without the play");
+    expect(snapshot).not.toContain("Units per day");
   });
 });
 

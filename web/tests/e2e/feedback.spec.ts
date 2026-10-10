@@ -81,7 +81,7 @@ test("missing required answers are announced and linked", async ({ page }) => {
 test("landing footer links to the form; the top navigation does not", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("footer").getByRole("link", { name: "Practitioner feedback" })).toHaveAttribute("href", "/feedback");
-  await expect(page.locator("nav.top-nav").getByRole("link", { name: /feedback/i })).toHaveCount(0);
+  await expect(page.locator(".top-nav").getByRole("link", { name: /feedback/i })).toHaveCount(0);
 });
 
 test("results page in mock mode shows no simulated numbers", async ({ page }) => {
