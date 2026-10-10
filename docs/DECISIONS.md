@@ -32,6 +32,17 @@ wins.
   seeded by `harness/seed_plays.py`), badged `Recorded from Gemini · <date>` -- not the replayed
   nightly plan. Every other demo gap's plan and trace is still the replayed nightly plan (scripted
   planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
+- **10 Oct 2026 update:** the `cite_or_drop` number tokenizer (`agents/gate/guardrails.py`) now
+  extracts whole figures: signed (`-161.52`), Western and Indian grouping (`1,795,464`,
+  `17,95,464`), ranges (`20-30` is two figures), with ISO and "18 Sept 2026" dates and identifiers
+  (`DS-07`, `v1`) never counted. The old pattern refused any number preceded by `-` and then
+  reported the fraction `52` of `-161.52`; and the rule did not scan `alternatives`, where that
+  figure (the rejected transfer's expected margin) lives. The three `cite_or_drop` rejections in the
+  28 Sep flagship recording (`eval/raw/planner_real_traces_2026-09-28/run_04`) were this false
+  positive: no 52 appears in those rationales, and under the fixed rule all three pass. The
+  recorded traces are unchanged; the re-record happens in a later step. The same defect hit
+  `run_02` and `run_03` and the 24 Sep prompt-v6 round. A figure present nowhere in the play
+  (the 24 Sep `9.744%`) is still rejected.
 - Claims that no forecasting tool or competitor sees the online sell-by date read as: "Forecasting
   tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap
   type."

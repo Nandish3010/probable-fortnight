@@ -586,7 +586,7 @@ data the judge simply hadn't been shown**, not a Planner fabrication:
    does not walk `alternatives` either -- it only passed on the `bf8c6eb467` play by coincidence,
    because its 0.5%-relative-tolerance number matching let 446.15 slip through as "close enough"
    to an unrelated cited value (448). Flagged here for whoever owns `guardrails.py` next; fixing
-   the deterministic guardrail was judged out of scope for a rationale-quality measurement task.
+   the deterministic guardrail was judged out of scope for a rationale-quality measurement task. (Update 10 Oct 2026: `cited_numbers` now walks `alternatives`; see docs/DECISIONS.md.)
 3. Audience segment human names ("Household essentials buyers" for `seg_5`) are real, from
    `segments.jsonl`, and are part of the Planner's own `get_candidate_audiences` tool context --
    but the play object only carries `segment_ids`, so the judge (seeing only ids) flagged every
