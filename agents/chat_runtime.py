@@ -37,6 +37,7 @@ _VALIDATOR = jsonschema.Draft202012Validator(ENVELOPE_SCHEMA, format_checker=jso
 KANNADA_RE = re.compile(r"[ಀ-೿]")
 
 
+KN_ENGLISH_NOTICE = "ಕ್ಷಮಿಸಿ, ಕನ್ನಡದಲ್ಲಿ ಉತ್ತರಿಸಲು ಆಗಲಿಲ್ಲ."  # "Sorry, I could not reply in Kannada."
 GLOSS_PREFIX = "English: "
 GLOSS_MAX = 280
 _KN_DIGITS = str.maketrans("೦೧೨೩೪೫೬೭೮೯", "0123456789")
@@ -74,11 +75,23 @@ def as_of_for(store: LocalStore) -> date:
     return date.fromisoformat(json.loads(mp.read_text(encoding="utf-8"))["as_of"]) if mp.exists() else date.today()
 
 
+# A quick-reply or list-row click posts its action id as the message text ("add:SKU-...",
+# "cat:snacks", "no", "stop"). It is ASCII but it is not something the customer typed, so it carries
+# no language of its own: the reply follows the stored preference, like STOP or an empty message.
+ACTION_ID_RE = re.compile(r"^\s*(?:(?:add|cat):\S+|no|stop|unsubscribe)\s*[.!]?\s*$", re.I)
+
+
+def is_action_id(text: str) -> bool:
+    return bool(ACTION_ID_RE.match(text))
+
+
 def detect_lang(text: str, fallback: str) -> str:
     """Reply in the script the customer just typed in; fall back to their stored preference only
     when the message carries no script of its own (STOP, a button id, empty)."""
     if KANNADA_RE.search(text):
         return "kn"
+    if is_action_id(text):
+        return fallback
     if re.search(r"[A-Za-z]{2,}", text):
         return "en"
     return fallback
@@ -114,11 +127,69 @@ def parse_envelope(text: str) -> dict[str, Any]:
 # eval/evaluation.md). A model can still occasionally quote a parenthetical context note despite
 # being told not to, so strip anything shaped like one before it ever reaches a customer, rather
 # than trusting the prompt alone a second time.
-_INTERNAL_LEAK_RE = re.compile(r"\(known:.*?\)|\[internal[^\]]*\]", re.I | re.S)
+_INTERNAL_LEAK_RE = re.compile(r"\[internal[^\]]*\]", re.I)
+_KNOWN_NOTE_RE = re.compile(r"\(known:", re.I)
+
+
+def _strip_known_note(text: str) -> str:
+    """Remove each "(known: ...)" note through its MATCHING close paren (the note can hold a
+    parenthetical of its own), or to the end of the text when it never closes. A non-greedy
+    regex stopped at the first ")" and left the note's last ")" at the end of the reply."""
+    while (m := _KNOWN_NOTE_RE.search(text)):
+        depth, end = 0, len(text)
+        for i in range(m.start(), len(text)):
+            depth += (text[i] == "(") - (text[i] == ")")
+            if depth == 0:
+                end = i + 1
+                break
+        text = text[: m.start()] + text[end:]
+    return text
+
+
+def drop_dangling_close(text: str) -> str:
+    """No reply ends with a ")" that closes nothing: drop trailing unmatched ")" (and the space before it)."""
+    text = text.rstrip()
+    while text.endswith(")") and text.count(")") > text.count("("):
+        text = text[:-1].rstrip()
+    return text
 
 
 def _strip_internal_leak(text: str) -> str:
-    return _INTERNAL_LEAK_RE.sub("", text).strip()
+    return drop_dangling_close(_INTERNAL_LEAK_RE.sub("", _strip_known_note(text)).strip())
+
+
+# Quick-reply labels the prompt fixes by action id, in each reply language. Composed here so a
+# button always has a human label that differs from its siblings, whatever the model wrote.
+BUTTON_LABELS = {
+    "en": {"add": "Add to cart", "no": "Not now", "stop": "STOP"},
+    "kn": {"add": "ಕಾರ್ಟ್\u200cಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP"},
+}
+
+
+def _button_key(button_id: str) -> str | None:
+    bid = button_id.strip().lower()
+    return "add" if bid.startswith("add:") else (bid if bid in ("no", "stop") else None)
+
+
+def _row_title(r: dict[str, Any]) -> str:
+    tail = str(r["id"]).split(":", 1)[-1]
+    return str(r.get("title") or r.get("desc") or tail.replace("_", " ").replace("-", " ").title())
+
+
+def _clamp_buttons(buttons: list[Any], lang: str) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for b in buttons:
+        if not isinstance(b, dict) or not b.get("id"):
+            continue
+        bid = str(b["id"])[:64]
+        key = _button_key(bid)
+        label = BUTTON_LABELS[lang][key] if key else str(b.get("label") or "").strip()
+        if not label or (not key and label.lower() == bid.lower()) or label.lower() in seen:
+            continue
+        seen.add(label.lower())
+        out.append({"id": bid, "label": label[:20]})
+    return out[:3]
 
 
 def clamp(env: dict[str, Any]) -> dict[str, Any]:
@@ -127,13 +198,15 @@ def clamp(env: dict[str, Any]) -> dict[str, Any]:
     # (docs/schemas/chat_envelope.schema.json), so a literal null passes this function unchanged
     # and then fails _VALIDATOR.validate() uncaught -- the documented live-chat 500. Pop the key
     # outright for any falsy value (None, [], {}) instead of leaving it in the envelope.
-    if env.get("buttons"):
-        env["buttons"] = [{"id": str(b["id"])[:64], "label": str(b["label"])[:20]} for b in env["buttons"][:3]]
+    lang = "kn" if is_non_english(str(env.get("text", ""))) else "en"
+    buttons = _clamp_buttons(env["buttons"], lang) if isinstance(env.get("buttons"), list) else []
+    if buttons:
+        env["buttons"] = buttons
     else:
         env.pop("buttons", None)
     if env.get("list"):
-        rows = env["list"].get("rows") or []
-        env["list"] = {"title": str(env["list"].get("title", ""))[:60], "rows": [{"id": str(r["id"])[:64], "title": str(r["title"])[:24], **({"desc": str(r["desc"])[:72]} if r.get("desc") else {})} for r in rows[:10]]}
+        rows = [r for r in (env["list"].get("rows") or []) if isinstance(r, dict) and r.get("id")]
+        env["list"] = {"title": str(env["list"].get("title", ""))[:60], "rows": [{"id": str(r["id"])[:64], "title": _row_title(r)[:24], **({"desc": str(r["desc"])[:72]} if r.get("desc") else {})} for r in rows[:10]]}
     else:
         env.pop("list", None)
     if env.get("citations"):
@@ -219,7 +292,8 @@ async def forget_persisted_sessions(store: LocalStore, visitor_id: str, app_name
 class ChatRuntime:
     """Runner cache, session bookkeeping and the turn loop for one specialist app."""
 
-    def __init__(self, app_name: str, agent_name: str, build_agent: Callable[[LocalStore, str | None], LlmAgent], gloss_fallback: Callable[[LocalStore, str, dict[str, Any]], str | None] | None = None):
+    def __init__(self, app_name: str, agent_name: str, build_agent: Callable[[LocalStore, str | None], LlmAgent], gloss_fallback: Callable[[LocalStore, str, dict[str, Any]], str | None] | None = None, kn_fallback: Callable[[LocalStore, str, dict[str, Any]], str | None] | None = None):
+        self._kn_fallback = kn_fallback
         self.app_name = app_name
         self._gloss_fallback = gloss_fallback
         self.agent_name = agent_name
@@ -258,16 +332,16 @@ class ChatRuntime:
         for key in [k for k in self._runners if k.startswith(prefix)]:
             del self._runners[key]
 
-    async def run_turn(self, store: LocalStore, session_id: str, text: str, customer_id: str, backend: str | None, now: str, tenant: TenantConfig, channel: str, language: str, extra_tool_calls: list[dict[str, Any]] | None = None, visitor_id: str | None = None) -> dict[str, Any]:
+    async def run_turn(self, store: LocalStore, session_id: str, text: str, customer_id: str, backend: str | None, now: str, tenant: TenantConfig, channel: str, language: str, extra_tool_calls: list[dict[str, Any]] | None = None, visitor_id: str | None = None, reply_lang: str | None = None) -> dict[str, Any]:
         t0 = time.perf_counter()
         session_io: list[float] = []
         io_token = SESSION_IO_MS.set(session_io)
         try:
-            return await self._run_turn(store, session_id, text, customer_id, backend, now, tenant, channel, language, extra_tool_calls, visitor_id, t0, session_io)
+            return await self._run_turn(store, session_id, text, customer_id, backend, now, tenant, channel, language, extra_tool_calls, visitor_id, t0, session_io, reply_lang)
         finally:
             SESSION_IO_MS.reset(io_token)
 
-    async def _run_turn(self, store: LocalStore, session_id: str, text: str, customer_id: str, backend: str | None, now: str, tenant: TenantConfig, channel: str, language: str, extra_tool_calls: list[dict[str, Any]] | None, visitor_id: str | None, t0: float, session_io: list[float]) -> dict[str, Any]:
+    async def _run_turn(self, store: LocalStore, session_id: str, text: str, customer_id: str, backend: str | None, now: str, tenant: TenantConfig, channel: str, language: str, extra_tool_calls: list[dict[str, Any]] | None, visitor_id: str | None, t0: float, session_io: list[float], reply_lang: str | None = None) -> dict[str, Any]:
         runner = self.runner(store, backend)
         adk_user_id, adk_session_id = adk_ids(visitor_id or visitor_for(store), customer_id, session_id)
         async with self._locks.setdefault(f"{store.root}|{adk_session_id}", asyncio.Lock()):
@@ -302,6 +376,15 @@ class ChatRuntime:
         if reply:
             # A tool-composed receipt or refusal (place_order, apply_offer) replaces whatever the model wrote: amounts and refusals come from code.
             env["text"] = reply
+        if reply_lang == "kn" and not reply and not is_non_english(env["text"]):
+            # The turn's language is Kannada but the model answered in English: the reply language
+            # is decided by code. Swap in the Kannada rendering of the structured fields when there
+            # is one, else say so in Kannada; the English the model wrote becomes the gloss.
+            english = env["text"]
+            kn = self._kn_fallback(store, customer_id, env) if self._kn_fallback else None
+            env["text"] = kn or f"{KN_ENGLISH_NOTICE} {english}"[:4096]
+            env["english_gloss"] = english
+            env.pop("buttons", None) if not kn else None
         fallback = (lambda e: self._gloss_fallback(store, customer_id, e)) if self._gloss_fallback else None
         resolve_gloss(env, reply_en, fallback)
         envelope = {"session_id": session_id, "message_id": f"{session_id}-{int(time.time() * 1000)}", "role": "agent", "language": language, **env, "tool_calls": [{"name": t["name"], **({"args": t["args"]} if "args" in t else {}), **({"result_ref": t["result_ref"]} if "result_ref" in t else {})} for t in tool_calls][:20], "latency_ms": latency_ms, "ts": now}

@@ -14,7 +14,7 @@ from typing import Any
 from google.adk.models import BaseLlm, LlmRequest, LlmResponse
 from google.genai import types
 
-from agents.chat_runtime import detect_lang
+from agents.chat_runtime import BUTTON_LABELS, detect_lang
 
 STRINGS = {
     "en": {
@@ -50,7 +50,10 @@ STRINGS = {
         "back_in_stock": "ಹಿಂದೆ ಕೇಳಿದಾಗ {name} ಇರಲಿಲ್ಲ. ಈಗ ಸ್ಟಾಕ್‌ನಲ್ಲಿ ಲಭ್ಯ! ಸೇರಿಸಲೇ?",
     },
 }
-LABELS = {"en": {"add": "Add to cart", "no": "Not now", "stop": "STOP", "subs": "In stock at your store", "cats": "Categories"}, "kn": {"add": "ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ", "no": "ಈಗ ಬೇಡ", "stop": "STOP", "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"}}
+LABELS = {
+    "en": {**BUTTON_LABELS["en"], "subs": "In stock at your store", "cats": "Categories"},
+    "kn": {**BUTTON_LABELS["kn"], "subs": "ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಲಭ್ಯ", "cats": "ವಿಭಾಗಗಳು"},
+}
 GREETING_RE = re.compile(r"^\W*(hi|hello|hey|namaskara|namaste|good (morning|evening)|any (offers?|deals?|discounts?)( today)?\??|offers?|deals?|discounts?)\W*$|\b(offers?|deals?|discounts?)\b")
 BROWSE_RE = re.compile(r"\b(what (all )?(do|can) (you|i)|what all|menu|catalog(ue)?|categories|everything|browse)\b")
 SIZE_RE = re.compile(r"^\d+(g|kg|ml|l)$")

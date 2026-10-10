@@ -154,7 +154,7 @@ def context_summary(context: dict, turn_language: str | None = None) -> str:
         m = memory[0]
         what = m.get("name") or m.get("query_text") or "something"
         status = "back in stock now" if m.get("now_in_stock") else "still not in stock"
-        bits.append(f"previously asked about {what} ({status})")
+        bits.append(f"previously asked about {what}, {status}")
     return "; ".join(bits)
 
 
@@ -175,6 +175,24 @@ def offer_summary_en(offer: dict[str, Any], names: dict[str, str]) -> str:
     bb = offer.get("best_before_date")
     when = f" Best before {date.fromisoformat(bb).strftime('%d %b %Y')}." if bb else ""
     return f"Offer: {what}.{when}"
+
+
+def offer_summary_kn(offer: dict[str, Any], names: dict[str, str]) -> str | None:
+    """The offer in Kannada from its structured fields (product names stay as catalogued), or None
+    for a mechanic with no Kannada wording."""
+    params = offer.get("mechanic_params") or {}
+    name = names.get(offer.get("sku") or "", offer.get("sku") or "")
+    mechanic = offer.get("mechanic")
+    if mechanic == "bundle":
+        what = f"{name} ಜೊತೆ {names.get(params.get('bundle_sku') or '', '')} ₹{float(params.get('bundle_price') or 0):g}ಕ್ಕೆ."
+    elif mechanic == "coupon":
+        what = f"{name} ಮೇಲೆ {float(params.get('discount_pct') or 0):g}% ರಿಯಾಯಿತಿ."
+    elif mechanic == "outlet_markdown":
+        what = f"{name} ಮೇಲೆ ಸ್ಟೋರ್\u200cನಲ್ಲಿ {float(params.get('markdown_pct') or 0):g}% ರಿಯಾಯಿತಿ."
+    else:
+        return None
+    bb = offer.get("best_before_date")
+    return what + (f" ಬಳಕೆಗೆ ಉತ್ತಮ {date.fromisoformat(bb).strftime('%d %b %Y')}ರವರೆಗೆ." if bb else "")
 
 
 def _stock_info(ctx, sku: str, node_id: str) -> dict:
