@@ -5,7 +5,10 @@ import { getEvents } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { recordedEvents } from "../lib/recorded";
 import { Badge } from "./Badge";
+import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
+import { traceDurationMs } from "../lib/health";
+import { ModelChip } from "./ModelChip";
 import { SourceBadge } from "./SourceBadge";
 import { TraceView } from "./traceRows";
 import type { EventsResponse, TraceEvent } from "../lib/types";
@@ -96,12 +99,17 @@ export function TracePanel({ runId }: { runId: string }) {
       <div className="trace-panel__header">
         <SourceBadge source={response.source} recordedAt={runSummary?.recorded_at ?? response.recorded_at} fallbackReason={runSummary?.fallback_reason} />
         {fromRecorded ? <Badge kind="replay" detail="recorded copy, live service not answering" /> : null}
-        <span className="trace-panel__run-id muted">run {runId}</span>
+        <ModelChip latencyMs={traceDurationMs(events)} />
         <button type="button" onClick={replay} disabled={replaying}>
           {replaying ? "Replaying (4x)…" : "Replay at 4x"}
         </button>
       </div>
       <TraceView events={events.slice(0, visibleCount)} label={`Agent trace for run ${runId}`} tabIndex={0} />
+      <Details summary="Show technical details" testId="trace-technical-details">
+        <p className="trace-panel__run-id muted" data-testid="trace-run-id">
+          Run {runId}
+        </p>
+      </Details>
     </div>
   );
 }

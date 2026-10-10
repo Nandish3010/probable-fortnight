@@ -245,8 +245,9 @@ test.describe("already approved", () => {
 
 test.describe("Meena preview", () => {
   // mocks/chat.json: the recorded chips play was written in English only (language_set ["en"]), so
-  // Meena's first reply in mock mode is an English offer, labelled as the fallback for a Kannada
-  // customer. The Kannada-with-gloss rendering is covered next, from the fixture's Kannada order reply.
+  // The preview asks the customer who is in the approved play's audience (Ravi for the Tea beat, lib/treatedPersona.ts).
+  // The first reply in mock mode is an English offer (mock chat answers every customer alike). The
+  // English-fallback label for a Kannada customer and the Kannada-with-gloss rendering are covered next.
   test("shows the real first reply: the offer text with lang=en and the English fallback label, slid in, never blocking the result", async ({ page }) => {
     await setMockDelay(page, { "/chat": 1800 });
     await openBeat(page);
@@ -255,16 +256,17 @@ test.describe("Meena preview", () => {
     await expect(page.getByTestId("approve-result")).toBeVisible({ timeout: 8000 });
     const preview = page.getByTestId("meena-preview");
     await expect(preview).toHaveAttribute("data-status", "loading");
-    await expect(preview).toContainText("Meena's message is being written…");
+    await expect(preview).toContainText("Ravi's message is being written…");
     await expect(preview).toHaveAttribute("data-motion", "on");
 
     const text = page.getByTestId("meena-text");
     await expect(text).toBeVisible({ timeout: 10_000 });
     await expect(text).toHaveAttribute("lang", "en");
     await expect(text).toContainText("Masala Chips 200G: buy with Cola Classic 250ML for ₹50 today");
-    await expect(page.getByTestId("english-fallback-label")).toHaveText("English fallback");
+    // Ravi reads English, so an English reply is not a fallback (it is for a Kannada customer, below)
+    await expect(page.getByTestId("english-fallback-label")).toHaveCount(0);
     await expect(page.getByTestId("meena-gloss")).toHaveCount(0);
-    await expect(preview).toContainText("What Meena receives");
+    await expect(preview).toContainText("What Ravi receives");
   });
 
   test("a Kannada reply carries lang=kn with the English gloss beneath, which can be hidden and stays hidden", async ({ page }) => {
@@ -313,7 +315,7 @@ test.describe("Meena preview", () => {
     expect(waited).toBeLessThan(12_000);
   });
 
-  test("an English reply to a Kannada customer is labelled 'English fallback'; a reply with no offer says Meena may not be in the audience", async ({ page }) => {
+  test("an English reply to a Kannada customer is labelled 'English fallback'; a reply with no offer says the customer may not be in the audience", async ({ page }) => {
     await forceLiveApi(page, FAKE_API);
     const english = {
       session_id: "CUST-MEENA:web",
@@ -321,11 +323,14 @@ test.describe("Meena preview", () => {
       language: "kn",
       text: "I don't have any offers for you right now. Is there anything else I can help you with?",
     };
+    // a customer list with only the Kannada customer, so she is the one asked
+    const kannada = mockFixture("customers_demo").filter((c: { customer_id: string }) => c.customer_id === "CUST-MEENA");
     await fakeApi(
       page,
       beatHandlers({
         "/approve": okJson(mockFixture("approve")),
         "/chat": okJson([english]),
+        "/customers/demo": okJson(kannada),
       }),
     );
     await openBeat(page);
@@ -339,7 +344,7 @@ test.describe("Meena preview", () => {
 });
 
 test.describe("follow-ups", () => {
-  test("'Chat as Meena' scrolls to the chat panel, focuses the composer and pre-fills the message", async ({ page }) => {
+  test("'Chat as Ravi' (the Tea beat's treated customer) scrolls to the chat panel, focuses the composer and pre-fills the message", async ({ page }) => {
     await openBeat(page);
     await page.getByTestId("chat-log").first().evaluate((el) => el.closest("#chat-panel")!.scrollIntoView());
     await approveButton(page).click();

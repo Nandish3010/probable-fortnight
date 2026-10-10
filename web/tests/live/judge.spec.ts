@@ -29,23 +29,26 @@ test.describe("judge: landing", () => {
     // the forecast run id moved into the result's Details (the heading no longer leaks ids)
     await page.getByTestId("approve-details").locator("summary").click();
     await expect(page.getByText(/refc_play_tea_ds04_v1/)).toBeVisible();
+    // After the Tea approve the Approve preview and the chat panel use a customer who is in Tea's
+    // audience (Ravi, Dark store 4), not Meena, who is only in the chips audience. Checked before
+    // the full-page screenshot below: Playwright's resize can briefly lay the page out as a phone.
+    await expect(page.getByTestId("meena-preview")).toContainText("What Ravi receives");
+    await expect(page.getByTestId("meena-text")).toContainText(/Darjeeling Tea/, { timeout: 20_000 });
+    await expect(page.getByTestId("meena-audience-note")).toHaveCount(0);
+    await expect(page.getByTestId("chat-as-customer")).toHaveText("Chat as Ravi");
+    await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-RAVI");
     await shot(page, "judge-03-approved-chart");
 
     // second approve must be idempotent
     const again = await page.request.post(`${API}/approve`, { headers: visitorHeaders("live-judge-a"), data: { play_id: "play_tea_ds04_v1" } });
     expect((await again.json()).note).toContain("already approved");
 
-    // Meena's offer is for the chips bundle, so approve that play (API, not the beat) before chatting.
-    await page.request.post(`${API}/approve`, { headers: visitorHeaders("live-judge-a"), data: { play_id: "play_chips_ds07_v1" } });
-
-    // chat as Meena after approval: the offer arrives, mentioning the bundle price. The live
-    // Gemini-backed Customer Agent paraphrases freely and does not reliably reply in Kannada even
-    // for this Kannada-preference customer (observed live, both in and out of CI), so this checks
-    // the one stable fact -- the real price cited -- rather than an exact phrase or language.
+    // chat as Ravi after approval: the Tea offer arrives. The live Gemini-backed Customer Agent
+    // paraphrases freely, so this checks the one stable fact -- the product named -- not a phrase.
     const chat = page.getByTestId("chat-log");
     await page.getByRole("button", { name: "Send" }).click();
-    await expect(chat.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
-    await expect(chat.getByRole("button", { name: /ಕಾರ್ಟ್|Add to cart/ })).toBeVisible();
+    await expect(chat.getByText(/Darjeeling Tea/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(chat.getByRole("button", { name: /Add to cart|ಕಾರ್ಟ್/ })).toBeVisible();
     await shot(page, "judge-04-chat-offer");
 
     // isolation: another visitor still sees the play as proposed

@@ -107,7 +107,7 @@ test("landing: Run the beat, Approve and read the result using only the keyboard
     await page.keyboard.press("Tab");
     seen.push((await stop(page))?.name ?? "");
   }
-  expect(seen.join(" | ")).toContain("Chat as Meena");
+  expect(seen.join(" | ")).toContain("Chat as Ravi");
 });
 
 test("the Reset dialog traps Tab inside it, closes on Escape and returns focus to its button", async ({ page }) => {

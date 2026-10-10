@@ -57,14 +57,13 @@ test.describe("Screenshots: judge landing, approve, chat, reset", () => {
     await expect(page.locator("svg.forecast-chart")).toBeVisible({ timeout: 30_000 });
     await shot(page, "judge-03-approved-chart");
 
-    // Meena's offer is the chips bundle, so approve that play through the API before chatting.
-    const API = process.env.TAAL_API_URL || "http://localhost:8080";
-    await page.request.post(`${API}/approve`, { headers: { "X-Taal-Visitor": "shots-judge", "Content-Type": "application/json" }, data: { play_id: "play_chips_ds07_v1" } });
+    // After the Tea approve the chat panel is on Ravi, who is in Tea's audience.
     const chat = page.getByTestId("chat-log");
+    await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-RAVI");
     await page.getByRole("button", { name: "Send" }).click();
-    // The live Gemini-backed Customer Agent paraphrases freely, so check the price is cited
+    // The live Gemini-backed Customer Agent paraphrases freely, so check the product is named
     // rather than an exact scripted phrase.
-    await expect(chat.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
+    await expect(chat.getByText(/Darjeeling Tea/).first()).toBeVisible({ timeout: 15_000 });
     await shot(page, "judge-04-chat-offer");
 
     await page.getByRole("button", { name: "Reset demo data" }).click();

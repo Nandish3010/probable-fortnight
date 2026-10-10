@@ -83,8 +83,11 @@ export default function PhoneViewPage() {
   const [executionSaved, setExecutionSaved] = useState(false);
   // The last failed call and how to run it again; one slot, because the flow is one step at a time.
   const [phoneError, setPhoneError] = useState<{ error: ApiError; retry: () => void } | null>(null);
-  // True when no photographed SKU raised a gap and the node's biggest open gap is shown instead.
+  // True when the card shown is the node's biggest open gap rather than one read off the pallet.
   const [gapIsFallback, setGapIsFallback] = useState(false);
+  // Set when no photographed SKU raised a gap. `fallback` is the node's biggest open gap (and its
+  // play), held back until the visitor asks to see it.
+  const [noRisk, setNoRisk] = useState<{ fallback: { gap: Gap; play: Play | null } | null } | null>(null);
 
   const steps = useMemo(() => (play ? stepsForMechanic(play.mechanic) : []), [play]);
 
@@ -126,6 +129,13 @@ export default function PhoneViewPage() {
   // Confirm rows removes the button that was pressed; when the gap's card appears and focus has
   // dropped to <body>, put it on the card's title so the next Tab reaches Approve.
   const gapSectionRef = useRef<HTMLElement>(null);
+  // No gap came from the photographed items: focus moves to the result heading, the same way it
+  // moves to the card title when there is a gap.
+  const noRiskHeadingRef = useRef<HTMLHeadingElement>(null);
+  const noRiskShown = noRisk !== null;
+  useEffect(() => {
+    if (noRiskShown) noRiskHeadingRef.current?.focus();
+  }, [noRiskShown]);
   const cardKey = play ? play.play_id : gap ? gap.gap_id : null;
   useEffect(() => {
     if (!cardKey) return;
@@ -144,6 +154,7 @@ export default function PhoneViewPage() {
       setDateOverrides({});
       setConfirmSkipped([]);
       setConfirmWritten(null);
+      setNoRisk(null);
       // Track the photo_ref the API actually returned, not the UI's selectedPhoto state --
       // an uploaded photo has no selectedPhoto (that only tracks the sample-photo buttons), so
       // confirm must key off what capture() gave back or it can never be called for an upload.
@@ -197,6 +208,7 @@ export default function PhoneViewPage() {
     setExecutionSaved(false);
     setPhoneError(null);
     setGapIsFallback(false);
+    setNoRisk(null);
   }
 
   async function loadGapForNode() {
@@ -234,9 +246,17 @@ export default function PhoneViewPage() {
     const photoSkus = new Set((rows ?? []).map((r) => r.sku_guess));
     const ordered = [...gaps].sort((a, b) => Number(photoSkus.has(b.sku)) - Number(photoSkus.has(a.sku)));
     const topGap = ordered[0] ?? null;
-    // No photographed SKU raised a gap: the card below is the node's biggest open gap, not
-    // something read off the pallet, and the page says so.
-    setGapIsFallback(topGap !== null && (rows ?? []).length > 0 && !photoSkus.has(topGap.sku));
+    setNoRisk(null);
+    // No photographed SKU raised a gap: say so, and keep the node's biggest open gap behind a button
+    // instead of putting an unrelated number on screen.
+    if ((rows ?? []).length > 0 && !(topGap && photoSkus.has(topGap.sku))) {
+      setGap(null);
+      setPlay(null);
+      setGapIsFallback(false);
+      setNoRisk({ fallback: topGap ? { gap: topGap, play: plays.find((p) => p.gap_id === topGap.gap_id) ?? null } : null });
+      return;
+    }
+    setGapIsFallback(false);
     setGap(topGap);
     if (topGap) {
       const matching = plays.filter((p) => p.gap_id === topGap.gap_id);
@@ -244,6 +264,13 @@ export default function PhoneViewPage() {
     } else {
       setPlay(null);
     }
+  }
+
+  function revealFallback() {
+    if (!noRisk?.fallback) return;
+    setGap(noRisk.fallback.gap);
+    setPlay(noRisk.fallback.play);
+    setGapIsFallback(true);
   }
 
   function toggleStep(id: string) {
@@ -438,6 +465,20 @@ export default function PhoneViewPage() {
 
       {phoneError ? (
         <ErrorCard error={phoneError.error} compact onRetry={phoneError.retry} />
+      ) : null}
+
+      {noRisk ? (
+        <section className="card phone-norisk" data-testid="phone-no-risk" aria-labelledby="phone-norisk-title">
+          <h3 id="phone-norisk-title" ref={noRiskHeadingRef} tabIndex={-1}>
+            No sell-by risk for these items
+          </h3>
+          <p>Nothing you photographed is close to its online sell-by date, so Taal has no play to propose.</p>
+          {noRisk.fallback && !gap ? (
+            <button type="button" onClick={revealFallback} data-testid="show-fallback-gap">
+              See the node&apos;s biggest open gap
+            </button>
+          ) : null}
+        </section>
       ) : null}
 
       {gap ? (

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getRerunStatus, streamRerun } from "../lib/api";
+import { ModelChip } from "./ModelChip";
 import { TraceView } from "./traceRows";
 import type { RerunAccepted, RerunResult, TraceEvent } from "../lib/types";
 
@@ -107,7 +108,9 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
 
   return (
     <div className="live-replan" data-testid="live-replan" ref={root}>
-      <p className="live-replan__status">{headerLine}</p>
+      <p className="live-replan__status">
+        {headerLine} <ModelChip />
+      </p>
       <p className="muted live-replan__timing">
         {elapsedS} s elapsed · falls back to rules after {Math.round(accepted.deadline_s)} s
       </p>

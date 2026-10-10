@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getDemoCustomers, isMockMode, sendChat } from "../lib/api";
+import { getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { CHAT_REQUEST_EVENT, DEMO_CUSTOMER_ID, DEMO_MESSAGE, type ChatRequestDetail } from "../lib/chatBridge";
 import { langAttr, languageName, replyLanguage, uniqueByLabel, containsKannada } from "../lib/lang";
 import { label as idLabel } from "../lib/labels";
 import { prefersReducedMotion } from "../lib/motion";
 import { personaCaption } from "../lib/playText";
-import { recordOffer } from "../lib/progressStore";
+import { recordOffer, useProgress } from "../lib/progressStore";
+import { treatedCustomerFor } from "../lib/treatedPersona";
 import { Badge } from "./Badge";
 import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
@@ -45,6 +46,9 @@ export function ChatPanel({
   play?: Play | null;
 }) {
   const [customers, setCustomers] = useState<DemoCustomer[]>([]);
+  // False until the customer list has answered (a cold API can take 3 to 4 s), so the picker's
+  // place says "Loading customers…" instead of being blank.
+  const [customersLoaded, setCustomersLoaded] = useState(false);
   const [activeId, setActiveId] = useState(customerId);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState(initialMessage);
@@ -60,10 +64,38 @@ export function ChatPanel({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const playId = play?.play_id;
+  // The play whose audience the panel follows: the page's hero play, or (on /chat, which has none)
+  // the play this visitor approved last. Once it is approved the panel opens on a customer who is in
+  // its audience, because the first customer is only in the chips audience.
+  const { crumbs } = useProgress();
+  const lastApproved = crumbs.approved[crumbs.approved.length - 1] ?? null;
+  const [approvedPlay, setApprovedPlay] = useState<Play | null>(null);
+  useEffect(() => {
+    if (play || !lastApproved) {
+      setApprovedPlay(null);
+      return;
+    }
+    let cancelled = false;
+    getPlays({ gap_id: lastApproved.gap_id })
+      .then((list) => {
+        if (!cancelled) setApprovedPlay(list.find((p) => p.play_id === lastApproved.play_id) ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [play, lastApproved?.play_id, lastApproved?.gap_id]);
+  const followedPlay = play ?? approvedPlay;
+  const approved =
+    followedPlay !== null && (followedPlay.status === "approved" || crumbs.approved.some((a) => a.play_id === followedPlay.play_id));
+
+  const playId = followedPlay?.play_id;
   useEffect(() => {
     if (!showCustomerPicker) return;
-    getDemoCustomers(playId).then(setCustomers).catch(() => setCustomers([]));
+    getDemoCustomers(playId)
+      .then(setCustomers)
+      .catch(() => setCustomers([]))
+      .finally(() => setCustomersLoaded(true));
   }, [showCustomerPicker, playId]);
 
   // One session per demo customer; the per-visitor sandbox (X-Taal-Visitor) keeps judges apart.
@@ -80,6 +112,18 @@ export function ChatPanel({
   }
 
   switchRef.current = switchCustomer;
+  // True once the visitor (or a follow-up button) chose a customer: the default below never overrides it.
+  const chosen = useRef(false);
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
+
+  // After the play is approved, open on a customer who is in its audience.
+  useEffect(() => {
+    if (!approved || !followedPlay || customers.length === 0 || chosen.current) return;
+    const treated = treatedCustomerFor(followedPlay, customers, activeIdRef.current);
+    if (treated && treated.customer_id !== activeIdRef.current) switchRef.current(treated.customer_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approved, followedPlay?.play_id, customers]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -104,11 +148,16 @@ export function ChatPanel({
       if (detail.action === "prefill") {
         detail.handled = true;
         reveal();
+        if (detail.customerId && detail.customerId !== activeIdRef.current) {
+          chosen.current = true;
+          switchRef.current(detail.customerId);
+        }
         setInput(detail.message);
         inputRef.current?.focus({ preventScroll: true });
       } else if (detail.action === "holdout" && holdoutRef.current) {
         detail.handled = true;
         reveal();
+        chosen.current = true;
         switchRef.current(holdoutRef.current);
         sendRef.current(detail.message);
       }
@@ -119,9 +168,12 @@ export function ChatPanel({
 
   // /chat?as=holdout (or prefill): applied once, when the customer list is in.
   const pendingAs = useRef<string | null>(null);
+  const pendingCustomer = useRef<string | null>(null);
   useEffect(() => {
     try {
-      pendingAs.current = new URLSearchParams(window.location.search).get("as");
+      const params = new URLSearchParams(window.location.search);
+      pendingAs.current = params.get("as");
+      pendingCustomer.current = params.get("customer");
     } catch {
       pendingAs.current = null;
     }
@@ -131,9 +183,15 @@ export function ChatPanel({
     if (!as || customers.length === 0) return;
     pendingAs.current = null;
     if (as === "holdout" && holdoutId) {
+      chosen.current = true;
       switchRef.current(holdoutId);
       sendRef.current(DEMO_MESSAGE);
     } else if (as === "prefill") {
+      const wanted = pendingCustomer.current;
+      if (wanted && wanted !== activeIdRef.current && customers.some((c) => c.customer_id === wanted && c.role !== "holdout")) {
+        chosen.current = true;
+        switchRef.current(wanted);
+      }
       setInput(DEMO_MESSAGE);
       inputRef.current?.focus({ preventScroll: true });
     }
@@ -210,13 +268,21 @@ export function ChatPanel({
           {latency !== null ? <span className="chip">{latency} ms</span> : null}
         </div>
       </div>
+      {showCustomerPicker && !customersLoaded ? (
+        <p className="muted chat-panel__customer-note" data-testid="chat-customers-loading" role="status">
+          Loading customers…
+        </p>
+      ) : null}
       {showCustomerPicker && customers.length > 0 ? (
         <div className="chat-panel__customer-picker">
           <label>
             Customer{" "}
             <select
               value={activeId}
-              onChange={(e) => switchCustomer(e.target.value)}
+              onChange={(e) => {
+                chosen.current = true;
+                switchCustomer(e.target.value);
+              }}
               className={styles.picker}
               data-testid="chat-customer-select"
             >
@@ -229,7 +295,7 @@ export function ChatPanel({
           </label>
           {active ? (
             <p className="muted chat-panel__customer-note" data-testid="chat-customer-note">
-              {personaCaption(active, play)}
+              {personaCaption(active, followedPlay)}
             </p>
           ) : null}
           {active ? (
