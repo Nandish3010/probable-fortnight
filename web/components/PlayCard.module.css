@@ -1,0 +1,319 @@
+/* The decision card (components/PlayCard.tsx). One card with dividers, not cards inside cards
+   (design_spec.md section 3). Everything is sized from the type and spacing tokens in globals.css. */
+
+.card {
+  --pc-pad: var(--space-4);
+  position: relative;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--pc-pad);
+  margin-block-end: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .card {
+    --pc-pad: var(--space-5);
+  }
+
+  /* The hero card is the screen's one decision: padded for 16, not 24, so Approve starts above the
+     fold of a 1280 x 800 window. */
+  .hero {
+    --pc-pad: var(--space-4);
+  }
+}
+
+.detail {
+  min-width: 0;
+}
+
+/* Compact density for the phone feed: a column of at most --max-feed, tighter rhythm. */
+.feed {
+  --pc-pad: var(--space-4);
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.titleBlock {
+  min-width: 0;
+  flex: 1 1 14rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-lg);
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.whyNow {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  overflow-wrap: anywhere;
+}
+
+.figure {
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+
+.honesty {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.section {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+
+.h4 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: normal;
+}
+
+.plan {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.checks {
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+
+.extra {
+  margin-top: var(--space-3);
+}
+
+.decision {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
+  min-width: 0;
+}
+
+.approveSlot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.stickyFigure {
+  display: none;
+}
+
+.decisionDone {
+  display: block;
+}
+
+/* Phones: the decision row stays at the bottom of the screen while the card is on screen, so
+   Approve is never a long scroll away. position: sticky (not fixed) keeps it inside the card: it
+   rests in place at the end of the card instead of floating over the footer. Safe-area padding
+   keeps it clear of the home indicator. After Approve the row holds the long result and is
+   released (.decisionDone). */
+/* Desk detail (mode "detail") has long sections after the decision row (copy, trace, policy). A
+   sticky row pins itself to the bottom only while its natural place is below the screen, so on
+   a phone the row is moved to the end of the card: it is then pinned from the top of the page
+   to the last section, and Approve never scrolls out of reach. Before approval only: the result
+   keeps its place in the card. */
+@media (max-width: 767px) {
+  .detail {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail .decision:not(.decisionDone) {
+    order: 100;
+  }
+
+  .decision:not(.decisionDone) {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin-inline: calc(-1 * var(--pc-pad));
+    margin-bottom: 0;
+    padding: var(--space-3) var(--pc-pad) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 16px -12px rgba(20, 22, 31, 0.35);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .stickyFigure {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    line-height: var(--lh-xs);
+  }
+
+  .stickyAmount {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-lg);
+    color: var(--good-text);
+  }
+
+  .stickyLabel {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+
+  /* While Approve is working the row holds the three steps and the timer: the whole width is theirs. */
+  .decision:has(:global([data-phase="submitting"])) .stickyFigure {
+    display: none;
+  }
+}
+
+/* Desk: a bar under the nav once Approve has scrolled out of view. The anchor is zero-height and
+   sticky, so showing or hiding the bar never moves the card's content. */
+.barAnchor {
+  position: sticky;
+  top: var(--nav-h);
+  height: 0;
+  z-index: 15;
+}
+
+.bar {
+  position: absolute;
+  inset: 0 calc(-1 * var(--pc-pad)) auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--pc-pad);
+  background: var(--surface);
+  border-block: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-raised);
+}
+
+.barFigure {
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.barFigure strong {
+  color: var(--good-text);
+  font-size: var(--fs-md);
+}
+
+.barButton {
+  flex: none;
+  min-height: var(--tap);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.barButton:hover {
+  background: var(--accent-soft);
+}
+
+@media (max-width: 767px) {
+  /* Phones already have the sticky decision row. */
+  .barAnchor {
+    display: none;
+  }
+}
+
+/* Details body */
+.detailsHint {
+  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+}
+
+@media (max-width: 479px) {
+  .detailsHint {
+    display: none;
+  }
+}
+
+.detailSection {
+  margin-top: var(--space-3);
+}
+
+.detailSection p {
+  margin: 0 0 var(--space-2);
+}
+
+.minor {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.alts {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.alts li {
+  margin-bottom: var(--space-2);
+}
+
+.ids {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px var(--space-3);
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+
+.ids dt {
+  color: var(--text-muted);
+}
+
+.ids dd {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  overflow-wrap: anywhere;
+}
+
+/* The title takes focus from code (after the card opens, or a phone opens a play) so a keyboard
+   reader lands on the card; no ring on a heading nobody tabs to. */
+.title:focus,
+.title:focus-visible {
+  outline: none;
+}

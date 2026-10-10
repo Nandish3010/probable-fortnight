@@ -1,0 +1,136 @@
+/* The guided tour (components/Tour.tsx): a "Take the tour" link, a ring around what a step points
+   at, and a small popover. Fixed to the viewport and rendered in <body>, so no card transform can
+   move it. Colours are tokens that flip in dark mode. No transitions at all under reduced motion. */
+
+.link {
+  min-height: var(--tap);
+  padding: 0 var(--space-1);
+  border: none;
+  background: none;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.link:hover {
+  color: var(--text);
+}
+
+.link:focus-visible,
+.skip:focus-visible,
+.back:focus-visible,
+.next:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ring {
+  position: fixed;
+  z-index: 60;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  pointer-events: none;
+}
+
+.pop {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  width: min(340px, calc(100vw - 16px));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+  transition: opacity 0.15s var(--ease);
+}
+
+.count {
+  margin: 0 0 2px;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  color: var(--text-muted);
+}
+
+.text {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: var(--fw-semibold);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.skip,
+.back,
+.next {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.skip {
+  padding-inline: var(--space-1);
+  border: none;
+  background: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.back {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.next {
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.next:hover {
+  background: var(--accent-strong);
+}
+
+/* On a phone the same card, a little tighter. */
+@media (max-width: 767px) {
+  .pop {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .text {
+    font-size: var(--fs-sm);
+    line-height: var(--lh-sm);
+    margin-bottom: var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .ring,
+  .link {
+    transition: none;
+    animation: none;
+  }
+}

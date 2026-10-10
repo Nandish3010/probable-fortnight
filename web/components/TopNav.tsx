@@ -1,28 +1,35 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PersonaBar } from "./PersonaBar";
+import { Stepper } from "./Stepper";
+import { stepForPath } from "../lib/progress";
 
-const LINKS = [
-  { href: "/", label: "Judge mode" },
-  { href: "/desk", label: "Play Desk" },
-  { href: "/phone", label: "Phone view" },
-  { href: "/chat", label: "Chat" },
-  { href: "/outcomes", label: "Outcomes" },
-];
-
+/** The bar on every route: the brand (a link home) on the left and, on the five screens of the
+ * judge path, the stepper in the nav area. A route off that path (the practitioner feedback form,
+ * the dev pages, a missing page) gets the brand and a way back instead. */
 export default function TopNav() {
   const pathname = usePathname();
+  const current = stepForPath(pathname);
   return (
-    <nav className="top-nav">
-      <span className="top-nav__brand">
-        <span className="top-nav__mark" aria-hidden="true" />
-        Taal
-      </span>
-      {LINKS.map((link) => (
-        <a key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>
-          {link.label}
-        </a>
-      ))}
-    </nav>
+    <>
+      <header className="top-nav">
+        <div className="top-nav__inner">
+          <Link href="/" className="top-nav__brand" aria-label="Taal, home">
+            <span className="top-nav__mark" aria-hidden="true" />
+            Taal
+          </Link>
+          {current ? (
+            <Stepper current={current} />
+          ) : (
+            <Link href="/" className="top-nav__back">
+              Back to demo
+            </Link>
+          )}
+        </div>
+      </header>
+      <PersonaBar />
+    </>
   );
 }

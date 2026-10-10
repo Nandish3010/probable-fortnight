@@ -44,26 +44,31 @@ test.describe("Screenshots: judge landing, approve, chat, reset", () => {
     await freezeClock(page);
     await asVisitor(page, "shots-judge");
     await page.goto("/");
-    await expect(page.getByText("Taal judge mode")).toBeVisible();
+    await expect(page.getByTestId("demo-clock")).toContainText("Nothing you do here persists.");
 
     await page.getByRole("button", { name: "Run the 60-second beat" }).click();
     const beat = page.getByTestId("beat-panel");
-    await expect(beat.getByText("₹9,200")).toBeVisible();
-    await expect(beat.getByText(/6 days|days/)).toBeVisible();
+    // HERO_GAP_ID (app/page.tsx): the Darjeeling Tea lot at Dark store 4.
+    await expect(beat.getByTestId("why-now")).toContainText("₹35,020");
+    await expect(beat.locator(".gap-card__stats .stat__value").nth(2)).toHaveText(/^\d+d$/); // days left: the stats sit in the card's Details, closed by default
     await shot(page, "judge-02-gap-card");
 
     await beat.getByRole("button", { name: "Approve" }).click();
     await expect(page.locator("svg.forecast-chart")).toBeVisible({ timeout: 30_000 });
     await shot(page, "judge-03-approved-chart");
 
+    // Meena's offer is the chips bundle, so approve that play through the API before chatting.
+    const API = process.env.TAAL_API_URL || "http://localhost:8080";
+    await page.request.post(`${API}/approve`, { headers: { "X-Taal-Visitor": "shots-judge", "Content-Type": "application/json" }, data: { play_id: "play_chips_ds07_v1" } });
     const chat = page.getByTestId("chat-log");
     await page.getByRole("button", { name: "Send" }).click();
     // The live Gemini-backed Customer Agent paraphrases freely, so check the price is cited
     // rather than an exact scripted phrase.
-    await expect(chat.getByText(/58\.5/)).toBeVisible({ timeout: 15_000 });
+    await expect(chat.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
     await shot(page, "judge-04-chat-offer");
 
     await page.getByRole("button", { name: "Reset demo data" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Reset", exact: true }).click(); // Reset asks first
     await expect(page.getByRole("button", { name: "Reset demo data" })).toBeEnabled();
     await shot(page, "judge-05-after-reset");
   });
@@ -108,7 +113,7 @@ test.describe("Screenshots: Priya phone intake, gap card, approve, execution", (
     const confirmed = page.waitForResponse((r) => r.url().endsWith("/capture/confirm"));
     await page.getByRole("button", { name: "Confirm rows" }).click();
     await confirmed;
-    await expect(page.getByText("₹9,200")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("why-now")).toContainText("₹9,200", { timeout: 15_000 });
     await shot(page, "priya-03-gap-card");
 
     await page.getByRole("button", { name: "Approve" }).click();
@@ -145,7 +150,7 @@ test.describe("Screenshots: Meena's customer chat, Kannada offer", () => {
     // cited. The screenshot itself may or may not show Kannada text depending on what the model
     // produced this run; capturing a guaranteed-Kannada shot for the deck is a manual concern,
     // not something this CI gate can force.
-    await expect(log.getByText(/58\.5/)).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
     // the chat panel alone, so the deck's UX card shows the offer rather than page chrome
     await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/meena-offer-kannada.png` });
   });

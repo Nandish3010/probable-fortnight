@@ -1,0 +1,189 @@
+.panel {
+  min-width: 0;
+  /* Where the result scrolls to: just under the sticky nav. */
+  scroll-margin-top: calc(var(--nav-h) + var(--space-3));
+}
+
+.buttonRow {
+  position: relative;
+}
+
+/* "Press A": a desktop hint, shown while the card is hovered or has focus inside it. Hidden on
+   touch screens, where there is no keyboard to press it on. */
+.hint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: absolute;
+    right: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--fs-xs);
+    line-height: var(--lh-xs);
+    color: var(--on-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms var(--ease);
+  }
+
+  :global([data-a-hint]):is(:hover, :focus-within) .hint {
+    opacity: 1;
+  }
+
+  .hint kbd {
+    min-width: 20px;
+    padding: 0 5px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    text-align: center;
+  }
+}
+
+/* What replaces the Approve button once it has been pressed: same height, so nothing moves. */
+.approvedBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 55px;
+  padding: 13px var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--state-pass-bd);
+  background: var(--state-pass-bg);
+  color: var(--state-pass-fg);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+
+.error {
+  margin-top: var(--space-3);
+}
+
+.banner {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--state-na-bd);
+  background: var(--state-na-bg);
+  color: var(--state-na-fg);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: var(--fw-medium);
+}
+
+.body {
+  margin-top: var(--space-3);
+  min-width: 0;
+}
+
+.body[data-motion="on"] {
+  animation: fade 200ms var(--ease) both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Focus lands here programmatically right after Approve (never via Tab, tabIndex={-1}), so no ring. */
+.heading {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-lg);
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+.heading:focus {
+  outline: none;
+}
+
+.badges {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-1);
+}
+
+.chain {
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.previewRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-block: var(--space-4);
+}
+
+.followups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.followupsIn {
+  animation: fade 300ms var(--ease) 800ms both;
+}
+
+.follow {
+  min-height: var(--tap);
+  padding: 8px var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-weight: var(--fw-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.follow:hover {
+  background: var(--accent-soft);
+}
+
+.ids {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px var(--space-3);
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+
+.ids dt {
+  color: var(--text-muted);
+}
+
+.ids dd {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body[data-motion="on"],
+  .followupsIn {
+    animation: none;
+  }
+}

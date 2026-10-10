@@ -1,11 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { Fragment, useMemo, useState } from "react";
-import { ApprovePanel } from "../../components/ApprovePanel";
-import { Badge } from "../../components/Badge";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Details } from "../../components/Details";
+import { ErrorCard } from "../../components/ErrorCard";
 import { GapCard } from "../../components/GapCard";
+import { Icon } from "../../components/icons";
+import { PlayCard } from "../../components/PlayCard";
+import { Skeleton } from "../../components/Skeleton";
 import { capture, captureConfirm, execution, getGaps, getPlays, type CaptureConfirmSkip } from "../../lib/api";
+import { toApiError, type ApiError } from "../../lib/apiError";
+import { label } from "../../lib/labels";
+import { prefersReducedMotion } from "../../lib/motion";
+import { recordSpot } from "../../lib/progressStore";
+import { relativeDate } from "../../lib/format";
 import { useServerNow } from "../../lib/useServerNow";
 import type { ApproveResponse, ExecutionStep, Gap, Mechanic, Play, VisionRow } from "../../lib/types";
 
@@ -22,6 +30,21 @@ const SAMPLE_PHOTOS = [
   { ref: "fixtures/photos/pallet_06.jpg", src: "/samples/pallet_06.jpg", label: "Pallet 6 · atta & poha (date hard to read)" },
   { ref: "fixtures/photos/pallet_08.jpg", src: "/samples/pallet_08.jpg", label: "Pallet 7 · milk & paneer" },
 ];
+
+/** A confidence under this share is called out (colour, an icon and the word "low"), and the same
+ * threshold the server uses to ask for a confirmation. */
+const LOW_CONFIDENCE = 0.8;
+
+function Confidence({ name, value }: { name: string; value: number }) {
+  const low = value < LOW_CONFIDENCE;
+  return (
+    <span className={`conf ${low ? "conf--low" : ""}`} data-low={low ? "true" : undefined}>
+      {low ? <Icon name="alert-triangle" size={12} /> : null}
+      {name} {Math.round(value * 100)}%
+      {low ? <span className="visually-hidden"> (low)</span> : null}
+    </span>
+  );
+}
 
 function stepsForMechanic(mechanic: Mechanic): ExecutionStep[] {
   if (mechanic === "transfer_plus_nudge") {
@@ -58,11 +81,62 @@ export default function PhoneViewPage() {
   const [approveResult, setApproveResult] = useState<ApproveResponse | null>(null);
   const [stepsDone, setStepsDone] = useState<Record<string, boolean>>({});
   const [executionSaved, setExecutionSaved] = useState(false);
+  // The last failed call and how to run it again; one slot, because the flow is one step at a time.
+  const [phoneError, setPhoneError] = useState<{ error: ApiError; retry: () => void } | null>(null);
+  // True when no photographed SKU raised a gap and the node's biggest open gap is shown instead.
+  const [gapIsFallback, setGapIsFallback] = useState(false);
 
   const steps = useMemo(() => (play ? stepsForMechanic(play.mechanic) : []), [play]);
 
+  // A tap on a sample tile used to look like nothing happened: the result appears below the tiles,
+  // often off screen. Bring it into view and move focus onto it, so a screen reader lands on it too.
+  // The table arrives a moment later and makes the page taller; if the visitor has not scrolled in
+  // between, the result is brought to the top once more so it really is what they see.
+  const resultRef = useRef<HTMLDivElement>(null);
+  const userScrolled = useRef(false);
+  useEffect(() => {
+    const mark = () => {
+      userScrolled.current = true;
+    };
+    window.addEventListener("wheel", mark, { passive: true });
+    window.addEventListener("touchmove", mark, { passive: true });
+    window.addEventListener("keydown", mark);
+    return () => {
+      window.removeEventListener("wheel", mark);
+      window.removeEventListener("touchmove", mark);
+      window.removeEventListener("keydown", mark);
+    };
+  }, []);
+  useEffect(() => {
+    if (!previewSrc) return;
+    const el = resultRef.current;
+    if (!el) return;
+    userScrolled.current = false;
+    el.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    el.focus({ preventScroll: true });
+  }, [previewSrc]);
+  useEffect(() => {
+    if (!rows || userScrolled.current) return;
+    const el = resultRef.current;
+    if (el && el.getBoundingClientRect().top > 120) {
+      el.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+  }, [rows]);
+
+  // Confirm rows removes the button that was pressed; when the gap's card appears and focus has
+  // dropped to <body>, put it on the card's title so the next Tab reaches Approve.
+  const gapSectionRef = useRef<HTMLElement>(null);
+  const cardKey = play ? play.play_id : gap ? gap.gap_id : null;
+  useEffect(() => {
+    if (!cardKey) return;
+    const a = document.activeElement;
+    if (a && a !== document.body) return;
+    gapSectionRef.current?.querySelector<HTMLElement>("[data-card-title]")?.focus({ preventScroll: true });
+  }, [cardKey]);
+
   async function runCapture(photoRef?: string, imageDataUrl?: string) {
     setCapturing(true);
+    setPhoneError(null);
     try {
       const res = await capture({ node_id: nodeId, photo_ref: photoRef, image_data_url: imageDataUrl });
       setRows(res.rows);
@@ -74,6 +148,8 @@ export default function PhoneViewPage() {
       // an uploaded photo has no selectedPhoto (that only tracks the sample-photo buttons), so
       // confirm must key off what capture() gave back or it can never be called for an upload.
       setCapturedPhotoRef(res.photo_ref);
+    } catch (e) {
+      setPhoneError({ error: toApiError(e, "/capture"), retry: () => runCapture(photoRef, imageDataUrl) });
     } finally {
       setCapturing(false);
     }
@@ -119,9 +195,20 @@ export default function PhoneViewPage() {
     setApproveResult(null);
     setStepsDone({});
     setExecutionSaved(false);
+    setPhoneError(null);
+    setGapIsFallback(false);
   }
 
   async function loadGapForNode() {
+    setPhoneError(null);
+    try {
+      await loadGapForNodeUnguarded();
+    } catch (e) {
+      setPhoneError({ error: toApiError(e, "/capture/confirm"), retry: loadGapForNode });
+    }
+  }
+
+  async function loadGapForNodeUnguarded() {
     if (rows && capturedPhotoRef) {
       setConfirming(true);
       try {
@@ -137,6 +224,7 @@ export default function PhoneViewPage() {
           // Nothing was written -- do not proceed to load gaps as if the confirm succeeded.
           return;
         }
+        recordSpot(); // Priya's rows are in: the stepper's Spot step
       } finally {
         setConfirming(false);
       }
@@ -146,6 +234,9 @@ export default function PhoneViewPage() {
     const photoSkus = new Set((rows ?? []).map((r) => r.sku_guess));
     const ordered = [...gaps].sort((a, b) => Number(photoSkus.has(b.sku)) - Number(photoSkus.has(a.sku)));
     const topGap = ordered[0] ?? null;
+    // No photographed SKU raised a gap: the card below is the node's biggest open gap, not
+    // something read off the pallet, and the page says so.
+    setGapIsFallback(topGap !== null && (rows ?? []).length > 0 && !photoSkus.has(topGap.sku));
     setGap(topGap);
     if (topGap) {
       const matching = plays.filter((p) => p.gap_id === topGap.gap_id);
@@ -161,12 +252,17 @@ export default function PhoneViewPage() {
 
   async function markDone() {
     if (!play) return;
-    await execution({
-      play_id: play.play_id,
-      node_id: nodeId,
-      steps_done: steps.filter((s) => stepsDone[s.id]).map((s) => s.id),
-    });
-    setExecutionSaved(true);
+    setPhoneError(null);
+    try {
+      await execution({
+        play_id: play.play_id,
+        node_id: nodeId,
+        steps_done: steps.filter((s) => stepsDone[s.id]).map((s) => s.id),
+      });
+      setExecutionSaved(true);
+    } catch (e) {
+      setPhoneError({ error: toApiError(e, "/execution"), retry: markDone });
+    }
   }
 
   const allConfirmable =
@@ -179,9 +275,11 @@ export default function PhoneViewPage() {
     }) ?? false;
 
   return (
-    <main className="page">
-      <h1 className="visually-hidden">Taal</h1>
-      <h2>Priya's phone</h2>
+    <main id="main-content" tabIndex={-1} className="page">
+      <h1>Priya&apos;s phone</h1>
+      <p className="muted phone-intro">
+        Capture to gap: photograph a pallet, confirm what Taal read, and see the gap it finds.
+      </p>
 
       <div className="phone-frame">
       <section className="card">
@@ -204,7 +302,10 @@ export default function PhoneViewPage() {
               aria-pressed={selectedPhoto === p.ref}
               onClick={() => pickSample(p.ref, p.src)}
             >
-              <Image src={p.src} alt={p.label} width={92} height={92} className="photo-choice__thumb" />
+              <span className="photo-choice__frame">
+                <Skeleton width="100%" height="100%" className="photo-choice__skeleton" />
+                <Image src={p.src} alt={p.label} width={92} height={92} className="photo-choice__thumb" />
+              </span>
               <span className="photo-choice__label">{p.label}</span>
             </button>
           ))}
@@ -212,7 +313,9 @@ export default function PhoneViewPage() {
 
         <p className="muted">Own photo (experimental)</p>
         <label className="camera-button">
-          <span className="camera-button__icon" aria-hidden="true">📷</span>
+          <span className="camera-button__icon">
+            <Icon name="camera" size={20} />
+          </span>
           <span>Take or choose a photo</span>
           <input
             type="file"
@@ -224,103 +327,134 @@ export default function PhoneViewPage() {
         </label>
         {ownFileName ? <p className="muted">Selected: {ownFileName}</p> : null}
 
-        <button type="button" className="mic-button" disabled title="Voice: Live API session, documented stub" aria-label="Voice input (disabled)">
-          🎤
-        </button>
+        <div className="mic-row">
+          <button
+            type="button"
+            className="mic-button"
+            disabled
+            title="Voice is not part of this demo"
+            aria-label="Voice input (not available)"
+            aria-describedby="mic-note"
+          >
+            <Icon name="mic" size={20} />
+          </button>
+          <span id="mic-note" className="muted">
+            Voice is not part of this demo
+          </span>
+        </div>
 
         {previewSrc ? (
-          <div className="captured-photo">
-            {/* eslint-disable-next-line @next/next/no-img-element -- an uploaded own-photo is a
-                blob/data URL, which next/image cannot optimise; a plain img handles both cases */}
-            <img src={previewSrc} alt="Photographed pallet" />
-            {capturing ? <span className="captured-photo__badge">Reading pallet…</span> : null}
-            <button type="button" className="captured-photo__clear" onClick={clearPhoto}>
-              Clear photo
-            </button>
-          </div>
-        ) : null}
+          <div
+            ref={resultRef}
+            tabIndex={-1}
+            role="region"
+            aria-label="Photo result"
+            className="phone-result"
+            data-testid="phone-result"
+          >
+            <div className="captured-photo">
+              {/* eslint-disable-next-line @next/next/no-img-element -- an uploaded own-photo is a
+                  blob/data URL, which next/image cannot optimise; a plain img handles both cases */}
+              <img src={previewSrc} alt="Photographed pallet" />
+              {capturing ? <span className="captured-photo__badge">Reading pallet…</span> : null}
+              <button type="button" className="captured-photo__clear" onClick={clearPhoto}>
+                Clear photo
+              </button>
+            </div>
 
-        {rows ? (
-          <>
-            <table className="intake-table" data-testid="intake-table">
-              <thead>
-                <tr>
-                  <th>SKU guess</th>
-                  <th>Best before</th>
-                  <th>Facings</th>
-                  <th>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <Fragment key={`frag-${i}`}>
-                    <tr key={`row-${i}`}>
-                      <td>{row.sku_guess}</td>
-                      <td>{row.best_before_date ?? "–"}</td>
-                      <td>{row.facings_count}</td>
-                      <td>
-                        sku {Math.round(row.sku_confidence * 100)}% · date {Math.round(row.date_confidence * 100)}% ·
-                        count {Math.round(row.count_confidence * 100)}%
-                      </td>
+            {rows ? (
+              <>
+                <table className="intake-table" data-testid="intake-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Best before</th>
+                      <th>Packs</th>
+                      <th>Confidence</th>
                     </tr>
-                    {row.needs_confirmation ? (
-                      <tr key={`confirm-${i}`} className="confirm-row">
-                        <td colSpan={4}>
-                          <p>{row.confirmation_question}</p>
-                          <button type="button" onClick={() => setConfirmed((c) => ({ ...c, [i]: true }))}>
-                            {confirmed[i] === true ? "Confirmed: Yes" : "Yes"}
-                          </button>{" "}
-                          <button type="button" onClick={() => setConfirmed((c) => ({ ...c, [i]: false }))}>
-                            {confirmed[i] === false ? "Confirmed: No" : "No"}
-                          </button>
-                          {confirmed[i] === true && !row.best_before_date ? (
-                            <p>
-                              <label htmlFor={`date-${i}`}>Best-before date could not be read. Enter it: </label>
-                              <input
-                                id={`date-${i}`}
-                                type="date"
-                                value={dateOverrides[i] ?? ""}
-                                onChange={(e) => setDateOverrides((d) => ({ ...d, [i]: e.target.value }))}
-                              />
-                            </p>
-                          ) : null}
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-            <button type="button" onClick={loadGapForNode} disabled={!allConfirmable || confirming}>
-              {confirming ? "Confirming…" : "Confirm rows"}
-            </button>
-            {confirmWritten !== null ? (
-              <p className="muted">
-                Wrote {confirmWritten} batch{confirmWritten === 1 ? "" : "es"}.
-                {confirmSkipped.length
-                  ? ` Skipped ${confirmSkipped.length}: ${confirmSkipped
-                      .map((s) => `${s.sku_guess} (${s.reason})`)
-                      .join(", ")}.`
-                  : ""}
-              </p>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <Fragment key={`frag-${i}`}>
+                        <tr key={`row-${i}`}>
+                          <td>
+                            <span className="sku-name">{label("sku", row.sku_guess)}</span>
+                            <Details inline summary="id">{row.sku_guess}</Details>
+                          </td>
+                          <td title={row.best_before_date ?? undefined}>{row.best_before_date ? (relativeDate(row.best_before_date, serverNow ?? undefined)?.short ?? row.best_before_date) : "–"}</td>
+                          <td>{row.facings_count}</td>
+                          <td>
+                            <Confidence name="sku" value={row.sku_confidence} />
+                            <Confidence name="date" value={row.date_confidence} />
+                            <Confidence name="count" value={row.count_confidence} />
+                          </td>
+                        </tr>
+                        {row.needs_confirmation ? (
+                          <tr key={`confirm-${i}`} className="confirm-row">
+                            <td colSpan={4}>
+                              <p>{row.confirmation_question}</p>
+                              <button type="button" onClick={() => setConfirmed((c) => ({ ...c, [i]: true }))}>
+                                {confirmed[i] === true ? "Confirmed: Yes" : "Yes"}
+                              </button>{" "}
+                              <button type="button" onClick={() => setConfirmed((c) => ({ ...c, [i]: false }))}>
+                                {confirmed[i] === false ? "Confirmed: No" : "No"}
+                              </button>
+                              {confirmed[i] === true && !row.best_before_date ? (
+                                <p>
+                                  <label htmlFor={`date-${i}`}>Best-before date could not be read. Enter it: </label>
+                                  <input
+                                    id={`date-${i}`}
+                                    type="date"
+                                    value={dateOverrides[i] ?? ""}
+                                    onChange={(e) => setDateOverrides((d) => ({ ...d, [i]: e.target.value }))}
+                                  />
+                                </p>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+                <button type="button" className="button-primary" onClick={loadGapForNode} disabled={!allConfirmable || confirming}>
+                  {confirming ? "Confirming…" : "Confirm rows"}
+                </button>
+                {confirmWritten !== null ? (
+                  <p className="muted">
+                    Wrote {confirmWritten} batch{confirmWritten === 1 ? "" : "es"}.
+                    {confirmSkipped.length
+                      ? ` Skipped ${confirmSkipped.length}: ${confirmSkipped
+                          .map((s) => `${s.sku_guess} (${s.reason})`)
+                          .join(", ")}.`
+                      : ""}
+                  </p>
+                ) : null}
+              </>
             ) : null}
-          </>
+          </div>
         ) : null}
       </section>
 
+      {phoneError ? (
+        <ErrorCard error={phoneError.error} compact onRetry={phoneError.retry} />
+      ) : null}
+
       {gap ? (
-        <section>
-          <GapCard gap={gap} now={serverNow} />
-          {play ? (
-            <div className="card">
-              <div className="card__header">
-                <h3>Play: {play.mechanic}</h3>
-                <Badge kind="replay" detail="pre-proposed" />
-              </div>
-              <p>{play.rationale.split(".")[0]}.</p>
-              <ApprovePanel play={play} onApproved={setApproveResult} />
-            </div>
+        <section ref={gapSectionRef}>
+          {gapIsFallback ? (
+            <p className="muted phone-fallback" role="status">
+              <span className="chip phone-fallback__chip">Fallback gap</span>
+              <span data-testid="gap-fallback-note">
+                None of the photographed items raised a gap. Showing the node&apos;s biggest open gap instead.
+              </span>
+            </p>
           ) : null}
+          {play ? (
+            <PlayCard play={play} gap={gap} mode="hero" now={serverNow} onApproved={setApproveResult} />
+          ) : (
+            <GapCard gap={gap} now={serverNow} />
+          )}
         </section>
       ) : null}
 

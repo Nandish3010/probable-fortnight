@@ -1,0 +1,179 @@
+/* The stepper in the nav bar (components/Stepper.tsx). Desktop: five steps in a row, each a
+   24px dot, a label and a persona caption, joined by a line. Phones: the same five links as
+   equal columns, dot over label, no captions and no lines, so nothing is clipped at 360px. */
+
+.stepper {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.item:last-child {
+  flex: 0 0 auto;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.link:hover {
+  color: var(--text);
+  text-decoration: none;
+  background: var(--surface-alt);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.dot {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.caption {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.connector {
+  flex: 1 1 8px;
+  min-width: 8px;
+  height: 2px;
+  margin-inline: 6px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+
+/* done: filled with the good colour and a check */
+.item[data-state="done"] .dot,
+.item[data-state="current"][data-done="true"] .dot {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--on-accent);
+}
+
+.item[data-done="true"] .connector {
+  background: var(--good);
+}
+
+/* current: an accent ring, a bolder label */
+.item[data-state="current"] .dot {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.item[data-state="current"]:not([data-done="true"]) .dot {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.item[data-state="current"] .label {
+  font-weight: var(--fw-semibold);
+}
+
+.item[data-state="current"] .caption {
+  color: var(--accent-strong);
+}
+
+/* locked: a lock, muted. Still a link. */
+.item[data-state="locked"] .label {
+  color: var(--text-muted);
+}
+
+.item[data-state="locked"] .dot {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+@media (max-width: 899px) {
+  .caption {
+    font-size: var(--fs-xs);
+  }
+
+  .connector {
+    flex-basis: 4px;
+    min-width: 4px;
+    margin-inline: 2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .list {
+    gap: 0;
+  }
+
+  .item,
+  .item:last-child {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .connector,
+  .caption {
+    display: none;
+  }
+
+  .link {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    padding: 2px 0;
+  }
+
+  .text {
+    align-items: center;
+  }
+
+  .label {
+    font-size: var(--fs-xs);
+  }
+}

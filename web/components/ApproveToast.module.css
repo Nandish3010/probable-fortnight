@@ -1,0 +1,95 @@
+/* Desktop: top right, under the nav, so it never covers the chart's axis or the result. Phones:
+   centred above the sticky decision row (about 72px tall), still clear of the home indicator. */
+.toast {
+  position: fixed;
+  top: calc(var(--nav-h) + var(--space-3));
+  right: var(--space-6);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: min(360px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--state-pass-bd);
+  box-shadow: var(--shadow-pop);
+  animation: toastIn 200ms var(--ease) both;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .toast {
+    top: auto;
+    right: auto;
+    left: 50%;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    animation-name: toastInPhone;
+  }
+}
+
+@keyframes toastInPhone {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--state-pass-bg);
+  color: var(--state-pass-fg);
+}
+
+.text {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  min-width: 0;
+}
+
+.dismiss {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.dismiss:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

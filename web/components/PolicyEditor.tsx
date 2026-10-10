@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getPolicy, rerun } from "../lib/api";
+import { toApiError, type ApiError } from "../lib/apiError";
 import { Badge } from "./Badge";
+import { ErrorCard } from "./ErrorCard";
 import type { RerunAccepted } from "../lib/types";
 
 export function PolicyEditor({
@@ -24,17 +26,30 @@ export function PolicyEditor({
   const [text, setText] = useState("");
   const [version, setVersion] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [loadError, setLoadError] = useState<ApiError | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
-    getPolicy().then((doc) => {
-      setText(doc.text);
-      setVersion(doc.policy_version);
-    });
-  }, []);
+    let cancelled = false;
+    setLoadError(null);
+    getPolicy()
+      .then((doc) => {
+        if (cancelled) return;
+        setText(doc.text);
+        setVersion(doc.policy_version);
+      })
+      .catch((e) => {
+        if (!cancelled) setLoadError(toApiError(e, "/policy"));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAttempt]);
 
   useEffect(() => {
-    if (refreshKey > 0) getPolicy().then((doc) => setVersion(doc.policy_version));
+    // Only the version label is refreshed here; if this read fails the label keeps its last value.
+    if (refreshKey > 0) getPolicy().then((doc) => setVersion(doc.policy_version)).catch(() => {});
   }, [refreshKey]);
 
   async function handleReplan() {
@@ -46,13 +61,21 @@ export function PolicyEditor({
       setVersion(accepted.policy_version);
       onReplanStart(accepted);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Re-plan failed. Showing last recorded result would be safer here.");
+      setError(toApiError(e, "/rerun"));
     } finally {
       setSubmitting(false);
     }
   }
 
   const busy = submitting || replanning;
+
+  if (loadError) {
+    return (
+      <div className="policy-editor">
+        <ErrorCard error={loadError} compact onRetry={() => setLoadAttempt((n) => n + 1)} />
+      </div>
+    );
+  }
 
   return (
     <div className="policy-editor">
@@ -69,7 +92,15 @@ export function PolicyEditor({
       <button type="button" onClick={handleReplan} disabled={busy}>
         {busy ? "Re-planning…" : "Change policy → re-plan"}
       </button>
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <ErrorCard
+          error={error}
+          compact
+          onRetry={handleReplan}
+          title={error.kind === "conflict" ? "A re-plan is already running" : undefined}
+          body={error.kind === "conflict" ? "Wait for it to finish, then try again." : undefined}
+        />
+      ) : null}
     </div>
   );
 }

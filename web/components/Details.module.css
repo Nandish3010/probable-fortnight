@@ -1,0 +1,93 @@
+.details {
+  margin-block: 4px;
+  font-size: var(--fs-sm);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  min-height: var(--tap);
+  padding: 4px;
+}
+
+/* the browser's own marker is replaced by the chevron */
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary {
+  list-style: none;
+}
+
+.summary:hover {
+  color: var(--text);
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.body {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.inline {
+  display: block;
+  margin-block: 2px 0;
+}
+
+.inline .summary {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  padding: 0 2px;
+  min-height: 0;
+}
+
+.details[open] > .summary > .chevron {
+  transform: rotate(180deg);
+}
+
+/* The decision card's disclosure: full-width 44px summary, chevron that turns when open, and a
+   body of ordinary prose sections rather than a monospace id box. */
+.card {
+  margin-block: 0;
+  font-size: var(--fs-sm);
+  border-top: 1px solid var(--border);
+}
+
+.card .summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 8px 0;
+  color: var(--text);
+  font-weight: var(--fw-medium);
+}
+
+.chevron {
+  flex: none;
+  transition: transform var(--dur-fast, 120ms) ease;
+}
+
+.card[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.cardBody {
+  padding-bottom: 8px;
+  overflow-wrap: anywhere;
+}

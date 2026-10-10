@@ -43,11 +43,13 @@ test.describe("Demand signal: chat -> gap evidence -> Play Desk", () => {
     expect(colaGap.evidence.distinct_customers).toBe(2);
 
     await page.goto("/desk");
-    const item = page.locator(".inbox__item", { hasText: "DS-07" }).filter({ hasText: "Cola" });
+    const item = page.locator(".inbox__item", { hasText: "Dark store 7" }).filter({ hasText: "Cola" });
     await expect(item.first()).toBeVisible({ timeout: 15_000 });
     await item.first().click();
-    await expect(page.getByTestId("play-detail").getByText(/Gap type:/)).toBeVisible();
-    await expect(page.getByTestId("play-detail").getByText(/real chat requests? from 2 customers asking for this/)).toBeVisible();
+    const detail = page.getByTestId("play-detail");
+    await expect(detail.getByText(/Dark store 7 · /)).toBeVisible(); // the eyebrow: store and gap type
+    await detail.getByTestId("card-details").locator("summary").click(); // the demand line is in Details > Why now
+    await expect(detail.getByText(/real chat requests? from 2 customers asking for this/)).toBeVisible();
     await expectNoConsoleErrors(errors);
   });
 });

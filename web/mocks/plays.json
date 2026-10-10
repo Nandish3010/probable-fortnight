@@ -135,12 +135,13 @@
     "counterfactuals": {
       "do_nothing_inr": 35020.0,
       "blanket_markdown_inr": 32015.18,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -27522.13
     },
     "cost": {
-      "plan_cost_inr": 1.51,
+      "plan_cost_inr": 3.94,
       "conversation_budget_inr": 41.99,
-      "pct_of_rupees_at_stake": 0.124
+      "pct_of_rupees_at_stake": 0.131
     },
     "source": "scripted_stub"
   },
@@ -205,7 +206,7 @@
       {
         "rule": "frequency_cap",
         "passed": true,
-        "detail": "all 0 customers under 2 plays in 7 days"
+        "detail": "all 311 customers under 2 plays in 7 days"
       },
       {
         "rule": "consent_required",
@@ -279,86 +280,112 @@
     "counterfactuals": {
       "do_nothing_inr": 11210.0,
       "blanket_markdown_inr": 11152.8,
-      "blanket_markdown_pct": 10.0
+      "blanket_markdown_pct": 10.0,
+      "play_net_inr": -6507.68
     },
     "cost": {
-      "plan_cost_inr": 1.51,
+      "plan_cost_inr": 3.94,
       "conversation_budget_inr": 40.43,
-      "pct_of_rupees_at_stake": 0.374
+      "pct_of_rupees_at_stake": 0.396
     },
     "source": "scripted_stub"
   },
   {
-    "play_id": "play_chips_ds07_v1",
-    "gap_id": "gap_chips_ds07",
-    "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-12T03:30:00Z",
-    "objective": "clear_online_sellby",
-    "target": {
-      "sku": "SKU-MASALA-CHIPS-200G",
-      "node_ids": [
-        "DS-07"
-      ],
-      "batch_ids": [
-        "B-CHIPS-DS07-01"
-      ],
-      "units": 368,
-      "deadline_date": "2026-09-18",
-      "deadline_type": "online_sellby"
-    },
     "mechanic": "bundle",
-    "mechanic_params": {
-      "bundle_sku": "SKU-COCONUT-WATER-1L",
-      "bundle_price": 61.0
+    "rationale": "This play targets six high-affinity segments with a bundle of Masala Chips and Cola Classic at fifty rupees to clear the online sell-by gap before the deadline. The bundle mechanic is preferred by policy over blanket markdowns and yields a positive expected margin of 126.42 rupees while avoiding 605.44 rupees of waste. Alternative bundle partners and transfer options were evaluated but rejected due to lower or negative expected margins.",
+    "play_id": "play_chips_ds07_v1",
+    "window": {
+      "end": "2026-09-18T23:59:59Z",
+      "start": "2026-09-12T00:00:00Z"
     },
-    "audience": {
-      "segment_ids": [
-        "seg_5",
-        "seg_2",
-        "seg_1",
-        "seg_3",
-        "seg_4"
-      ],
-      "filters": {
-        "min_affinity": 0.3
-      },
-      "purpose": "marketing",
-      "size_before_consent": 379,
-      "size_after_consent": 315
+    "expected_outcome": {
+      "units": 24.22,
+      "margin_inr": 126.42,
+      "waste_avoided_inr": 605.44,
+      "discount_cost_inr": 121.09,
+      "ci_low": 1.31,
+      "ci_high": 70.65,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
     },
     "channel": "web_chat",
-    "window": {
-      "start": "2026-09-12T00:00:00Z",
-      "end": "2026-09-18T23:59:59Z"
+    "mechanic_params": {
+      "bundle_sku": "SKU-COLA-CLASSIC-250ML",
+      "bundle_price": 50
     },
+    "alternatives": [
+      {
+        "mechanic_params": {
+          "bundle_price": 55,
+          "bundle_sku": "SKU-COCONUT-WATER-1L"
+        },
+        "expected_margin_inr": 117.46,
+        "expected_units": 24.22,
+        "mechanic": "bundle",
+        "rejected_because": "lower expected margin than the Cola Classic bundle"
+      },
+      {
+        "mechanic_params": {
+          "bundle_price": 50,
+          "bundle_sku": "SKU-ORANGE-JUICE-500ML"
+        },
+        "expected_units": 24.22,
+        "rejected_because": "lower expected margin than the Cola Classic bundle",
+        "mechanic": "bundle",
+        "expected_margin_inr": 106.32
+      },
+      {
+        "expected_units": 24.36,
+        "mechanic": "transfer_plus_nudge",
+        "mechanic_params": {
+          "transfer_units": 368,
+          "transfer_to_node": "OUT-03"
+        },
+        "rejected_because": "negative expected margin",
+        "expected_margin_inr": -127.12
+      }
+    ],
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_chips_ds07"
+      },
+      {
+        "ref": "est-v1",
+        "type": "estimator"
+      },
+      {
+        "ref": "v1",
+        "type": "policy"
+      },
+      {
+        "ref": "sense_20260912_baseline_2aaad73c",
+        "type": "forecast"
+      }
+    ],
     "copy": {
+      "copy_status": "pending",
       "language_set": [
-        "en",
-        "kn"
+        "en"
       ],
-      "variants": [],
-      "copy_status": "pending"
-    },
-    "holdout": {
-      "fraction": 0.1,
-      "seed": "seed-play_chips_ds07_v1",
-      "min_treated_n": 20
+      "variants": []
     },
     "guardrails": [
       {
         "rule": "margin_floor",
         "passed": true,
-        "detail": "net margin 17.79% (net price 61.00, cost 50.15) vs snacks floor 8.00%"
+        "detail": "net margin 10.44% (net price 50.00, cost 44.78) vs snacks floor 8.00%"
       },
       {
         "rule": "frequency_cap",
         "passed": true,
-        "detail": "all 313 customers under 2 plays in 7 days"
+        "detail": "all 352 customers under 2 plays in 7 days"
       },
       {
         "rule": "consent_required",
         "passed": true,
-        "detail": "audience filtered by consent: 379 -> 315"
+        "detail": "audience filtered by consent: 426 -> 352"
       },
       {
         "rule": "sellby_disclosure",
@@ -383,68 +410,58 @@
       {
         "rule": "cite_or_drop",
         "passed": true,
-        "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+        "detail": "2 number(s) in rationale all cited; 4 citation(s) resolve"
       }
     ],
-    "rationale": "368 units of Masala Chips 200G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-18; doing nothing writes off ₹9200 and a blanket 20% markdown costs ₹8189. This play uses a bundle with SKU-COCONUT-WATER-1L at ₹61 for 315 consented customers (Household essentials buyers, Tea connoisseurs, Festival sweets loyalists, Everyday staples shoppers, Personal care regulars): expected 22 units, margin ₹235, discount cost ₹87, waste avoided ₹542 (CI 1 to 63 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
-    "citations": [
-      {
-        "type": "gap",
-        "ref": "gap_chips_ds07"
-      },
-      {
-        "type": "estimator",
-        "ref": "est-v1"
-      },
-      {
-        "type": "policy",
-        "ref": "v1"
-      },
-      {
-        "type": "forecast",
-        "ref": "sense_20260912_baseline_2aaad73c"
-      },
-      {
-        "type": "stock",
-        "ref": "B-CHIPS-DS07-01"
-      }
-    ],
-    "alternatives": [
-      {
-        "mechanic": "coupon",
-        "mechanic_params": {
-          "discount_pct": 15
-        },
-        "expected_units": 21.67,
-        "expected_margin_inr": 10.84,
-        "rejected_because": "margin_floor: net margin 1.96% (net price 25.50, cost 25.00) vs snacks floor 8.00%"
-      }
-    ],
-    "policy_version": "v1",
-    "trace_ref": "events/run_chips_ds07_v1_bd0a8253",
-    "status": "proposed",
-    "expected_outcome": {
-      "units": 21.67,
-      "margin_inr": 235.14,
-      "waste_avoided_inr": 541.8,
-      "discount_cost_inr": 86.69,
-      "ci_low": 1.17,
-      "ci_high": 63.23,
-      "prior_n": 20.0,
-      "measured_n": 0,
-      "estimator_version": "est-v1"
+    "target": {
+      "units": 368,
+      "node_ids": [
+        "DS-07"
+      ],
+      "deadline_type": "online_sellby",
+      "sku": "SKU-MASALA-CHIPS-200G",
+      "deadline_date": "2026-09-18",
+      "batch_ids": [
+        "B-CHIPS-DS07-01"
+      ]
     },
+    "gap_id": "gap_chips_ds07",
+    "holdout": {
+      "seed": "seed-play_chips_ds07_v1",
+      "fraction": 0.1,
+      "min_treated_n": 20
+    },
+    "audience": {
+      "purpose": "marketing",
+      "size_before_consent": 426,
+      "filters": {},
+      "segment_ids": [
+        "seg_5",
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_4",
+        "seg_6"
+      ],
+      "size_after_consent": 352
+    },
+    "objective": "clear_online_sellby",
     "counterfactuals": {
       "do_nothing_inr": 9200.0,
       "blanket_markdown_inr": 8188.78,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -8468.14
     },
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_chips_ds07_v1_67483238",
     "cost": {
-      "plan_cost_inr": 1.51,
-      "conversation_budget_inr": 40.95,
-      "pct_of_rupees_at_stake": 0.462
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 45.76,
+      "pct_of_rupees_at_stake": 0.54
     },
-    "source": "scripted_stub"
+    "source": "recorded_gemini"
   },
   {
     "play_id": "play_kaju_ds01_v1",
@@ -575,11 +592,12 @@
     "counterfactuals": {
       "do_nothing_inr": 2860.0,
       "blanket_markdown_inr": 1192.32,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": 2256.16
     },
     "cost": {
-      "plan_cost_inr": 1.51,
-      "conversation_budget_inr": 20.49,
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 18.06,
       "pct_of_rupees_at_stake": 2.0
     },
     "source": "scripted_stub"
@@ -715,11 +733,12 @@
     "counterfactuals": {
       "do_nothing_inr": 1950.0,
       "blanket_markdown_inr": 855.44,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -1060.8
     },
     "cost": {
-      "plan_cost_inr": 1.51,
-      "conversation_budget_inr": 11.49,
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 9.06,
       "pct_of_rupees_at_stake": 2.0
     },
     "source": "scripted_stub"
@@ -856,11 +875,12 @@
     "counterfactuals": {
       "do_nothing_inr": 1770.0,
       "blanket_markdown_inr": 831.92,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -949.2
     },
     "cost": {
-      "plan_cost_inr": 1.51,
-      "conversation_budget_inr": 10.29,
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 7.86,
       "pct_of_rupees_at_stake": 2.0
     },
     "source": "scripted_stub"
@@ -994,11 +1014,12 @@
     "counterfactuals": {
       "do_nothing_inr": 1300.0,
       "blanket_markdown_inr": 786.24,
-      "blanket_markdown_pct": 20.0
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": 2256.16
     },
     "cost": {
-      "plan_cost_inr": 1.51,
-      "conversation_budget_inr": 8.49,
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 6.06,
       "pct_of_rupees_at_stake": 2.0
     },
     "source": "scripted_stub"

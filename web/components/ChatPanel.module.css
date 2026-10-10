@@ -1,0 +1,139 @@
+/* Additions to the chat panel (the layout classes .chat-panel, .chat-msg ... stay global because
+   the specs select on them). */
+
+/* The visitor's own bubble before the server has answered, and when the send failed. The words come
+   from ::after so the bubble's text stays exactly what the visitor typed. */
+.pending,
+.failed {
+  position: relative;
+}
+
+.pending {
+  opacity: 0.75;
+}
+
+.pending::after,
+.failed::after {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  color: var(--text-muted);
+  text-align: end;
+}
+
+.pending::after {
+  content: "Sending…";
+}
+
+.failed {
+  border: 1px solid var(--state-fail-bd);
+}
+
+.failed::after {
+  content: "Not delivered";
+  color: var(--state-fail-fg);
+  font-weight: var(--fw-semibold);
+}
+
+.tag {
+  display: inline-block;
+  margin-bottom: var(--space-1);
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--state-fallback-bd);
+  background: var(--state-fallback-bg);
+  color: var(--state-fallback-fg);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.glossToggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-2);
+  margin-top: 2px;
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  text-decoration: underline;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.sources {
+  margin-top: 2px;
+}
+
+.pickerDetails {
+  margin: 0;
+}
+
+/* Secondary button: neutral at rest, the danger colour only on hover and keyboard focus, so the
+   opt-out demo does not read as the main action. */
+.stop {
+  min-height: var(--tap);
+  padding: 8px 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  box-shadow: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.stop:hover:not(:disabled),
+.stop:focus-visible {
+  border-color: var(--danger);
+  color: var(--danger-text);
+  background: var(--state-fail-bg);
+}
+
+.stop:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-2);
+}
+
+/* 44 px targets for the quick replies, the suggestion chip, Send and the composer input. */
+.tapRow button,
+.tapRow input {
+  min-height: var(--tap);
+}
+
+@media (forced-colors: active) {
+  .failed {
+    border: 2px solid CanvasText;
+  }
+  .stop:hover:not(:disabled),
+  .stop:focus-visible {
+    border-color: Highlight;
+    color: HighlightText;
+    background: Highlight;
+  }
+}
+
+/* The message box takes its own full row; Send and the opt-out demo button share the row under it,
+   so a long button label never squeezes the box to a few letters. */
+.composer input {
+  flex: 1 1 100%;
+}
+
+/* The customer picker never pokes out of the card on a narrow screen. */
+.picker {
+  max-width: 100%;
+  box-sizing: border-box;
+}

@@ -15,6 +15,10 @@ function findChromium(): string | undefined {
 }
 const executablePath = findChromium();
 
+// The guided tour (lib/tour.ts) is switched off for the persona walkthroughs with its kill switch.
+const webURL = process.env.TAAL_WEB_URL || "http://localhost:3000";
+const tourOff = { cookies: [], origins: [{ origin: webURL, localStorage: [{ name: "taal_tour_off", value: "1" }] }] };
+
 export default defineConfig({
   testDir: "./tests/live",
   timeout: 120_000,
@@ -25,7 +29,8 @@ export default defineConfig({
   reporter: [["list"]],
   outputDir: "../eval/runs/live-results",
   use: {
-    baseURL: process.env.TAAL_WEB_URL || "http://localhost:3000",
+    baseURL: webURL,
+    storageState: tourOff,
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : {},
   },

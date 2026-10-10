@@ -1,0 +1,101 @@
+/* Landing page layout (app/page.tsx). Components carry their own modules; this is page rhythm only. */
+
+.top {
+  margin-bottom: var(--space-4);
+}
+
+/* The hero line is the page's h1. 28/34 on desktop, 22/28 below 768 (design_spec.md 2.2). */
+.heroLine {
+  margin: 0 0 var(--space-3);
+  max-width: 40ch;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-xl);
+}
+
+@media (min-width: 768px) {
+  .heroLine {
+    font-size: var(--fs-2xl);
+    line-height: var(--lh-2xl);
+    max-width: 44ch;
+  }
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.clock {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  cursor: help;
+}
+
+.footerRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+}
+
+.resetNote {
+  margin: 0;
+}
+
+.footerActions {
+  margin-block: var(--space-4) var(--space-2);
+}
+
+/* Once the beat is open the decision is the point: the hero line shrinks to a one-liner and the
+   four steps to a single row, so the card (and Approve) start higher on the screen. */
+@media (min-width: 768px) {
+  .topCompact {
+    /* The nav already leaves 40 px above the page; the decision is what the screen is for. */
+    margin-top: calc(-1 * var(--space-3));
+    margin-bottom: var(--space-2);
+  }
+
+  .topCompact .heroLine {
+    font-size: var(--fs-md);
+    line-height: var(--lh-md);
+    max-width: none;
+    margin-bottom: var(--space-1);
+  }
+
+  .topCompact .meta {
+    gap: var(--space-1) var(--space-4);
+  }
+}
+
+/* Phone layout: the landing is the decision feed, with the customer chat after it. */
+.phoneLanding {
+  margin-bottom: var(--space-4);
+}
+
+/* Before hydration the page cannot yet tell which layout it is: a phone shows the feed's
+   placeholder instead of the desktop button, a desktop shows nothing extra. */
+.phoneOnly {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .phoneOnly {
+    display: block;
+  }
+
+  section.desktopOnly {
+    display: none;
+  }
+}

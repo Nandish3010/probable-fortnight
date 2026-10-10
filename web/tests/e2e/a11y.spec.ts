@@ -3,6 +3,7 @@ import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 import type { AxeResults } from "axe-core";
+import { openBeat } from "./helpers";
 
 // Every route, scanned with real axe-core (not a manual guess), at both desktop and a real phone
 // viewport width -- per the WCAG-violations fix in b0565d1, re-run whenever the UI changes rather
@@ -65,3 +66,65 @@ test.describe("phone viewport (390x844)", () => {
     });
   }
 });
+
+// States beyond the first paint: the decision card open, after Approve, the legend and Reset dialog
+// open, in light and dark, desktop and phone. (Contrast is where a state usually fails.)
+const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+
+for (const scheme of ["light", "dark"] as const) {
+  for (const [name, viewport] of [["desktop", { width: 1280, height: 800 }], ["phone", { width: 390, height: 844 }]] as const) {
+    test.describe(`${scheme} ${name}: states`, () => {
+      test.use({ viewport, colorScheme: scheme });
+
+      test("landing: beat open (on a phone, the feed), Details and legend open", async ({ page }) => {
+        await page.goto("/");
+        await page.getByTestId("state-legend").locator("summary").click();
+        const card = await openBeat(page, { goto: false });
+        await card.getByTestId("guardrail-summary").click();
+        await card.getByTestId("card-details").locator("summary").click();
+        await page.waitForTimeout(300);
+        const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+        expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+      });
+
+      test("landing: after Approve", async ({ page }) => {
+        const card = await openBeat(page);
+        await card.getByRole("button", { name: "Approve" }).click();
+        await page.locator('[data-testid="approve-result"][data-phase="settled"]').waitFor({ timeout: 30_000 });
+        await page.waitForTimeout(300);
+        const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+        expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+      });
+
+      test("landing: Reset dialog open", async ({ page }) => {
+        await page.goto("/");
+        await page.getByRole("button", { name: "Reset demo data" }).click();
+        await page.getByRole("dialog").waitFor();
+        const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+        expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+      });
+
+      test("desk: a play open with Details open", async ({ page }) => {
+        await page.goto("/desk");
+        await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+        await page.getByTestId("card-details").locator("summary").click();
+        await page.waitForTimeout(300);
+        const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+        expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+      });
+
+      test("phone view: after capture and Approve", async ({ page }) => {
+        await page.goto("/phone");
+        await page.getByRole("button", { name: "Pallet 1" }).click();
+        await page.getByTestId("intake-table").waitFor();
+        await page.getByRole("button", { name: "Confirm rows" }).click();
+        await page.getByTestId("why-now").waitFor();
+        await page.getByRole("button", { name: "Approve" }).click();
+        await page.locator('[data-testid="approve-result"][data-phase="settled"]').waitFor({ timeout: 30_000 });
+        await page.waitForTimeout(300);
+        const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+        expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+      });
+    });
+  }
+}

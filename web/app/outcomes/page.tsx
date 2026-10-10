@@ -3,22 +3,23 @@
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
+import { Details } from "../../components/Details";
+import { ErrorCard } from "../../components/ErrorCard";
+import { FastForwardPanel } from "../../components/FastForwardPanel";
 import { getOutcomes, getPlays, getPriorUpdate, isMockMode, postMeasure } from "../../lib/api";
-import { inr, formatDateTime, pct } from "../../lib/format";
+import { toApiError, type ApiError } from "../../lib/apiError";
+import { Skeleton } from "../../components/Skeleton";
+import { count, dayMonth, inr, formatDateTime, liftInPoints, pct, pointsFromPp } from "../../lib/format";
+import { GAP_TYPE_LABEL, label } from "../../lib/labels";
+import { isApproved } from "../../lib/progress";
+import { FF_EXPLAINER, sampleSizeLine } from "../../lib/fastForward";
+import { refreshProgress, useProgress } from "../../lib/progressStore";
+import { recordedOutcomes } from "../../lib/recorded";
 import type { MeasureResponse, Outcome, Play, PortfolioSummary, PriorUpdate } from "../../lib/types";
 import portfolio from "../../mocks/portfolio_summary.json";
+import styles from "./outcomes.module.css";
 
 const PORTFOLIO: PortfolioSummary = portfolio as PortfolioSummary;
-
-const GAP_TYPE_LABEL: Record<string, string> = {
-  online_sellby_breach: "online sell-by breaches",
-  expiry_writeoff: "expiry write-offs",
-  stockout_risk: "stockout risk",
-  slow_mover: "slow movers",
-  rebalance: "rebalance",
-  assortment_gap: "assortment gaps",
-  unmet_demand: "unmet demand",
-};
 
 // docs/impact_math.md, Part 1.2: the margin blanket_markdown_inr already destroys on the
 // baseline volume that was projected to sell at full price with no intervention at all. Only
@@ -34,33 +35,36 @@ function PortfolioCard() {
   const { totals, governor, planned } = PORTFOLIO;
   const byType = Object.entries(totals.by_type).sort((a, b) => b[1].exposure_inr - a[1].exposure_inr);
   return (
-    <div className="card portfolio-card">
+    <div className="card portfolio-card" data-testid="portfolio-card">
       <div className="card__header">
-        <h3>Nightly portfolio</h3>
+        <h2 className="card__title">Portfolio projection</h2>
         <Badge kind="synthetic" detail="batch job, not a live measurement" />
       </div>
       <p className="muted">
-        Every planner-eligible gap from one Sense run ({PORTFOLIO.sense_run_id}, as of{" "}
-        {PORTFOLIO.as_of}), planned by the same deterministic drafter and estimator behind every
-        play on this screen -- no model calls, run with{" "}
-        <code>python -m jobs.portfolio</code>. This is a projection across the portfolio, not a
-        measurement.
+        Every gap Taal found in one scan of the stock ({dayMonth(PORTFOLIO.as_of)}), planned by the same rule-based
+        drafter and estimator behind every play on this page. No model calls. This is a projection across the
+        portfolio, not a measurement.
       </p>
       <div className="portfolio-card__stats">
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
-          <span className="muted">total exposure across {totals.gaps} gaps</span>
+          <span className="portfolio-card__label">Total at stake</span>
+          <span className="muted">across {count(totals.gaps)} gaps</span>
         </div>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
+          <span className="portfolio-card__label">Expected recovered</span>
           <span className="muted">
-            expected margin across {planned.count} planned plays -- sales margin, or for
-            transfer plays, write-off avoided net of transfer cost
+            margin across {count(planned.count)} planned plays, with {inr(planned.expected_waste_avoided_inr)} of write-off
+            avoided on {count(planned.expected_units)} units
           </span>
         </div>
         <div className="portfolio-card__stat">
-          <span className="portfolio-card__number">{inr(planned.expected_waste_avoided_inr)}</span>
-          <span className="muted">expected waste avoided, {planned.expected_units.toLocaleString("en-IN")} units</span>
+          <span className="portfolio-card__number">{count(planned.count)}</span>
+          <span className="portfolio-card__label">Plans drafted</span>
+          <span className="muted">
+            for {count(totals.gaps)} gaps; {count(planned.eligible_no_play)} more were eligible but no draft passed every check
+          </span>
         </div>
       </div>
       <table className="portfolio-card__table">
@@ -75,26 +79,25 @@ function PortfolioCard() {
           {byType.map(([type, v]) => (
             <tr key={type}>
               <td>{GAP_TYPE_LABEL[type] ?? type}</td>
-              <td>{v.count}</td>
+              <td>{count(v.count)}</td>
               <td>{inr(v.exposure_inr)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="muted portfolio-card__counterfactual-line">
-        Under do-nothing this exposure is a {inr(totals.do_nothing_inr)} write-off; a blanket 20%
-        markdown across every gap brings that to {inr(totals.blanket_markdown_inr)}. Planned plays
-        are projected to recover {inr(planned.expected_margin_inr)} of margin (sales margin, or
-        for transfer plays, write-off avoided net of transfer cost) without discounting volume
-        that was not at risk.
+        If nothing is done, this exposure becomes a {inr(totals.do_nothing_inr)} write-off. A blanket 20% markdown across
+        every gap brings that to {inr(totals.blanket_markdown_inr)}. The planned plays are projected to recover{" "}
+        {inr(planned.expected_margin_inr)} of margin without discounting volume that was not at risk.
       </p>
       <p className="muted portfolio-card__governor-line">
-        The Cost Governor triaged {governor.triaged_out} of {totals.gaps} gaps out before a play
-        was attempted ({inr(governor.triaged_out_exposure_inr)} of exposure, each below the ₹
-        {governor.planner_threshold_inr.toLocaleString("en-IN")} planner threshold -- a templated
-        suggestion only, no model or estimator cost spent). {planned.eligible_no_play} more were
-        eligible but produced no valid play (guardrails rejected every candidate).
+        Taal set aside {count(governor.triaged_out)} of {count(totals.gaps)} gaps before drafting anything:{" "}
+        {inr(governor.triaged_out_exposure_inr)} of exposure, each below the {inr(governor.planner_threshold_inr)} planning
+        threshold. No model or estimator cost was spent on them.
       </p>
+      <Details summary="Details" testId="portfolio-details">
+        Stock scan {PORTFOLIO.sense_run_id}, as of {PORTFOLIO.as_of}. Regenerate with python -m jobs.portfolio.
+      </Details>
     </div>
   );
 }
@@ -114,7 +117,7 @@ function PriorUpdateLine({ update }: { update: PriorUpdate | null }) {
         {update.responders.holdout} of {update.holdout_n} holdout customers responded
         {update.lift != null && update.ci.low != null && update.ci.high != null ? (
           <>
-            , lift {pct(update.lift)} (95% CI {pct(update.ci.low)} to {pct(update.ci.high)})
+            , {liftInPoints({ lift: update.lift, ci_low: update.ci.low, ci_high: update.ci.high })}
           </>
         ) : null}
         . The prior moves by exactly those treated counts. A demonstration of the update, not applied to the live
@@ -129,20 +132,39 @@ function FeaturedCounterfactualCard({ play, priorUpdate }: { play: Play | null; 
   return (
     <div className="card">
       <div className="card__header">
-        <h3>Worked example: {play.target.sku}</h3>
+        <h2 className="card__title">Worked example: {label("sku", play.target.sku)}</h2>
         <Badge kind="synthetic" />
       </div>
+      <p className={styles.exampleNote} data-testid="seeded-example-note">
+        <span>Seeded example, computed at build time. Not your approval.</span>
+      </p>
       <p className="muted">
-        {play.target.units} units at {play.target.node_ids.join(", ")}, {inr(play.counterfactuals.do_nothing_inr)}{" "}
-        written off if nothing is done. See <code>docs/impact_math.md</code> for the full derivation.
+        {count(play.target.units)} units at {play.target.node_ids.map((n) => label("node", n)).join(", ")}, {inr(play.counterfactuals.do_nothing_inr)}{" "}
+        written off if nothing is done.
       </p>
       <CounterfactualBars
         counterfactuals={play.counterfactuals}
         expectedOutcome={play.expected_outcome}
+        mechanic={play.mechanic}
         blanketMarkdownGiveawayInr={BLANKET_MARKDOWN_GIVEAWAY_INR[play.play_id]}
       />
       {priorUpdate?.play_id === play.play_id ? <PriorUpdateLine update={priorUpdate} /> : null}
+      <Details inline summary="Details" testId="worked-example-ids">
+        {play.target.sku} · {play.play_id}. The derivation is in docs/impact_math.md.
+      </Details>
     </div>
+  );
+}
+
+const INCONCLUSIVE_TIP = "The interval crosses zero or too few customers responded";
+
+/** Shown instead of a verdict when the measured difference cannot be told apart from noise. */
+function InconclusiveBadge() {
+  return (
+    <span className="chip chip--inconclusive" title={INCONCLUSIVE_TIP} tabIndex={0} data-testid="inconclusive-badge">
+      Inconclusive
+      <span className="visually-hidden">: {INCONCLUSIVE_TIP}</span>
+    </span>
   );
 }
 
@@ -152,25 +174,22 @@ function ExpectedVsMeasured({ play, outcome }: { play: Play | null; outcome: Out
   return (
     <p className="expected-vs-measured">
       <strong>Expected vs. measured, same play:</strong> the estimator projected{" "}
-      {play.expected_outcome.units} units; the holdout test measured {outcome.treated.units} units
-      in the treated arm, a lift of {pct(outcome.lift)}
-      {outcome.ci_low != null && outcome.ci_high != null ? (
-        <> (95% CI {pct(outcome.ci_low)}-{pct(outcome.ci_high)})</>
-      ) : null}
-      {crossesZero ? ", an interval that crosses zero" : ""} -- {outcome.treated.customers + outcome.holdout.customers}{" "}
-      customers is too small a sample to resolve a real effect from noise. This is why the play
-      above is labelled a projection and the row below is labelled measured: most tools stop at
-      "recommend"; this one measures and reports when the answer is null.
+      {count(play.expected_outcome.units)} units; the holdout test measured {count(outcome.treated.units)} units
+      in the treated group, a {liftInPoints(outcome)}
+      {crossesZero ? ", a range that crosses zero" : ""}. {count(outcome.treated.customers + outcome.holdout.customers)}{" "}
+      customers are too few to tell a real effect from noise. That is why the play above is labelled a projection and
+      the row below is labelled measured: most tools stop at &quot;recommend&quot;, and this one measures and says so
+      when the answer is null.
     </p>
   );
 }
 
 function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
   return (
-    <td>
-      <strong>{label}</strong>
+    <td data-label={label}>
+      <strong className="outcomes-table__arm-name">{label}</strong>
       <div className="muted">
-        {arm.customers} customers, {arm.responders} responders, {arm.units} units
+        {count(arm.customers)} customers, {count(arm.responders)} responders, {count(arm.units)} units
       </div>
       <div className="muted">margin {inr(arm.margin_inr)}, discount {inr(arm.discount_cost_inr)}</div>
     </td>
@@ -187,17 +206,136 @@ function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
     <div className="card impact-summary">
       <div className="impact-summary__stat">
         <span className="impact-summary__number">{kg.toFixed(1)} kg</span>
-        <span className="muted">of food diverted from waste, across {measured.length} measured play{measured.length === 1 ? "" : "s"}</span>
+        <span className="muted">of food kept out of the bin, across {measured.length} measured play{measured.length === 1 ? "" : "s"}</span>
       </div>
       <div className="impact-summary__stat">
-        <span className="impact-summary__number">{co2e.toFixed(1)} kg</span>
-        <span className="muted">CO2e avoided (estimate; see the emissions factor caveat in docs/DATA_MODEL.md)</span>
+        <span className="impact-summary__number">{co2e.toFixed(1)} kg CO2e</span>
+        <span className="muted">of emissions avoided (an estimate)</span>
       </div>
       <div className="impact-summary__stat">
         <span className="impact-summary__number">{inr(rupees)}</span>
-        <span className="muted">margin preserved that would otherwise have been written off</span>
+        <span className="muted">of margin kept that would otherwise have been written off</span>
+      </div>
+      <div className="impact-summary__details">
+        <Details inline summary="Details" testId="impact-details">
+          The emissions factor and its caveats are in docs/DATA_MODEL.md.
+        </Details>
       </div>
     </div>
+  );
+}
+
+/** The summary card is the first thing on the page: the measured result for the play THIS visitor
+ * approved, or an honest empty state with the one button that produces it. The seeded portfolio and
+ * worked example below it are labelled as not theirs. */
+function SummaryCard({
+  outcome,
+  approvedName,
+  loaded,
+  measuring,
+  onRun,
+  measureResult,
+  fastForwarded,
+}: {
+  outcome: Outcome | undefined;
+  /** The measured row came from the fast-forward demonstration (E2): say how little it proves. */
+  fastForwarded: boolean;
+  /** Plain name of an approved play with no measured row yet, when there is one. */
+  approvedName: string | null;
+  loaded: boolean;
+  measuring: boolean;
+  onRun: () => void;
+  measureResult: MeasureResponse | null;
+}) {
+  const crossesZero = outcome ? (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0 : false;
+  // A fast-forwarded row whose range crosses zero is inconclusive by definition, even from an API that
+  // does not send the flag.
+  const inconclusive = outcome ? outcome.inconclusive ?? (fastForwarded && crossesZero) : false;
+  const lift = outcome ? outcome.lift_pp ?? (outcome.lift != null ? outcome.lift * 100 : null) : null;
+  const lo = outcome ? outcome.ci_low_pp ?? (outcome.ci_low != null ? outcome.ci_low * 100 : null) : null;
+  const hi = outcome ? outcome.ci_high_pp ?? (outcome.ci_high != null ? outcome.ci_high * 100 : null) : null;
+
+  return (
+    <section className={`card ${styles.summary}`} aria-labelledby="summary-title" data-testid="outcome-summary">
+      <div className={styles.summaryHead}>
+        <h2 id="summary-title">{outcome ? `Your result: ${label("sku", outcome.sku)}` : "Your result"}</h2>
+        {outcome ? (
+          <div className={styles.badges}>
+            <Badge kind={outcome.data_label === "REAL PILOT" ? "real-pilot" : "synthetic"} />
+            {inconclusive ? <InconclusiveBadge /> : null}
+          </div>
+        ) : null}
+      </div>
+
+      {outcome && lift != null ? (
+        <>
+          <div className={styles.figures}>
+            <div className={styles.figure} data-testid="summary-difference">
+              <span className={styles.figureLabel}>Response-rate difference, treated minus holdout</span>
+              <span className={styles.figureValue}>{pointsFromPp(lift)} points</span>
+              {lo != null && hi != null ? (
+                <span className={styles.figureNote}>95% CI {pointsFromPp(lo)} to {pointsFromPp(hi)} points</span>
+              ) : null}
+            </div>
+            <div className={styles.figure} data-testid="summary-ceo">
+              <span className={styles.figureLabel}>CEO number: margin recovered per ₹1 of discount</span>
+              {inconclusive ? (
+                <span className={styles.figureValueMuted}>withheld: inconclusive</span>
+              ) : outcome.margin_per_discount_rupee != null ? (
+                <span className={styles.figureValue}>{outcome.margin_per_discount_rupee.toFixed(2)}</span>
+              ) : (
+                <span className={styles.figureValueMuted}>n/a: no discount was given</span>
+              )}
+              <span className={styles.figureNote}>net margin recovered per ₹1 of discount, against the holdout</span>
+            </div>
+          </div>
+          <p className={styles.runNote}>
+            {count(outcome.treated.customers)} customers got the offer and {count(outcome.holdout.customers)} were held back as the holdout.
+            {outcome.treated.responders === 0 && outcome.holdout.responders === 0
+              ? " Nobody in either group ordered yet, so this is a null result, not a failure: there is nothing to compare."
+              : ""}
+            {(inconclusive || crossesZero) && !fastForwarded
+              ? ` The range crosses zero, so ${count(outcome.treated.customers + outcome.holdout.customers)} customers are too few to tell a real effect from noise.`
+              : ""}
+          </p>
+          {fastForwarded ? (
+            <div className={styles.ffResult} data-testid="ff-result">
+              <p className={styles.runNote} data-testid="ff-sample-size">
+                <Badge kind="synthetic" detail="fast-forwarded day" /> {sampleSizeLine(outcome)}
+              </p>
+              <p className={styles.runNote} data-testid="ff-explainer">
+                {FF_EXPLAINER}
+              </p>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div data-testid="summary-empty">
+          <p className={styles.empty}>
+            {!loaded ? "Checking your session…" : "Nothing is measured in your session yet. Approve a play, then Run Measure."}
+          </p>
+          {approvedName ? (
+            <p className={styles.emptyHint}>
+              You approved {approvedName}. Run Measure compares the customers who got the offer with the holdout group.
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      <div className={styles.runRow}>
+        <button type="button" className="button-primary" onClick={onRun} disabled={measuring} data-testid="run-measure">
+          {measuring ? "Measuring…" : "Run Measure"}
+        </button>
+        <p className={styles.runNote}>Nothing in your session is measured until you click Run Measure.</p>
+      </div>
+      {measureResult ? (
+        <p className={styles.runNote} role="status" data-testid="measure-result">
+          {measureResult.plays} play{measureResult.plays === 1 ? "" : "s"} joined against orders:{" "}
+          {measureResult.measured} measured, {measureResult.unmeasured} unmeasured (below the minimum sample) ·{" "}
+          {formatDateTime(measureResult.computed_at)}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -207,20 +345,63 @@ export default function OutcomesPage() {
   const [priorUpdate, setPriorUpdate] = useState<PriorUpdate | null>(null);
   const [measuring, setMeasuring] = useState(false);
   const [measureResult, setMeasureResult] = useState<MeasureResponse | null>(null);
-  const [measureError, setMeasureError] = useState<string | null>(null);
+  const [measureError, setMeasureError] = useState<ApiError | null>(null);
+  const [outcomesError, setOutcomesError] = useState<ApiError | null>(null);
+  const [featuredError, setFeaturedError] = useState<ApiError | null>(null);
+  const [priorError, setPriorError] = useState<ApiError | null>(null);
+  const [usingRecorded, setUsingRecorded] = useState(false);
+  const [allPlays, setAllPlays] = useState<Play[]>([]);
 
-  function refresh() {
-    return getOutcomes().then(setOutcomes);
+  async function loadOutcomes() {
+    setOutcomesError(null);
+    try {
+      setOutcomes(await getOutcomes());
+    } catch (e) {
+      setOutcomesError(toApiError(e, "/outcomes"));
+    }
+  }
+
+  async function loadFeatured() {
+    setFeaturedError(null);
+    try {
+      const plays = await getPlays({ gap_id: "gap_chips_ds07" });
+      setFeaturedPlay(plays.find((p) => p.play_id === FEATURED_PLAY_ID) ?? plays[0] ?? null);
+    } catch (e) {
+      setFeaturedError(toApiError(e, "/plays"));
+    }
+  }
+
+  // Every play in the sandbox, to find the one the visitor approved for the fast-forward panel. If
+  // this read fails the panel is simply not offered; Run Measure still is.
+  async function loadAllPlays() {
+    try {
+      setAllPlays(await getPlays());
+    } catch {
+      setAllPlays([]);
+    }
+  }
+
+  async function loadPrior() {
+    setPriorError(null);
+    try {
+      setPriorUpdate(await getPriorUpdate());
+    } catch (e) {
+      setPriorUpdate(null);
+      setPriorError(toApiError(e, "/outcomes/prior-update"));
+    }
+  }
+
+  async function showRecordedOutcomes() {
+    setOutcomes(await recordedOutcomes());
+    setOutcomesError(null);
+    setUsingRecorded(true);
   }
 
   useEffect(() => {
-    refresh();
-    getPlays({ gap_id: "gap_chips_ds07" }).then((plays) => {
-      setFeaturedPlay(plays.find((p) => p.play_id === FEATURED_PLAY_ID) ?? plays[0] ?? null);
-    });
-    getPriorUpdate()
-      .then(setPriorUpdate)
-      .catch(() => setPriorUpdate(null));
+    loadOutcomes();
+    loadFeatured();
+    loadPrior();
+    loadAllPlays();
   }, []);
 
   async function runMeasure() {
@@ -229,9 +410,11 @@ export default function OutcomesPage() {
     try {
       const result = await postMeasure();
       setMeasureResult(result);
-      await refresh();
-    } catch {
-      setMeasureError("Measure failed. Approve a play first, then try again.");
+      // The sandbox may hold approvals this browser has no crumb for; ask it again so the summary
+      // card can find the visitor's play.
+      await Promise.all([loadOutcomes(), refreshProgress()]);
+    } catch (e) {
+      setMeasureError(toApiError(e, "/measure"));
     } finally {
       setMeasuring(false);
     }
@@ -239,53 +422,113 @@ export default function OutcomesPage() {
 
   const featuredOutcome = outcomes?.find((o) => o.play_id === FEATURED_PLAY_ID);
 
+  // The play THIS visitor approved: the crumbs written by Approve, and the sandbox's own /plays.
+  const progress = useProgress();
+  const approvedIds = new Set<string>(progress.crumbs.approved.map((a) => a.play_id));
+  for (const p of progress.api.plays ?? []) if (isApproved(p.status)) approvedIds.add(p.play_id);
+  const mine = (outcomes ?? []).filter((o) => approvedIds.has(o.play_id));
+  const myMeasured = mine.filter((o) => o.status === "measured" && o.lift != null);
+  // The most recently approved play first; when the crumbs are silent, the first one the API reports.
+  const order = progress.crumbs.approved.map((a) => a.play_id).reverse();
+  const myOutcome =
+    [...myMeasured].sort((a, b) => {
+      const ia = order.indexOf(a.play_id);
+      const ib = order.indexOf(b.play_id);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    })[0];
+  const approvedPlayId = [...approvedIds][0];
+  const approvedName = myOutcome || !approvedPlayId
+    ? null
+    : mine[0]
+      ? label("sku", mine[0].sku)
+      : featuredPlay && approvedIds.has(featuredPlay.play_id)
+        ? label("sku", featuredPlay.target.sku)
+        : "a play";
+
+  // E2: the visitor approved a play and nothing of theirs is measured (or the fast-forward just ran).
+  const recency = [...progress.crumbs.approved.map((a) => a.play_id).reverse(), ...approvedIds];
+  const ffPlay = recency.map((id) => allPlays.find((p) => p.play_id === id)).find((p): p is Play => Boolean(p));
+  const ffDone = ffPlay ? progress.crumbs.fastForwarded.includes(ffPlay.play_id) : false;
+  const showFastForward = outcomes !== null && ffPlay !== undefined && (!myOutcome || ffDone);
+
   return (
-    <main className="page">
-      <h1 className="visually-hidden">Taal</h1>
+    <main id="main-content" tabIndex={-1} className="page">
       <div className="card__header">
-        <h2>Outcomes</h2>
+        <h1>Outcomes</h1>
         <Badge kind={isMockMode() ? "replay" : "live"} detail="/outcomes" />
       </div>
       <p className="muted">
-        Three views, in order: what the portfolio projects, what one play projects, and what one
-        week of holdout measurement actually found.
+        Your measured result comes first. Below it: what the whole portfolio projects, one worked example, and every
+        play that has been measured.
       </p>
+
+      <SummaryCard
+        outcome={myOutcome}
+        approvedName={approvedName}
+        loaded={outcomes !== null || outcomesError !== null}
+        measuring={measuring}
+        onRun={runMeasure}
+        measureResult={measureResult}
+        fastForwarded={myOutcome ? progress.crumbs.fastForwarded.includes(myOutcome.play_id) : false}
+      />
+      {showFastForward && ffPlay ? (
+        <FastForwardPanel
+          play={ffPlay}
+          done={ffDone}
+          onFinished={async () => {
+            await Promise.all([loadOutcomes(), refreshProgress()]);
+          }}
+        />
+      ) : null}
+      {measureError ? (
+        <ErrorCard
+          error={measureError}
+          compact
+          onRetry={runMeasure}
+          title={measureError.kind === "http" || measureError.kind === "not_found" ? "Measure did not run" : undefined}
+          body={
+            measureError.kind === "http" || measureError.kind === "not_found"
+              ? "Approve a play first, then try again."
+              : undefined
+          }
+        />
+      ) : null}
 
       <PortfolioCard />
+      {featuredError ? <ErrorCard error={featuredError} compact onRetry={loadFeatured} /> : null}
       <FeaturedCounterfactualCard play={featuredPlay} priorUpdate={priorUpdate} />
+      {priorError ? <ErrorCard error={priorError} compact onRetry={loadPrior} /> : null}
       <ExpectedVsMeasured play={featuredPlay} outcome={featuredOutcome} />
 
-      <div className="card__header">
-        <h3>Measured</h3>
-      </div>
+      <h2 className={styles.sectionHead}>Measured plays</h2>
       <p className="holdout-explainer">
-        <strong>Holdout</strong> is a randomly assigned control group -- customers who see no offer for this
-        play at all, chosen the same way as everyone in "Treated" except for a coin flip. Every lift number
-        below is the difference between what the treated group actually did and what this control group did,
-        not a before/after comparison against the same customers. This is the only honest way to know a play
-        caused the change, rather than a trend that would have happened anyway.
+        <strong>Holdout</strong> is a randomly chosen control group: customers who get no offer for this play, picked
+        the same way as everyone in &quot;Treated&quot; apart from a coin flip. Every response-rate difference below is
+        what the treated group did minus what this control group did, not a before-and-after comparison of the same
+        customers. That is the only honest way to know a play caused the change rather than a trend that was coming anyway.
       </p>
+      {usingRecorded ? (
+        <p className="muted" data-testid="recorded-note">
+          <Badge kind="replay" detail="recorded copy" /> The live service is not answering, so these are the recorded
+          rows that ship with the app.
+        </p>
+      ) : isMockMode() ? (
+        <p className={styles.mockNote} data-testid="mock-rows-note">
+          Replay mode: the rows below are recorded, not produced by your session.
+        </p>
+      ) : null}
       {outcomes ? <ImpactSummary outcomes={outcomes} /> : null}
-      <div className="outcomes-measure">
-        <button type="button" onClick={runMeasure} disabled={measuring}>
-          {measuring ? "Measuring…" : "Run Measure"}
-        </button>
-        {measureResult ? (
-          <span className="muted">
-            {" "}
-            {measureResult.plays} play{measureResult.plays === 1 ? "" : "s"} joined against orders:{" "}
-            {measureResult.measured} measured, {measureResult.unmeasured} unmeasured (below min treated n) ·{" "}
-            {formatDateTime(measureResult.computed_at)}
-          </span>
-        ) : null}
-        {measureError ? <span className="error"> {measureError}</span> : null}
-      </div>
-      {!outcomes ? (
-        <p className="muted">Loading…</p>
+      {outcomesError ? (
+        <ErrorCard error={outcomesError} onRetry={loadOutcomes} onShowRecorded={showRecordedOutcomes} />
+      ) : !outcomes ? (
+        <div className={styles.skeletonRows} aria-busy="true" aria-label="Loading measured plays">
+          <Skeleton height={56} radius={8} />
+          <Skeleton height={56} radius={8} />
+        </div>
       ) : outcomes.length === 0 ? (
         <p className="muted">
-          No plays measured yet. Approve a play on the Play Desk, then click Run Measure above --
-          this joins orders against treated/holdout assignments and is never run automatically.
+          No plays are measured yet. Approve a play on the Play Desk, then click Run Measure at the top of this page.
+          Measure joins orders against the treated and holdout assignments.
         </p>
       ) : (
         <div className="outcomes-table-wrap" tabIndex={0} role="region" aria-label="Measured and unmeasured plays">
@@ -293,67 +536,70 @@ export default function OutcomesPage() {
             <thead>
               <tr>
                 <th>Play</th>
+                <th>Result</th>
+                <th>CEO number</th>
+                <th>Waste avoided</th>
                 <th>Treated</th>
                 <th>Holdout</th>
-                <th>Lift</th>
-                <th>Waste avoided</th>
-                <th>CEO number</th>
                 <th>Data</th>
-                <th>Looker</th>
               </tr>
             </thead>
             <tbody>
               {outcomes.map((o) => (
                 <tr key={o.play_id}>
-                  <td>
-                    <strong>{o.sku}</strong>
-                    <div className="muted">{o.node_id} · {o.mechanic}</div>
-                    <div className="muted">
-                      min treated n {o.min_treated_n}
-                      {o.measured_at ? ` · measured ${formatDateTime(o.measured_at)}` : null}
-                    </div>
+                  <td data-label="Play" className="outcomes-table__play">
+                    <strong>{label("sku", o.sku)}</strong>
+                    <div className="muted">{label("node", o.node_id)} · {label("mechanic", o.mechanic)}</div>
+                    {o.measured_at ? <div className="muted">Measured {formatDateTime(o.measured_at)}</div> : null}
+                    <Details inline summary="Details">
+                      {o.sku} · {o.node_id} · {o.mechanic} · {o.play_id} · minimum treated customers {o.min_treated_n}
+                    </Details>
                   </td>
-                  <ArmCell label="Treated" arm={o.treated} />
-                  <ArmCell label="Holdout" arm={o.holdout} />
-                  <td>
+                  <td data-label="Result">
                     {o.status === "measured" && o.lift != null ? (
                       <span>
-                        {pct(o.lift)}
-                        {o.ci_low !== undefined && o.ci_high !== undefined ? (
-                          <span className="muted"> (CI {pct(o.ci_low)}–{pct(o.ci_high)})</span>
+                        {liftInPoints(o) ?? pct(o.lift)}
+                        {o.inconclusive === true ? (
+                          <>
+                            {" "}
+                            <InconclusiveBadge />
+                          </>
                         ) : null}
                       </span>
                     ) : (
                       <span className="muted">unmeasured</span>
                     )}
                   </td>
-                  <td>
-                    {o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}
-                    {o.waste_kg_est != null ? <div className="muted">{o.waste_kg_est.toFixed(1)} kg</div> : null}
-                  </td>
-                  <td>
-                    {o.status === "measured" && o.margin_per_discount_rupee != null ? (
+                  <td data-label="CEO number">
+                    {o.inconclusive === true ? (
+                      // An inconclusive result has no honest per-rupee figure: withheld, not zero.
+                      <span className="muted" data-testid="ceo-withheld">withheld: inconclusive</span>
+                    ) : o.status === "measured" && o.margin_per_discount_rupee != null ? (
                       <div>
                         <span className="ceo-number">{o.margin_per_discount_rupee.toFixed(2)}</span>
                         <div className="muted">net margin recovered per {"₹"}1 of discount vs holdout</div>
                       </div>
+                    ) : o.status === "measured" ? (
+                      <span className="muted">n/a: no discount was given</span>
                     ) : (
                       <span className="muted">unmeasured</span>
                     )}
                   </td>
-                  <td>
-                    <Badge kind={o.data_label === "REAL PILOT" ? "real-pilot" : "synthetic"} />
+                  <td data-label="Waste avoided">
+                    {o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}
+                    {o.waste_kg_est != null ? <div className="muted">{o.waste_kg_est.toFixed(1)} kg</div> : null}
                   </td>
-                  <td>
+                  <ArmCell label="Treated" arm={o.treated} />
+                  <ArmCell label="Holdout" arm={o.holdout} />
+                  <td data-label="Data">
+                    <Badge kind={o.data_label === "REAL PILOT" ? "real-pilot" : "synthetic"} />
                     {o.looker_url ? (
-                      <a href={o.looker_url} target="_blank" rel="noreferrer">
-                        Open Looker
-                      </a>
-                    ) : (
-                      <button type="button" disabled>
-                        Looker (n/a)
-                      </button>
-                    )}
+                      <div>
+                        <a href={o.looker_url} target="_blank" rel="noreferrer">
+                          Open Looker
+                        </a>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
