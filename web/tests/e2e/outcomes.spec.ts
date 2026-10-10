@@ -19,7 +19,7 @@ test.describe("outcomes: measure button", () => {
 
 test.describe("outcomes: estimator prior on the featured play", () => {
   test("the prior update line shows on the featured card and survives Reset", async ({ page }) => {
-    const line = /Estimator prior: Beta\(1,19\) → Beta\(17,319\) · SYNTHETIC orders/;
+    const line = /Estimator prior: Beta\(1,19\) → Beta\(17,326\) · SYNTHETIC orders/;
     await page.goto("/outcomes");
     const card = page.locator(".card", { hasText: "Worked example: Masala Chips 200G" });
     await expect(card.getByText(line)).toBeVisible();
@@ -38,7 +38,7 @@ test.describe("outcomes: honest wording of a lift", () => {
     await page.goto("/outcomes");
     const row = page.locator(".outcomes-table tbody tr").filter({ hasText: "Masala Chips 200G" });
     // mocks/outcomes.json carries lift_pp / ci_low_pp / ci_high_pp / inconclusive for this row
-    await expect(row).toContainText("response-rate difference, +0.3 percentage points (95% CI -12.5 to +1.9 points)");
+    await expect(row).toContainText("response-rate difference, +0.3 percentage points (95% CI -11.4 to +1.7 points)");
     const badge = row.getByTestId("inconclusive-badge");
     await expect(badge).toBeVisible();
     await expect(badge).toHaveAttribute("title", "The interval crosses zero or too few customers responded");
@@ -46,24 +46,24 @@ test.describe("outcomes: honest wording of a lift", () => {
     await expect(row.locator(".ceo-number")).toHaveCount(0);
   });
 
-  test("a row from an older API (no *_pp fields, no inconclusive flag) is formatted from its fractions and gets no badge", async ({ page }) => {
+  test("every measured row of the regenerated outcomes carries the API's *_pp fields and flag, and the badge follows the flag", async ({ page }) => {
     await page.goto("/outcomes");
     const row = page.locator(".outcomes-table tbody tr").filter({ hasText: "Kaju Katli 250G" });
     await expect(row).toContainText("response-rate difference, 0.0 percentage points (95% CI -12.1 to +1.3 points)");
-    await expect(row.getByTestId("inconclusive-badge")).toHaveCount(0);
+    await expect(row.getByTestId("inconclusive-badge")).toBeVisible();
   });
 
   test("the worked example's lift line uses the same wording", async ({ page }) => {
     await page.goto("/outcomes");
     await expect(page.locator(".prior-update")).toContainText(
-      "response-rate difference, +2.3 percentage points (95% CI -9.3 to +6.1 points)",
+      "response-rate difference, +1.5 percentage points (95% CI -12.4 to +5.6 points)",
     );
   });
 
   test("the worked example shows the canonical figure and gap types use the shared label map", async ({ page }) => {
     await page.goto("/outcomes");
     const card = page.locator(".card", { hasText: "Worked example: Masala Chips 200G" });
-    await expect(card.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹777");
+    await expect(card.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹732");
     await expect(page.locator(".portfolio-card__table")).toContainText("Online sell-by breach");
   });
 });
@@ -104,7 +104,7 @@ test.describe("outcomes: summary card first", () => {
     await page.goto("/outcomes");
     const summary = page.getByTestId("outcome-summary");
     await expect(summary.getByTestId("summary-difference")).toContainText("+0.3 points");
-    await expect(summary.getByTestId("summary-difference")).toContainText("95% CI -12.5 to +1.9 points");
+    await expect(summary.getByTestId("summary-difference")).toContainText("95% CI -11.4 to +1.7 points");
     await expect(summary.getByTestId("inconclusive-badge")).toBeVisible();
     await expect(summary.getByTestId("summary-ceo")).toContainText("withheld: inconclusive");
     await expect(summary).not.toContainText("%-");

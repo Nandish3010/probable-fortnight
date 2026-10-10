@@ -103,9 +103,9 @@ test.describe("PlayCard: detail mode (Desk)", () => {
 
   test("the holdout slider changes the card's estimate", async ({ page }) => {
     const card = await openChips(page);
-    await expect(card.getByTestId("plan-sentence")).toContainText("About 283 of 315 consented customers get the offer; about 32 are held back");
+    await expect(card.getByTestId("plan-sentence")).toContainText("About 317 of 352 consented customers get the offer; about 35 are held back");
     await card.getByLabel("Holdout fraction").fill("0.5");
-    await expect(card.getByTestId("plan-sentence")).toContainText("about 158 are held back");
+    await expect(card.getByTestId("plan-sentence")).toContainText("about 176 are held back");
   });
 
   test("a bar under the nav appears once Approve has scrolled out of view, and takes you back to it", async ({ page }) => {
@@ -118,7 +118,7 @@ test.describe("PlayCard: detail mode (Desk)", () => {
     const bottom = await decision.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY);
     await page.evaluate((y) => window.scrollTo(0, y + 600), bottom);
     await expect(bar).toBeVisible();
-    await expect(bar).toContainText("Recovered vs doing nothing ₹777");
+    await expect(bar).toContainText("Recovered vs doing nothing ₹732");
     // the bar sits under the sticky nav and inside the viewport
     const box = (await bar.boundingBox())!;
     expect(box.y).toBeGreaterThanOrEqual(0);

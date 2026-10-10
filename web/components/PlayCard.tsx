@@ -278,8 +278,8 @@ export function PlayCard({
             <>
               <p className={styles.minor}>Alternatives the planner considered</p>
               <ul className={styles.alts} data-testid="alternatives">
-                {play.alternatives.map((alt) => (
-                  <li key={alt.mechanic}>
+                {play.alternatives.map((alt, i) => (
+                  <li key={`${alt.mechanic}-${i}`}>
                     <strong>{label("mechanic", alt.mechanic)}</strong>: expected {alt.expected_units} units, margin{" "}
                     {inr(alt.expected_margin_inr)}. Rejected because: {alt.rejected_because}
                   </li>

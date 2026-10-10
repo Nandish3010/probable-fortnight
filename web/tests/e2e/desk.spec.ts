@@ -1,17 +1,17 @@
 import { test, expect } from "@playwright/test";
 
-// Mock mode: no committed real-Gemini recording exists (harness/recorded_traces.py), so every
-// seeded play -- the flagship (gap_chips_ds07) included -- has source "scripted_stub", and the
-// re-plan flow below is served from web/mocks/rerun.json + rerun_events.json.
+// Mock mode: the flagship (gap_chips_ds07) is seeded from the committed real-Gemini recording
+// (harness/recorded_traces.py, source "recorded_gemini"); every other seeded play is "scripted_stub",
+// and the re-plan flow below is served from web/mocks/rerun.json + rerun_events.json.
 test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
-  test("flagship trace shows Scripted fixture; policy change streams a live re-plan to a result", async ({ page }) => {
+  test("flagship trace shows Recorded from Gemini; policy change streams a live re-plan to a result", async ({ page }) => {
     await page.goto("/desk");
     const inbox = page.getByLabel("Play inbox");
     await inbox.getByRole("button", { name: /Masala Chips 200G/ }).first().click();
 
     const card = page.getByTestId("play-detail");
     const trace = card.locator(".trace-panel");
-    await expect(trace.getByText("Scripted fixture")).toBeVisible();
+    await expect(trace.getByText("Recorded from Gemini")).toBeVisible();
 
     const liveReplan = page.getByTestId("live-replan");
     await expect(liveReplan).not.toBeVisible();
@@ -41,12 +41,14 @@ test.describe("Play Desk: provenance badges and the live re-plan flow", () => {
 
     const first = attempts.getByTestId("trace-attempt-1");
     await expect(first.locator(".trace-panel__marker--fail")).toContainText("rejected");
-    await expect(first.locator("code")).toHaveText("margin_floor");
-    await expect(first.getByText(/net margin 1\.96%/)).toBeVisible();
+    // the recorded Gemini draft was rejected twice by the schema check (an `id` key, no `play_id`)
+    await expect(first.locator("code")).toHaveText(["schema", "schema"]);
+    await expect(first.getByText(/Additional properties are not allowed \('id' was unexpected\)/)).toBeVisible();
+    await expect(first.getByText(/'play_id' is a required property/)).toBeVisible();
     const rejected = first.locator("details");
     await expect(rejected).not.toHaveAttribute("open", "");
     await rejected.locator("summary").click();
-    await expect(rejected.getByText(/Masala Chips 200G at Dark store 07/)).toBeVisible();
+    await expect(rejected.getByText(/bundle of Masala Chips and Cola Classic at fifty rupees/)).toBeVisible();
 
     const second = attempts.getByTestId("trace-attempt-2");
     await expect(second.getByText("passed all guardrails")).toBeVisible();
@@ -105,7 +107,7 @@ test.describe("Play Desk: plain language, one figure, honest checks", () => {
     // the demo clock is 12 Sep and the deadline 18 Sep: relative, with the weekday date beside it
     await expect(card.getByTestId("why-now")).toContainText("368 units pass their online sell-by in 6 days (Fri 18 Sep). ₹9,200 is at stake.");
     await expect(card.getByTestId("plan-sentence")).toContainText("Bundle with a popular item.");
-    await expect(card.getByTestId("plan-sentence")).toContainText("Offer a bundle of Masala Chips 200G with Coconut Water 1L at ₹61");
+    await expect(card.getByTestId("plan-sentence")).toContainText("Offer a bundle of Masala Chips 200G with Cola Classic 250ML at ₹50");
     // the inbox also names the store and the mechanic
     await expect(page.getByLabel("Play inbox").getByText("Dark store 7 · Bundle with a popular item").first()).toBeVisible();
     // the technical block is inside the collapsed Details; ids are one click away
@@ -149,9 +151,9 @@ test.describe("Play Desk: plain language, one figure, honest checks", () => {
     const card = await openChips(page);
     const figure = card.getByTestId("recovered-figure");
     await expect(card.getByTestId("recovered-figure")).toHaveCount(1); // once on the card, not once per section
-    // stub chips: margin 235.14 + waste avoided 541.80 = 776.94
-    await expect(figure).toContainText("Recovered vs doing nothing ₹777");
-    await expect(figure.getByTestId("recovered-figure-parts")).toContainText("waste avoided (at cost) ₹542 plus margin earned ₹235");
+    // recorded chips: margin 126.42 + waste avoided 605.44 = 731.86
+    await expect(figure).toContainText("Recovered vs doing nothing ₹732");
+    await expect(figure.getByTestId("recovered-figure-parts")).toContainText("waste avoided (at cost) ₹605 plus margin earned ₹126");
     await expect(card.getByTestId("comparison-line")).toHaveText(
       "Within noise of a blanket 20% markdown, but only this play can be measured against a holdout",
     );

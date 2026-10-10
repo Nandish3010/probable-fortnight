@@ -138,6 +138,10 @@ test("chat: type, send with Enter, read the reply and toggle the English line, a
   await page.keyboard.press("Enter"); // pre-filled "Any offers today?"
   const log = page.getByTestId("chat-log");
   await expect(log.locator(".chat-msg--agent").first()).toBeVisible({ timeout: 10_000 });
+  // the recorded offer is English, so the English line belongs to the Kannada order reply that follows "Add to cart"
+  await log.locator(".chat-msg--agent").first().getByRole("button", { name: "Add to cart" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(log.locator(".chat-msg--agent")).toHaveCount(2, { timeout: 10_000 });
   // Show/Hide English is a real button in the tab order, with its state announced
   const toggle = log.getByTestId("gloss-toggle").first();
   await toggle.focus();

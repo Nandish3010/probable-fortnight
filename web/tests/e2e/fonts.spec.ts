@@ -29,9 +29,11 @@ test.describe("fonts", () => {
 
   test("a Kannada reply renders in Noto Sans Kannada, not a system fallback", async ({ page }) => {
     await page.goto("/chat");
-    await page.getByRole("button", { name: "Send" }).click(); // Meena's offer is in Kannada
-    const bubble = page.getByTestId("chat-log").locator(".chat-msg--agent").first();
-    await expect(bubble).toContainText("ಇಂದು");
+    await page.getByRole("button", { name: "Send" }).click(); // the recorded offer is English; its order reply is Kannada
+    const log = page.getByTestId("chat-log");
+    await log.locator(".chat-msg--agent").first().getByRole("button", { name: "Add to cart" }).click();
+    const bubble = log.locator(".chat-msg--agent").nth(1);
+    await expect(bubble).toContainText("ಆರ್ಡರ್");
     await page.evaluate(() => document.fonts.ready);
     const loaded = await page.evaluate(() =>
       Array.from(document.fonts).filter((f) => f.status === "loaded").map((f) => f.family.replace(/['"]/g, "")),

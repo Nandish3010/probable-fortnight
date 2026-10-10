@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { count, formatDateTime, formatDuration, inr } from "../../lib/format";
+import { count, formatDateTime, formatDuration, inr, liftInPoints } from "../../lib/format";
 
 // Number and time formats the UI writes itself (design_spec.md 8.6). No browser: pure functions.
 
@@ -31,5 +31,21 @@ test.describe("lib/format: grouping and dates", () => {
     expect(out).toMatch(/^12 Sep, \d{2}:\d{2}$/);
     expect(out).not.toMatch(/am|pm|Sept/i);
     expect(formatDateTime(undefined)).toBe("–");
+  });
+});
+
+test.describe("lib/format: lift in points", () => {
+  test("uses the API's *_pp fields when present", () => {
+    expect(liftInPoints({ lift: 0.003096, ci_low: -0.113902, ci_high: 0.017326, lift_pp: 0.31, ci_low_pp: -11.39, ci_high_pp: 1.733 })).toBe(
+      "response-rate difference, +0.3 percentage points (95% CI -11.4 to +1.7 points)",
+    );
+  });
+  test("an older API without *_pp fields is formatted from its fractions", () => {
+    expect(liftInPoints({ lift: 0.023, ci_low: -0.093, ci_high: 0.061 })).toBe(
+      "response-rate difference, +2.3 percentage points (95% CI -9.3 to +6.1 points)",
+    );
+  });
+  test("no lift, no sentence", () => {
+    expect(liftInPoints({})).toBeNull();
   });
 });

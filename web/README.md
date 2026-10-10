@@ -29,7 +29,7 @@ NEXT_PUBLIC_TAAL_MOCK=1 npm run dev
 
 Every mock file mirrors the TypeScript contracts in `lib/types.ts` exactly (`Play`, `Gap`,
 `ChatEnvelope`, `ApproveResponse`, `Outcome`, …). Chat answers in mock mode depend on the
-message text: "offers" returns the bundle offer (en + kn, with the best-before date),
+message text: "offers" returns the bundle offer (English only: the recorded chips play carries no Kannada copy; with the best-before date),
 "Cola Zero" returns the out-of-stock substitution list; a reply in Kannada carries an `english_gloss` line shown under the bubble, "STOP" returns the opt-out
 confirmation, anything else returns a generic prompt.
 

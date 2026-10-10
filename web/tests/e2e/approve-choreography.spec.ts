@@ -244,7 +244,10 @@ test.describe("already approved", () => {
 });
 
 test.describe("Meena preview", () => {
-  test("shows the real first reply: Kannada with lang=kn, the English gloss beneath, slid in, never blocking the result", async ({ page }) => {
+  // mocks/chat.json: the recorded chips play was written in English only (language_set ["en"]), so
+  // Meena's first reply in mock mode is an English offer, labelled as the fallback for a Kannada
+  // customer. The Kannada-with-gloss rendering is covered next, from the fixture's Kannada order reply.
+  test("shows the real first reply: the offer text with lang=en and the English fallback label, slid in, never blocking the result", async ({ page }) => {
     await setMockDelay(page, { "/chat": 1800 });
     await openBeat(page);
     await approveButton(page).click();
@@ -257,15 +260,27 @@ test.describe("Meena preview", () => {
 
     const text = page.getByTestId("meena-text");
     await expect(text).toBeVisible({ timeout: 10_000 });
+    await expect(text).toHaveAttribute("lang", "en");
+    await expect(text).toContainText("Masala Chips 200G: buy with Cola Classic 250ML for ₹50 today");
+    await expect(page.getByTestId("english-fallback-label")).toHaveText("English fallback");
+    await expect(page.getByTestId("meena-gloss")).toHaveCount(0);
+    await expect(preview).toContainText("What Meena receives");
+  });
+
+  test("a Kannada reply carries lang=kn with the English gloss beneath, which can be hidden and stays hidden", async ({ page }) => {
+    await forceLiveApi(page, FAKE_API);
+    await fakeApi(page, beatHandlers({ "/approve": okJson(mockFixture("approve")), "/chat": okJson(mockFixture("chat").order) }));
+    await openBeat(page);
+    await approveButton(page).click();
+    await approveSettled(page);
+    const text = page.getByTestId("meena-text");
     await expect(text).toHaveAttribute("lang", "kn");
-    await expect(text).toContainText("ಇಂದು");
+    await expect(text).toContainText("ಆರ್ಡರ್");
     const gloss = page.getByTestId("meena-gloss");
     await expect(gloss).toHaveAttribute("lang", "en");
-    await expect(gloss).toContainText("English: Offer: Masala Chips 200G with Coconut Water 1L");
+    await expect(gloss).toContainText("English: Your order for Masala Chips 200G + Cola Classic 250ML has been placed");
     await expect(page.getByTestId("english-fallback-label")).toHaveCount(0);
-    await expect(preview).toContainText("What Meena receives");
 
-    // the English gloss can be hidden, and stays hidden
     await page.getByTestId("meena-gloss-toggle").click();
     await expect(page.getByTestId("meena-gloss")).toHaveCount(0);
     await expect(page.getByTestId("meena-gloss-toggle")).toHaveText("Show English");
@@ -281,7 +296,7 @@ test.describe("Meena preview", () => {
     await expect(page.getByTestId("approve-recovered-amount")).toHaveText(RECOVERED);
     await clearMockFaults(page);
     await page.getByRole("button", { name: "Try again" }).click();
-    await expect(page.getByTestId("meena-text")).toContainText("ಇಂದು");
+    await expect(page.getByTestId("meena-text")).toContainText("buy with Cola Classic 250ML for ₹50");
   });
 
   test("no answer within 8 s is 'Preview unavailable' too", async ({ page }) => {

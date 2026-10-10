@@ -64,7 +64,7 @@ test.describe("Screenshots: judge landing, approve, chat, reset", () => {
     await page.getByRole("button", { name: "Send" }).click();
     // The live Gemini-backed Customer Agent paraphrases freely, so check the price is cited
     // rather than an exact scripted phrase.
-    await expect(chat.getByText(/58\.5/)).toBeVisible({ timeout: 15_000 });
+    await expect(chat.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
     await shot(page, "judge-04-chat-offer");
 
     await page.getByRole("button", { name: "Reset demo data" }).click();
@@ -150,7 +150,7 @@ test.describe("Screenshots: Meena's customer chat, Kannada offer", () => {
     // cited. The screenshot itself may or may not show Kannada text depending on what the model
     // produced this run; capturing a guaranteed-Kannada shot for the deck is a manual concern,
     // not something this CI gate can force.
-    await expect(log.getByText(/58\.5/)).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
     // the chat panel alone, so the deck's UX card shows the offer rather than page chrome
     await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/meena-offer-kannada.png` });
   });

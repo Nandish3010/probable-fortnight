@@ -250,7 +250,7 @@ function SummaryCard({
   const crossesZero = outcome ? (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0 : false;
   // A fast-forwarded row whose range crosses zero is inconclusive by definition, even from an API that
   // does not send the flag.
-  const inconclusive = outcome ? outcome.inconclusive === true || (fastForwarded && crossesZero) : false;
+  const inconclusive = outcome ? outcome.inconclusive ?? (fastForwarded && crossesZero) : false;
   const lift = outcome ? outcome.lift_pp ?? (outcome.lift != null ? outcome.lift * 100 : null) : null;
   const lo = outcome ? outcome.ci_low_pp ?? (outcome.ci_low != null ? outcome.ci_low * 100 : null) : null;
   const hi = outcome ? outcome.ci_high_pp ?? (outcome.ci_high != null ? outcome.ci_high * 100 : null) : null;

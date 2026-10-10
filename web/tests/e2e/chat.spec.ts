@@ -7,8 +7,13 @@ test.describe("customer chat", () => {
     await page.getByRole("button", { name: "Send" }).click(); // pre-filled "Any offers today?"
     const log = page.getByTestId("chat-log");
     const offer = log.locator(".chat-msg--agent").first();
-    await expect(offer).toContainText("ಇಂದು");
-    await expect(offer.getByTestId("english-gloss")).toHaveText(/^English: Offer: Masala Chips 200G with Coconut Water 1L for ₹61/);
+    // the recorded chips play is English only (mocks/chat.json), so the offer has no gloss; the order reply is Kannada
+    await expect(offer).toContainText("buy with Cola Classic 250ML for ₹50");
+    await expect(offer.getByTestId("english-gloss")).toHaveCount(0);
+    await offer.getByRole("button", { name: "Add to cart" }).click();
+    const order = log.locator(".chat-msg--agent").nth(1);
+    await expect(order).toContainText("ಆರ್ಡರ್");
+    await expect(order.getByTestId("english-gloss")).toHaveText(/^English: Your order for Masala Chips 200G \+ Cola Classic 250ML has been placed/);
 
     await page.getByRole("button", { name: "Do you have Cola Zero?" }).click();
     const substitution = log.locator(".chat-msg--agent").last();
@@ -74,17 +79,21 @@ test.describe("customer chat: polish", () => {
     await page.goto("/chat");
     await page.getByRole("button", { name: "Send" }).click();
     const log = page.getByTestId("chat-log");
-    const offer = log.locator(".chat-msg--agent").first();
-    await expect(offer.locator("p[lang='kn']")).toContainText("ಇಂದು");
+    // the offer itself is English (recorded chips play); the Kannada reply is the order confirmation
+    await log.locator(".chat-msg--agent").first().getByRole("button", { name: "Add to cart" }).click();
+    const offer = log.locator(".chat-msg--agent").nth(1);
+    await expect(offer.locator("p[lang='kn']")).toContainText("ಆರ್ಡರ್");
     await expect(offer.getByTestId("english-gloss")).toBeVisible();
     await expect(offer.getByTestId("gloss-toggle")).toHaveText("Hide English");
     await offer.getByTestId("gloss-toggle").click();
     await expect(offer.getByTestId("english-gloss")).toHaveCount(0);
     await expect(offer.getByTestId("gloss-toggle")).toHaveText("Show English");
     await expect(offer.getByTestId("gloss-toggle")).toHaveAttribute("aria-expanded", "false");
-    // the next Kannada reply starts the way the visitor left it (hidden)
-    await offer.getByRole("button", { name: "Not now" }).click();
-    await expect(log.locator(".chat-msg--agent")).toHaveCount(2, { timeout: 10_000 });
+    // the next Kannada reply (the STOP confirmation) starts the way the visitor left it (hidden)
+    await page.getByRole("button", { name: /Customer replies STOP/ }).click();
+    await expect(log.locator(".chat-msg--agent")).toHaveCount(3, { timeout: 10_000 });
+    await expect(log.locator(".chat-msg--agent").last().getByTestId("english-gloss")).toHaveCount(0);
+    await expect(log.locator(".chat-msg--agent").last().getByTestId("gloss-toggle")).toHaveText("Show English");
   });
 
   test("an English reply to a Kannada customer is labelled English fallback; the same reply to an English customer is not", async ({ page }) => {

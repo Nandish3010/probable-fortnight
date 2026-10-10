@@ -44,7 +44,7 @@ test.describe("judge: landing", () => {
     // the one stable fact -- the real price cited -- rather than an exact phrase or language.
     const chat = page.getByTestId("chat-log");
     await page.getByRole("button", { name: "Send" }).click();
-    await expect(chat.getByText(/58\.5/)).toBeVisible({ timeout: 15_000 });
+    await expect(chat.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
     await expect(chat.getByRole("button", { name: /ಕಾರ್ಟ್|Add to cart/ })).toBeVisible();
     await shot(page, "judge-04-chat-offer");
 

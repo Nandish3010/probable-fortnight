@@ -41,23 +41,22 @@ test.describe("Arjun: Play Desk", () => {
     await expect(card.locator(".trace-panel__event").first()).toBeVisible();
     await expect((await card.locator(".trace-panel__event").count())).toBeGreaterThan(3);
     await expect(card.getByText(/^e-[0-9a-f-]+$/).first()).toBeVisible();
-    // The real recorded run's own rejections were all cite_or_drop (an uncited number in the
-    // rationale), not margin_floor -- that was the old scripted stub's story.
-    await expect(card.locator(".trace-panel").getByText(/guardrail cite_or_drop|cite_or_drop/).first()).toBeVisible();
-    // ... and the panel lists each of those attempts: three rejected by cite_or_drop with the
-    // reason and the wording that failed, then the one that passed.
+    // The committed recording (2026-10-10, regenerated with the economics change) was rejected once,
+    // by the schema check (an `id` key where `play_id` is required), then passed on attempt 2.
+    await expect(card.locator(".trace-panel").getByText(/Additional properties are not allowed/).first()).toBeVisible();
+    // ... and the panel lists those attempts: one rejected by the schema guardrail with its two
+    // reasons and the wording that failed, then the one that passed.
     const attempts = card.locator(".trace-panel").getByTestId("trace-attempts");
-    await expect(attempts.locator(".trace-attempt--rejected")).toHaveCount(3);
-    await expect(attempts.locator(".trace-attempt--rejected").first().locator("code")).toHaveText("cite_or_drop");
-    await expect(attempts.locator(".trace-attempt--rejected").first()).toContainText("uncited numbers in rationale");
+    await expect(attempts.locator(".trace-attempt--rejected")).toHaveCount(1);
+    await expect(attempts.locator(".trace-attempt--rejected").first().locator("code")).toHaveText(["schema", "schema"]);
+    await expect(attempts.locator(".trace-attempt--rejected").first()).toContainText("'play_id' is a required property");
     await expect(attempts.locator(".trace-attempt--accepted")).toHaveCount(1);
     await shot(page, "arjun-03b-attempts");
 
     // replay reproduces the same panel state as the live run, event for event (snapshot diff)
     const trace = card.locator(".trace-panel__list");
     const beforeReplay = await trace.innerText();
-    // The real recorded run took 65 s wall time (7 iterations); at 4x replay that is ~16.2 s,
-    // just over the old 15 s timeout sized for the much shorter scripted-stub trace.
+    // The committed recording took 27.5 s wall time; at 4x replay that is ~7 s, inside the timeout below.
     await card.getByRole("button", { name: /Replay at 4x/ }).click();
     await expect(card.getByRole("button", { name: "Replay at 4x" })).toBeVisible({ timeout: 25_000 });
     const afterReplay = await trace.innerText();
@@ -126,7 +125,7 @@ test.describe("Arjun: Play Desk", () => {
     await expect(liveRun).toBeVisible();
     await expect(liveRun.getByText(/\d+ s elapsed/)).toBeVisible();
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 60_000 });
-    await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(3);
+    await expect(recorded.getByTestId("trace-attempts").locator(".trace-attempt--rejected")).toHaveCount(1);
     // the streamed trace stays under the result once the run is done
     await expect(card.getByTestId("live-replan")).toHaveCount(0);
     await expect(card.getByTestId("live-trace").getByTestId("trace-attempts")).toBeVisible();

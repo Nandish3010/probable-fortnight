@@ -47,13 +47,17 @@ test.describe("feed: order and labels", () => {
     await expect(page.getByRole("button", { name: "Run the 60-second beat" })).toHaveCount(0);
   });
 
-  test("every card shows its own source honestly (no recorded Gemini run beyond the hero)", async ({ page }) => {
+  test("every card shows its own source honestly (only the chips flagship has a recorded Gemini run)", async ({ page }) => {
     await page.goto("/");
-    for (const n of [1, 2, 3]) {
+    // mocks/plays.json: Tea and Quinoa are scripted; Chips (card 3) is the committed real-Gemini recording
+    for (const n of [1, 2]) {
       const card = page.getByTestId(`feed-card-${n}`);
       await expect(card.locator(".badge").first()).toContainText("Scripted fixture");
       await expect(card).not.toContainText("Recorded from Gemini");
     }
+    const chips = page.getByTestId("feed-card-3");
+    await expect(chips.locator(".badge").first()).toContainText("Recorded from Gemini");
+    await expect(chips).not.toContainText("Scripted fixture");
   });
 
   test("the feed is one column, and the chat panel follows it", async ({ page }) => {
