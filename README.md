@@ -84,7 +84,7 @@ sell-by in 6 days. The Desk's trace for this gap is a real, committed Gemini rec
 (`harness/record_flagship_traces.py --gap gap_chips_ds07 --runs 5`, `TAAL_MODEL_BACKEND=vertex`,
 `gemini-2.5-flash`) all reached `proposed` with 0 fallbacks; `harness/seed_plays.py` picked the
 highest-margin one to seed the play. That run's first `propose_play` attempt, and its next two,
-were rejected by the `cite_or_drop` guardrail for an uncited number in the rationale; the fourth
+were rejected three times by a tokenizer defect since fixed; a re-recorded run follows. The fourth
 attempt passed all eight guardrails -- a bundle of Masala Chips 200G with Coconut Water 1L, ₹58.50
 for the pair, offered to 334 consented customers across 6 segments through the outlet channel. The
 model itself considered and rejected a transfer-to-another-node alternative for negative expected
@@ -149,7 +149,7 @@ tests prove what the model's output must pass through, not how good the model is
 | Never decided by Gemini | Code | Enforced by |
 |---|---|---|
 | Every rupee: expected units, margin, cost, counterfactuals | `agents/gate/estimator.py:216` (`estimate`); re-checked when a play is proposed, `agents/planner/tools.py:370` (`check_play_money`) | `tests/unit/test_estimator.py:32` (coupon arithmetic against a hand calculation); `tests/unit/test_invariants.py:45` (a play whose margin was altered after estimation is rejected) |
-| Guardrail pass/fail: the eight rules | `agents/gate/guardrails.py:266` asserts the rule table equals `GUARDRAIL_RULES` in `agents/gate/models.py:42-45`; `check` at `:269` | `tests/unit/test_guardrails.py:28` (all eight run, in order); `:155` (consent_required ignores any model-written rationale) |
+| Guardrail pass/fail: the eight rules | `agents/gate/guardrails.py:364` asserts the rule table equals `GUARDRAIL_RULES` in `agents/gate/models.py:42-45`; `check` at `:367` | `tests/unit/test_guardrails.py:28` (all eight run, in order); `:155` (consent_required ignores any model-written rationale) |
 | Who is in the holdout: arm by hash of (customer, seed); the seed is `seed-<play id>`, set in code when a play is proposed | `agents/planner/tools.py:361` (`propose_play`), `services/api/approve.py:113` calls `agents/gate/assignment.py:23` (`assign_arm`, SHA-256 bucket) | `tests/unit/test_assignment.py:15` (arm is a pure function of seed and id); `:34` (model-written play fields cannot change an arm); `tests/agents/test_holdout_seed.py:24` (a model-written seed is replaced) |
 | Consent: whether any offer may reach a customer; what STOP does | `agents/customer/tools.py:54` (`_consent_ok`), checked at `:104`, `:218`, `:260`; `record_stop` at `:354` withdraws consent and drops pending offers | `tests/agents/test_customer_gates.py:15`: after `record_stop`, context, `apply_offer` and `negotiate_offer` all refuse with no model turn |
 | Forecast numbers, including the re-forecast on approve | `jobs/sense/forecast.py:127` (statistical model, no LLM); approve re-runs it at `services/api/approve.py:144` | `tests/sql/test_forecast.py:23`: an approved play changes p50 inside its window and nowhere else |

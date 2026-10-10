@@ -5,7 +5,7 @@ once and the Play card can list all eight.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -168,22 +168,110 @@ def rule_holdout_required(draft: dict[str, Any], ctx: GuardrailContext) -> dict[
     return _result("holdout_required", True, f"holdout {fraction:.0%}, min_treated_n {min_treated}")
 
 
+# ---------------------------------------------------------------------------------------------
+# cite_or_drop: which figures a rationale claims, and which figures the play can vouch for
+# ---------------------------------------------------------------------------------------------
+
+# Spans that are never a claim, however many digits they hold.
 _ISO_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?\b")
-_NUMBER = re.compile(r"(?<![A-Za-z0-9_-])(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?")
-_ID_LIKE = re.compile(r"\b[A-Za-z]+[A-Za-z0-9]*[-_][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*\b")
+_NUMERIC_DATE = re.compile(r"\b(?:\d{1,2}[/.-]\d{1,2}[/.-]\d{4}|\d{4}/\d{1,2}/\d{1,2})\b")
+_MONTH = (
+    r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?"
+    r"|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+)
+_TEXT_DATE = re.compile(
+    rf"\b(?:\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTH}\b\.?(?:,?\s+\d{{4}}\b)?"  # 18 Sept 2026
+    rf"|{_MONTH}\b\.?\s+\d{{1,2}}(?:st|nd|rd|th)?\b(?:,?\s+\d{{4}}\b)?"  # Sept 18, 2026
+    rf"|{_MONTH}\b\.?,?\s+\d{{4}}\b)"  # September 2026
+)
+_ID_LIKE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*[-_][A-Za-z0-9_-]*\d[A-Za-z0-9_-]*\b")  # DS-07, run_04 (one leading letter: linear)
+_NOT_CLAIMS = (_ISO_DATE, _NUMERIC_DATE, _TEXT_DATE, _ID_LIKE)
+
+# One numeric token, taken whole: digits (commas allowed; grouping is validated by _split_groups),
+# an optional fraction, or a bare ".5". The guard refuses a token glued to a word (v1, p50, DS07,
+# run_04) and the tail of a decimal whose head was refused ("p161.52" yields nothing, never "52");
+# a currency word may touch its digits (INR58.50, Rs874). _NUMBER_ANY has no guard: digits inside
+# an identifier are still facts the play states.
+_NUMBER_BODY = r"{guard}(?P<int>\d+(?:,\d+)*)(?P<frac>\.\d+)?|(?<![\w.])(?P<lead>\.\d+)"
+_NUMBER = re.compile(_NUMBER_BODY.format(guard=r"(?:(?<=\bRs)|(?<=\bINR)|(?<!\w))(?<!\d\.)"))
+_NUMBER_ANY = re.compile(_NUMBER_BODY.format(guard=""))
+
+# A minus sign is a sign only when it is not a hyphen or a range dash: not glued to a preceding
+# word, digit, ")", "]" or "%" ("20-30", "DS-07", "10%-20%"). A currency marker may sit between the
+# sign and the digits ("-₹161.52") or before the sign ("₹-161.52", "INR -161.52").
+_NEGATIVE_BEFORE = re.compile(
+    r"(?:(?:^|[^\w)\]%.])[-−–](?:(?:₹|\bRs\.?|\bINR)\s?)?|(?:₹|\bRs\.?|\bINR)\s?[-−–])$"
+)
+
+
+@dataclass(frozen=True)
+class _Number:
+    start: int
+    end: int
+    value: float  # signed
+    decimal: bool  # written with a fractional part
+    negative: bool  # written with an explicit minus sign
+
+
+def _split_groups(digits: str) -> list[str]:
+    """"1,795,464" (Western) and "17,95,464" (Indian) are one number; "20,30,40" is a list."""
+    parts = digits.split(",")
+    if len(parts) == 1:
+        return parts
+    head, *mid, last = parts
+    western = len(head) <= 3 and len(last) == 3 and all(len(p) == 3 for p in mid)
+    indian = len(head) <= 2 and len(last) == 3 and all(len(p) == 2 for p in mid)
+    return ["".join(parts)] if western or indian else parts
+
+
+def _tokens(text: str, *, glued: bool = False) -> Iterator[_Number]:
+    """Every numeric token in `text`, whole and in order. `glued=True` also yields the digits
+    inside identifiers (the 07 of DS-07, the 200 of SKU-CHIPS-200G)."""
+    for m in (_NUMBER_ANY if glued else _NUMBER).finditer(text):
+        negative = _NEGATIVE_BEFORE.search(text, max(0, m.start() - 12), m.start()) is not None
+        if m.group("lead"):
+            value = float("0" + m.group("lead"))
+            yield _Number(m.start(), m.end(), -value if negative else value, True, negative)
+            continue
+        groups = _split_groups(m.group("int"))
+        pos = m.start("int")
+        for i, digits in enumerate(groups):
+            frac = m.group("frac") if i == len(groups) - 1 else None
+            value = float(digits + (frac or ""))
+            neg = negative and i == 0
+            end = pos + len(digits) + len(frac or "")
+            yield _Number(pos, end, -value if neg else value, frac is not None, neg)
+            pos = end + 1  # past the comma
 
 
 def numbers_in_text(text: str) -> list[float]:
-    """Numbers a reader would take as a claim: any decimal, or any integer >= 10. ISO dates and
-    identifiers such as DS-07 or SKU-CHIPS-200G are ignored."""
-    cleaned = _ISO_DATE.sub(" ", text)
-    cleaned = _ID_LIKE.sub(" ", cleaned)
-    out = []
-    for whole, frac in _NUMBER.findall(cleaned):
-        value = float(whole.replace(",", "") + (frac or ""))
-        if frac or value >= 10:
-            out.append(value)
-    return out
+    """The figures a reader would take as claims in `text`: signed floats, in order.
+
+    A figure is a whole numeric token, never a piece of one: an optional minus sign, digits with
+    Western (1,795,464) or Indian (17,95,464) grouping, an optional fraction (161.52, .5). A
+    currency marker (₹, Rs, Rs., INR), a trailing % and unit letters (200G) are not part of the
+    value. Rules:
+      * a claim is any decimal, any explicit negative, or any integer of 10 or more; a bare
+        single-digit integer is a count ("3 segments"), not a claim;
+      * "-" is a sign only when not glued to a preceding word, digit, ")" or "%": "20-30" is the
+        two figures 20 and 30, and "-161.52" is one negative figure;
+      * never claims: ISO dates and timestamps, "18 Sept 2026" and dd/mm/yyyy dates, and
+        identifiers (DS-07, SKU-CHIPS-200G, run_04, v1, p50, DS07);
+      * magnitude words (k, lakh, crore, M) are not interpreted: "1.2 lakh" claims 1.2, which must
+        then match a cited 1.2 as written.
+    """
+    skip = [m.span() for pattern in _NOT_CLAIMS for m in pattern.finditer(text)]
+    return [
+        n.value
+        for n in _tokens(text)
+        if (n.decimal or n.negative or abs(n.value) >= 10)
+        and not any(s <= n.start and n.end <= e for s, e in skip)
+    ]
+
+
+def _fmt(value: float) -> str:
+    """A figure as the rationale wrote it: 52, 161.52, -161.52, 1795464 (never 1.79546e+06)."""
+    return str(int(value)) if value.is_integer() else repr(value)
 
 
 def _walk_numbers(obj: Any, acc: list[float]) -> None:
@@ -192,8 +280,7 @@ def _walk_numbers(obj: Any, acc: list[float]) -> None:
     if isinstance(obj, int | float):
         acc.append(float(obj))
     elif isinstance(obj, str):
-        acc.extend(numbers_in_text(obj))
-        acc.extend(float(m.group(0)) for m in re.finditer(r"\d+\.\d+|\d+", obj))
+        acc.extend(n.value for n in _tokens(obj, glued=True))
     elif isinstance(obj, Mapping):
         for v in obj.values():
             _walk_numbers(v, acc)
@@ -209,19 +296,28 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
     # guardrails is tool-computed (check_guardrails), never LLM-authored: a rationale restating a
     # number from a passed rule's own detail (a margin percent, an audience count) is citing a
     # verified fact, not inventing one, even though that number lives outside expected_outcome.
-    for key in ("expected_outcome", "counterfactuals", "target", "mechanic_params", "audience", "holdout", "guardrails"):
+    # alternatives carries the estimator's figures for the mechanics the play rejected (expected
+    # units, expected margin, transfer units): a rationale explaining why one mechanic beat another
+    # quotes them, and they are as much the play's own fields as expected_outcome is.
+    for key in ("expected_outcome", "counterfactuals", "alternatives", "target", "mechanic_params", "audience", "holdout", "guardrails"):
         _walk_numbers(draft.get(key) or {}, acc)
     # Percent forms of fractions (holdout 0.1 -> 10) and rupee values expressed in whole rupees.
-    acc.extend(v * 100.0 for v in list(acc) if 0 < v < 1)
+    acc.extend(v * 100.0 for v in list(acc) if 0 < abs(v) < 1)
     return acc
 
 
 def _matches(value: float, cited: Iterable[float]) -> bool:
-    # 0.5% of a large cited value (e.g. a rupees-at-stake figure in the thousands) used to open
-    # a wide match window -- tightened to 0.1%, which still tolerates real rounding differences
-    # (₹9,194 vs ₹9,194.2) without accepting a materially different number as "the same" one.
+    """Whether `value` (a figure from the rationale) is one of `cited`.
+
+    The window is 0.1% of the cited value, never under 0.5: it tolerates real rounding
+    differences (₹9,194 for 9194.12, 23 units for 22.98) without accepting a materially different
+    number as "the same" one (it was 0.5% once, which opened a +-46 window around ₹9,200).
+    Sign: a figure written with an explicit minus must match a negative cited value; an unsigned
+    figure matches on magnitude, so "a loss of 161.52" matches a cited -161.52.
+    """
     for c in cited:
-        if abs(value - c) <= max(0.5, 0.001 * abs(c)):
+        reference = c if value < 0 else abs(c)
+        if abs(value - reference) <= max(0.5, 0.001 * abs(c)):
             return True
     return False
 
@@ -230,11 +326,13 @@ def rule_cite_or_drop(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str,
     """Real scope, stated plainly rather than implied by the name: this is not a strict
     per-citation link check (it does not verify *which* citation backs *which* number in the
     rationale). It checks that every number the rationale states also appears somewhere in the
-    play's own structured fields (expected_outcome, counterfactuals, target, mechanic_params,
-    audience, holdout) or in a guardrail rule's own tool-computed detail string -- i.e. the
-    model did not invent a number that appears nowhere in the facts it was given. That is a real
-    and useful check (see test_cite_or_drop_rejects_an_uncited_number), but a rationale can still
-    cite a true number for the wrong reason; this rule cannot catch that.
+    play's own structured fields (expected_outcome, counterfactuals, alternatives, target,
+    mechanic_params, audience, holdout) or in a guardrail rule's own tool-computed detail string
+    -- i.e. the model did not invent a number that appears nowhere in the facts it was given.
+    That is a real and useful check (see test_cite_or_drop_rejects_an_uncited_number), but a
+    rationale can still cite a true number for the wrong reason; this rule cannot catch that.
+    Figures that live only in the gap row or a forecast run (a citation carries just the id) are
+    not in the play, so they do not count as cited.
     """
     citations = draft.get("citations") or []
     unresolved = []
@@ -245,7 +343,7 @@ def rule_cite_or_drop(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str,
     uncited = sorted({v for v in claimed if not _matches(v, cited)})
     problems = []
     if uncited:
-        problems.append("uncited numbers in rationale: " + ", ".join(f"{v:g}" for v in uncited))
+        problems.append("uncited numbers in rationale: " + ", ".join(_fmt(v) for v in uncited))
     if unresolved:
         problems.append("citations that do not resolve: " + ", ".join(unresolved))
     if problems:
