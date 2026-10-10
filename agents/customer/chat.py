@@ -33,7 +33,7 @@ from agents.gate.store import LocalStore
 
 from .agent import build_customer_agent
 from .context import CustomerContext, reset_context, set_context
-from .tools import context_summary, get_customer_context, offer_summary_en
+from .tools import context_summary, get_customer_context, offer_summary_en, offer_summary_kn
 
 APP = "taal_customer"
 
@@ -43,10 +43,22 @@ def _offer_gloss(store: LocalStore, customer_id: str, env: dict[str, Any]) -> st
     (a `play` citation), summarised in English from the offer's own structured fields."""
     plays = {c["ref"] for c in env.get("citations") or [] if c["type"] == "play"}
     offers = [o for o in store.read("offers") if o["customer_id"] == customer_id and o["play_id"] in plays]
-    return offer_summary_en(offers[-1], {p["sku"]: p["name"] for p in store.read("products")}) if offers else None
+    if not offers:  # a reply that names the pending offer's product without citing the play
+        names = {p["sku"]: p["name"] for p in store.read("products")}
+        offers = [o for o in store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at") and names.get(o.get("sku") or "", "\0").lower() in env["text"].lower()]
+        return offer_summary_en(offers[-1], names) if offers else None
+    return offer_summary_en(offers[-1], {p["sku"]: p["name"] for p in store.read("products")})
 
 
-RUNTIME = ChatRuntime(APP, "customer", lambda store, backend: build_customer_agent({p["name"].lower(): p["sku"] for p in store.read("products")}, backend), gloss_fallback=_offer_gloss)
+def _offer_kn(store: LocalStore, customer_id: str, env: dict[str, Any]) -> str | None:
+    """Kannada wording for an English reply that is about this customer's pending offer."""
+    names = {p["sku"]: p["name"] for p in store.read("products")}
+    mine = [o for o in store.read("offers") if o["customer_id"] == customer_id and not o.get("redeemed_at")]
+    hit = [o for o in mine if names.get(o.get("sku") or "", "\0").lower() in env["text"].lower()]
+    return offer_summary_kn(hit[-1], names) if hit else None
+
+
+RUNTIME = ChatRuntime(APP, "customer", lambda store, backend: build_customer_agent({p["name"].lower(): p["sku"] for p in store.read("products")}, backend), gloss_fallback=_offer_gloss, kn_fallback=_offer_kn)
 _now = now_iso
 _parse_envelope = parse_envelope
 _clamp = clamp
@@ -101,7 +113,7 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
             turn_language = None if (is_first_turn and has_pending_offer) else detect_lang(text, language)
             turn_text = f"{text}\n\n(known: {context_summary(customer_context, turn_language=turn_language)})"
             extra_tool_calls = [{"name": "get_customer_context", "args": {"customer_id": customer_id}}]
-        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id)
+        envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id, reply_lang=ctx.reply_lang)
         return [envelope]
     finally:
         reset_context(token)
