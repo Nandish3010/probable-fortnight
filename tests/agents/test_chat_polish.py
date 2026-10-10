@@ -105,8 +105,8 @@ def meena(sandbox):
 def test_kannada_customer_add_to_cart_gets_a_kannada_receipt_with_gloss(sandbox, meena):
     env = asyncio.run(run_chat_async(sandbox, f"{meena}:web", f"add:{CHIPS}", now_iso=NOW))[0]
     order = next(o for o in sandbox.read("orders") if o["customer_id"] == meena and o["ts"] == NOW)
-    assert env["text"].startswith("ಆರ್ಡರ್") and order["order_id"] in env["text"] and "58.5" in env["text"]
-    assert env["english_gloss"] == f"English: Your order for Masala Chips 200G + Coconut Water 1L has been placed. Your order ID is {order['order_id']} and the total is ₹58.5."
+    assert env["text"].startswith("ಆರ್ಡರ್") and order["order_id"] in env["text"] and "61" in env["text"]
+    assert env["english_gloss"] == f"English: Your order for Masala Chips 200G + Coconut Water 1L has been placed. Your order ID is {order['order_id']} and the total is ₹61."
 
 
 def test_kannada_customer_no_button_replies_in_kannada(sandbox, meena):
@@ -129,7 +129,7 @@ def test_every_quick_reply_has_a_distinct_human_label_in_both_languages():
 class EnglishOnlyLlm(BaseLlm):
     """A model that ignores the Kannada directive."""
     model: str = "stub-english"
-    text: str = "We have a bundle deal on Masala Chips 200G for Rs 58.5. Best before 2026-10-15."
+    text: str = "We have a bundle deal on Masala Chips 200G for Rs 61. Best before 2026-10-15."
 
     async def generate_content_async(self, llm_request, stream=False):
         yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text=json.dumps({"text": self.text}))]))
@@ -144,8 +144,8 @@ def _english_model(monkeypatch, text=None):
 def test_english_reply_on_a_kannada_turn_becomes_kannada_with_the_english_gloss(sandbox, meena, monkeypatch):
     _english_model(monkeypatch)
     env = asyncio.run(run_chat_async(sandbox, f"{meena}:web", "ಇಂದು ಯಾವ ಆಫರ್ ಇದೆ?", now_iso=NOW))[0]
-    assert env["text"].startswith("Masala Chips 200G ಜೊತೆ Coconut Water 1L ₹58.5ಕ್ಕೆ") and "ಬಳಕೆಗೆ ಉತ್ತಮ" in env["text"]
-    assert env["english_gloss"].startswith("English: ") and "58.5" in env["english_gloss"]
+    assert env["text"].startswith("Masala Chips 200G ಜೊತೆ Coconut Water 1L ₹61ಕ್ಕೆ") and "ಬಳಕೆಗೆ ಉತ್ತಮ" in env["text"]
+    assert env["english_gloss"].startswith("English: ") and "61" in env["english_gloss"]
 
 
 def test_english_reply_with_no_kannada_rendering_gets_a_kannada_notice_and_gloss(sandbox, meena, monkeypatch):
