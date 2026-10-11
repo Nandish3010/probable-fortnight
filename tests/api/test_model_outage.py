@@ -77,3 +77,10 @@ def test_health_names_the_fallback(client):
 def test_health_fallback_is_null_without_one(client, monkeypatch):
     pin_models(monkeypatch, fallback=None)
     assert client.get("/health", headers=H).json()["model_fallback"] is None
+
+
+def test_health_names_the_model(client):
+    from agents.gate.config import load_models
+
+    d = client.get("/health", headers=H).json()
+    assert d["model"] == load_models()["ids"]["flash"] and d["model"].startswith("gemini")

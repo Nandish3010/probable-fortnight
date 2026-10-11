@@ -392,6 +392,12 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
     """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
     ctx = current()
     if isinstance(play, dict):
+        # A live model often names the identifier `id` (every recorded run did, on attempt 1) instead
+        # of the schema's `play_id`: accept the alias and drop the duplicate rather than burn an attempt.
+        if "id" in play:
+            alias = play.pop("id")
+            if not play.get("play_id") and isinstance(alias, str):
+                play["play_id"] = alias
         # Server-owned fields. A live model will otherwise invent them: the first Vertex run wrote
         # created_at "2023-10-27" and copied the Sense run id into trace_ref.
         pinned = os.environ.get("TAAL_NOW")

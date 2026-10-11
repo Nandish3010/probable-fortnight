@@ -98,6 +98,8 @@ there is no clearance deadline forcing volume.
    - `guardrails` is the play's OWN top-level field, required alongside `expected_outcome` and
      `counterfactuals` -- copy `check_guardrails`' own `results` array into it verbatim; do not
      omit it and do not confuse it with the guardrail check you already ran.
+   - The play's identifier field is `play_id` (required; e.g. `"play_tea_ds04_v1"` for
+     `gap_tea_ds04`) -- never `id`.
    - Each `alternatives[]` entry needs exactly `mechanic`, `mechanic_params`, `expected_units`,
      `expected_margin_inr`, `rejected_because` -- never `estimated_outcome` or `play_draft`.
 4. `propose_play` runs all eight guardrails itself and returns every failing rule in `errors` if

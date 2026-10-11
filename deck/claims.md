@@ -9,7 +9,7 @@ Dates are the dates of the measurement, not of the deck.
 | 1 | Team: Nandish (lead), Rinu (co-builder) | `README.md:37-38` |
 | 1 | FSSAI advisory, 3 Dec 2024, file RCD-13/1/2024-Regulatory-FSSAI(E-13150): minimum 30% shelf life or 45 days at delivery | `README.md:82-87`; `eval/raw/docs_truth_sweep_2026-09-27/fssai_citation.json` |
 | 1 | Either-limit reading is Taal's configurable default | `README.md:87-93`; `config/tenant.demo.toml:6` |
-| 2 | Headline: 291 treated, 32 held out, difference +0.3 pp, 95% CI -10.4 to +1.9, inconclusive, synthetic orders, 12 Oct 2026 (Tea play, one fast-forwarded order) | `eval/raw/tea_fastforward_2026-10-12.json:7-8`; `eval/raw/tea_fastforward_2026-10-12.json:40-42`; `docs/openapi.yaml` |
+| 2 | Headline: 355 treated, 39 held out, difference +0.3 pp, 95% CI -8.7 to +1.6, inconclusive, synthetic orders, 12 Oct 2026 (Tea play, one fast-forwarded order) | `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:99-102`; `docs/openapi.yaml` |
 | 2 | Chips tile: 323 treated, 29 held out, +1.5 pp, 95% CI -12.4 to +5.6, inconclusive (synthetic) | `eval/raw/prior_update_2026-09-28.json:25-26`; `eval/raw/prior_update_2026-09-28.json:34-36` |
 | 2 | Loop diagram (Forecast, Propose, Approve, Offer, Measure, priors update) | `docs/loop.svg` |
 | 2 | Theme strip: nightly per-SKU, per-node forecasts with festival effects; human-approved offers | `docs/DECISIONS.md:81`; `jobs/sense/forecast.py:9` |
@@ -65,11 +65,11 @@ Dates are the dates of the measurement, not of the deck.
 | 12 | 0 of 7 measure against a control group | `eval/raw/feedback_summary_2026-10-09/summary.md:136` |
 | 12 | 4 of 7 want a one-week pilot | `eval/raw/feedback_summary_2026-10-09/summary.md:232` |
 | 12 | Quotes, role and business type | `eval/raw/feedback_summary_2026-10-09/summary.json:11356`; `eval/raw/feedback_summary_2026-10-09/summary.json:11370` |
-| 13 | Persona steps: Desk, phone, chat | `web/app/desk/page.tsx`; `README.md:12-14`; `web/components/ChatPanel.tsx:28` |
+| 13 | Persona steps: Desk, phone, chat | `web/app/desk/page.tsx`; `README.md:10-14`; `web/components/ChatPanel.tsx:28` |
 | 13 | Phone view: rows below 0.7 confidence are confirmed | `agents/capture/vision.py:25` |
 | 13 | STOP withdraws consent | `docs/privacy.md:56-64` |
 | 13 | Badge meanings (LIVE, REPLAY, SYNTHETIC, Recorded from Gemini) | `web/components/Badge.tsx`; `README.md:29` |
-| 14 | Tea: 103 units, ₹35,020 at stake; play net -₹27,522 vs -₹32,015 blanket markdown; ahead by ₹4,493 | `eval/raw/tea_beat_api_2026-10-10.json`; `agents/gate/estimator.py:263` |
+| 14 | Tea: 103 units, ₹35,020 at stake; play net -₹25,829 vs -₹32,015 blanket markdown; ahead by ₹6,186 | `eval/raw/tea_recorded_beat_2026-10-12.json`; `agents/gate/estimator.py:263` |
 | 14 | Chips: 368 units, ₹9,200 at stake; play net -₹8,468 vs -₹8,189; behind by ₹279 | `eval/raw/planner_real_traces_2026-10-10/run_05/play.json`; `eval/raw/tea_beat_api_2026-10-10.json` |
 | 14 | Prior sensitivity, margin 2% / 5% / 10%: ₹1.41 / 3.47 / 6.19 lakh | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
 | 14 | Prior sensitivity, waste avoided 2% / 5% / 10%: ₹3.26 / 7.06 / 11.18 lakh | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
@@ -88,4 +88,4 @@ Dates are the dates of the measurement, not of the deck.
 | 16 | Pilot: 50-60 consented testers, one week, 40-50% holdout, metric pre-registered | `docs/pilot.md:19-20` |
 | 16 | Vision harness built; synthetic photos only so far | `eval/evaluation_table.md`; `Makefile` |
 | 16 | BigQuery path built, flag off | `docs/scale.md:40-47`; `infra/deploy.sh:294` |
-| 17 | Repo and live app URLs | `README.md:11`; `README.md:1` |
+| 17 | Repo and live app URLs | `README.md:10`; `README.md:1` |

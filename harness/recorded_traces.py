@@ -1,7 +1,7 @@
 """Discover, validate and seed a committed real-Gemini planner recording (harness/
 record_flagship_traces.py's output) in place of a scripted-stub run, for one gap at a time.
 
-Wired into harness/seed_plays.py for the flagship gap only: every other demo gap keeps the stub.
+Wired into harness/seed_plays.py for every demo gap: a gap with no valid recording keeps the stub.
 No model call and no network here -- a recording is only ever read back and re-validated against
 the current tenant, never re-run, so seeding stays offline and deterministic (the Docker build
 included).

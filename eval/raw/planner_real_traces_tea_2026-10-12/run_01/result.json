@@ -1,0 +1,163 @@
+{
+  "run_id": "run_tea_ds04_v1_c522dda0",
+  "play": {
+    "alternatives": [
+      {
+        "mechanic_params": {
+          "markdown_pct": 10
+        },
+        "expected_units": 27.08,
+        "expected_margin_inr": 1760.06,
+        "mechanic": "outlet_markdown",
+        "rejected_because": "The policy prefers transfers over blanket markdowns, and the transfer play yields a significantly higher expected margin."
+      }
+    ],
+    "mechanic_params": {
+      "transfer_to_node": "OUT-01",
+      "transfer_units": 103
+    },
+    "expected_outcome": {
+      "units": 27.08,
+      "margin_inr": 9000.49,
+      "waste_avoided_inr": 9206.49,
+      "discount_cost_inr": 0.0,
+      "ci_low": 1.46,
+      "ci_high": 79.0,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 35020.0,
+      "blanket_markdown_inr": 32015.18,
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -26019.51
+    },
+    "gap_id": "gap_tea_ds04",
+    "rationale": "To address the online sell-by breach of Darjeeling Tea 100G at Dark store 04, we propose a transfer plus nudge play to Outlet 01. This play is highly preferred by the policy over blanket markdowns for premium tea. It is expected to clear 27.08 units, avoiding 9206.49 INR in waste and generating an expected margin of 9000.49 INR. A holdout of 10% is maintained to measure the play's performance.",
+    "play_id": "play_tea_ds04_v1",
+    "copy": {
+      "language_set": [
+        "en"
+      ],
+      "copy_status": "pending",
+      "variants": []
+    },
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 24.44% (net price 450.00, cost 340.00) vs premium_tea floor 12.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 386 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "audience filtered by consent: 460 -> 386"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "transfer_plus_nudge is not a discount play"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "transfer_plus_nudge does not push SKU-DARJEELING-TEA-100G; stockout rule not applicable"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "5 number(s) in rationale all cited; 4 citation(s) resolve"
+      }
+    ],
+    "citations": [
+      {
+        "type": "gap",
+        "ref": "gap_tea_ds04"
+      },
+      {
+        "ref": "est-v1",
+        "type": "estimator"
+      },
+      {
+        "type": "policy",
+        "ref": "v1"
+      },
+      {
+        "ref": "sense_20260912_baseline_2aaad73c",
+        "type": "forecast"
+      }
+    ],
+    "mechanic": "transfer_plus_nudge",
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "window": {
+      "end": "2026-10-06T23:59:59Z",
+      "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+      "units": 103,
+      "deadline_date": "2026-10-06",
+      "deadline_type": "online_sellby",
+      "batch_ids": [
+        "B-TEA-DS04-01"
+      ],
+      "sku": "SKU-DARJEELING-TEA-100G",
+      "node_ids": [
+        "DS-04"
+      ]
+    },
+    "holdout": {
+      "min_treated_n": 20,
+      "fraction": 0.1,
+      "seed": "seed-play_tea_ds04_v1"
+    },
+    "audience": {
+      "size_after_consent": 386,
+      "purpose": "marketing",
+      "filters": {},
+      "segment_ids": [
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_5"
+      ],
+      "size_before_consent": 460
+    },
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_tea_ds04_v1_c522dda0",
+    "cost": {
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 50.18,
+      "pct_of_rupees_at_stake": 0.155
+    },
+    "source": "live_gemini"
+  },
+  "status": "proposed",
+  "iterations": 1,
+  "policy_version": "v1",
+  "elapsed_ms": 25842,
+  "planner_source": "model",
+  "fallback_reason": null,
+  "source": "live_gemini",
+  "wall_time_s": 25.868,
+  "started_at": "2026-10-11T19:27:07Z",
+  "finished_at": "2026-10-11T19:27:33Z"
+}

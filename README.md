@@ -8,10 +8,11 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 ## Judge quick-start
 
-1. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
-2. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
-3. Click **Approve**. The headline reads "Recovered vs doing nothing ₹7,498" (₹7,498 recovered), with 291 customers treated and 32 held out (323 consented; seeded).
-4. Click **Chat as Ravi** and the offer arrives; add the tea to the cart and the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
+Three clicks, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development):
+1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
+2. Click **Approve**. The headline reads "Recovered vs doing nothing ₹9,191" (₹9,191 recovered), with 355 customers treated and 39 held out (394 consented; seeded).
+3. Click **Chat as Ravi** and the offer arrives.
+   Then, in the chat, add the tea to the cart: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
 - Live plans: 22/24 model-planned on 11 Oct 2026, p50 26.5 s, 0 fallbacks (`eval/raw/plan_live_2026-10-12.json`).
 
@@ -95,15 +96,23 @@ deadline; Taal makes the online sell-by cut-off a first-class gap type. The rule
 every gap card; the stricter reading is one switch away and retailers set their own.
 
 The 60-second beat opens on `gap_tea_ds04`: 103 units of Darjeeling Tea 100G at dark store DS-04,
-₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a scripted fixture play and is
-badged `Scripted fixture`: a transfer of the 103 units to OUT-01 plus a nudge to 323 consented
-customers (391 before consent), expected margin ₹7,498. It beats a blanket 20% markdown by ₹4,493
+₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a real, committed Gemini
+recording, badged `Recorded from Gemini · 12 Oct 2026`: five independent live Vertex runs
+(`harness/record_flagship_traces.py --gap gap_tea_ds04 --runs 5`, `gemini-3.5-flash`, prompt v6)
+all reached `proposed` with 0 fallbacks in 21.9 to 26.7 s, each after one schema-rejected
+`propose_play` attempt (an unexpected `id` field); `harness/seed_plays.py` seeds the best of the
+five that still validates against the tenant (run 2, first of four runs tied on margin). The play
+is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers (468 before
+consent) across 5 segments, expected margin ₹9,191 (waste avoided ₹9,397 minus transfer cost
+₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186
 (`counterfactuals.play_net_inr` on the play; `GET /plays`; snapshot in
-`eval/raw/tea_beat_api_2026-10-10.json`). Approval assigns 291 treated and 32
+`eval/raw/tea_recorded_beat_2026-10-12.json`, recorded runs in
+`eval/raw/planner_real_traces_tea_2026-10-12/`). Approval assigns 355 treated and 39
 holdout customers by hash, writes the play into `future_regressors`, and moves the projected
-write-off from ₹35,186 to ₹28,659 (live approve on the deployed API, 10 Oct 2026).
+write-off from ₹35,186 to ₹28,659 (local approve on the seeded tenant, 12 Oct 2026; the deployed
+service shows the same after the next deploy).
 
-The Gemini proof is the second demo gap, `gap_chips_ds07`: 368 units of Masala Chips at dark store
+The second Gemini-recorded demo gap is `gap_chips_ds07`: 368 units of Masala Chips at dark store
 DS-07, ₹9,200 at stake, online sell-by in 6 days. Its Desk trace is a real, committed Gemini
 recording, badged `Recorded from Gemini · 10 Oct 2026`: five independent live Vertex runs
 (`harness/record_flagship_traces.py --gap gap_chips_ds07 --runs 5`, `TAAL_MODEL_BACKEND=vertex`,

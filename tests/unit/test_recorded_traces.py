@@ -298,22 +298,40 @@ def test_seed_plays_falls_back_to_stub_with_no_recordings(tmp_path, data_dir, mo
     assert all(p["source"] == "scripted_stub" for p in by_gap.values())
 
 
-def test_real_committed_state_flagship_source_iff_a_recording_validates(tmp_path, data_dir):
+def test_real_committed_state_each_gap_source_iff_a_recording_validates(tmp_path, data_dir):
     """No monkeypatching: runs harness.seed_plays exactly as `make generate` and the Docker build
-    do, against whatever is actually committed under eval/raw right now (nothing, today -- so this
-    expects "scripted_stub"). Written to stay correct, and still meaningful, the day a real
-    validating recording is committed for the flagship: the independent discover+select check
-    below decides what "expected" means, rather than a fact hardcoded here."""
-    candidates = rt.discover_candidates(sp.FLAGSHIP_GAP)  # real default eval/raw
-    best, _ = rt.select_best(str(data_dir), sp.FLAGSHIP_GAP, candidates) if candidates else (None, {})
-    expected_flagship_source = "recorded_gemini" if best is not None else "scripted_stub"
-
+    do, against whatever is actually committed under eval/raw right now. Every demo gap with a
+    committed recording that validates is seeded from it ("recorded_gemini"); every gap without
+    one keeps the scripted stub. The independent discover+select check below decides what
+    "expected" means per gap, rather than a fact hardcoded here."""
     seed_dir = tmp_path / "seed-target"
     shutil.copytree(data_dir, seed_dir)
     outs = asyncio.run(sp.seed_plays(str(seed_dir)))
     by_gap = {o["play"]["gap_id"]: o["play"] for o in outs}
 
-    assert by_gap[sp.FLAGSHIP_GAP]["source"] == expected_flagship_source
-    for gap_id, play in by_gap.items():
-        if gap_id != sp.FLAGSHIP_GAP:
-            assert play["source"] == "scripted_stub"
+    for gap_id in sp.DEMO_GAPS:
+        candidates = rt.discover_candidates(gap_id)  # real default eval/raw
+        best, _ = rt.select_best(str(data_dir), gap_id, candidates) if candidates else (None, {})
+        assert by_gap[gap_id]["source"] == ("recorded_gemini" if best is not None else "scripted_stub"), gap_id
+
+
+def test_seed_plays_uses_the_committed_tea_recording_and_stubs_the_rest(tmp_path, data_dir):
+    """The hero beat's Tea play comes from the committed real-Gemini recording, with its
+    provenance in the seeded trace (the UI's "Recorded from Gemini" badge reads it); gaps with no
+    recording (cola, kaju, quinoa) keep the scripted stub."""
+    seed_dir = tmp_path / "seed-target"
+    shutil.copytree(data_dir, seed_dir)
+    outs = asyncio.run(sp.seed_plays(str(seed_dir)))
+    by_gap = {o["play"]["gap_id"]: o for o in outs}
+
+    tea = by_gap["gap_tea_ds04"]
+    assert tea["play"]["source"] == "recorded_gemini"
+    assert tea["source"] == "recorded_gemini" and tea["planner_source"] == "model"
+    assert tea["play"]["mechanic"] == "transfer_plus_nudge"
+    run_summary = next(e for e in reversed(tea["events"]) if e.get("kind") == "run_summary")
+    assert run_summary["source"] == "recorded_gemini" and run_summary["recorded_source"] == "live_gemini"
+    assert run_summary["recorded_in"].startswith("eval/raw/planner_real_traces_tea_")
+    assert str(run_summary["model"]).startswith("gemini")
+
+    for gap_id in ("gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"):
+        assert by_gap[gap_id]["play"]["source"] == "scripted_stub", gap_id

@@ -1,0 +1,152 @@
+{
+  "mechanic_params": {
+    "transfer_units": 103,
+    "transfer_to_node": "OUT-01"
+  },
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 24.44% (net price 450.00, cost 340.00) vs premium_tea floor 12.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 394 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 468 -> 394"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "transfer_plus_nudge is not a discount play"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "transfer_plus_nudge does not push SKU-DARJEELING-TEA-100G; stockout rule not applicable"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+    }
+  ],
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_tea_ds04_v1",
+    "min_treated_n": 20
+  },
+  "audience": {
+    "size_before_consent": 468,
+    "filters": {},
+    "size_after_consent": 394,
+    "segment_ids": [
+      "seg_2",
+      "seg_1",
+      "seg_3",
+      "seg_5",
+      "seg_6"
+    ],
+    "purpose": "marketing"
+  },
+  "mechanic": "transfer_plus_nudge",
+  "target": {
+    "batch_ids": [
+      "B-TEA-DS04-01"
+    ],
+    "deadline_type": "online_sellby",
+    "sku": "SKU-DARJEELING-TEA-100G",
+    "units": 103,
+    "deadline_date": "2026-10-06",
+    "node_ids": [
+      "DS-04"
+    ]
+  },
+  "citations": [
+    {
+      "type": "gap",
+      "ref": "gap_tea_ds04"
+    },
+    {
+      "ref": "est-v1",
+      "type": "estimator"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+    }
+  ],
+  "channel": "web_chat",
+  "rationale": "This play transfers 103 units of Darjeeling Tea 100G from Dark store 04 to Outlet 01 to clear the stock before the online sell-by date of 2026-10-06. The transfer_plus_nudge mechanic is preferred by policy v1 over blanket markdowns. It targets 394 customers across five high-affinity segments. According to estimator est-v1, this play is expected to clear 27.64 units and generate 9191.29 INR in margin. This avoids 9397.29 INR in waste while maintaining a net margin of 24.44%, which is well above the 12.00% floor for premium tea.",
+  "objective": "clear_online_sellby",
+  "counterfactuals": {
+    "do_nothing_inr": 35020.0,
+    "blanket_markdown_inr": 32015.18,
+    "blanket_markdown_pct": 20.0,
+    "play_net_inr": -25828.71
+  },
+  "expected_outcome": {
+    "units": 27.64,
+    "margin_inr": 9191.29,
+    "waste_avoided_inr": 9397.29,
+    "discount_cost_inr": 0.0,
+    "ci_low": 1.49,
+    "ci_high": 80.63,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "play_id": "play_tea_ds04_v1",
+  "gap_id": "gap_tea_ds04",
+  "alternatives": [
+    {
+      "mechanic_params": {
+        "bundle_sku": "SKU-SOAN-PAPDI-1KG",
+        "bundle_price": 740
+      },
+      "mechanic": "bundle",
+      "expected_units": 27.64,
+      "rejected_because": "Policy v1 prefers transfers over bundles, and the transfer play has a higher expected margin of 9191.29 INR compared to 1234.36 INR for the bundle.",
+      "expected_margin_inr": 1234.36
+    }
+  ],
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-10-06T23:59:59Z"
+  },
+  "copy": {
+    "language_set": [
+      "en"
+    ],
+    "copy_status": "pending",
+    "variants": []
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_tea_ds04_v1_ba376cf1",
+  "cost": {
+    "plan_cost_inr": 3.94,
+    "conversation_budget_inr": 51.22,
+    "pct_of_rupees_at_stake": 0.158
+  },
+  "source": "live_gemini"
+}
