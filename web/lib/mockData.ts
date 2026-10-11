@@ -40,14 +40,14 @@ export async function mockJson(key: MockKey): Promise<unknown> {
 
 // Per-play overrides for the approve fixture. mocks/approve.json still holds the old Masala Chips
 // stub (287 treated, 26 held back); the hero play is Tea, so a mock Approve for a play listed here
-// answers with that play's own numbers: 323 consented, 291 treated, 32 held back, write-off 35,186
+// answers with that play's own numbers: 394 consented, 355 treated, 39 held back, write-off 35,186
 // to 28,659. Everything else (the forecast series, run id shape) comes from the fixture. The real
 // service regenerates the fixture from the flagship; until then this keeps mock mode self-consistent.
 const APPROVE_OVERRIDES: Record<string, { treated_n: number; holdout_n: number; eligible_n: number; excluded_subscribers: number; writeoff_before_inr: number; writeoff_after_inr: number }> = {
   play_tea_ds04_v1: {
-    treated_n: 291,
-    holdout_n: 32,
-    eligible_n: 323,
+    treated_n: 355,
+    holdout_n: 39,
+    eligible_n: 394,
     excluded_subscribers: 0,
     writeoff_before_inr: 35186,
     writeoff_after_inr: 28659,

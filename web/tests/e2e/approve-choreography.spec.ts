@@ -80,7 +80,7 @@ test.describe("submitting: honest steps and timer", () => {
     expect(said).toContain("Approving. This takes a few seconds.");
     for (const step of ["Writing the offer", "Re-forecasting with the play", "Assigning the holdout"]) expect(said).toContain(`${step}: done.`);
     const last = said[said.length - 1];
-    expect(last).toMatch(/^Approved\. Recovered versus doing nothing: 7,498 rupees\. 291 customers will receive the offer; 32 are held back\.$/);
+    expect(last).toMatch(/^Approved\. Recovered versus doing nothing: 9,191 rupees\. 355 customers will receive the offer; 39 are held back\.$/);
     // the order: submitting first, then the steps, then the result
     expect(said.indexOf("Approving. This takes a few seconds.")).toBeLessThan(said.indexOf("Writing the offer: done."));
     expect(said.indexOf("Assigning the holdout: done.")).toBeLessThan(said.length - 1);

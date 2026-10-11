@@ -1,57 +1,29 @@
 [
   {
-    "play_id": "play_tea_ds04_v1",
-    "gap_id": "gap_tea_ds04",
-    "tenant_id": "kutumb-mart",
-    "created_at": "2026-09-12T03:30:00Z",
-    "objective": "clear_online_sellby",
     "target": {
-      "sku": "SKU-DARJEELING-TEA-100G",
+      "deadline_date": "2026-10-06",
+      "units": 103,
+      "deadline_type": "online_sellby",
       "node_ids": [
         "DS-04"
       ],
+      "sku": "SKU-DARJEELING-TEA-100G",
       "batch_ids": [
         "B-TEA-DS04-01"
-      ],
-      "units": 103,
-      "deadline_date": "2026-10-06",
-      "deadline_type": "online_sellby"
+      ]
     },
-    "mechanic": "transfer_plus_nudge",
-    "mechanic_params": {
-      "transfer_to_node": "OUT-01",
-      "transfer_units": 103
-    },
-    "audience": {
-      "segment_ids": [
-        "seg_2",
-        "seg_1"
-      ],
-      "filters": {
-        "min_affinity": 0.3
-      },
-      "purpose": "marketing",
-      "size_before_consent": 391,
-      "size_after_consent": 323
-    },
-    "channel": "web_chat",
-    "window": {
-      "start": "2026-09-12T00:00:00Z",
-      "end": "2026-10-06T23:59:59Z"
-    },
-    "copy": {
-      "language_set": [
-        "en",
-        "kn"
-      ],
-      "variants": [],
-      "copy_status": "pending"
-    },
-    "holdout": {
-      "fraction": 0.1,
-      "seed": "seed-play_tea_ds04_v1",
-      "min_treated_n": 20
-    },
+    "alternatives": [
+      {
+        "expected_units": 27.64,
+        "mechanic_params": {
+          "transfer_units": 103,
+          "transfer_to_node": "OUT-02"
+        },
+        "rejected_because": "OUT-01 is preferred as the primary transfer candidate",
+        "expected_margin_inr": 9191.29,
+        "mechanic": "transfer_plus_nudge"
+      }
+    ],
     "guardrails": [
       {
         "rule": "margin_floor",
@@ -61,12 +33,12 @@
       {
         "rule": "frequency_cap",
         "passed": true,
-        "detail": "all 323 customers under 2 plays in 7 days"
+        "detail": "all 394 customers under 2 plays in 7 days"
       },
       {
         "rule": "consent_required",
         "passed": true,
-        "detail": "audience filtered by consent: 391 -> 323"
+        "detail": "audience filtered by consent: 468 -> 394"
       },
       {
         "rule": "sellby_disclosure",
@@ -91,59 +63,93 @@
       {
         "rule": "cite_or_drop",
         "passed": true,
-        "detail": "12 number(s) in rationale all cited; 5 citation(s) resolve"
+        "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
       }
     ],
-    "rationale": "103 units of Darjeeling Tea 100G at Dark store 04 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-10-06; doing nothing writes off ₹35020 and a blanket 20% markdown costs ₹32015. This play uses a transfer of 103 units to OUT-01 with a nudge for 323 consented customers (Tea connoisseurs, Festival sweets loyalists): expected 23 units, margin ₹7498, discount cost ₹0, waste avoided ₹7704 (CI 1 to 66 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\"",
+    "holdout": {
+      "seed": "seed-play_tea_ds04_v1",
+      "min_treated_n": 20,
+      "fraction": 0.1
+    },
+    "gap_id": "gap_tea_ds04",
+    "copy": {
+      "language_set": [
+        "en"
+      ],
+      "copy_status": "pending",
+      "variants": []
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 35020.0,
+      "blanket_markdown_inr": 32015.18,
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -25828.71
+    },
+    "play_id": "play_tea_ds04_v1",
+    "rationale": "This play transfers the at-risk units of Darjeeling Tea from the dark store to the outlet to clear the online sell-by breach. It targets high-affinity segments after consent. The play is expected to sell a portion of the units, generating positive margin and avoiding waste. This transfer-based approach is preferred over blanket markdowns under the policy.",
+    "mechanic": "transfer_plus_nudge",
+    "expected_outcome": {
+      "units": 27.64,
+      "margin_inr": 9191.29,
+      "waste_avoided_inr": 9397.29,
+      "discount_cost_inr": 0.0,
+      "ci_low": 1.49,
+      "ci_high": 80.63,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
     "citations": [
       {
         "type": "gap",
         "ref": "gap_tea_ds04"
       },
       {
-        "type": "estimator",
-        "ref": "est-v1"
+        "ref": "est-v1",
+        "type": "estimator"
       },
       {
-        "type": "policy",
-        "ref": "v1"
+        "ref": "v1",
+        "type": "policy"
       },
       {
         "type": "forecast",
         "ref": "sense_20260912_baseline_2aaad73c"
-      },
-      {
-        "type": "stock",
-        "ref": "B-TEA-DS04-01"
       }
     ],
-    "alternatives": [],
-    "policy_version": "v1",
-    "trace_ref": "events/run_tea_ds04_v1_3f7cc1b3",
+    "audience": {
+      "purpose": "marketing",
+      "segment_ids": [
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_5",
+        "seg_6"
+      ],
+      "size_before_consent": 468,
+      "size_after_consent": 394,
+      "filters": {}
+    },
+    "window": {
+      "end": "2026-10-06T23:59:59Z",
+      "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+      "transfer_units": 103,
+      "transfer_to_node": "OUT-01"
+    },
+    "created_at": "2026-09-12T03:30:00Z",
     "status": "proposed",
-    "expected_outcome": {
-      "units": 22.66,
-      "margin_inr": 7497.87,
-      "waste_avoided_inr": 7703.87,
-      "discount_cost_inr": 0.0,
-      "ci_low": 1.22,
-      "ci_high": 66.1,
-      "prior_n": 20.0,
-      "measured_n": 0,
-      "estimator_version": "est-v1"
-    },
-    "counterfactuals": {
-      "do_nothing_inr": 35020.0,
-      "blanket_markdown_inr": 32015.18,
-      "blanket_markdown_pct": 20.0,
-      "play_net_inr": -27522.13
-    },
+    "policy_version": "v1",
+    "trace_ref": "events/run_tea_ds04_v1_e6b5d8f9",
     "cost": {
       "plan_cost_inr": 3.94,
-      "conversation_budget_inr": 41.99,
-      "pct_of_rupees_at_stake": 0.131
+      "conversation_budget_inr": 51.22,
+      "pct_of_rupees_at_stake": 0.158
     },
-    "source": "scripted_stub"
+    "source": "recorded_gemini"
   },
   {
     "play_id": "play_quinoa_out02_v1",

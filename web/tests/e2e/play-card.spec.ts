@@ -43,14 +43,14 @@ test.describe("PlayCard: hero mode (landing)", () => {
   test("the headline figure, its two parts, the honesty line and the three bars", async ({ page }) => {
     const beat = await openBeat(page);
     // Tea is a transfer play: waste avoided minus transfer cost
-    await expect(beat.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹7,498");
-    await expect(beat.getByTestId("recovered-figure-parts")).toContainText("waste avoided (at cost) ₹7,704 minus transfer cost ₹206");
+    await expect(beat.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹9,191");
+    await expect(beat.getByTestId("recovered-figure-parts")).toContainText("waste avoided (at cost) ₹9,397 minus transfer cost ₹206");
     await expect(beat.getByTestId("honesty-line")).toContainText("not a measurement");
     await expect(beat.locator(".counterfactuals__row")).toHaveCount(3);
     await expect(beat.locator(".counterfactuals__row--play")).toHaveCount(1);
-    await expect(beat.getByTestId("comparison-line")).toHaveText("Beats a blanket 20% markdown by ₹4,493");
+    await expect(beat.getByTestId("comparison-line")).toHaveText("Beats a blanket 20% markdown by ₹6,186");
     // computed from the play's own audience and holdout fraction, said as an estimate
-    await expect(beat.getByTestId("plan-sentence")).toContainText("About 291 of 323 consented customers get the offer; about 32 are held back");
+    await expect(beat.getByTestId("plan-sentence")).toContainText("About 355 of 394 consented customers get the offer; about 39 are held back");
   });
 
   test("Approve is the only Approve button, reachable before Details, and the card keeps Details collapsed", async ({ page }) => {
@@ -70,7 +70,7 @@ test.describe("PlayCard: hero mode (landing)", () => {
     await expect(beat.getByTestId("approve-result")).toBeVisible({ timeout: 30_000 });
     await expect(beat.getByTestId("decision")).toHaveAttribute("data-sticky", "off");
     // the result's own figure is the same canonical figure
-    await expect(beat.getByTestId("approve-recovered")).toContainText("Recovered vs doing nothing ₹7,498");
+    await expect(beat.getByTestId("approve-recovered")).toContainText("Recovered vs doing nothing ₹9,191");
   });
 });
 
@@ -189,7 +189,7 @@ test.describe("PlayCard: sticky Approve on a phone (390 x 844)", () => {
     await expect(approve).toBeInViewport({ ratio: 1 });
     // 44 px tall at least, and the compact figure is shown beside it
     expect((await approve.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await expect(decision).toContainText("₹7,498");
+    await expect(decision).toContainText("₹9,191");
     await assertNoHorizontalOverflow(page);
   });
 

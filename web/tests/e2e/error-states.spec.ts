@@ -86,7 +86,7 @@ test.describe("Approve", () => {
     await expect(page.getByTestId("approve-error")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
     // it is final: the figure is already the canonical one, with no count-up
-    await expect(result.getByTestId("approve-recovered-amount")).toHaveText("₹7,498");
+    await expect(result.getByTestId("approve-recovered-amount")).toHaveText("₹9,191");
   });
 
   test("404: the sandbox was restarted", async ({ page }) => {
