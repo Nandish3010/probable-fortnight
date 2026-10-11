@@ -9,7 +9,7 @@ under `eval/raw/`; see `eval/evaluation.md` for the full table and the commands 
 | Stage | Throughput | Status |
 |---|---|---|
 | Sense job, full nightly run (300 SKUs, 16 nodes/outlets), local backend | 3.8s total (forecast 2.5s, gaps 0.15s, segments+substitutes 1.2s) | measured: `uv run python -m jobs.sense`, local compute against LocalStore (default everywhere except the deployed `taal-sense` job's own env; see below); `eval/raw/sense_throughput_2026-09-20.json` |
-| Planner Agent, one gap, live Vertex | 70.5s (rerun, proposed) to 110.9s (plan, no_play after 2 iterations) | measured: `harness.sweep_live` against a live `TAAL_MODEL_BACKEND=vertex` server, real Gemini calls; `eval/raw/sweep_vertex_2026-09-20.txt` |
+| Planner Agent, one gap, live Vertex | 70.5s (rerun, proposed) to 110.9s (plan, no_play after 2 iterations) on 20 Sep, gemini-2.5-flash; superseded on 11 Oct, gemini-3.5-flash: p50 26.5s, p95 31.8s (`eval/raw/plan_live_2026-10-12.json`) | measured: `harness.sweep_live` against a live `TAAL_MODEL_BACKEND=vertex` server, real Gemini calls; `eval/raw/sweep_vertex_2026-09-20.txt` |
 | Planner Agent fan-out, 50 gaps, Batch API | not measured | the Batch API fan-out in DECISIONS §18.3 is a documented design, not built -- nothing in this repo submits a Batch job |
 | Customer Agent, one turn, live Vertex | 4.5-6.9s across 3 live calls | measured: same sweep run |
 | Vision intake, one photo, live Vertex | 3.9s | measured: same sweep run (`POST /capture` with an uploaded image) |

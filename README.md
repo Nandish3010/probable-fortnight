@@ -14,7 +14,7 @@ Three clicks, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first lo
 3. Click **Chat as Ravi** and the offer arrives.
    Then, in the chat, add the tea to the cart: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-- Live plans: 22/24 model-planned on 11 Oct 2026, p50 26.5 s, 0 fallbacks (`eval/raw/plan_live_2026-10-12.json`).
+- Latency, one story (gemini-3.5-flash): live plan p50 26.5 s, p95 31.8 s, 22/24 = 92% model-planned, 0 fallbacks (11 Oct 2026, `eval/raw/plan_live_2026-10-12.json`); Approve 6 to 10 s warm (6.3 to 6.6 s measured 12 Oct, 10.1 s after idle, `eval/raw/approve_timing_2026-10-12.json`); recorded runs 21.8 to 27.6 s (chips, 10 Oct) and 21.9 to 26.7 s (Tea, 12 Oct). The Plan live chip reads these from `/health` `plan_live_eval`. Evidence on gemini-2.5-flash (cost, customer agent, simulation, vision, 9 Oct live eval) predates the switch. Checks: 464 pytest tests and 473 Playwright tests run in `make verify`, the CI gate in `.github/workflows/verify.yml`.
 
 Demo video: link added at submission
 
