@@ -8,6 +8,7 @@ import logging
 import os
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from typing import Any
 
@@ -42,6 +43,44 @@ def _save_play(store: LocalStore, row: dict[str, Any], play: dict[str, Any]) -> 
 def _writeoff(series: dict[str, float], on_hand: int, deadline: str, unit_cost: float) -> float:
     sold = sum(v for d, v in series.items() if d <= deadline)
     return round(max(0.0, on_hand - sold) * unit_cost, 2)
+
+
+def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The templated variants, replaced slot by slot by AI.GENERATE_TABLE output (vertex backend
+    only) when it returns within generate_copy_bigquery's timeout (default 6.0 s, measured live at
+    ~3-4 s for a 10-variant play). Approve is on the demo's critical path, so any failure or
+    timeout is absorbed here and the templated variants are returned as-is; this never raises."""
+    variants = templated
+    try:
+        models = load_models()
+        if models["backend"] == "vertex":
+            project = os.environ.get(models["vertex"]["project_env"])
+            if not project:
+                raise RuntimeError(f"{models['vertex']['project_env']} not set")
+            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"])
+            if bq_variants:
+                # Per (segment, language) slot: keep the BigQuery variant only if the same
+                # deterministic validator that gates templated copy accepts it; any slot it
+                # rejects, or that BigQuery didn't return at all, keeps the templated variant
+                # rather than being dropped -- an offer must never go out blank.
+                bq_accepted, _ = validate_copy(bq_variants, play, best_before)
+                bq_by_key = {(v["segment_id"], v["language"]): v for v in bq_accepted}
+                variants = [bq_by_key.get((v["segment_id"], v["language"]), v) for v in templated]
+    except Exception as e:
+        logger.warning("copy generation via BigQuery AI.GENERATE_TABLE failed, falling back to templates: %s", e)
+        variants = templated
+    return variants
+
+
+def _reforecast(store: LocalStore, as_of: date, run_id: str, play: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+    """Single-series re-forecast with the play as a regressor; persists the new forecast rows and
+    returns (rows, latency_ms). Reads future_regressors, so it runs after they are written."""
+    t_fc = time.perf_counter()
+    new_rows = forecast(store, as_of, run_id, skus=[play["target"]["sku"]], includes_plays=True)
+    fc_ms = int((time.perf_counter() - t_fc) * 1000)
+    kept = [r for r in store.read("forecasts") if not (r["sku"] == play["target"]["sku"] and r.get("includes_plays"))]
+    store.write("forecasts", kept + new_rows)
+    return new_rows, fc_ms
 
 
 def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime, holdout_fraction: float | None = None, rationale: str | None = None, edits: list[dict[str, Any]] | None = None, approved_by: str = "judge", as_of: date | None = None) -> dict[str, Any]:
@@ -80,37 +119,12 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     play["window"]["start"] = now_iso
     play["status"] = "approved"
     play["approved_by"], play["approved_at"] = approved_by, now_iso
-    # --- copy: templated always computed first (the immediate result and the fallback);
-    # AI.GENERATE_TABLE in BigQuery, vertex backend only, replaces it on success within the
-    # timeout. Approve is on the demo's critical path, so a judge never waits too long on
-    # BigQuery: generate_copy_bigquery issues one parameterized AI.GENERATE_TABLE query (no temp
-    # table) and its default timeout_s (6.0, measured live at ~3-4s for a 10-variant play) caps
-    # the wait; any failure or timeout here is silently absorbed and the templated variants are
-    # used as-is.
+    # --- copy: the templated variants are always computed first (the immediate result and the
+    # fallback). AI.GENERATE_TABLE in BigQuery (vertex backend only) may replace them, but it runs
+    # in a worker thread concurrently with the re-forecast further down -- see `_bigquery_copy`.
     partner = load_catalogue(store).get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
     best_before = gap["evidence"].get("expiry_date")
     templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
-    variants = templated
-    models = load_models()
-    if models["backend"] == "vertex":
-        try:
-            project = os.environ.get(models["vertex"]["project_env"])
-            if not project:
-                raise RuntimeError(f"{models['vertex']['project_env']} not set")
-            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"])
-            if bq_variants:
-                # Per (segment, language) slot: keep the BigQuery variant only if the same
-                # deterministic validator that gates templated copy accepts it; any slot it
-                # rejects, or that BigQuery didn't return at all, keeps the templated variant
-                # rather than being dropped -- an offer must never go out blank.
-                bq_accepted, _ = validate_copy(bq_variants, play, best_before)
-                bq_by_key = {(v["segment_id"], v["language"]): v for v in bq_accepted}
-                variants = [bq_by_key.get((v["segment_id"], v["language"]), v) for v in templated]
-        except Exception as e:
-            logger.warning("copy generation via BigQuery AI.GENERATE_TABLE failed, falling back to templates: %s", e)
-    accepted, reasons = validate_copy(variants, play, best_before)
-    play["copy"]["variants"] = accepted
-    play["copy"]["copy_status"] = "validated" if accepted and not reasons else ("rejected" if not accepted else "validated")
     # --- assignment by hash
     pctx = _planner_ctx(store, tenant)
     # An assortment_gap play's real, demonstrated askers live in the gap's evidence, never the
@@ -127,16 +141,8 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     store.append("play_assignments", rows)
     treated = [r["customer_id"] for r in rows if r["arm"] == "treated"]
     holdout = [r["customer_id"] for r in rows if r["arm"] == "holdout"]
-    # --- offers for treated only
-    lang_of = {c["customer_id"]: c.get("language", "en") for c in store.read("customers")}
-    text_by_lang = {v["language"]: v["text"] for v in accepted}
-    offers = []
-    for cid in treated:
-        text = text_by_lang.get(lang_of.get(cid, "en")) or text_by_lang.get("en") or (accepted[0]["text"] if accepted else "")
-        offers.append({"offer_id": f"{play_id}|{cid}", "tenant_id": tenant.tenant_id, "customer_id": cid, "play_id": play_id, "sku": play["target"]["sku"], "mechanic": play["mechanic"], "mechanic_params": play.get("mechanic_params") or {}, "text": text, "best_before_date": best_before, "created_at": now_iso, "delivered_at": None, "redeemed_at": None})
-    if offers:
-        store.append("offers", offers)
-    # --- the play becomes a known future regressor
+    # --- the play becomes a known future regressor. This must land before the re-forecast reads
+    # future_regressors, and it needs only the window, so it runs ahead of the concurrent branches.
     nodes = {n["node_id"]: n for n in store.read("nodes")}
     clusters = {nodes[n]["cluster_id"] for n in play["target"]["node_ids"] if n in nodes}
     w0, w1 = date.fromisoformat(play["window"]["start"][:10]), date.fromisoformat(play["window"]["end"][:10])
@@ -147,15 +153,35 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
             r["on_promo"], r["play_id"] = True, play_id
             touched += 1
     store.write("future_regressors", regs)
-    # --- single-series re-forecast
+    # --- offer copy (BigQuery, ~6 s cap) and the single-series re-forecast are independent of each
+    # other, so they run concurrently: wall time is max(a, b), not a + b. Assignment (above) and the
+    # regressors (above) are already done; offers below need the assignment and the copy, so they
+    # wait for the join. Each branch owns its failure handling: the copy branch absorbs every error
+    # into the templated variants and so cannot fail; a forecast error is re-raised only after the
+    # copy branch has finished, so one branch never cancels the other.
     as_of = as_of or date.fromisoformat(gap["created_at"])
     baseline_rows = [r for r in store.read("forecasts") if r["sku"] == play["target"]["sku"] and not r.get("includes_plays")]
-    t_fc = time.perf_counter()
     run_id = f"refc_{play_id}_{now.strftime('%H%M%S')}"
-    new_rows = forecast(store, as_of, run_id, skus=[play["target"]["sku"]], includes_plays=True)
-    fc_ms = int((time.perf_counter() - t_fc) * 1000)
-    kept = [r for r in store.read("forecasts") if not (r["sku"] == play["target"]["sku"] and r.get("includes_plays"))]
-    store.write("forecasts", kept + new_rows)
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="approve") as pool:
+        copy_future = pool.submit(_bigquery_copy, play, product, best_before, templated)
+        forecast_future = pool.submit(_reforecast, store, as_of, run_id, play)
+        variants = copy_future.result()
+        forecast_error = forecast_future.exception()
+    if forecast_error is not None:
+        raise forecast_error
+    new_rows, fc_ms = forecast_future.result()
+    accepted, reasons = validate_copy(variants, play, best_before)
+    play["copy"]["variants"] = accepted
+    play["copy"]["copy_status"] = "validated" if accepted and not reasons else ("rejected" if not accepted else "validated")
+    # --- offers for treated only
+    lang_of = {c["customer_id"]: c.get("language", "en") for c in store.read("customers")}
+    text_by_lang = {v["language"]: v["text"] for v in accepted}
+    offers = []
+    for cid in treated:
+        text = text_by_lang.get(lang_of.get(cid, "en")) or text_by_lang.get("en") or (accepted[0]["text"] if accepted else "")
+        offers.append({"offer_id": f"{play_id}|{cid}", "tenant_id": tenant.tenant_id, "customer_id": cid, "play_id": play_id, "sku": play["target"]["sku"], "mechanic": play["mechanic"], "mechanic_params": play.get("mechanic_params") or {}, "text": text, "best_before_date": best_before, "created_at": now_iso, "delivered_at": None, "redeemed_at": None})
+    if offers:
+        store.append("offers", offers)
     base_series = series_for(baseline_rows, play["target"]["sku"], play["target"]["node_ids"])
     play_series = series_for(new_rows, play["target"]["sku"], play["target"]["node_ids"])
     p10 = defaultdict(float)
