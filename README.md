@@ -1,17 +1,19 @@
 # Taal
 
-Taal turns a retailer's write-off forecast into a human-approved, holdout-tested offer for the right customers.
+Forecast, propose, approve, offer, measure: one loop that sells at-risk stock before it is written off, with a holdout to prove it.
+
+![The Taal loop: Forecast, Propose, Approve, Offer, Measure, with priors updating from Measure back to Forecast](docs/loop.svg)
 
 Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 ## Judge quick-start
 
-- Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
-- Live plans: 22/24 model-planned on 11 Oct 2026, p50 26.5 s, 0 fallbacks (`eval/raw/plan_live_2026-10-12.json`).
+1. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
+2. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
+3. Click **Approve**. The headline reads "Recovered vs doing nothing ₹7,498" (₹7,498 recovered), with 291 customers treated and 32 held out (323 consented; seeded).
+4. Click **Chat as Ravi** and the offer arrives; add the tea to the cart and the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-1. **Run the 60-second beat** on the landing page. It opens on the Darjeeling Tea gap (`gap_tea_ds04`, 103 units, ₹35,020 at stake) and stops at Approve.
-2. **Approve** the pre-proposed play. The approved play sets a promo flag on its window in `future_regressors`, and the re-forecast moves the chart: on the live API the projected write-off goes from ₹35,186 to ₹28,659, with 291 customers treated and 32 held back (323 consented; seeded).
-3. **Chat as a customer in the play's audience** (Ravi for the Tea play) and ask what is on the shelf; the offer carries the best-before date and the stock answer comes from the inventory tool.
+- Live plans: 22/24 model-planned on 11 Oct 2026, p50 26.5 s, 0 fallbacks (`eval/raw/plan_live_2026-10-12.json`).
 
 Demo video: link added at submission
 
@@ -52,6 +54,8 @@ generator no longer produces.
 | Forecast backtest, synthetic tenant -- mean MAPE over 63 tier-origin rows (9 category tiers x 7 rolling origins, 7-day horizon) and pooled WAPE over the same scored series-days | MAPE 0.133 (tiers 0.107 to 0.221); WAPE 0.113 | seeded | `eval/raw/backtest_rows_2026-09-20.jsonl` (MAPE); `synthetic_reference` in `eval/raw/external_backtest_2026-10-09.json` (both); `uv run python -m jobs.sense.backtest` |
 | **Real data** -- same backtest and forecaster on UCI Online Retail II (top 300 SKUs, 8 rolling origins); gap detector: 0 gaps, none computable (no stock or expiry in the data) | MAPE 3.79 (median per-day error 0.78); WAPE 0.83; 0 gaps | measured on public data | `eval/raw/external_backtest_2026-10-09.json`; method and caveats in [`eval/external_backtest.md`](eval/external_backtest.md). Caveat: a UK gift wholesaler, not grocery, with lumpy daily sales; the figure says the method is weak on lumpy daily demand, not what grocery will do |
 | Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md` section 18.7 |
+
+India scale, as reported (the letter itself was not opened): Inc42 (22 Jul 2026), citing Eternal's Q1 FY27 shareholder letter, reports Blinkit's inventory losses (expiry, shrinkage, damage, pilferage, transit) at about 1.8% of net order value. With the same article's Q1 NOV of ₹17,132 crore and 2,443 stores, that is ₹17,132 crore / 2,443 = ₹7.01 crore per store per quarter, x 4 = ₹28.05 crore a year, x 1.8% = about ₹0.5 crore (₹50 lakh) of inventory loss per store per year. This is all inventory loss, not only the near-expiry stock Taal targets, and it annualises one quarter; it is context for scale, not a Taal result.
 
 Buyer and pricing basis: the buyer is the category / supply-chain head, who owns write-off; the basis is either a fee per dark store per month or a percentage of rupees rescued measured against the holdout (`fee = pct x rupees rescued vs holdout`). No price point is set until a pilot measures that lift.
 
