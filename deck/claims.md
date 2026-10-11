@@ -6,6 +6,7 @@ Dates are the dates of the measurement, not of the deck.
 
 | Slide | Claim | Source |
 |---|---|---|
+| 1 | Title block: Gemini 3.5 Flash plans in an ADK agent (guardrails price every rupee, holdout on every play); hero Rs 9,191 recovered vs doing nothing on one tea lot, projected | `config/models.toml:23`; `agents/planner/agent.py:29`; `eval/raw/tea_recorded_beat_2026-10-12.json:25-26` |
 | 1 | Team: Nandish (lead), Rinu (co-builder) | `README.md:37-38` |
 | 1 | FSSAI advisory, 3 Dec 2024, file RCD-13/1/2024-Regulatory-FSSAI(E-13150): minimum 30% shelf life or 45 days at delivery | `README.md:82-87`; `eval/raw/docs_truth_sweep_2026-09-27/fssai_citation.json` |
 | 1 | Either-limit reading is Taal's configurable default | `README.md:87-93`; `config/tenant.demo.toml:6` |
@@ -14,29 +15,31 @@ Dates are the dates of the measurement, not of the deck.
 | 2 | User: category or supply-chain head owns write-off and is the buyer; day to day a demand planner (Play Desk) and a dark-store manager (phone view) | `README.md:60`; `docs/DECISIONS.md:554`; `web/app/desk/page.tsx` |
 | 2 | 3 of 7 practitioners write off weekly or daily | `eval/raw/feedback_summary_2026-10-09/summary.md:72-73` |
 | 3 | Hero (projected, seeded tenant): Tea recovered vs doing nothing Rs 9,191 (waste avoided Rs 9,397 minus transfer cost Rs 206); beats a blanket 20% markdown by Rs 6,186; recorded Gemini run, 12 Oct 2026 | `eval/raw/tea_recorded_beat_2026-10-12.json:25-26`; `eval/raw/tea_recorded_beat_2026-10-12.json:40` |
-| 3 | Holdout, Tea: 355 treated (1 responder), 39 held out (0 responders), so +0.3 pp, 95% CI -8.7 to +1.6, inconclusive, synthetic orders, 12 Oct 2026 (one fast-forwarded order) | `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:85`; `eval/raw/tea_recorded_beat_2026-10-12.json:105`; `eval/raw/tea_recorded_beat_2026-10-12.json:99-102`; `docs/openapi.yaml` |
+| 3 | Holdout card big value +0.3 pp; 95% CI -8.7 to +1.6; 1 of 355 treated responded, 0 of 39 held out; synthetic, inconclusive; Chips 323 / 29 (19 Sep) also inconclusive. Holdout, Tea: 355 treated (1 responder), 39 held out (0 responders), so +0.3 pp, 95% CI -8.7 to +1.6, inconclusive, synthetic orders, 12 Oct 2026 (one fast-forwarded order) | `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:85`; `eval/raw/tea_recorded_beat_2026-10-12.json:105`; `eval/raw/tea_recorded_beat_2026-10-12.json:99-102`; `docs/openapi.yaml` |
 | 3 | Chips tile: 323 treated, 29 held out, +1.5 pp, 95% CI -12.4 to +5.6, inconclusive (synthetic) | `eval/raw/prior_update_2026-09-28.json:25-26`; `eval/raw/prior_update_2026-09-28.json:34-36` |
 | 3 | Loop diagram (Forecast, Propose, Approve, Offer, Measure, priors update) | `docs/loop.svg` |
 | 3 | Theme strip: nightly per-SKU, per-node forecasts with festival effects; human-approved offers | `docs/DECISIONS.md:81`; `jobs/sense/forecast.py:9` |
 | 3 | 95% CI on the measured lift | `eval/raw/prior_update_2026-09-28.json:36-41` |
 | 4 | Vendor cells (Blue Yonder, RELEX, Wasteless, Afresh, Flashfood) and the Unclear definition | `README.md:198-222` |
+| 4 | New line adds no number or competitor claim: the model proposes, code owns every rupee, every play keeps a holdout | `agents/gate/estimator.py:263`; `agents/gate/guardrails.py` |
 | 4 | Taal row: Yes on sell-by cut-off, holdout, write-back | `README.md:205`; `agents/gate/guardrails.py`; `services/api/approve.py` |
 | 4 | Vendor pages read on 2026-10-09 | `README.md:198-202` |
-| 5 | Six gap types | `README.md:231`; `agents/gate/models.py:36-38` |
+| 5 | Six gap types: Sense produces six (`README.md:51`); the `GapType` enum starts at line 35 and lists seven values, the seventh (`assortment_gap`) kept for schema compatibility only | `README.md:51`; `README.md:231`; `agents/gate/models.py:35-38` |
 | 5 | LoopAgent, max 3 iterations | `agents/planner/agent.py:29` |
 | 5 | Six deterministic planner tools | `agents/planner/tools.py:460` |
 | 5 | Orders through an in-process MCP tool | `README.md:234` |
 | 5 | 95% CI on Measure | `eval/raw/prior_update_2026-09-28.json:36-41` |
 | 5 | Low-confidence rows must be confirmed | `agents/capture/vision.py:25` |
 | 6 | Six steps, two loops (A: play into forecast; B: outcomes into priors) | `README.md:224-236` |
-| 6 | Six gap types; eight guardrails | `README.md:231-232`; `agents/gate/models.py:44-46` |
+| 6 | Six gap types (Sense produces six; enum lists seven, see slide 5 row); eight guardrails | `README.md:51`; `README.md:231-232`; `agents/gate/models.py:35-38`; `agents/gate/models.py:44-46` |
 | 7 | Recorded chips run, 10 Oct, gemini-3.5-flash: 2 proposed, 1 rejected on a schema check, the second passes all eight guardrails | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `README.md:96-129` |
+| 7 | Chips trace: the play's expected outcome is 24.22 units and Rs 126.42 margin; slide 15 chips lot: play net -Rs 8,468 vs blanket markdown -Rs 8,189, so behind by Rs 279 (different scope: play margin vs whole-lot counterfactual) | `eval/raw/planner_real_traces_2026-10-10/summary.json:242-245`; `eval/raw/tea_beat_api_2026-10-10.json:25-30` |
 | 7 | Trace and chat screenshots are the redesigned app (frames from the UI session, 12 Oct) | `deck/img/trace-attempts.png`; `deck/img/chat-gloss.png` |
 | 7 | Screenshots (Play Desk trace, customer chat with English gloss) | `deck/img/trace-attempts.png`; `deck/img/chat-gloss.png` |
 | 8 | Scheduler 20:00 and 20:30 UTC | `infra/deploy.sh:331`; `infra/deploy.sh:361` |
 | 8 | Nightly `taal-sense` job runs AI.FORECAST (TimesFM) into BigQuery | `infra/deploy.sh:309`; `jobs/sense/run.py:50-58` |
 | 8 | Judge-facing path reads the frozen local snapshot and uses the local forecaster; nightly output is not read by it | `services/api/sandbox.py:45-51`; `infra/deploy.sh:294-298` |
-| 8 | AI.FORECAST benchmarked, local won 45/45 | `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json:58` |
+| 8 | AI.FORECAST benchmarked, local won 45/45; caveat as in the file: a structural home-field advantage, seeded data generated with the same form the local model fits | `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json:58` |
 | 8 | Architecture boxes match the committed diagram | `docs/architecture.md:7-30`; `docs/architecture.svg` |
 | 9 | Gemini 3.5 Flash (fallback 3.5 Flash-Lite) | `config/models.toml:23`; `eval/raw/model_verification_2026-10-10.json` |
 | 9 | Service-to-decision table (planner proposes the play; Gemini drafts, chats, reads pallets; AI.GENERATE_TABLE writes copy; local forecaster re-forecasts on approve; Firestore feedback; Cloud Run serves and runs jobs; MCP tool places the order; guardrails and estimator own every rupee) | `agents/planner/agent.py:29`; `jobs/sense/copy.py:95`; `services/api/approve.py`; `agents/gate/estimator.py:263`; `docs/architecture.md:20` |
@@ -46,6 +49,7 @@ Dates are the dates of the measurement, not of the deck.
 | 9 | GitHub Actions runs verify, then deploys to Cloud Run on every merge to main | `.github/workflows/verify.yml:68-98` |
 | 10 | ₹486 / $5.86 per 30 days, modelled from measured usage | `eval/raw/cost_measurement_2026-09-23.json:309-310` |
 | 10 | The 486 rupee figure was measured on 23 Sep on gemini-2.5-flash-family pricing, before the 10 Oct switch to gemini-3.5-flash; not re-measured | `eval/raw/cost_measurement_2026-09-23.json`; `config/models.toml:17` |
+| 10 | The 486 rupee measurement window had 0 plays and 0 gaps (idle-plus-nightly cost; no cost per play) | `eval/raw/cost_measurement_2026-09-23.json:312-313` |
 | 10 | 752 BigQuery jobs | `eval/raw/cost_measurement_2026-09-23.json:284` |
 | 10 | Micro ₹200-500 (1 shop, 500 SKUs); Mid ₹2,500-5,000 (300 SKUs, 10 nodes); Large ₹1-2 lakh (20,000 SKUs, 500 nodes); all estimates | `docs/scale.md:83-85` |
 | 10 | Buyer is the category or supply-chain head; basis per node per month or % of rupees rescued | `README.md:60`; `docs/DECISIONS.md:554` |
@@ -54,6 +58,7 @@ Dates are the dates of the measurement, not of the deck.
 | 11 | Outcomes screenshot (redesigned app): chips, 323 treated and 29 held out, inconclusive, SYNTHETIC | `eval/raw/prior_update_2026-09-28.json:25-26` |
 | 11 | 70% confidence threshold for the confirm step | `agents/capture/vision.py:25` |
 | 11 | Screenshots (phone confirm step, Outcomes with SYNTHETIC badge) | `deck/img/phone-confirm.png`; `deck/img/outcomes.png` |
+| 12 | Header: measured and dated, each card names its source file; Approve card labelled hand-timed | `eval/raw/approve_timing_2026-10-12.json` |
 | 12 | Planner live 5/5 proposed, 0 fallbacks, 21.8 to 27.6 s (10 Oct, chips, gemini-3.5-flash); Tea 5/5, 21.9 to 26.7 s (12 Oct) | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
 | 12 | Live plan, deployed, 11 Oct, gemini-3.5-flash: 22 of 24 model-planned (92% pass rate), 0 fallbacks, planner elapsed p50 26.5 s and p95 31.8 s over the 22 observed runs, 1 loop iteration each, 90 s deadline; 2 runs unobservable (poll 404 on a cold instance) counted as not passed | `eval/raw/plan_live_2026-10-12.json` |
 | 12 | Earlier 3-run check, 10 Oct: server elapsed 30.3 / 27.5 / 29.6 s, 3 of 3 model-planned | `eval/raw/live_replan_timing_2026-10-10.json` |
@@ -98,3 +103,4 @@ Dates are the dates of the measurement, not of the deck.
 | 17 | Vision harness built; synthetic photos only so far | `eval/evaluation_table.md`; `Makefile` |
 | 17 | BigQuery path built, flag off | `docs/scale.md:40-47`; `infra/deploy.sh:294` |
 | 18 | Repo and live app URLs | `README.md:10`; `README.md:1` |
+| 18 | Recap: Rs 9,191 recovered vs doing nothing, projected, seeded tenant; 22 of 24 live plans on gemini-3.5-flash, p50 26.5 s (11 Oct); holdout synthetic and inconclusive | `eval/raw/tea_recorded_beat_2026-10-12.json:25-26`; `eval/raw/plan_live_2026-10-12.json` |
