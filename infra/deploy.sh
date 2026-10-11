@@ -230,11 +230,13 @@ AGENTS_ENV_AT="${AGENTS_ENV//,/@}"
 if [ -n "${PREV_ORIGINS}" ]; then
   AGENTS_ENV_AT="${AGENTS_ENV_AT}@TAAL_ALLOWED_ORIGINS=${PREV_ORIGINS}"
 fi
+# one instance: re-plan state is in process memory; a second instance would 404 on poll
 gcloud run deploy taal-agents \
   --project "${PROJECT}" --region "${REGION}" \
   --image "${REGION}-docker.pkg.dev/${PROJECT}/taal/taal-agents" \
   --set-env-vars "^@^${AGENTS_ENV_AT}" \
   ${FEEDBACK_SECRET_FLAG[@]+"${FEEDBACK_SECRET_FLAG[@]}"} \
+  --max-instances 1 \
   --memory 2Gi --cpu 2 --concurrency 20 --timeout 300 \
   --allow-unauthenticated
 # CORS: TAAL_ALLOWED_ORIGINS is set at the end of this script, once taal-web's URLs are known.
