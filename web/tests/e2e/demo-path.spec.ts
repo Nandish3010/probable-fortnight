@@ -133,25 +133,28 @@ test.describe("model chip and trace header", () => {
     await expect(trace.locator("ol.trace-panel__list")).toHaveAttribute("aria-label", /^Agent trace for run run_/);
   });
 
-  test("when /health names no model the chip is absent and the header is otherwise unchanged", async ({ page }) => {
+  test("when /health names no model the chip falls back to the model the run itself recorded", async ({ page }) => {
     await injectMockFaults(page, { "/health": { kind: "http" } });
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
     const trace = page.getByTestId("play-detail").locator(".trace-panel").first();
     await expect(trace.getByText("Recorded from Gemini")).toBeVisible();
     await expect(trace.getByRole("button", { name: /Replay at 4x/ })).toBeVisible();
-    await expect(page.getByTestId("model-chip")).toHaveCount(0);
+    await expect(trace.getByTestId("model-chip")).toHaveText(/^gemini-3\.5-flash( · \d+\.\d s)?$/);
+    await expect(trace.getByTestId("model-chip")).not.toHaveAttribute("title", /Fallback/);
   });
 
-  test("Plan live shows the chip in the live panel and the run time on the result", async ({ page }) => {
+  test("Plan live on the scripted (stub) backend shows no model chip, in flight or on the result", async ({ page }) => {
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
     const card = page.getByTestId("play-detail");
     await card.getByTestId("plan-live").click();
     const live = card.getByTestId("live-replan");
-    await expect(live.getByTestId("model-chip")).toHaveText("gemini-3.5-flash"); // exact: no run time while the run is in flight
+    await expect(live).toBeVisible();
+    await expect(live.getByTestId("model-chip")).toHaveCount(0); // the mock backend is the scripted stub
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 10_000 });
-    await expect(card.locator(".re-plan-result__meta").getByTestId("model-chip")).toHaveText("gemini-3.5-flash · 1.2 s");
+    await expect(card.locator(".re-plan-result__meta").getByTestId("model-chip")).toHaveCount(0);
+    await expect(card.locator(".re-plan-result__meta").getByText("Scripted fixture")).toBeVisible();
   });
 });
 

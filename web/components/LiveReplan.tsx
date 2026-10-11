@@ -109,7 +109,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
   return (
     <div className="live-replan" data-testid="live-replan" ref={root}>
       <p className="live-replan__status">
-        {headerLine} <ModelChip />
+        {headerLine} {accepted.backend === "vertex" ? <ModelChip /> : null}
       </p>
       <p className="muted live-replan__timing">
         {elapsedS} s elapsed · falls back to rules after {Math.round(accepted.deadline_s)} s

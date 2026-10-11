@@ -37,10 +37,15 @@ test.describe("Arjun: Play Desk", () => {
     await expect(card.getByText(/margin floor|margin_floor/i).first()).toBeVisible();
     await shot(page, "arjun-03-why");
 
-    // trace is readable to a judge: invocation_id visible, one line per tool call, the revision visible
+    // trace is readable to a judge: one line per tool call, the revision visible; the event id sits behind
+    // each row's "technical details" and is not on the surface
     await expect(card.locator(".trace-panel__event").first()).toBeVisible();
     await expect((await card.locator(".trace-panel__event").count())).toBeGreaterThan(3);
-    await expect(card.getByText(/^e-[0-9a-f-]+$/).first()).toBeVisible();
+    await expect(card.getByText(/^Event e-[0-9a-f-]+$/).first()).toBeHidden();
+    const withId = card.locator(".trace-panel__event").filter({ has: page.getByTestId("trace-event-id") }).first();
+    await withId.locator("summary", { hasText: "technical details" }).click();
+    await expect(withId.getByText(/^Event e-[0-9a-f-]+$/)).toBeVisible();
+    await withId.locator("summary", { hasText: "technical details" }).click(); // closed again so the replay snapshot below compares like with like
     // The committed recording (2026-10-10, regenerated with the economics change) was rejected once,
     // by the schema check (an `id` key where `play_id` is required), then passed on attempt 2.
     await expect(card.locator(".trace-panel").getByText(/Additional properties are not allowed/).first()).toBeVisible();

@@ -156,11 +156,15 @@ export function EventRow({ row }: { row: Row }) {
           event.text
         )}
       </div>
-      <span className="trace-panel__invocation muted">{event.invocation_id}</span>
-      {raw ? (
+      {raw || event.invocation_id ? (
         <details className="trace-panel__raw">
-          <summary>full JSON</summary>
-          <pre>{JSON.stringify(raw, null, 2)}</pre>
+          <summary>technical details</summary>
+          {event.invocation_id ? (
+            <p className="trace-panel__invocation muted" data-testid="trace-event-id">
+              Event {event.invocation_id}
+            </p>
+          ) : null}
+          {raw ? <pre>{JSON.stringify(raw, null, 2)}</pre> : null}
         </details>
       ) : null}
     </li>

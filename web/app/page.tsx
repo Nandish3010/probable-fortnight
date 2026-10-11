@@ -164,6 +164,17 @@ export default function LandingPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <section className={`${styles.top} ${beatReady ? styles.topCompact : ""}`}>
         <h1 className={styles.heroLine}>{HERO_LINE}</h1>
+        {/* public/loop.svg is a copy of docs/loop.svg (the one source; `npm run sync:loop` refreshes it,
+            tests/e2e/loop-svg.spec.ts fails when the two differ). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className={styles.loop}
+          src="/loop.svg"
+          width={1600}
+          height={400}
+          alt="The Taal loop in five steps: Forecast, Propose, Approve, Offer, Measure. An arrow returns from Measure to Forecast, labelled priors update."
+          data-testid="loop-diagram"
+        />
         <div className={styles.meta}>
           <p
             className={styles.clock}

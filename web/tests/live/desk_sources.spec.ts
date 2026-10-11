@@ -34,6 +34,9 @@ test.describe("Play Desk: provenance badges (real stack, stub backend)", () => {
     await inbox.getByRole("button", { name: /Quinoa 500G/ }).first().click();
     const card = page.getByTestId("play-detail");
     await expect(card.locator(".trace-panel").getByText("Scripted fixture")).toBeVisible();
+    // A scripted fixture shows its badge alone: no model chip, no model id anywhere in the header.
+    await expect(card.locator(".trace-panel").getByTestId("model-chip")).toHaveCount(0);
+    await expect(card.locator(".trace-panel__header")).not.toContainText(/gemini-/);
     await expectNoConsoleErrors(errors);
   });
 

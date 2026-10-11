@@ -34,6 +34,9 @@ const FEATURED_PLAY_ID = "play_chips_ds07_v1";
 function PortfolioCard() {
   const { totals, governor, planned } = PORTFOLIO;
   const byType = Object.entries(totals.by_type).sort((a, b) => b[1].exposure_inr - a[1].exposure_inr);
+  // The scan counted rows of a gap type the generator no longer makes, so the Desk (the current gap
+  // list) shows fewer than the scan did. Say so instead of leaving two different numbers unexplained.
+  const retired = totals.by_type.assortment_gap?.count ?? 0;
   return (
     <div className="card portfolio-card" data-testid="portfolio-card">
       <div className="card__header">
@@ -49,7 +52,12 @@ function PortfolioCard() {
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
           <span className="portfolio-card__label">Total at stake</span>
-          <span className="muted">across {count(totals.gaps)} gaps</span>
+          <span className="muted" data-testid="portfolio-gap-count">
+            across {count(totals.gaps)} gaps
+            {retired > 0 && totals.gaps > retired
+              ? `: the ${count(totals.gaps - retired)} on the Desk and ${count(retired)} assortment-gap ${retired === 1 ? "row" : "rows"} from the original scan`
+              : ""}
+          </span>
         </div>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
@@ -455,7 +463,7 @@ export default function OutcomesPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <div className="card__header">
         <h1>Outcomes</h1>
-        <Badge kind={isMockMode() ? "replay" : "live"} detail="/outcomes" />
+        <Badge kind="synthetic" detail="/outcomes" />
       </div>
       <p className="muted">
         Your measured result comes first. Below it: what the whole portfolio projects, one worked example, and every
