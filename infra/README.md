@@ -188,6 +188,37 @@ all invisible in stub mode, all fixed:**
    deploys under `taal-deploy` today. Revisit both when `iam.sh`'s dedicated service accounts are
    finally created (see the "Known deviation" note above).
 
+## Rollback in 60 seconds
+
+Cloud Run keeps every revision, so a bad deploy is undone by routing traffic back, not by
+redeploying. Do it per service (`taal-agents`, `taal-web`); it takes effect in seconds.
+
+```bash
+# 1. list revisions, newest first; the one serving traffic is marked with a bullet
+gcloud run revisions list --service taal-agents --region asia-south1 --project amru-509214
+gcloud run revisions list --service taal-web    --region asia-south1 --project amru-509214
+
+# 2. send 100% of traffic to the previous good revision (copy its name from the list)
+gcloud run services update-traffic taal-agents --to-revisions <rev>=100 --region asia-south1 --project amru-509214
+gcloud run services update-traffic taal-web    --to-revisions <rev>=100 --region asia-south1 --project amru-509214
+
+# 3. check
+curl -s https://taal-agents-2obkp776ca-el.a.run.app/health
+curl -s -o /dev/null -w '%{http_code}\n' https://taal-web-2obkp776ca-el.a.run.app/
+```
+
+`/health` must report `"status": "ok"` and the web root must answer `200`. After
+`update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to
+"latest" with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214`
+once the fix is deployed. Roll back `taal-agents` and `taal-web` independently; the web build bakes in
+the API URL, which does not change between revisions.
+
+## Pin one instance during judging
+
+Considered and declined on 11 Oct 2026: `min-instances` stays 0 on `taal-agents` and `taal-web`
+through judging, and the 8 to 12 s cold start is accepted. If that decision is ever reversed,
+`infra/min_instances.sh on|off` (needs `GOOGLE_CLOUD_PROJECT` and `REGION`) toggles `min-instances` 1/0.
+
 ## Not in this directory
 
 - Secret values (API keys, service-account keys) -- created out of band in Secret Manager and
