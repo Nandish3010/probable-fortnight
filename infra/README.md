@@ -87,8 +87,9 @@ scripts themselves, so a future `./infra/deploy.sh` run reproduces this cleanly.
   Run instead routes to a *different* instance -- no in-flight request pinning it to the first one,
   a cold second instance spun up under load, min-instances at 0 -- finds no such run in its own
   registry and answers `404`, exactly the same failure mode the per-visitor sandbox already accepts
-  for approvals. Not routed around here; no Cloud Run flag in this repository is changed to force
-  session affinity or a shared run registry.
+  for approvals. Not routed around by a shared run registry or session affinity.
+- **`taal-agents` runs with `--max-instances 1` during the competition because re-plan state is in
+  memory.** Remove the cap after judging or move run state to Firestore.
 
 **IAM: resolved.** `taal-deploy@amru-509214.iam.gserviceaccount.com` was granted `roles/owner` on
 20 Sep 2026 (after two earlier attempts at a narrower Vertex role picked the wrong entries --

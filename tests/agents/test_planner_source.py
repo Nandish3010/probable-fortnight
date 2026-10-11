@@ -184,6 +184,8 @@ def test_deploy_sets_a_90s_planner_deadline_under_the_request_timeout():
     deploy = (Path(__file__).resolve().parents[2] / "infra" / "deploy.sh").read_text()
     assert "TAAL_PLANNER_DEADLINE_S=90" in deploy
     assert "--timeout 300" in deploy  # Cloud Run request timeout stays above 90 s + the web's 30 s poll grace
+    agents_block = deploy.split("gcloud run deploy taal-agents", 1)[1].split("gcloud run deploy taal-web", 1)[0]
+    assert "--max-instances 1" in agents_block  # re-plan state is in process memory
 
 
 def test_no_fallback_when_the_model_responds_in_time(sandbox, monkeypatch):
