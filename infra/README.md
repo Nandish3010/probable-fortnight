@@ -215,17 +215,9 @@ the API URL, which does not change between revisions.
 
 ## Pin one instance during judging
 
-Planned values: `min-instances=1` on `taal-agents` and on `taal-web`, from 18 Oct to 7 Nov 2026, so a
-judge never hits a cold start. Judge-mode sandboxes live on the instance's disk, so a pinned
-instance also keeps visitors' approvals from resetting on scale-to-zero. Set it with
-`infra/min_instances.sh` (needs `GOOGLE_CLOUD_PROJECT=amru-509214` and `REGION=asia-south1`):
-
-```bash
-./infra/min_instances.sh on    # 18 Oct: min-instances=1 on taal-agents and taal-web
-./infra/min_instances.sh off   # after 7 Nov: back to scale-to-zero (min-instances=0)
-```
-
-Do not run it before the owner approves the cost.
+Considered and declined on 11 Oct 2026: `min-instances` stays 0 on `taal-agents` and `taal-web`
+through judging, and the 8 to 12 s cold start is accepted. If that decision is ever reversed,
+`infra/min_instances.sh on|off` (needs `GOOGLE_CLOUD_PROJECT` and `REGION`) toggles `min-instances` 1/0.
 
 ## Not in this directory
 
