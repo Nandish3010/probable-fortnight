@@ -7,6 +7,7 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 ## Judge quick-start
 
 - Live URL: https://taal-web-2obkp776ca-el.a.run.app (deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development).
+- Live plans: 22/24 model-planned on 11 Oct 2026, p50 26.5 s, 0 fallbacks (`eval/raw/plan_live_2026-10-12.json`).
 
 1. **Run the 60-second beat** on the landing page. It opens on the Darjeeling Tea gap (`gap_tea_ds04`, 103 units, ₹35,020 at stake) and stops at Approve.
 2. **Approve** the pre-proposed play. The approved play sets a promo flag on its window in `future_regressors`, and the re-forecast moves the chart: on the live API the projected write-off goes from ₹35,186 to ₹28,659, with 291 customers treated and 32 held back (323 consented; seeded).

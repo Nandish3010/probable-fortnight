@@ -41,9 +41,12 @@ from services.feedback.summary import summarize as summarize_feedback
 from .approve import WindowExpired
 from .approve import approve as do_approve
 from .health_probes import firestore_check, sessions_check
+from .plan_live_eval import load_plan_live_eval
 from .sandbox import base_dir, store_for, visitor_id
 
 VERSION = "0.1.0"
+# Committed live-plan evidence summary for /health (None when the file is missing).
+_PLAN_LIVE_EVAL = load_plan_live_eval()
 log = logging.getLogger(__name__)
 app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
 # allow_origin_regex=r"https?://.*" with allow_credentials=True used to reflect literally any
@@ -297,7 +300,7 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         "sessions": {"checked_at": t, **sessions_check()},
     }
     status = "ok" if all(c["ok"] for c in checks.values()) else "degraded"
-    return {
+    body = {
         "status": status, "version": VERSION, "checks": checks, "backend": backend,
         # The model a failed call is retried on (config/models.toml ids.fallback); null when none is
         # configured. Additive: every earlier field is unchanged.
@@ -313,6 +316,11 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         # fails a deploy unless this reads "firestore": the container disk does not survive a restart.
         "feedback_store": feedback_backend(),
     }
+    # Additive (10-11 Oct 2026): the committed 24-run live-plan evidence, read once at startup from
+    # eval/raw/plan_live_2026-10-12.json; omitted when that file is missing.
+    if _PLAN_LIVE_EVAL is not None:
+        body["plan_live_eval"] = _PLAN_LIVE_EVAL
+    return body
 
 
 @app.get("/gaps")
