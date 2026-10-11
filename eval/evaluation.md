@@ -1062,3 +1062,14 @@ the 4 MB `adk eval` log is not committed; no thought-signature fields were prese
   Sep (empty and fabricated rationale) were not re-run today, and the judge is the same model
   family as the planner, so this is weak evidence of rationale quality; the human-labelled
   agreement subset is still not done.
+
+## Live plan, 24 runs on the deployed API (2026-10-11)
+
+- **22 of 24 live re-plans were model-planned, 0 fell back to rules** (12 on `gap_tea_ds04`, 12 on
+  `gap_chips_ds07`; `gemini-3.5-flash`, 90 s deadline, fresh visitor header per run, at most 2 in
+  flight). Planner elapsed over the 22 observed runs: **p50 26.5 s, p95 31.8 s**. The other 2
+  runs were not observable: their poll returned 404 because a different cold Cloud Run instance
+  answered (run state is in process memory), so they count as not passed; 2 follow-up runs were
+  both model-planned and are listed separately. Raw: `eval/raw/plan_live_2026-10-12.json`
+  (file name carries the plan's date; the runs were 23:50 to 23:58 IST on 11 Oct), summary
+  `eval/raw/plan_live_2026-10-12.md`. Earlier 3-run check: `eval/raw/live_replan_timing_2026-10-10.json`.

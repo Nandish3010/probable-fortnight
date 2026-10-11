@@ -50,7 +50,8 @@ Dates are the dates of the measurement, not of the deck.
 | 10 | 70% confidence threshold for the confirm step | `agents/capture/vision.py:25` |
 | 10 | Screenshots (phone confirm step, Outcomes with SYNTHETIC badge) | `deck/img/phone-confirm.png`; `deck/img/outcomes.png` |
 | 11 | Planner live 5/5 proposed, 0 fallbacks, 21.8 to 27.6 s (10 Oct) | `eval/raw/planner_real_traces_2026-10-10/summary.json` |
-| 11 | Live re-plan, deployed, 10 Oct: server elapsed 30.3 / 27.5 / 29.6 s, 3 of 3 model-planned, 0 fallbacks, 1 loop iteration each, 90 s deadline | `eval/raw/live_replan_timing_2026-10-10.json` |
+| 11 | Live re-plan, deployed, 11 Oct: 22 of 24 model-planned, 0 fallbacks, planner elapsed p50 26.5 s and p95 31.8 s over the 22 observed runs, 1 loop iteration each, 90 s deadline; 2 runs unobservable (poll 404 on a cold instance) counted as not passed | `eval/raw/plan_live_2026-10-12.json` |
+| 11 | Earlier 3-run check, 10 Oct: server elapsed 30.3 / 27.5 / 29.6 s, 3 of 3 model-planned | `eval/raw/live_replan_timing_2026-10-10.json` |
 | 11 | Before the fix, 9 Oct: 47.7 / 47.7 / 30.8 s, 2 of 3 fell back to rules at a 45 s deadline | `eval/raw/live_replan_timing_2026-10-09.json`; `eval/raw/planner_live_rerun_2026-10-09/summary.json` |
 | 11 | Customer agent p50 4.56 s, p95 6.48 s, 50/50 returned 200 (28 Sep); 6 s budget | `eval/raw/customer_latency_2026-09-28/analysis.json:5-8`; `docs/architecture.md:108` |
 | 11 | Approve + re-forecast 8.3 s (21 Sep) and 10.6 s (28 Sep); write-off ₹9,194 to ₹8,068 | `eval/raw/sweep_vertex_2026-09-21.txt:12`; `eval/raw/post_deploy_check_2026-09-28/summary.json:30-39` |

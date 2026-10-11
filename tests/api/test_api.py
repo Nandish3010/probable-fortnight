@@ -91,6 +91,22 @@ def test_health_shape(client):
     assert d["tenant"]["skus"] == 300 and d["tenant"]["nodes"] == 16
 
 
+def test_health_includes_plan_live_eval(client):
+    from services.api import main as api_main
+
+    d = client.get("/health", headers={"X-Taal-Visitor": "v-plan-live"}).json()
+    assert d["plan_live_eval"] == api_main._PLAN_LIVE_EVAL
+    assert d["plan_live_eval"]["passed"] <= d["plan_live_eval"]["total"]
+
+
+def test_health_omits_plan_live_eval_when_file_missing(client, monkeypatch):
+    from services.api import main as api_main
+
+    monkeypatch.setattr(api_main, "_PLAN_LIVE_EVAL", None)
+    d = client.get("/health", headers={"X-Taal-Visitor": "v-plan-live"}).json()
+    assert "plan_live_eval" not in d and d["status"] in ("ok", "degraded")
+
+
 def test_gaps_and_plays(client):
     g = client.get("/gaps", params={"node_id": "DS-07"}, headers=_h("visitor-1")).json()
     assert any(x["gap_id"] == "gap_chips_ds07" for x in g)
