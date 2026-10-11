@@ -8,28 +8,19 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 ## Judge quick-start
 
-Three clicks, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development):
+Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
 1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
-2. Click **Approve**. The headline reads "Recovered vs doing nothing ₹9,191" (₹9,191 recovered), with 355 customers treated and 39 held out (394 consented; seeded).
-3. Click **Chat as Ravi** and the offer arrives.
-   Then, in the chat, add the tea to the cart: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
+2. Click **Approve** (6 to 10 s). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
+3. Click **Chat as Ravi** and the offer arrives. Then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-- Latency, one story (gemini-3.5-flash): live plan p50 26.5 s, p95 31.8 s, 22/24 = 92% model-planned, 0 fallbacks (11 Oct 2026, `eval/raw/plan_live_2026-10-12.json`); Approve 6 to 10 s warm (6.3 to 6.6 s measured 12 Oct, 10.1 s after idle, `eval/raw/approve_timing_2026-10-12.json`); recorded runs 21.8 to 27.6 s (chips, 10 Oct) and 21.9 to 26.7 s (Tea, 12 Oct). The Plan live chip reads these from `/health` `plan_live_eval`. Evidence on gemini-2.5-flash (cost, customer agent, simulation, vision, 9 Oct live eval) predates the switch. Checks: 464 pytest tests and 473 Playwright tests run in `make verify`, the CI gate in `.github/workflows/verify.yml`.
+Live re-plan about 27 s, Approve 6 to 10 s warm; evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
 
 Demo video: link added at submission
 
-| Exposure (seeded) | Plays (seeded) | Projected margin |
-|---|---|---|
-| ₹1,795,464 | 424 | ₹347,356 (projected) |
-| `eval/raw/portfolio_2026-09-24.json` | same file | `docs/impact_math.md`, same file |
-
-Exposure includes ₹16,443 from 5 assortment rows the current generator no longer makes.
-
 - Deck: [`docs/deck.pdf`](docs/deck.pdf)
-- Reset demo data restores the seeded tenant for your visitor only; nothing you do reaches anyone else.
-- Provenance badges: every panel carries a LIVE, REPLAY, REAL PILOT or SYNTHETIC badge. The Desk's trace and re-plan result instead name the run's source, as `Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`. Sense is nightly and replayed; approve, chat, capture and execution are live calls. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service and ends badged with whichever source the run actually produced.
+- Reset demo data restores the seeded tenant for your visitor only.
+- Provenance badges: every panel carries a LIVE, REPLAY, REAL PILOT or SYNTHETIC badge; the Desk's trace and re-plan result name the run's source instead (`Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`). Approve, chat, capture and execution are live calls; Sense is nightly and replayed. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service.
 - What is real and what is simulated: see [the table](#what-is-real-what-is-simulated).
-
 
 ## Team
 
@@ -40,38 +31,25 @@ Exposure includes ₹16,443 from 5 assortment rows the current generator no long
 
 ## Impact in numbers
 
-Every number below is reproduced from a committed evidence file or a named code constant, not
-typed by hand; see `eval/raw/docs_truth_sweep_2026-09-27/impact_numbers.py` for the script that
-reproduced each one. The figures were measured on 2026-09-24, before the apparel path was removed
-from the tree; they include 5 `assortment_gap` rows (₹16,443 of the exposure) that the current
-generator no longer produces.
+Every number is reproduced from a committed evidence file or a named code constant; the full table with sources is in [`docs/impact_numbers.md`](docs/impact_numbers.md). Measured 2026-09-24 on the seeded tenant.
 
 | What | Number | Label | Source |
 |---|---|---|---|
-| 28-day exposure on the seeded tenant (one Sense run, 555 gaps, of which 5 are `assortment_gap` rows the current generator no longer makes, so 550 grocery gaps; the 28-day horizon bounds 4 of the six gap types Sense produces today, `agents/gate/models.py:34-36` -- the other 2 (`stockout_risk`, `unmet_demand`) use each node's `lead_time_days` instead; the enum keeps a seventh name, `assortment_gap`, for schema compatibility only, 3-5 days in the seeded tenant, `data/generator/generate.py:119`) | ₹1,795,464 | seeded | `eval/raw/portfolio_2026-09-24.json` (`totals/exposure_inr`); horizon = `HORIZON`, `jobs/sense/forecast.py:31`; reproduced in `impact_numbers.json` |
-| Plays planned | 424 | seeded | `eval/raw/portfolio_2026-09-24.json` (`planned/count`); reproduced in `impact_numbers.json` |
-| Expected margin at the default response prior (5%, `agents/gate/estimator.py:35-36`) -- sales margin ₹206,205 plus write-off avoided (net of transfer cost) ₹141,151 | ₹347,356 total | projected | `eval/raw/portfolio_2026-09-24.json` (`plays[*].expected_outcome.margin_inr`, split by mechanic); transfer-cost formula per the `agents/gate/estimator.py` docstring; reproduced in `impact_numbers.json` |
-| Monthly running cost of this deployment -- usage measured over the trailing 30 days to 2026-09-23, priced at Google's public list rates; not a bill | ₹486 | measured (usage), list-priced; not a bill | `eval/raw/cost_measurement_2026-09-23.json` (`modeled/total_inr`; method "modeled_from_measured_usage": usage quantities measured over the trailing 30 days, priced at Google's public list rates) |
-| Forecast backtest, synthetic tenant -- mean MAPE over 63 tier-origin rows (9 category tiers x 7 rolling origins, 7-day horizon) and pooled WAPE over the same scored series-days | MAPE 0.133 (tiers 0.107 to 0.221); WAPE 0.113 | seeded | `eval/raw/backtest_rows_2026-09-20.jsonl` (MAPE); `synthetic_reference` in `eval/raw/external_backtest_2026-10-09.json` (both); `uv run python -m jobs.sense.backtest` |
-| **Real data** -- same backtest and forecaster on UCI Online Retail II (top 300 SKUs, 8 rolling origins); gap detector: 0 gaps, none computable (no stock or expiry in the data) | MAPE 3.79 (median per-day error 0.78); WAPE 0.83; 0 gaps | measured on public data | `eval/raw/external_backtest_2026-10-09.json`; method and caveats in [`eval/external_backtest.md`](eval/external_backtest.md). Caveat: a UK gift wholesaler, not grocery, with lumpy daily sales; the figure says the method is weak on lumpy daily demand, not what grocery will do |
-| Who pays -- a category or supply-chain head; price anchor is a share of waste avoided | -- | projected | `docs/DECISIONS.md` section 18.7 |
+| 28-day exposure, one Sense run (555 gaps: 550 grocery plus 5 assortment rows, ₹16,443 of the exposure, that the current generator no longer makes) | ₹1,795,464 | seeded | `eval/raw/portfolio_2026-09-24.json` |
+| Plays planned | 424 | seeded | same file |
+| Expected margin per 28-day run at the default 5% response prior (sales margin ₹206,205 plus write-off avoided ₹141,151) | ₹347,356 | projected | same file; `docs/impact_math.md` |
+| Monthly run cost: usage measured to 2026-09-23 with zero plays in the window, on gemini-2.5-flash, list-priced | ₹486 | measured usage; not a bill | `eval/raw/cost_measurement_2026-09-23.json` |
+| Forecast backtest: synthetic tenant / public non-grocery data | WAPE 0.113 / 0.83 | seeded / public | `eval/raw/external_backtest_2026-10-09.json`; [`eval/external_backtest.md`](eval/external_backtest.md) |
 
-India scale, as reported (the letter itself was not opened): Inc42 (22 Jul 2026), citing Eternal's Q1 FY27 shareholder letter, reports Blinkit's inventory losses (expiry, shrinkage, damage, pilferage, transit) at about 1.8% of net order value. With the same article's Q1 NOV of ₹17,132 crore and 2,443 stores, that is ₹17,132 crore / 2,443 = ₹7.01 crore per store per quarter, x 4 = ₹28.05 crore a year, x 1.8% = about ₹0.5 crore (₹50 lakh) of inventory loss per store per year. This is all inventory loss, not only the near-expiry stock Taal targets, and it annualises one quarter; it is context for scale, not a Taal result.
+India scale, as reported by Inc42 (22 Jul 2026): Blinkit's inventory losses (expiry, shrinkage, damage, pilferage, transit) are about 1.8% of net order value. With the same article's Q1 NOV of ₹17,132 crore and 2,443 stores, that is ₹17,132 crore / 2,443 = ₹7.01 crore per store per quarter, x 4 x 1.8% = about ₹0.5 crore of inventory loss per store per year. This is all inventory loss, not only near-expiry stock, and it annualises one quarter: context for scale, not a Taal result.
 
-Buyer and pricing basis: the buyer is the category / supply-chain head, who owns write-off; the basis is either a fee per dark store per month or a percentage of rupees rescued measured against the holdout (`fee = pct x rupees rescued vs holdout`). No price point is set until a pilot measures that lift.
+Buyer and pricing basis: the buyer is the category or supply-chain head, who owns write-off; the basis is a fee per dark store per month or a percentage of rupees rescued against the holdout. No price point is set until a pilot measures that lift.
 
-Payback illustration, synthetic and projected, not a quote: break-even fee per node per month = projected margin per node - run cost per node = ₹347,356 / 16 nodes - ₹486 / 16 nodes, about ₹21,710 - ₹30.
+Payback illustration, synthetic and projected, not a quote: the ₹347,356 is per 28-day run at the 5% prior; divided by 16 nodes it is about ₹21,710 per node per 28-day run. Against the ₹486 measured run cost (a floor: no plays ran in that window) the break-even is about ₹21,710 - ₹30 per node; against the Mid profile estimate of ₹2,500 to 5,000 a month (`docs/scale.md`) it is about ₹21,710 - ₹156 to ₹313 per node.
 
 ## Screenshots
 
-Captured with Playwright against the real local stack (`make api` + `make web`, mock mode off,
-`TAAL_MODEL_BACKEND=stub`) -- real seeded data, not mocks. `web/tests/live/screens.spec.ts`
-reproduces them.
-
-No image in these screenshots, and none of the phone view's sample pallet photos
-(`web/public/samples/pallet_0N.jpg`), is a real camera photo: all eight samples are AI-generated
-renders (`fixtures/photos/README.md` says how that was determined). Vision accuracy on real phone
-photos has not been measured yet.
+Captured with Playwright against the real local stack (`make api` + `make web`, mock mode off, stub model backend); `web/tests/live/screens.spec.ts` reproduces them. None of the images or the phone view's eight sample pallet photos is a real camera photo: they are AI-generated renders (`fixtures/photos/README.md`), and vision accuracy on real photos has not been measured.
 
 | | |
 |---|---|
@@ -81,61 +59,11 @@ photos has not been measured yet.
 
 ## The hook
 
-FSSAI, India's food regulator, sent e-commerce food business operators an advisory on
-3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf),
-Regulatory Compliance Division, paragraph 4): "FSSAI mandates that products must have a minimum
-shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory,
-not a gazetted rule, and it leaves two things open: 30% of what (total shelf life is the usual
-reading), and whether the two limits are alternatives or cumulative. **The reading below is
-Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule
-(`config/tenant.demo.toml`, `sellby_rule`) rather than hard-coding it. On the demo tenant's
-default, either limit satisfies it (the lenient reading, which keeps bread and milk sellable
-online), so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left
-(30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the
-deadline; Taal makes the online sell-by cut-off a first-class gap type. The rule is shown on
-every gap card; the stricter reading is one switch away and retailers set their own.
+FSSAI, India's food regulator, sent e-commerce food business operators an advisory on 3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf), paragraph 4): "FSSAI mandates that products must have a minimum shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory, not a gazetted rule, and it leaves open 30% of what, and whether the two limits are alternatives or cumulative. **The reading below is Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule (`config/tenant.demo.toml`, `sellby_rule`); on the demo tenant either limit satisfies it, so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left (30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap type, shown on every gap card.
 
-The 60-second beat opens on `gap_tea_ds04`: 103 units of Darjeeling Tea 100G at dark store DS-04,
-₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a real, committed Gemini
-recording, badged `Recorded from Gemini · 12 Oct 2026`: five independent live Vertex runs
-(`harness/record_flagship_traces.py --gap gap_tea_ds04 --runs 5`, `gemini-3.5-flash`, prompt v6)
-all reached `proposed` with 0 fallbacks in 21.9 to 26.7 s, each after one schema-rejected
-`propose_play` attempt (an unexpected `id` field); `harness/seed_plays.py` seeds the best of the
-five that still validates against the tenant (run 2, first of four runs tied on margin). The play
-is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers (468 before
-consent) across 5 segments, expected margin ₹9,191 (waste avoided ₹9,397 minus transfer cost
-₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186
-(`counterfactuals.play_net_inr` on the play; `GET /plays`; snapshot in
-`eval/raw/tea_recorded_beat_2026-10-12.json`, recorded runs in
-`eval/raw/planner_real_traces_tea_2026-10-12/`). Approval assigns 355 treated and 39
-holdout customers by hash, writes the play into `future_regressors`, and moves the projected
-write-off from ₹35,186 to ₹28,659 (local approve on the seeded tenant, 12 Oct 2026; the deployed
-service shows the same after the next deploy).
+The 60-second beat opens on `gap_tea_ds04`: 103 units of Darjeeling Tea 100G at dark store DS-04, ₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a real, committed Gemini recording, badged `Recorded from Gemini · 12 Oct 2026`: five independent live Vertex runs (`gemini-3.5-flash`, prompt v6) all reached `proposed` with 0 fallbacks in 21.9 to 26.7 s, each after one schema-rejected `propose_play` attempt (`eval/raw/planner_real_traces_tea_2026-10-12/`). The play is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers, expected margin ₹9,191 (waste avoided ₹9,397 minus transfer cost ₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186, but it still nets -₹25,829 against ₹35,020 at stake: ₹9,191 is the improvement over doing nothing (`eval/raw/tea_recorded_beat_2026-10-12.json`). Approval assigns 355 treated and 39 holdout customers by hash.
 
-The second Gemini-recorded demo gap is `gap_chips_ds07`: 368 units of Masala Chips at dark store
-DS-07, ₹9,200 at stake, online sell-by in 6 days. Its Desk trace is a real, committed Gemini
-recording, badged `Recorded from Gemini · 10 Oct 2026`: five independent live Vertex runs
-(`harness/record_flagship_traces.py --gap gap_chips_ds07 --runs 5`, `TAAL_MODEL_BACKEND=vertex`,
-`gemini-3.5-flash`, prompt v6) all reached `proposed` with 0 fallbacks in 21.8 to 27.6 s;
-`harness/seed_plays.py` picked run 5 to seed the play. Run 5 needed a second `propose_play`
-attempt (the first was rejected on a schema error, an unexpected `id` field), then passed all eight
-guardrails: a bundle of Masala Chips 200G with Cola Classic 250ML, ₹50 for the pair, offered to 352
-consented customers (426 before consent) across 6 segments through the web-chat channel. The model
-considered and rejected a Coconut Water bundle at ₹55, an Orange Juice bundle at ₹50 and a transfer
-to OUT-03 (negative expected margin, -₹127.12); `margin_floor` passed at 10.44% net margin against
-the snacks category's 8% floor. The planner loop is capped at 3 revisions; the run used 1. Approval
-assigns 323 treated and 29 holdout customers by hash, and Meena's chat then delivers the offer.
-This chips play does not beat the baseline: its net is -₹8,468 against -₹8,189 for a blanket 20%
-markdown, about ₹279 worse, and the Desk shows both. The figures are in
-`eval/raw/planner_real_traces_2026-10-10/summary.json` and
-`eval/raw/planner_real_traces_2026-10-10/run_05/{play,result}.json`. On the deployed service,
-**Change policy → re-plan** instead runs Gemini live on demand: the Desk streams each tool call and
-guardrail check as it happens, and if no valid play arrives within the 90 s deadline set for the
-deployed service, the deterministic-rules fallback runs instead, badged "Rules (fallback)" with the
-reason shown. Three live re-plans on the deployed service on 10 Oct (Tea, then Chips twice) all returned
-a model-planned play with no fallback, in 27.5 to 30.3 s server-side
-(`eval/raw/live_replan_timing_2026-10-10.json`); the same test on 9 Oct, before the fix, fell back to
-rules in 2 of 3 runs (`eval/raw/live_replan_timing_2026-10-09.json`).
+The second recorded gap, `gap_chips_ds07` (recorded 10 Oct 2026), does not beat the baseline: -₹8,468 against -₹8,189 for a blanket 20% markdown, about ₹279 worse, and the Desk shows both. Both plays in full, and the live re-plan timings: [`docs/hero_plays.md`](docs/hero_plays.md).
 
 ## Architecture
 
@@ -144,105 +72,22 @@ rules in 2 of 3 runs (`eval/raw/live_replan_timing_2026-10-09.json`).
 Two paths: a per-visitor sandbox serves judges, and nightly Cloud Run jobs run on BigQuery
 (source and request paths in [`docs/architecture.md`](docs/architecture.md)).
 
-## Why this generalizes: one decision loop, not a promo bot
+## More documentation
 
-The mechanism behind the hook is not specific to food. A `Play` (`docs/schemas/play.schema.json`)
-is a single object -- target, mechanic, audience, guardrails, holdout, expected outcome -- and
-`agents/gate/guardrails.py` and `agents/gate/estimator.py` never look at what kind of gap produced
-it. The gate layer does not look at what kind of gap produced a play. Only the grocery loop ships in
-this tree:
-
-1. **Online sell-by is a first-class gap type**, not a side note on expiry: `online_sellby_breach`
-   sits alongside `expiry_writeoff`, `stockout_risk`, `rebalance` and `slow_mover` as one of the
-   forecast-driven gap types a lot can raise before a deadline.
-2. **A guardrailed planner drafts the play.** The ADK Planner Agent (`LlmAgent` in a `LoopAgent`)
-   proposes a mechanic; `agents/gate/guardrails.py`'s eight rules gate it before it reaches a
-   human, revising the play on a failed guardrail rather than failing outright.
-3. **Every play gets a hash holdout.** Assignment (`agents/gate/assignment.py`) splits treated vs
-   holdout by a deterministic hash of the customer id on every play, never an all-in send.
-4. **Measure updates the estimator's prior.** Every Measure run calls `update_prior()`
-   (`agents/gate/estimator.py`, `jobs/measure/run.py`) and writes the new `alpha`/`beta` back to
-   `estimator_priors`, keyed by mechanic, category and segment -- the next play of that shape
-   starts from what was actually measured, not a static assumption.
-
-The loop closes rather than staying open-ended: the approved play sets a promo flag on its window;
-the re-forecast applies the fitted promo lift (a projection; Measure tests it against the holdout)
-and the chart moves in the 60-second beat, not a side effect the next Sense run has to catch up to.
-
-## What Gemini decides / what it is never allowed to decide
-
-Each row names the code that owns the decision and the test that fails if that boundary moves.
-CI runs `TAAL_MODEL_BACKEND=stub` (scripted models, same tools and code paths), so the left-column
-tests prove what the model's output must pass through, not how good the model is.
-
-| Gemini decides | Code | Enforced by |
-|---|---|---|
-| Reading SKU, best-before date and count from a pallet photo, with a confidence per field | `agents/capture/vision.py:99` (`_vertex_rows`) | `tests/agents/test_vision.py:12`: rows validate against the schema; low-confidence rows are flagged |
-| Proposing the play: shape, mechanic (and its parameters), audience segments, rationale; revising after a failed guardrail | `agents/planner/agent.py:101` (`LlmAgent` in a `LoopAgent`, max 3 iterations) | `tests/agents/test_planner.py:50`: the chips coupon fails the margin floor and the revision is a different, passing play |
-| Offer copy wording, per segment and language (vertex backend only, at approve time; templated otherwise) | `jobs/sense/copy.py:95` (`AI.GENERATE_TABLE` at `:151`), gated by `validate_copy` at `:168` | `tests/unit/test_copy.py:39`: a variant stating the wrong best-before date is rejected |
-| What to say to a customer, and which tool to call | `agents/customer/agent.py:38`, turn loop `agents/chat_runtime.py:160`, envelope clamped at `:180` | `tests/agents/test_customer.py:31` (every scripted conversation in `fixtures/conversations/`); `:88`: the exact on-hand count never reaches the customer |
-
-| Never decided by Gemini | Code | Enforced by |
-|---|---|---|
-| Every rupee: expected units, margin, cost, counterfactuals | `agents/gate/estimator.py:216` (`estimate`); re-checked when a play is proposed, `agents/planner/tools.py:370` (`check_play_money`) | `tests/unit/test_estimator.py:32` (coupon arithmetic against a hand calculation); `tests/unit/test_invariants.py:45` (a play whose margin was altered after estimation is rejected) |
-| Guardrail pass/fail: the eight rules | `agents/gate/guardrails.py:364` asserts the rule table equals `GUARDRAIL_RULES` in `agents/gate/models.py:42-45`; `check` at `:367` | `tests/unit/test_guardrails.py:28` (all eight run, in order); `:155` (consent_required ignores any model-written rationale) |
-| Who is in the holdout: arm by hash of (customer, seed); the seed is `seed-<play id>`, set in code when a play is proposed | `agents/planner/tools.py:361` (`propose_play`), `services/api/approve.py:113` calls `agents/gate/assignment.py:23` (`assign_arm`, SHA-256 bucket) | `tests/unit/test_assignment.py:15` (arm is a pure function of seed and id); `:34` (model-written play fields cannot change an arm); `tests/agents/test_holdout_seed.py:24` (a model-written seed is replaced) |
-| Consent: whether any offer may reach a customer; what STOP does | `agents/customer/tools.py:54` (`_consent_ok`), checked at `:104`, `:218`, `:260`; `record_stop` at `:354` withdraws consent and drops pending offers | `tests/agents/test_customer_gates.py:15`: after `record_stop`, context, `apply_offer` and `negotiate_offer` all refuse with no model turn |
-| Forecast numbers, including the re-forecast on approve | `jobs/sense/forecast.py:127` (statistical model, no LLM); approve re-runs it at `services/api/approve.py:144` | `tests/sql/test_forecast.py:23`: an approved play changes p50 inside its window and nowhere else |
-| Discount bounds: the category margin floor on every play; the ad-hoc chat discount ceiling | `agents/gate/guardrails.py:76` (`rule_margin_floor`); `agents/customer/tools.py:274` (`min(ad_hoc_max_discount_pct, margin headroom)`) | `tests/unit/test_guardrails.py:53`; `tests/unit/test_estimator.py:82` (property test: margin never below the floor when the gate passes); `tests/agents/test_customer_gates.py:36` (every catalogue sku) |
-
-Two limits, stated rather than hidden. **STOP recognition is the model's call.** The prompt tells
-the Customer Agent to call `record_stop` on "STOP" (`agents/customer/prompts/customer.md:38`), and
-only the scripted conversations 10-12 cover that step. What STOP does after the call, and every
-consent check after it, is code. **The copy validator checks the percentage and the best-before
-date, not rupee amounts** in the text (`jobs/sense/copy.py:168`); a bundle price the model misstates
-in words would pass it.
-
-## How this differs from named vendors
-
-Taal differs by what it plans to, not by what it forecasts: the online sell-by cut-off, with a
-holdout and a forecast write-back per play. We did not find these three together in any public
-vendor documentation; that is a statement about public pages, not a claim about what vendors can
-do.
-
-Columns: (a) plans to an online sell-by cut-off; (b) holdout or control group on every promotion;
-(c) the promotion is written back into the forecast as a covariate; (d) India or quick-commerce.
-Vendor cells come from public pages and search results read on 2026-10-09; the Taal row cites
-code and tests.
-
-| | (a) Online sell-by | (b) Holdout | (c) Forecast write-back | (d) India / quick-commerce |
-|---|---|---|---|---|
-| **Taal** | Yes: each lot's `online_sellby_date` comes from the tenant's versioned rule (`agents/gate/sellby.py:24`), and a dark-store lot's deadline is that date, not expiry (`jobs/sense/gaps.py`, `deadline = sellby if ...`); `tests/unit/test_sellby.py`, `tests/unit/test_ingest.py` | Yes: `holdout_required` is one of the eight rules every play must pass (`agents/gate/guardrails.py:157`); tenant floor `min_holdout_fraction = 0.05`; `tests/unit/test_guardrails.py:98` | Yes: approve writes the play into `future_regressors` and re-forecasts the series (`services/api/approve.py:144`); `tests/sql/test_forecast.py:23` | Built for Indian quick-commerce dark stores; the tenant is seeded, no live retailer yet |
-| Blue Yonder | Unclear | Unclear | Unclear | Partial |
-| RELEX | Partial | Unclear | Partial | Partial |
-| Wasteless | No | Unclear | Unclear | Unclear |
-| Afresh | No | Unclear | Unclear | No |
-| Flashfood | No | No | No | No |
-
-**Yes / Partial / No** are our reading of the vendor pages (Partial: part of the criterion, or one
-of its markets). **Unclear** means the public pages and search results were silent; it does not
-mean the feature is absent, and enterprise suites keep deeper documentation behind sales access.
-No for Wasteless means it prices in-store from the expiry date; for Afresh (store ordering
-software) and Flashfood (a consumer surplus marketplace) it means a different product category,
-not a gap in a competing planner. RELEX (c) is Yes for promotions and Unclear for markdowns;
-RELEX (d) is quick-commerce customers outside India (Getir, Flink), none found in India.
-
-Pricing: enterprise planning suites are quote-based; we found no public per-store price.
-
-Sources: [Blue Yonder](https://blueyonder.com/resources/automate-fresh-food-pricing-with-pricing-real-time),
-[RELEX](https://www.relexsolutions.com/resources/markdown-optimization/)
-([promotions](https://www.relexsolutions.com/resources/promotion-forecasting-and-replenishment/)),
-[Wasteless](https://www.wasteless.com/), [Afresh](https://www.afresh.com/),
-[Flashfood](https://www.flashfood.com/).
+- [`docs/design_notes.md`](docs/design_notes.md): why the loop generalizes beyond promos, and what Gemini decides versus what code never lets it decide.
+- [`docs/vendors.md`](docs/vendors.md): how Taal differs from named vendors (public pages read 2026-10-09).
+- [`docs/related_work.md`](docs/related_work.md): outside references, and consent and approval in AP2 vocabulary.
+- [`docs/hero_plays.md`](docs/hero_plays.md): the Tea and chips recordings in detail.
+- [`docs/codespaces.md`](docs/codespaces.md): running it in GitHub Codespaces.
 
 ## What it does
 
 1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
-2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; six gap types -- five grocery write-off-risk types from the forecast (online sell-by breach, expiry write-off, stockout, rebalance, slow mover) plus one grocery demand-signal type from real chat requests (unmet demand) -- with rupees at stake; segments; substitutes.
-3. **Plan**: an ADK Planner Agent (LlmAgent inside a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator; eight guardrails gate it; the Cost Governor decides which gaps are worth a model call.
-4. **Approve**: assignment with a holdout, vernacular copy with the best-before line, offers for treated customers only, the play as a known future regressor, the chart moves.
+2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; six gap types (five write-off-risk types from the forecast, plus unmet demand from real chat requests) with rupees at stake.
+3. **Plan**: an ADK Planner Agent (LlmAgent in a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator and eight guardrails gate it.
+4. **Approve**: assignment with a holdout, copy with the best-before line, offers for treated customers only, the play written into the forecast, the chart moves.
 5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
-6. **Measure**: treated vs holdout inside the play window, 95% CI, `unmeasured` when the treated arm is too small, estimator priors updated from the exact treated/responder counts so the next play of that shape starts from real evidence, a food-waste line in kg and CO2e labelled as an estimate.
+6. **Measure**: treated vs holdout inside the play window with a 95% CI, `unmeasured` when the treated arm is too small, estimator priors updated from the exact counts.
 
 ## How Gen AI is used
 
@@ -254,88 +99,46 @@ Sources: [Blue Yonder](https://blueyonder.com/resources/automate-fresh-food-pric
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
-`TAAL_MODEL_BACKEND=stub` (the default and what CI runs) replaces Gemini with scripted models that
-follow the same tool protocol, so the ADK agents, tools, session state, escalation and event log
-are the real code paths and the decision policy is a script. `vertex` uses the pinned Gemini ids
-through Vertex AI. Model ids live only in `config/models.toml`; verify each in Model Garden before the deploy.
+`TAAL_MODEL_BACKEND=stub` (the default, what CI runs) replaces Gemini with scripted models that follow the same tool protocol, so the agents, tools, session state and event log are the real code paths. `vertex` uses the pinned Gemini ids through Vertex AI; ids live only in `config/models.toml`.
 
 ## What is real, what is simulated
 
-BigQuery batch path status, the 27 Sep billing outage and the forecasts data-loss bug (found and
-fixed before it ran): [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
+BigQuery batch path status and the 27 Sep incidents: [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
 
 | Real | Seeded | Projected |
 |---|---|---|
 | Judge mode reads a frozen, pinned-clock local snapshot per visitor | Kutumb Mart tenant: 300 grocery SKUs, 10 dark stores, 6 outlets, 4,000 customers, 70 days of sales history (`eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json`) | Expected margin and write-off avoided after approve, at the default response prior |
-| Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen -- labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
+| Forecasts (local seasonal-xreg forecaster, `jobs/sense/forecast.py`), gaps, estimator, guardrails, the planner loop code | -- | Outcomes screen: labelled SYNTHETIC until a pilot runs (`docs/pilot.md`) |
 | Assignment by hash, re-forecast, chat with Gemini, MCP orders into the local store, measurement code | -- | -- |
-| The nightly BigQuery jobs exist. We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the judge-facing path uses the local forecaster; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by the judge-facing path (`eval/incidents_2026-09-27.md`, `eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk's shown plan for the flagship gap (`gap_chips_ds07`): a real, committed Gemini recording (`eval/raw/planner_real_traces_2026-09-28/`); other demo gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+| The nightly BigQuery jobs exist. BigQuery `AI.FORECAST` lost 45/45 head-to-head to the local forecaster, so the judge-facing path uses the local one; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by that path (`eval/raw/bigquery_ai_forecast_2026-09-27/head_to_head_summary.json`) | Play Desk plans: Tea (recorded 12 Oct, `eval/raw/planner_real_traces_tea_2026-10-12/`) and chips (recorded 10 Oct, `eval/raw/planner_real_traces_2026-10-10/`) are committed Gemini recordings; the cola, kaju and quinoa gaps still seed from the scripted planner fixture (`infra/Dockerfile.api`) | -- |
+
+Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because the state of a re-plan run lives in process memory; a second instance would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
+
+## Production path
+
+- **Scalability (estimate):** the Large profile (20,000 SKUs, 500 nodes, 1M customers, about 2,000 gaps a night after triage) keeps the same shape; only the Planner queue depth, BigQuery partition pruning and the triage threshold scale. No tenant that size has run, so its throughput is not measured ([`docs/scale.md`](docs/scale.md)).
+- **What breaks first:** the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
+- **Run cost:** ₹486 a month measured on the demo tenant (usage to 23 Sep, no plays in the window, list prices, not a bill). Estimates by profile: Micro ₹200 to 500, Mid ₹2,500 to 5,000 (the demo persona), Large ₹1 to 2 lakh.
+- **Pilot design:** 50 to 60 consented testers for one week, a 40 to 50% holdout, the metric pre-registered, results labelled apart from seeded numbers ([`docs/pilot.md`](docs/pilot.md)). Nothing has been measured on real customers yet.
+- **Your data:** `uv run python -m data.ingest --products products.csv --batches inventory_batches.csv --sales sales.csv --tenant config/tenant.<name>.toml --out .local/data-<name>` (details below).
 
 ## Not in this submission
 
-Voice (Gemini Live) is not part of this submission: it exists only as a documented stub with no
-tests, and the phone view's microphone button is disabled.
-
-## Related work
-
-Two outside references anchor design decisions here, rather than left as unverified intuition:
-
-- **[OTTO's forecasting team, "Team Lumen"](https://cloud.google.com/customers/otto)**, as reported
-  in Google Cloud's customer story: a Time-series Dense Encoder (TiDE) model, trained on Vertex AI
-  and deployed on GKE, drawing on BigQuery as a data source, which the story credits with up to a
-  30% improvement in demand-forecast accuracy; the story's own worked example is seasonal
-  inventory (gaming consoles). Taal's own forecaster is different: the local seasonal-xreg
-  forecaster (`jobs/sense/forecast.py`). We benchmarked BigQuery `AI.FORECAST` (TimesFM) against the local seasonal model on 45 backtest comparisons (5 origins x 9 category tiers); the local model won 45/45, so the judge-facing path uses the local forecaster; the nightly `taal-sense` job still runs `AI.FORECAST` (`infra/deploy.sh:309`) and its output is not read by the judge-facing path (see
-  [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md)).
-- **Winkelmann, Elbracht, Brenker & Gerzen, ["Discounted Sales of Expiring Perishables: Challenges
-  for Demand Forecasting in Grocery Retail Practice"](https://arxiv.org/abs/2602.04464)** (Feb
-  2026) -- its title names a real, open problem: forecasting demand for discounted, soon-to-expire
-  perishables in grocery retail. Taal's own design takes a stance on one piece of that problem: an
-  approved play is written into `future_regressors` and the series is re-forecast with the play's
-  promo flag as a known covariate, rather than left for the next forecast cycle to be surprised by
-  the uplift after the fact.
-
-## Related work: AP2 vocabulary for consent and approval
-
-Google's [Agent Payments Protocol (AP2)](https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol)
-names three stages of machine-to-machine consent as signed Mandates: **Intent** (what the user
-authorised an agent to do, and its scope), **Cart** (the exact items and price the user approved),
-and **Payment** (authorisation to charge a specific instrument). Taal does not implement AP2's
-protocol or its cryptographic Verifiable Credentials -- there is no agent-to-agent payment here,
-only one retailer's own agent talking to its own customer -- but the same three-stage discipline
-already existed in this codebase before AP2 was named, and stating it in AP2's vocabulary makes the
-design legible to anyone who already knows that framework:
-
-| AP2 concept | Taal's equivalent |
-|---|---|
-| Intent Mandate | Marketing consent (`consent` table) plus the guardrail-approved play itself: what this customer may be offered, and under what limits (frequency cap, margin floor) |
-| Cart Mandate | `apply_offer(play_id, customer_id)` -- the customer's own `add:<sku>` click locks in the exact play, sku and discount before `place_order` runs |
-| Payment Mandate | `place_order(...)` -- the MCP order tool executes the transaction against the cart `apply_offer` already fixed |
-
-"STOP" (`record_stop`) revokes the Intent Mandate outright: the consent gate re-checks it on every
-proposed play, not just at signup.
+Voice (Gemini Live) is not part of this submission: it is a documented stub with no tests, and the phone view's microphone button is disabled.
 
 ## Bring your own data
 
-- **Three files**: `products.csv`, `inventory_batches.csv`, `sales.csv` (columns in [`docs/scale.md`](docs/scale.md#the-three-csv-ingestion-contract); worked example in [`data/samples/`](data/samples/)); `nodes.csv` and `inbound.csv` are optional.
-- **One command**: `uv run python -m data.ingest --products products.csv --batches inventory_batches.csv --sales sales.csv --tenant config/tenant.<name>.toml --out .local/data-<name>` (copy `config/tenant.demo.toml` to set your sell-by rule, margin floors and thresholds).
-- **What you get back**: every lot flagged under your online sell-by rule, units and rupees at stake by gap type, the ten largest gaps, and the stock already past its online sell-by or expiry; errors name the file, line and column.
-- **Nothing leaves the machine**: ingest pins the store and forecaster to local files and switches off the serving cache, whatever your environment says.
-- **A pilot is one command from here**: `TAAL_DATA_DIR=.local/data-<name> TAAL_TENANT_CONFIG=config/tenant.<name>.toml make api` serves those gaps over the same API the Play Desk reads (`eval/raw/ingest_roundtrip_2026-09-27/api_probe.txt`). Planning a play returns `no_play` until customer and consent tables exist, because the three files carry no audience; that is the pilot's first step ([`docs/pilot.md`](docs/pilot.md)).
+- **Three files**: `products.csv`, `inventory_batches.csv`, `sales.csv` (columns in [`docs/scale.md`](docs/scale.md#the-three-csv-ingestion-contract); example in [`data/samples/`](data/samples/)); `nodes.csv` and `inbound.csv` are optional.
+- **One command**: the `data.ingest` command above (copy `config/tenant.demo.toml` to set your sell-by rule, margin floors and thresholds). It flags every lot under your online sell-by rule, with rupees at stake by gap type; errors name the file, line and column; nothing leaves the machine.
+- **Pilot**: `TAAL_DATA_DIR=.local/data-<name> TAAL_TENANT_CONFIG=config/tenant.<name>.toml make api` serves those gaps over the same API. Planning a play returns `no_play` until customer and consent tables exist, because the three files carry no audience; that is the pilot's first step ([`docs/pilot.md`](docs/pilot.md)).
 
 ## Evaluation
 
-[`eval/evaluation_table.md`](eval/evaluation_table.md) is the DECISIONS §12 submission table,
-built by `make eval-table` from `eval/evaluation.md` and `eval/raw/` -- every cell is parsed from
-already-committed, already-measured output, never typed by hand. `eval/evaluation.md` is the dated
-narrative behind it: every number names the command that produced it and links to the raw output
-committed under `eval/raw/`. Rows §12 asks for that this project genuinely cannot produce yet
-(pilot results, Gemini-as-judge scoring, cost from a billing export, planner throughput timing) say
-so explicitly in the table rather than a guessed number.
+[`eval/evaluation_table.md`](eval/evaluation_table.md) is the submission table, built by `make eval-table` from `eval/evaluation.md` and `eval/raw/`: every cell is parsed from committed output, none is typed by hand. Rows this project cannot produce yet (pilot results, billing-export cost) say so.
 
-Dated live-model run (2026-10-09, `gemini-2.5-flash` on Vertex): ADK planner evalsets response match 38/46 (exact tool-trajectory match 6/46, which fails on retry-order variance), rationale judge 15/15 at mean 5.0; see the last row of [`eval/evaluation_table.md`](eval/evaluation_table.md) and `eval/raw/live_eval_2026-10-09/`. From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` on the global endpoint as its fallback; both were verified with real calls (`eval/raw/model_verification_2026-10-10.json`). The runs above predate the switch.
+From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` as its fallback, both verified with real calls (`eval/raw/model_verification_2026-10-10.json`). Eval cards from before the switch ran on `gemini-2.5-flash` and have not been re-run: the 9 Oct live eval (ADK response match 38/46, exact trajectory 6/46, rationale judge 15/15; `eval/raw/live_eval_2026-10-09/`), the agent simulation, vision and customer-latency runs, and the cost figure.
 
-The forecaster has also been backtested once on a public retail dataset it was not built around (UCI Online Retail II, not grocery): [`eval/external_backtest.md`](eval/external_backtest.md).
+Live plan on the deployed service, 11 Oct: 22 of 24 runs model-planned, 0 fallbacks, planner p50 26.5 s, p95 31.8 s. The other 2 were not observed (the first poll returned 404 from a second instance, so their outcome is unknown); they count as not passed and are not fallbacks (`eval/raw/plan_live_2026-10-12.md`). Latency numbers and test counts (464 pytest, 473 Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
 
 ## Development
 
@@ -348,24 +151,8 @@ make fixtures   # rebuild committed golden plays, mutations, golden runs, evalse
 make openapi    # regenerate docs/openapi.yaml
 ```
 
-Green `make verify` is the only definition of done (`harness/`: per-component
-checklists, `STATUS.md`). Layout and specs: `docs/DECISIONS.md`; data model:
-`docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`;
-pilot design: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
+Green `make verify` (464 pytest and 473 Playwright tests, the CI gate in `.github/workflows/verify.yml`) is the only definition of done (`harness/`, `STATUS.md`). Specs: `docs/DECISIONS.md`; data model: `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`; pilot: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
 
 ## Licence
 
 MIT for code (`LICENSE`). Third-party data terms in `DATA_LICENSES.md`.
-
-## Trying it in GitHub Codespaces
-
-Open the repo on GitHub, Code → Codespaces → Create. The devcontainer installs everything and runs
-`make generate`. Then, in two terminals:
-
-```
-make api
-NEXT_PUBLIC_TAAL_API_URL=https://<your codespace name>-8080.app.github.dev make web
-```
-
-Port 8080 is forwarded as public by the devcontainer so the browser can reach the API; port 3000
-opens automatically. Stop the Codespace when you are done.
