@@ -305,6 +305,9 @@ def health(store: LocalStore = Depends(store_for)) -> dict[str, Any]:
         # The model a failed call is retried on (config/models.toml ids.fallback); null when none is
         # configured. Additive: every earlier field is unchanged.
         "model_fallback": model_ids(models)[1] if models["ids"].get("flash") else None,
+        # The planner/chat model id (config/models.toml ids.flash), top level for the UI chip and reviewers.
+        # Additive (12 Oct 2026): every earlier field is unchanged.
+        "model": models["ids"].get("flash"),
         "tenant": {"tenant_id": tenant.tenant_id, "name": "Kutumb Mart", "skus": len(store.read("products")), "nodes": len(store.read("nodes")), "customers": len(store.read("customers"))},
         "last_sense_run_at": last and last["as_of"], "last_sense_run_minutes": last and round(last["timing_ms"]["total"] / 60000, 2), "last_sense_run_id": last and last["run_id"],
         "sellby_rule": tenant.sellby_rule.version,

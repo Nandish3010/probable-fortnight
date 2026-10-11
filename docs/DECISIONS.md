@@ -32,6 +32,11 @@ wins.
   seeded by `harness/seed_plays.py`), badged `Recorded from Gemini · <date>` -- not the replayed
   nightly plan. Every other demo gap's plan and trace is still the replayed nightly plan (scripted
   planner fixture), seeded with the stub backend (`infra/Dockerfile.api`).
+- **12 Oct 2026 update:** `harness/seed_plays.py` now seeds any demo gap that has a committed,
+  validated recording (found by gap id), not only the flagship. The 60-second beat gap
+  (`gap_tea_ds04`) is a recorded Gemini run (`eval/raw/planner_real_traces_tea_2026-10-12/`, 5/5
+  model-planned), so its play and trace are badged `Recorded from Gemini · 12 Oct 2026`; the
+  remaining demo gaps without a recording keep the scripted stub.
 - **10 Oct 2026 update:** the `cite_or_drop` number tokenizer (`agents/gate/guardrails.py`) now
   extracts whole figures: signed (`-161.52`), Western and Indian grouping (`1,795,464`,
   `17,95,464`), ranges (`20-30` is two figures), with ISO and "18 Sept 2026" dates and identifiers

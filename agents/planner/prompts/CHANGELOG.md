@@ -39,6 +39,11 @@
   fixing the contract alone; it needs either fewer round trips per iteration or a fundamentally
   different latency budget, which is a separate, harder problem from what this entry fixes.
 
+  Addendum (2026-10-12, no version bump): every live Tea run (5 of 5) spent attempt 1 on a schema
+  rejection for an `id` field in place of the required `play_id`. The prompt now names `play_id`
+  explicitly, and `propose_play` accepts a top-level `id` as an alias (agents/planner/tools.py).
+  The committed Tea recording (`eval/raw/planner_real_traces_tea_2026-10-12/`) predates this fix.
+
 - v5 (2026-09-21): the Planner now plans a seventh gap type, assortment_gap (the apparel analogue
   of unmet_demand/rebalance, sourced from real stylist asks). `get_candidate_audiences` gained a
   `gap_id` param the model must always pass, so an assortment_gap's real requesting customers

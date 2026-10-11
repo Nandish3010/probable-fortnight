@@ -1073,3 +1073,23 @@ the 4 MB `adk eval` log is not committed; no thought-signature fields were prese
   both model-planned and are listed separately. Raw: `eval/raw/plan_live_2026-10-12.json`
   (file name carries the plan's date; the runs were 23:50 to 23:58 IST on 11 Oct), summary
   `eval/raw/plan_live_2026-10-12.md`. Earlier 3-run check: `eval/raw/live_replan_timing_2026-10-10.json`.
+
+## Hero Tea play recorded from Gemini (2026-10-12)
+
+- **5 of 5 live planner runs on `gap_tea_ds04` were model-planned, 0 fell back to rules**
+  (`gemini-3.5-flash`, prompt v6, 120 s deadline, `harness/record_flagship_traces.py --gap gap_tea_ds04
+  --runs 5`, recorded 12 Oct 2026 00:59 IST). Wall time 21.9 to 26.7 s, median 24.1 s. Every run
+  needed a second `propose_play` attempt: the first was rejected on a schema error (an unexpected
+  `id` field), the second passed all eight guardrails. Raw: `eval/raw/planner_real_traces_tea_2026-10-12/`.
+- All five chose `transfer_plus_nudge` for the 103 units to OUT-01 (run 1: 386 consented customers,
+  margin ₹9,000; runs 2 to 5: 394 customers, margin ₹9,191.29). `harness/seed_plays.py` now seeds any
+  demo gap with a validated recording; it picked run 2 (first of the four tied on margin), so the
+  hero play on the Desk is badged `Recorded from Gemini · 12 Oct 2026`. Gaps without a recording
+  (cola, kaju, quinoa) keep the scripted stub.
+- Hero numbers after this change (seeded tenant, API test client, `harness/tea_beat_snapshot.py`,
+  `eval/raw/tea_recorded_beat_2026-10-12.json`): recovered vs doing nothing ₹9,191 (waste avoided
+  ₹9,397 minus transfer cost ₹206); play net -₹25,829 against -₹32,015 for a blanket 20% markdown,
+  so it beats the markdown by ₹6,186; Approve assigns 355 treated and 39 held out (394 consented);
+  Ravi's order is ₹450; the projected write-off moves from ₹35,186 to ₹28,659 (unchanged). Fast-forward
+  with one synthetic order: +0.3 pp, 95% CI -8.7 to +1.6, inconclusive. These replace the scripted
+  fixture's ₹7,498, 291 / 32 and ₹4,493.
