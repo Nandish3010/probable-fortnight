@@ -48,7 +48,7 @@ test.describe("submitting: honest steps and timer", () => {
 
     // the timer counts real seconds, and says the honest estimate
     const timer = page.getByTestId("approve-timer");
-    await expect(timer).toHaveText(/^Working: 0 s\. This usually takes 6 to 10 s\.$/);
+    await expect(timer).toHaveText(/^Working: 0 s\. This takes a few seconds\.$/);
     await expect(timer).toHaveText(/^Working: 2 s\./, { timeout: 4000 });
     // still nothing ticked: ticking before the answer would be a fake progress bar
     for (let i = 0; i < 3; i += 1) await expect(steps.nth(i)).toHaveAttribute("data-state", "working");
@@ -77,12 +77,12 @@ test.describe("submitting: honest steps and timer", () => {
     await approveButton(page).click();
     await approveSettled(page);
     const said = await page.evaluate(() => (window as unknown as { __live: string[] }).__live);
-    expect(said).toContain("Approving. This usually takes 6 to 10 seconds.");
+    expect(said).toContain("Approving. This takes a few seconds.");
     for (const step of ["Writing the offer", "Re-forecasting with the play", "Assigning the holdout"]) expect(said).toContain(`${step}: done.`);
     const last = said[said.length - 1];
     expect(last).toMatch(/^Approved\. Recovered versus doing nothing: 7,498 rupees\. 291 customers will receive the offer; 32 are held back\.$/);
     // the order: submitting first, then the steps, then the result
-    expect(said.indexOf("Approving. This usually takes 6 to 10 seconds.")).toBeLessThan(said.indexOf("Writing the offer: done."));
+    expect(said.indexOf("Approving. This takes a few seconds.")).toBeLessThan(said.indexOf("Writing the offer: done."));
     expect(said.indexOf("Assigning the holdout: done.")).toBeLessThan(said.length - 1);
     // one region, still there
     await expect(page.locator("#approve-live")).toHaveCount(1);

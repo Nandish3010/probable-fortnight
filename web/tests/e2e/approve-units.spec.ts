@@ -73,8 +73,8 @@ test.describe("approveReducer", () => {
   });
 
   test("the timer copy: the honest estimate, then the give-up line after 20 s", () => {
-    expect(workingCopy(7)).toBe("Working: 7 s. This usually takes 6 to 10 s.");
-    expect(workingCopy(19)).toBe("Working: 19 s. This usually takes 6 to 10 s.");
+    expect(workingCopy(7)).toBe("Working: 7 s. This takes a few seconds.");
+    expect(workingCopy(19)).toBe("Working: 19 s. This takes a few seconds.");
     expect(workingCopy(22)).toBe("Still working: 22 s. Taal gives up at 60 s and keeps your plan unchanged.");
     expect(formatElapsed(11800)).toBe("11.8 s");
   });
