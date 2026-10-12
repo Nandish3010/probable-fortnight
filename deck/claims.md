@@ -55,7 +55,7 @@ Dates are the dates of the measurement, not of the deck.
 | 10 | Buyer is the category or supply-chain head; basis per node per month or % of rupees rescued | `README.md:46`; `docs/DECISIONS.md:554` |
 | 10 | Break-even illustration: ₹347,356 per 28-day run at the 5% prior / 16 nodes (10 dark stores + 6 outlets) ≈ ₹21,710 per node; less the Mid profile cost ₹2,500 to 5,000 a month / 16 = ₹156 to ₹313 per node (the measured ₹486 / 16 ≈ ₹30 had zero plays in its window) | `README.md:48`; `eval/raw/portfolio_2026-09-24.json`; `docs/scale.md:83-85`; `eval/raw/cost_measurement_2026-09-23.json:312` |
 | 10 | 16 nodes (10 dark stores, 6 outlets) | `eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json:21` |
-| 11 | Outcomes screenshot (redesigned app): chips, 323 treated and 29 held out, inconclusive, SYNTHETIC | `eval/raw/prior_update_2026-09-28.json:25-26` |
+| 11 | Outcomes screenshot, live app 12 Oct: Tea, 355 offered, 39 held out, no orders yet, 0.0 points, 95% CI -9.0 to +1.1, inconclusive, SYNTHETIC | `deck/img/outcomes.png` |
 | 11 | 70% confidence threshold for the confirm step | `agents/capture/vision.py:25` |
 | 11 | Screenshots (phone confirm step, Outcomes with SYNTHETIC badge) | `deck/img/phone-confirm.png`; `deck/img/outcomes.png` |
 | 12 | Header: measured and dated, each card names its source file; Approve card labelled hand-timed | `eval/raw/approve_timing_2026-10-12.json` |
