@@ -158,9 +158,9 @@ def build_rows() -> list[Row]:
     # 7. Gemini-as-judge rationale score + 15-item human-labelled agreement
     rows.append(Row(
         "Gemini-as-judge rationale score + 15-item human-labelled agreement",
-        "Rationale judge run 2026-10-09: 15/15 (same-family judge, so weak evidence; see row 15). The "
+        "Rationale judge run 2026-10-12 on gemini-3.5-flash: 15/15, mean 5.0 (9 Oct, gemini-2.5-flash: 15/15) (same-family judge, so weak evidence; see rows 15 and 16). The "
         "15-item human labelling is not done, so judge-human agreement is not measured.",
-        "`harness/rationale_judge.py`, `eval/raw/live_eval_2026-10-09/summary.json`",
+        "`harness/rationale_judge.py`, `eval/raw/live_eval_2026-10-12/summary.json`",
     ))
 
     # 8. Agent Simulation guardrail pass rate over ~200 personas
