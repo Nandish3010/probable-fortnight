@@ -10,12 +10,19 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 ## Judge quick-start
 
-Open https://taal-web-2obkp776ca-el.a.run.app (the first load after idle takes 8 to 12 s). The demo clock is pinned to 12 Sep 2026.
-1. Click **Run the 60-second beat**: the Darjeeling Tea card shows 103 units and ₹35,020 at stake, 24 days before the online sell-by.
-2. Click **Approve** (about 3 to 7 s): 355 customers treated, 39 held out, "Recovered vs doing nothing ₹9,191".
-3. Click **Chat as Ravi**, then **Send** and **Add to cart**: the offer arrives with its best-before date, and the order totals ₹450.
+Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
+1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
+2. Click **Approve** (about 3 to 7 s; measured 12 Oct after #90, first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
+3. Click **Chat as Ravi** and the offer arrives. Then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-**Change policy → re-plan** is a live, streamed Gemini call (about 27 s). Every panel carries a LIVE, REPLAY or SYNTHETIC badge. Reset restores the seeded tenant for your visitor only. The tenant is seeded and ₹9,191 is a projection (the play still nets -₹25,829 against the ₹35,020 at stake): see [what is real, what is simulated](#what-is-real-what-is-simulated). Latency evidence: [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026). Deck: [`docs/deck.pdf`](docs/deck.pdf). Demo video: link added at submission.
+Live re-plan about 27 s, Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+
+Demo video: link added at submission
+
+- Deck: [`docs/deck.pdf`](docs/deck.pdf)
+- Reset demo data restores the seeded tenant for your visitor only.
+- Provenance badges: every panel carries a LIVE, REPLAY or SYNTHETIC badge (no REAL PILOT rows exist, so none is shown); the Desk's trace and re-plan result name the run's source instead (`Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`). Approve, chat, capture and execution are live calls; Sense is nightly and replayed. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service.
+- What is real and what is simulated: see [the table](#what-is-real-what-is-simulated).
 
 ## How Gen AI is used
 
@@ -25,7 +32,7 @@ Gemini 3.5 Flash on Vertex AI plans each play inside an ADK agent. It proposes t
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only), generated when a play is proposed or opened so it is ready at Approve; templated if it has not arrived within Approve's 3 s budget. The Approve response names which one shipped (`copy.source`) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
+| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -53,6 +60,7 @@ Every number is reproduced from a committed evidence file or a named code consta
 | 28-day exposure, one Sense run (555 gaps: 550 grocery plus 5 assortment rows, ₹16,443 of the exposure, that the current generator no longer makes) | ₹1,795,464 | seeded | `eval/raw/portfolio_2026-09-24.json` |
 | Plays planned | 424 | seeded | same file |
 | Expected margin per 28-day run at the default 5% response prior (sales margin ₹206,205 plus write-off avoided ₹141,151) | ₹347,356 | projected | same file; `docs/impact_math.md` |
+| The same estimate at a 2% / 10% response prior instead of 5% (550 grocery gaps; 421 / 423 plays) | ₹140,728 / ₹619,165 | projected | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
 | Monthly run cost: usage measured to 2026-09-23 with zero plays in the window, on gemini-2.5-flash, list-priced | ₹486 | measured usage; not a bill | `eval/raw/cost_measurement_2026-09-23.json` |
 | Forecast backtest: synthetic tenant / public non-grocery data | WAPE 0.113 / 0.83 | seeded / public | `eval/raw/external_backtest_2026-10-09.json`; [`eval/external_backtest.md`](eval/external_backtest.md) |
 
