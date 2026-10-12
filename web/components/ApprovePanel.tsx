@@ -171,7 +171,7 @@ export function ApprovePanel({
 
   useEffect(() => {
     if (phase === "submitting") {
-      setLive("Approving. This usually takes 10 to 13 seconds.");
+      setLive("Approving. This usually takes 6 to 10 seconds.");
     } else if (phase === "error") {
       // The ErrorCard is role="alert" and announces itself; saying it here as well would read it twice.
       setLive("");

@@ -155,7 +155,7 @@ export function formatElapsed(ms: number): string {
 /** The two lines under the steps while waiting. Whole seconds, from a performance.now() delta. */
 export function workingCopy(seconds: number): string {
   if (seconds >= 20) return `Still working: ${seconds} s. Taal gives up at 60 s and keeps your plan unchanged.`;
-  return `Working: ${seconds} s. This usually takes 10 to 13 s.`;
+  return `Working: ${seconds} s. This usually takes 6 to 10 s.`;
 }
 
 /** "HH:MM" in the tenant's time zone (all Taal timestamps are IST); null when not a timestamp. */
