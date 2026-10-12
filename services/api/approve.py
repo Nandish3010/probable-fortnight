@@ -24,11 +24,11 @@ from jobs.sense.forecast import forecast, series_for
 
 logger = logging.getLogger(__name__)
 
-# Hard wall-clock budget for the BigQuery copy branch, counted from the moment it starts (which is
+# Hard wall-clock budget (3 s by default; was 5 s) for the BigQuery copy branch, counted from the moment it starts (which is
 # now the top of approve(), not after assignment). Past it the templated variants are used and the
 # worker thread is abandoned. generate_copy_bigquery's own timeout is a per-request bound and
 # job_retry can re-submit the query (see its comment), so this deadline is the real cap.
-COPY_BUDGET_S = float(os.environ.get("TAAL_COPY_BUDGET_S", "5.0"))
+COPY_BUDGET_S = float(os.environ.get("TAAL_COPY_BUDGET_S", "3.0"))
 
 
 class WindowExpired(Exception):
@@ -53,19 +53,21 @@ def _writeoff(series: dict[str, float], on_hand: int, deadline: str, unit_cost: 
     return round(max(0.0, on_hand - sold) * unit_cost, 2)
 
 
-def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
     """The templated variants, replaced slot by slot by AI.GENERATE_TABLE output (vertex backend
-    only) when it returns within COPY_BUDGET_S (5.0 s, a hard wall-clock cap enforced in approve();
-    generate_copy_bigquery's own timeout_s is 4.5 s; measured live at ~3-4 s for a 10-variant play). Approve is on the demo's critical path, so any failure or
-    timeout is absorbed here and the templated variants are returned as-is; this never raises."""
+    only) when it returns within COPY_BUDGET_S (3.0 s, a hard wall-clock cap enforced in approve();
+    generate_copy_bigquery's own timeout_s is kept just under it). Approve is on the demo's critical
+    path, so any failure or timeout is absorbed here and the templated variants are returned as-is;
+    this never raises. Returns (variants, "bigquery" | "templated")."""
     variants = templated
+    source = "templated"
     try:
         models = load_models()
         if models["backend"] == "vertex":
             project = os.environ.get(models["vertex"]["project_env"])
             if not project:
                 raise RuntimeError(f"{models['vertex']['project_env']} not set")
-            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"])
+            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"], timeout_s=max(1.0, COPY_BUDGET_S - 0.2))
             if bq_variants:
                 # Per (segment, language) slot: keep the BigQuery variant only if the same
                 # deterministic validator that gates templated copy accepts it; any slot it
@@ -74,10 +76,11 @@ def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: s
                 bq_accepted, _ = validate_copy(bq_variants, play, best_before)
                 bq_by_key = {(v["segment_id"], v["language"]): v for v in bq_accepted}
                 variants = [bq_by_key.get((v["segment_id"], v["language"]), v) for v in templated]
+                source = "bigquery" if bq_by_key else "templated"
     except Exception as e:
         logger.warning("copy generation via BigQuery AI.GENERATE_TABLE failed, falling back to templates: %s", e)
-        variants = templated
-    return variants
+        variants, source = templated, "templated"
+    return variants, source
 
 
 def _reforecast(store: LocalStore, as_of: date, run_id: str, play: dict[str, Any], stale_rows: bool) -> tuple[list[dict[str, Any]], int]:
@@ -109,7 +112,8 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
             out["source"] = "recorded"
             return out
     gap = store.find("gaps", gap_id=play["gap_id"])[-1]
-    product = load_catalogue(store)[play["target"]["sku"]]
+    catalogue = load_catalogue(store)
+    product = catalogue[play["target"]["sku"]]
     # --- edits
     changes = list(edits or [])
     if holdout_fraction is not None and abs(holdout_fraction - play["holdout"]["fraction"]) > 1e-9:
@@ -133,19 +137,24 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     play["window"]["start"] = now_iso
     play["status"] = "approved"
     play["approved_by"], play["approved_at"] = approved_by, now_iso
-    # --- copy: the templated variants are always computed first (the immediate result and the
-    # fallback). AI.GENERATE_TABLE in BigQuery (vertex backend only) may replace them, but it runs
-    # in a worker thread concurrently with the re-forecast further down -- see `_bigquery_copy`.
-    partner = load_catalogue(store).get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
+    # --- copy. A play that already carries valid copy (a recorded or seeded play with variants)
+    # keeps it: no BigQuery call, source "existing". Otherwise the templated variants are computed
+    # first (the immediate result and the fallback) and AI.GENERATE_TABLE in BigQuery (vertex
+    # backend only) may replace them; that call runs in a worker thread concurrently with the
+    # assignment, the regressor write and the re-forecast below -- see `_bigquery_copy`. It gets its
+    # own snapshot of the play: this thread keeps mutating `play`. Wall time is max(copy, local
+    # work), capped at COPY_BUDGET_S for the copy. Nothing else runs between here and the submit.
+    partner = catalogue.get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
     best_before = gap["evidence"].get("expiry_date")
-    templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
-    # The BigQuery call needs only the play, the product and the date, so it starts here and runs
-    # underneath the assignment, the regressor write and the re-forecast below (on a Cloud Run vCPU
-    # that local work is several seconds). It gets its own snapshot of the play: this thread keeps
-    # mutating `play`. Wall time is max(copy, local work), capped at COPY_BUDGET_S for the copy.
+    existing, existing_reasons = (validate_copy(play["copy"]["variants"], play, best_before) if play["copy"].get("variants") else ([], []))
+    use_existing = bool(existing) and not existing_reasons
     pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="approve")
     t_copy = time.perf_counter()
-    copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated)
+    copy_future = None
+    templated: list[dict[str, Any]] = []
+    if not use_existing:
+        templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
+        copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated)
     # --- assignment by hash
     pctx = _planner_ctx(store, tenant)
     # An assortment_gap play's real, demonstrated askers live in the gap's evidence, never the
@@ -188,13 +197,15 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     run_id = f"refc_{play_id}_{now.strftime('%H%M%S')}"
     forecast_future = pool.submit(_reforecast, store, as_of, run_id, play, stale_rows)
     forecast_error = forecast_future.exception()
-    try:
-        variants = copy_future.result(timeout=max(0.0, COPY_BUDGET_S - (time.perf_counter() - t_copy)))
-    except FutureTimeout:
-        logger.warning("copy generation via BigQuery passed its %.1f s budget, using the templated variants", COPY_BUDGET_S)
-        variants = templated
-    finally:
-        pool.shutdown(wait=False, cancel_futures=True)
+    if use_existing:
+        variants, copy_source = existing, "existing"
+    else:
+        try:
+            variants, copy_source = copy_future.result(timeout=max(0.0, COPY_BUDGET_S - (time.perf_counter() - t_copy)))
+        except FutureTimeout:
+            logger.warning("copy generation via BigQuery passed its %.1f s budget, using the templated variants", COPY_BUDGET_S)
+            variants, copy_source = templated, "templated"
+    pool.shutdown(wait=False, cancel_futures=True)
     if forecast_error is not None:
         raise forecast_error
     new_rows, fc_ms = forecast_future.result()
@@ -225,7 +236,7 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     resp = {
         "play_id": play_id, "status": play["status"],
         "assignment": {"treated_n": len(treated), "holdout_n": len(holdout), "seed": play["holdout"]["seed"], "fraction": play["holdout"]["fraction"], "eligible_n": len(eligible), "excluded_subscribers": len([c for c in ids if c in subscribers]) if play["mechanic"] in ("coupon", "outlet_markdown", "bundle") else 0},
-        "offers_written": len(offers), "regressor_rows_touched": touched, "copy": {"variants": len(accepted), "rejected": reasons},
+        "offers_written": len(offers), "regressor_rows_touched": touched, "copy": {"variants": len(accepted), "rejected": reasons, "source": copy_source},
         # The model that actually ran: jobs/sense/forecast.py's local seasonal-xreg forecaster,
         # not the BigQuery ML.FORECAST/ARIMA_PLUS_XREG function -- that function was verified
         # separately against real BigQuery (eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json)
