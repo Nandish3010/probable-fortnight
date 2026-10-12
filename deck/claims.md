@@ -57,7 +57,7 @@ Dates are the dates of the measurement, not of the deck.
 | 11 | Caption: outcomes on a fast-forwarded day, synthetic orders. Outcomes screenshot after Fast-forward (sandbox, 12 Oct): Tea, 355 offered, 39 held out, 1 of 355 vs 0 of 39 ordered, +0.3 pp, 95% CI -8.7 to +1.6, inconclusive, SYNTHETIC | `deck/img/outcomes.png`; `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:85`; `eval/raw/tea_recorded_beat_2026-10-12.json:105` |
 | 11 | 70% confidence threshold for the confirm step | `agents/capture/vision.py:25` |
 | 11 | Screenshots (phone confirm step, Outcomes with SYNTHETIC badge) | `deck/img/phone-confirm.png`; `deck/img/outcomes.png` |
-| 12 | Header: measured and dated, each card names its source file; Approve card labelled hand-timed | `eval/raw/approve_timing_2026-10-12b.json` |
+| 12 | Header: measured and dated, each card names its source file; Approve card labelled "curl, 6 calls" (method field: curl, one POST per sample) | `eval/raw/approve_timing_2026-10-12b.json` |
 | 12 | Planner live 5/5 proposed, 0 fallbacks, 21.8 to 27.6 s (10 Oct, chips, gemini-3.5-flash); Tea 5/5, 21.9 to 26.7 s (12 Oct) | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
 | 12 | Live plan, deployed, 11 Oct, gemini-3.5-flash: 22 of 24 model-planned (92% pass rate), 0 fallbacks, planner elapsed p50 26.5 s and p95 31.8 s over the 22 observed runs, 1 loop iteration each, 90 s deadline; 2 runs unobservable (poll 404 on a cold instance) counted as not passed | `eval/raw/plan_live_2026-10-12.json` |
 | 12 | Earlier 3-run check, 10 Oct: server elapsed 30.3 / 27.5 / 29.6 s, 3 of 3 model-planned | `eval/raw/live_replan_timing_2026-10-10.json` |
@@ -85,7 +85,7 @@ Dates are the dates of the measurement, not of the deck.
 | 15 | Chips (10 Oct, API snapshot; projected): 368 units, ₹9,200 at stake; play net -₹8,468 vs -₹8,189 blanket markdown; behind by ₹279 | `eval/raw/tea_beat_api_2026-10-10.json:25-30`; `docs/impact_math.md:21` |
 | 15 | Prior sensitivity, margin 2% / 5% / 10%: ₹1.41 / 3.47 / 6.19 lakh | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
 | 15 | Prior sensitivity, waste avoided 2% / 5% / 10%: ₹3.26 / 7.06 / 11.18 lakh | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
-| 15 | 550 grocery gaps; 421 / 424 / 423 plays planned at 2% / 5% / 10% | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
+| 15 | 550 grocery gaps; plays planned at each prior: 421 (2%), 424 (5%), 423 (10%) (planned.count in runs 2pct, 5pct, 10pct) | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
 | 15 | Synthetic holdout, Chips (19 Sep): 323 treated, 29 held back, lift +1.5 points, 95% CI -12.4 to +5.6 | `eval/raw/prior_update_2026-09-28.json:25-36` |
 | 15 | Synthetic holdout, Tea: 355 treated, 39 held back; 1 responder vs 0, inconclusive | `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:85`; `eval/raw/tea_recorded_beat_2026-10-12.json:105` |
 | 15 | Projected at 5%: ₹347,356 margin, ₹706,183 waste avoided | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json`; `docs/impact_math.md` |
