@@ -1,0 +1,153 @@
+{
+  "guardrails": [
+    {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 24.44% (net price 450.00, cost 340.00) vs premium_tea floor 12.00%"
+    },
+    {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 416 customers under 2 plays in 7 days"
+    },
+    {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 494 -> 416"
+    },
+    {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+    },
+    {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "transfer_plus_nudge is not a discount play"
+    },
+    {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "transfer_plus_nudge does not push SKU-DARJEELING-TEA-100G; stockout rule not applicable"
+    },
+    {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+    },
+    {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "6 number(s) in rationale all cited; 4 citation(s) resolve"
+    }
+  ],
+  "citations": [
+    {
+      "ref": "gap_tea_ds04",
+      "type": "gap"
+    },
+    {
+      "ref": "est-v1",
+      "type": "estimator"
+    },
+    {
+      "type": "policy",
+      "ref": "v1"
+    },
+    {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+    }
+  ],
+  "expected_outcome": {
+    "units": 29.18,
+    "margin_inr": 9716.02,
+    "waste_avoided_inr": 9922.02,
+    "discount_cost_inr": 0.0,
+    "ci_low": 1.57,
+    "ci_high": 85.14,
+    "prior_n": 20.0,
+    "measured_n": 0,
+    "estimator_version": "est-v1"
+  },
+  "copy": {
+    "copy_status": "pending",
+    "variants": [],
+    "language_set": [
+      "en"
+    ]
+  },
+  "play_id": "play_tea_ds04_v1",
+  "target": {
+    "deadline_date": "2026-10-06",
+    "sku": "SKU-DARJEELING-TEA-100G",
+    "units": 103,
+    "deadline_type": "online_sellby",
+    "node_ids": [
+      "DS-04"
+    ],
+    "batch_ids": [
+      "B-TEA-DS04-01"
+    ]
+  },
+  "mechanic": "transfer_plus_nudge",
+  "alternatives": [
+    {
+      "rejected_because": "lower expected margin and units cleared than the OUT-01 transfer play with the full audience",
+      "mechanic_params": {
+        "transfer_units": 103,
+        "transfer_to_node": "OUT-02"
+      },
+      "expected_units": 27.64,
+      "expected_margin_inr": 9191.29,
+      "mechanic": "transfer_plus_nudge"
+    }
+  ],
+  "objective": "clear_online_sellby",
+  "audience": {
+    "size_before_consent": 494,
+    "size_after_consent": 416,
+    "purpose": "marketing",
+    "segment_ids": [
+      "seg_2",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_5",
+      "seg_6"
+    ],
+    "filters": {}
+  },
+  "rationale": "This play transfers 103 units of Darjeeling Tea 100G from dark store DS-04 to Outlet 01 to avoid waste before the online sell-by deadline of 2026-10-06. By targeting all six available customer segments, we reach 416 customers after consent. The play is expected to clear 29.18 units, avoiding 9922.02 INR in waste and generating 9716.02 INR in margin. This transfer is preferred over blanket markdowns under policy v1.",
+  "channel": "web_chat",
+  "holdout": {
+    "fraction": 0.1,
+    "seed": "seed-play_tea_ds04_v1",
+    "min_treated_n": 20
+  },
+  "counterfactuals": {
+    "do_nothing_inr": 35020.0,
+    "blanket_markdown_inr": 32015.18,
+    "blanket_markdown_pct": 20.0,
+    "play_net_inr": -25303.98
+  },
+  "mechanic_params": {
+    "transfer_to_node": "OUT-01",
+    "transfer_units": 103
+  },
+  "gap_id": "gap_tea_ds04",
+  "window": {
+    "start": "2026-09-12T00:00:00Z",
+    "end": "2026-10-06T23:59:59Z"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_tea_ds04_v1_1f635041",
+  "cost": {
+    "plan_cost_inr": 3.94,
+    "conversation_budget_inr": 54.08,
+    "pct_of_rupees_at_stake": 0.166
+  },
+  "source": "live_gemini"
+}

@@ -124,6 +124,21 @@ def test_cite_or_drop_tight_tolerance_on_large_numbers():
     assert gr.rule_cite_or_drop(d2, ctx())["passed"], "9205 is 5 away from the cited 9200 -- real rounding noise, should still match"
 
 
+def test_cite_or_drop_accepts_the_two_headline_sums_and_nothing_near_them():
+    """Planner prompt v7 asks the rationale to state the recovered-versus-doing-nothing figure and the
+    beat over a blanket markdown. Both are exact sums of counterfactual fields (the Tea hero play:
+    35,020 - 25,828.71 = 9,191.29 and 32,015.18 - 25,828.71 = 6,186.47), so they resolve; a figure a
+    few rupees off either sum, or a sum with the wrong sign convention, still does not."""
+    cf = {"do_nothing_inr": 35020.0, "blanket_markdown_inr": 32015.18, "blanket_markdown_pct": 20.0, "play_net_inr": -25828.71}
+    ok = draft(counterfactuals=cf, rationale="It recovers ₹9,191 against doing nothing and beats a blanket markdown by ₹6,186.")
+    assert gr.rule_cite_or_drop(ok, ctx())["passed"]
+    for bad in ("beats a blanket markdown by ₹6,250.", "recovers ₹9,300 against doing nothing.", "beats a blanket markdown by ₹57,843."):
+        res = gr.rule_cite_or_drop(draft(counterfactuals=cf, rationale=bad), ctx())
+        assert not res["passed"], bad
+    # without the three counterfactual fields the derived figures do not exist, so the same claim is rejected
+    assert not gr.rule_cite_or_drop(draft(rationale="It beats a blanket markdown by ₹6,186."), ctx())["passed"]
+
+
 def test_cite_or_drop_unresolved_citation():
     res = gr.rule_cite_or_drop(draft(), ctx(resolve_citation=lambda t, r: False))
     assert not res["passed"] and "do not resolve" in res["detail"]

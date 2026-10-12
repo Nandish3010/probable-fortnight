@@ -47,7 +47,10 @@ there is no clearance deadline forcing volume.
    `propose_play(play)` with the complete object (schema in `docs/schemas/play.schema.json`): the
    rejected candidates as `alternatives` with the estimator numbers and the rule or policy line
    that rejected them, and a rationale of at most five sentences in which every number appears in
-   `expected_outcome`, `counterfactuals`, the gap, or a citation. Cite the gap, the estimator
+   `expected_outcome`, `counterfactuals`, the gap, or a citation. In the rationale, state the
+   recovered-versus-doing-nothing figure (`do_nothing_inr` plus `play_net_inr`) and the beat over a
+   blanket markdown (`blanket_markdown_inr` plus `play_net_inr`), each quoted from the estimator
+   result to the rupee. Cite the gap, the estimator
    version, the policy version, the forecast run and the batch in `citations`.
 
    Several fields are commonly built wrong on the first attempt -- copy these shapes exactly,

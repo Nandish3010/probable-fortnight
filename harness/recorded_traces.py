@@ -243,6 +243,19 @@ def select_best(data_dir: str | Path, gap_id: str, candidates: list[Recording]) 
     return best, failures
 
 
+def read_pins(raw_root: Path | str = RAW_ROOT_DEFAULT) -> dict[str, str]:
+    """Optional `<raw_root>/seed_pins.json`: {gap_id: "<recording dir name>/<run tag>"}. A pinned
+    gap seeds that exact recorded run (if it still validates) instead of the highest-margin one.
+    Used when several committed recordings differ in margin but the numbers the README, deck and
+    video quote must not move: the pin names which real run is the exhibit. Never edits a
+    recording; a missing, unreadable or non-matching pin is ignored and normal selection applies."""
+    try:
+        pins = json.loads((Path(raw_root) / "seed_pins.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return {str(k): str(v) for k, v in pins.items()} if isinstance(pins, dict) else {}
+
+
 # --------------------------------------------------------------------------------------- seeding
 
 def _iso(ts: float) -> str:
@@ -314,11 +327,18 @@ def seed_from_recording(data_dir: str | Path, gap_id: str, raw_root: Path | str 
     if not candidates:
         return None, f"{gap_id}: no committed recording found under {root} -- seeding the scripted stub instead"
 
-    best, failures = select_best(data_dir, gap_id, candidates)
+    pinned_tag = read_pins(root).get(gap_id)
+    pinned = [c for c in candidates if c.tag == pinned_tag] if pinned_tag else []
+    best, failures = select_best(data_dir, gap_id, pinned) if pinned else (None, {})
+    pin_note = ""
+    if pinned_tag and best is None:
+        pin_note = f" [pin {pinned_tag} not usable: {'; '.join(failures.get(pinned_tag, ['no such candidate']))}; used highest margin]"
+    if best is None:
+        best, failures = select_best(data_dir, gap_id, candidates)
     if best is None:
         detail = " | ".join(f"{tag}: {'; '.join(reasons)}" for tag, reasons in failures.items())
         return None, f"{gap_id}: {len(candidates)} committed recording(s) found but none validated against the current tenant ({detail}) -- seeding the scripted stub instead"
 
     result = _seed_recording(data_dir, best)
     margin = result["play"]["expected_outcome"]["margin_inr"]
-    return result, f"{gap_id}: seeded from committed recording {best.tag} (source=recorded_gemini, margin_inr={margin:.2f}, {len(candidates) - 1} other candidate(s) considered)"
+    return result, f"{gap_id}: seeded from committed recording {best.tag} (source=recorded_gemini, margin_inr={margin:.2f}, {len(candidates) - 1} other candidate(s) considered{', pinned in eval/raw/seed_pins.json' if pinned and best is pinned[0] else ''}){pin_note}"

@@ -1,5 +1,13 @@
 # Planner prompt changelog
 
+- v7 (2026-10-12): step 3 now tells the model to state, in the rationale, the recovered-versus-doing-nothing
+  figure (`do_nothing_inr` + `play_net_inr`) and the beat over a blanket markdown (`blanket_markdown_inr` +
+  `play_net_inr`), each quoted from the estimator result. Reason: eight live Tea runs recorded on 12 Oct
+  (`eval/raw/planner_real_traces_tea_2026-10-12b/`) passed cite_or_drop but left the headline figures out of
+  the rationale (0 to 6 figures, never the beat). The two sums are not stored fields, so
+  `agents/gate/guardrails.py::cited_numbers` now also accepts those two derived figures (and nothing else);
+  `tests/unit/test_guardrails.py` pins that an invented near-miss figure is still rejected.
+
 - v6 (2026-09-24): five committed live Vertex traces (`eval/raw/rationale_judge_planner_runs_2026-09-21/`)
   all showed the same schema-validation failures repeating across `propose_play` retries, driving
   elapsed time to 50-62s. Two live re-run passes against the real Vertex backend (not the
