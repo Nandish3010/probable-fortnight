@@ -17,7 +17,7 @@ consent) across 5 segments, expected margin ₹9,191 (waste avoided ₹9,397 min
 ₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186
 (`counterfactuals.play_net_inr` on the play; `GET /plays`; snapshot in
 `eval/raw/tea_recorded_beat_2026-10-12.json`, recorded runs in
-`eval/raw/planner_real_traces_tea_2026-10-12/`). Approval assigns 355 treated and 39
+`eval/raw/planner_real_traces_tea_2026-10-12b/` and `-12c/`). Approval assigns 355 treated and 39
 holdout customers by hash, writes the play into `future_regressors`, and moves the projected
 write-off from ₹35,186 to ₹28,659 (local approve on the seeded tenant, 12 Oct 2026; the deployed
 service shows the same after the next deploy).
