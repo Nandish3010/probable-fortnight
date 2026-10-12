@@ -11,26 +11,122 @@ from datetime import date
 from functools import lru_cache
 from typing import Any
 
-TEMPLATES = {
+# Each entry is one phrasing (a str) or a list of phrasings of the same offer carrying the same
+# facts and slots. generate_copy() picks phrasing `i % len(list)` for the i-th audience segment, so
+# a play with several segments gets distinct lines (same facts, different wording) instead of one
+# sentence repeated per segment. Index 0 is the original wording. Every phrasing states
+# {best_before} wherever the original did, and uses only the slots below: no invented numbers.
+TEMPLATES: dict[str, dict[str, str | list[str]]] = {
     "en": {
-        "bundle": "{name}: buy with {partner} for ₹{bundle_price} today at your Kutumb Mart store. Best before {best_before}.",
-        "coupon": "{name}: {discount_pct}% off today at your Kutumb Mart store. Best before {best_before}.",
-        "usual_order_addon": "Add {name} to your usual order this week. Best before {best_before}.",
-        "substitution": "{name} is back in stock at your store. Best before {best_before}.",
-        "preorder": "{name} is arriving on {eta}. Reserve yours now.",
-        "subscription_nudge": "Your {name} subscription can be delivered early this week.",
-        "outlet_markdown": "{name}: {markdown_pct}% off in store this week. Best before {best_before}.",
-        "transfer_plus_nudge": "{name} is now available at your nearest Kutumb Mart outlet. Best before {best_before}.",
+        "bundle": [
+            "{name}: buy with {partner} for ₹{bundle_price} today at your Kutumb Mart store. Best before {best_before}.",
+            "Today at Kutumb Mart: {name} and {partner} together for ₹{bundle_price}. Best before {best_before}.",
+            "Pair {name} with {partner} and pay ₹{bundle_price} for both at your Kutumb Mart store. Best before {best_before}.",
+            "{name} plus {partner}: one bundle, ₹{bundle_price}, at your Kutumb Mart store today. Best before {best_before}.",
+            "Stocking up? Get {name} with {partner} for ₹{bundle_price} at Kutumb Mart. Best before {best_before}.",
+            "Your Kutumb Mart store has a bundle today: {name} with {partner} at ₹{bundle_price}. Best before {best_before}.",
+        ],
+        "coupon": [
+            "{name}: {discount_pct}% off today at your Kutumb Mart store. Best before {best_before}.",
+            "Today at your Kutumb Mart store: {discount_pct}% off {name}. Best before {best_before}.",
+            "Save {discount_pct}% on {name} today at Kutumb Mart. Best before {best_before}.",
+            "{name} is {discount_pct}% off today at your Kutumb Mart store. Best before {best_before}.",
+            "Today's offer: {name} at {discount_pct}% off, at your Kutumb Mart store. Best before {best_before}.",
+            "Pick up {name} for {discount_pct}% less today at Kutumb Mart. Best before {best_before}.",
+        ],
+        "usual_order_addon": [
+            "Add {name} to your usual order this week. Best before {best_before}.",
+            "This week, add {name} to your usual order. Best before {best_before}.",
+            "Your usual order can include {name} this week. Best before {best_before}.",
+            "Want {name} with your usual order this week? Add it now. Best before {best_before}.",
+            "Add {name} to this week's usual order. Best before {best_before}.",
+            "One more for your usual order this week: {name}. Best before {best_before}.",
+        ],
+        "substitution": [
+            "{name} is back in stock at your store. Best before {best_before}.",
+            "Back in stock at your store: {name}. Best before {best_before}.",
+            "Good news: {name} is available again at your store. Best before {best_before}.",
+            "Your store has {name} again. Best before {best_before}.",
+            "{name} has returned to the shelf at your store. Best before {best_before}.",
+            "Looking for {name}? It is back in stock at your store. Best before {best_before}.",
+        ],
+        "preorder": [
+            "{name} is arriving on {eta}. Reserve yours now.",
+            "Reserve {name} today: it arrives on {eta}.",
+            "Be first in line: {name} arrives on {eta}. Reserve yours now.",
+            "Reserve {name} now, before it arrives on {eta}.",
+            "Coming on {eta}: {name}. Reserve yours now.",
+            "Planning ahead? {name} arrives on {eta}, and you can reserve it now.",
+        ],
+        "subscription_nudge": [
+            "Your {name} subscription can be delivered early this week.",
+            "This week, your {name} subscription can arrive early.",
+            "Early delivery is available this week for your {name} subscription.",
+            "Your next {name} delivery can come early this week.",
+            "Want your {name} subscription sooner? It can be delivered early this week.",
+            "Good news: your {name} subscription can be delivered early this week.",
+        ],
+        "outlet_markdown": [
+            "{name}: {markdown_pct}% off in store this week. Best before {best_before}.",
+            "This week in store: {markdown_pct}% off {name}. Best before {best_before}.",
+            "Save {markdown_pct}% on {name} at your Kutumb Mart store this week. Best before {best_before}.",
+            "{name} is {markdown_pct}% off in store this week. Best before {best_before}.",
+            "In-store offer this week: {name} at {markdown_pct}% off. Best before {best_before}.",
+            "Pick up {name} for {markdown_pct}% less in store this week. Best before {best_before}.",
+        ],
+        "transfer_plus_nudge": [
+            "{name} is now available at your nearest Kutumb Mart outlet. Best before {best_before}.",
+            "{name} is now on the shelf at your nearest Kutumb Mart outlet. Best before {best_before}.",
+            "Picking up groceries this week? {name} is now stocked at your nearest Kutumb Mart outlet. Best before {best_before}.",
+            "New at your nearest Kutumb Mart outlet: {name}. Best before {best_before}.",
+            "{name} has just arrived at a Kutumb Mart outlet close to you. Best before {best_before}.",
+            "Drop in to your nearest Kutumb Mart outlet: {name} is available now. Best before {best_before}.",
+        ],
     },
     "kn": {
-        "bundle": "{name}: ಇಂದು {partner} ಜೊತೆ ₹{bundle_price}ಕ್ಕೆ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
-        "coupon": "{name}: ಇಂದು {discount_pct}% ರಿಯಾಯಿತಿ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        "bundle": [
+            "{name}: ಇಂದು {partner} ಜೊತೆ ₹{bundle_price}ಕ್ಕೆ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಇಂದು ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ {name} ಮತ್ತು {partner} ಒಟ್ಟಿಗೆ ₹{bundle_price}ಕ್ಕೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ಜೊತೆ {partner} ತೆಗೆದುಕೊಳ್ಳಿ, ಎರಡಕ್ಕೂ ₹{bundle_price}. ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ಮತ್ತು {partner}: ಒಂದೇ ಬಂಡಲ್, ₹{bundle_price}, ಇಂದು ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಸಾಮಾನು ತುಂಬಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೀರಾ? {name} ಜೊತೆ {partner} ₹{bundle_price}ಕ್ಕೆ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ ಇಂದು ಬಂಡಲ್ ಕೊಡುಗೆ: {name} ಜೊತೆ {partner}, ₹{bundle_price}ಕ್ಕೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        ],
+        "coupon": [
+            "{name}: ಇಂದು {discount_pct}% ರಿಯಾಯಿತಿ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಇಂದು ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ {name}ಗೆ {discount_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಇಂದು {name} ಮೇಲೆ {discount_pct}% ಉಳಿಸಿ, ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ಇಂದು {discount_pct}% ಕಡಿಮೆ ಬೆಲೆಗೆ ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಇಂದಿನ ಕೊಡುಗೆ: {name}ಗೆ {discount_pct}% ರಿಯಾಯಿತಿ, ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್‌ನಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಇಂದು ಕುಟುಂಬ ಮಾರ್ಟ್‌ಗೆ ಬಂದಾಗ {name}ಗೆ {discount_pct}% ರಿಯಾಯಿತಿ ಪಡೆಯಿರಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        ],
         "usual_order_addon": "ಈ ವಾರ ನಿಮ್ಮ ಸಾಮಾನ್ಯ ಆರ್ಡರ್‌ಗೆ {name} ಸೇರಿಸಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
         "substitution": "{name} ನಿಮ್ಮ ಸ್ಟೋರ್‌ನಲ್ಲಿ ಮತ್ತೆ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
-        "preorder": "{name} {eta}ರಂದು ಬರುತ್ತಿದೆ. ಈಗಲೇ ಕಾಯ್ದಿರಿಸಿ.",
+        "preorder": [
+            "{name} {eta}ರಂದು ಬರುತ್ತಿದೆ. ಈಗಲೇ ಕಾಯ್ದಿರಿಸಿ.",
+            "{eta}ರಂದು {name} ಬರುತ್ತಿದೆ. ಇಂದೇ ಕಾಯ್ದಿರಿಸಿ.",
+            "ಮೊದಲು ನಿಮ್ಮದಾಗಿಸಿಕೊಳ್ಳಿ: {name} {eta}ರಂದು ಬರುತ್ತಿದೆ. ಈಗಲೇ ಕಾಯ್ದಿರಿಸಿ.",
+            "{name} {eta}ರಂದು ಲಭ್ಯವಾಗಲಿದೆ. ಬರುವ ಮುನ್ನವೇ ಕಾಯ್ದಿರಿಸಿ.",
+            "{eta}ರಂದು ಬರಲಿದೆ: {name}. ಈಗಲೇ ಕಾಯ್ದಿರಿಸಿ.",
+            "ಮುಂಚಿತವಾಗಿ ಯೋಜಿಸಿ: {name} {eta}ರಂದು ಬರುತ್ತಿದೆ, ಈಗಲೇ ಕಾಯ್ದಿರಿಸಬಹುದು.",
+        ],
         "subscription_nudge": "ನಿಮ್ಮ {name} ಚಂದಾದಾರಿಕೆ ಈ ವಾರ ಬೇಗ ತಲುಪಿಸಬಹುದು.",
-        "outlet_markdown": "{name}: ಈ ವಾರ ಅಂಗಡಿಯಲ್ಲಿ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
-        "transfer_plus_nudge": "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        "outlet_markdown": [
+            "{name}: ಈ ವಾರ ಅಂಗಡಿಯಲ್ಲಿ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಈ ವಾರ ಅಂಗಡಿಯಲ್ಲಿ {name}ಗೆ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ನಿಮ್ಮ ಕುಟುಂಬ ಮಾರ್ಟ್ ಅಂಗಡಿಯಲ್ಲಿ ಈ ವಾರ {name} {markdown_pct}% ಕಡಿಮೆ ಬೆಲೆಗೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ಮೇಲೆ {markdown_pct}% ರಿಯಾಯಿತಿ, ಈ ವಾರ ಅಂಗಡಿಯಲ್ಲಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಅಂಗಡಿಯಲ್ಲಿ ಈ ವಾರದ ಕೊಡುಗೆ: {name}ಗೆ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಈ ವಾರ ಅಂಗಡಿಗೆ ಬಂದಾಗ {name} ತೆಗೆದುಕೊಳ್ಳಿ, {markdown_pct}% ರಿಯಾಯಿತಿ ಇದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        ],
+        "transfer_plus_nudge": [
+            "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಈ ವಾರ ದಿನಸಿ ಖರೀದಿಗೆ ಹೋಗುತ್ತೀರಾ? {name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಇದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಹೊಸದಾಗಿ ಲಭ್ಯ: {name}. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಈಗಷ್ಟೇ ಬಂದಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಬನ್ನಿ: {name} ಈಗ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        ],
     },
 }
 NEAR_DEADLINE = {"clear_online_sellby", "clear_expiry"}
@@ -59,9 +155,11 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
         "eta": _fmt_date(params.get("preorder_eta_date")), "best_before": _fmt_date(best_before),
     }
     variants = []
-    for seg in play["audience"]["segment_ids"]:
+    for i, seg in enumerate(play["audience"]["segment_ids"]):
         for lang in languages:
             tpl = TEMPLATES.get(lang, TEMPLATES["en"]).get(play["mechanic"], TEMPLATES["en"]["usual_order_addon"])
+            if isinstance(tpl, list):
+                tpl = tpl[i % len(tpl)]  # a different phrasing of the same offer per segment
             text = tpl.format(**ctx)
             variants.append({"segment_id": seg, "language": lang, "text": text, "disclosure_included": _date_stated(best_before, text)})
     return variants

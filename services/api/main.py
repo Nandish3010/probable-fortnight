@@ -132,6 +132,9 @@ class AssignmentOut(BaseModel):
 class CopyOut(BaseModel):
     variants: int
     rejected: list[str]
+    # Where the accepted variants came from: "existing" (the play already carried valid copy),
+    # "bigquery" (AI.GENERATE_TABLE output) or "templated". Additive (12 Oct 2026); optional.
+    source: str | None = None
 
 
 class ApproveResponseOut(BaseModel):
