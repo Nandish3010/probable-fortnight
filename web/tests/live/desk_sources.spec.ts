@@ -6,8 +6,9 @@ import { asVisitor, collectConsoleErrors, expectNoConsoleErrors } from "./helper
 // (eval/raw/planner_real_traces_2026-09-28/, harness/record_flagship_traces.py + 5 independent
 // real Vertex runs), and harness/seed_plays.py seeds it regardless of TAAL_MODEL_BACKEND -- so
 // the flagship's own trace is genuinely "recorded_gemini" here, checked with no injection at all.
-// A second, still-scripted demo gap (gap_tea_ds04 -- never had a recording made for it) proves the
-// "Scripted fixture" branch still works, also with no injection. The remaining two PlanSource
+// The hero Tea gap (gap_tea_ds04) also became a committed Gemini recording, so it has its own
+// "Recorded from Gemini" assertion. A still-scripted demo gap (gap_quinoa_out02 -- no recording has
+// been made for it) proves the "Scripted fixture" branch still works, also with no injection. The remaining two PlanSource
 // values (live_gemini, deterministic_rules) cannot occur for real in this environment (no Vertex
 // credentials, and the stub backend basically never misses its deadline), so those two tests
 // inject a response with page.route to exercise each badge's UI branch. Every injected value below
@@ -25,14 +26,26 @@ test.describe("Play Desk: provenance badges (real stack, stub backend)", () => {
     await expectNoConsoleErrors(errors);
   });
 
-  test("a scripted play (gap_tea_ds04, never recorded) still reads Scripted fixture", async ({ page }) => {
+  test("a scripted play (gap_quinoa_out02, never recorded) still reads Scripted fixture", async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await asVisitor(page, "live-desk-sources-scripted");
     await page.goto("/desk");
     const inbox = page.getByLabel("Play inbox");
-    await inbox.getByRole("button", { name: /Darjeeling Tea 100G/ }).first().click();
+    await inbox.getByRole("button", { name: /Quinoa 500G/ }).first().click();
     const card = page.getByTestId("play-detail");
     await expect(card.locator(".trace-panel").getByText("Scripted fixture")).toBeVisible();
+    await expectNoConsoleErrors(errors);
+  });
+
+  test("the hero Tea play now reads Recorded from Gemini · <date>", async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await asVisitor(page, "live-desk-sources-tea");
+    await page.goto("/desk");
+    const inbox = page.getByLabel("Play inbox");
+    await inbox.getByRole("button", { name: /Darjeeling Tea 100G/ }).first().click();
+    const card = page.getByTestId("play-detail");
+    await expect(card.locator(".trace-panel").getByText(/Recorded from Gemini · \d{1,2} \S+ 2026/)).toBeVisible();
+    await expect(card.locator(".trace-panel").getByText("Scripted fixture")).not.toBeVisible();
     await expectNoConsoleErrors(errors);
   });
 
