@@ -2,27 +2,44 @@
 
 Forecast, propose, approve, offer, measure: one loop that sells at-risk stock before it is written off, with a holdout to prove it.
 
-**₹9,191 recovered on the hero play, projected** (one tea lot on a seeded tenant, versus doing nothing; Gemini 3.5 Flash plans, code prices every rupee). [Live app](https://taal-web-2obkp776ca-el.a.run.app) · [Deck](docs/deck.pdf) · Video (link added at submission) · [API health](https://taal-agents-2obkp776ca-el.a.run.app/health)
+| Result on the judge path | Number |
+|---|---|
+| Hero play, recovered vs doing nothing | **₹9,191**, projected on a seeded tenant (one tea lot, 103 units) |
+| Beat over a blanket 20% markdown | **+₹6,186** |
+| Customers treated / held out | 355 / 39 (synthetic orders; the effect is not measured yet) |
+| Approve | about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer) |
+| Plan live | 22 of 24 model-planned on `gemini-3.5-flash`; planner p50 26.5 s, p95 31.8 s (11 Oct) |
+| Planner evalsets | 46 built from recorded Gemini runs; response match 38/46 (9 Oct) |
+| Tests and CI gate | 470+ pytest and 490+ Playwright tests in `make verify` (`.github/workflows/verify.yml`) |
+| 60-second judge path | 3 clicks: Run the 60-second beat, Approve, Chat as Ravi |
+
+[Live app](https://taal-web-2obkp776ca-el.a.run.app) · [Deck](docs/deck.pdf) · Video (link added at submission) · [API health](https://taal-agents-2obkp776ca-el.a.run.app/health)
+
+## What it is
+
+Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC). Taal forecasts stock per SKU and dark store every night, finds lots that will miss their online sell-by, and proposes a play for each. Gemini 3.5 Flash plans the play inside an ADK agent; plain code prices every rupee and runs eight guardrails over the proposal. Approval assigns a holdout, so the result can be measured.
 
 ![The Taal loop: Forecast, Propose, Approve, Offer, Measure, with priors updating from Measure back to Forecast](docs/loop.svg)
 
-Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
-
 ## Judge quick-start
 
-Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
+Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
 1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
 2. Click **Approve** (about 3 to 7 s; measured 12 Oct after #90, first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
-3. Click **Chat as Ravi** and the offer arrives. Then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
+3. Click **Chat as Ravi**: the follow-up button that appears after Approve on the Tea beat (the chat panel's default is Meena, the chips play's customer). The offer arrives; then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-Live re-plan about 27 s, Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
-
-Demo video: link added at submission
-
-- Deck: [`docs/deck.pdf`](docs/deck.pdf)
 - Reset demo data restores the seeded tenant for your visitor only.
-- Provenance badges: every panel carries a LIVE, REPLAY or SYNTHETIC badge (no REAL PILOT rows exist, so none is shown); the Desk's trace and re-plan result name the run's source instead (`Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`). Approve, chat, capture and execution are live calls; Sense is nightly and replayed. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service.
-- What is real and what is simulated: see [the table](#what-is-real-what-is-simulated).
+- Live re-plan about 27 s, Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+- Try it locally: `make setup`, then `make api` and `make web` (see Development below).
+
+## What it does
+
+1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
+2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; six gap types (five write-off-risk types from the forecast, plus unmet demand from real chat requests) with rupees at stake.
+3. **Plan**: an ADK Planner Agent (LlmAgent in a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator and eight guardrails gate it.
+4. **Approve**: assignment with a holdout, copy with the best-before line, offers for treated customers only, the play written into the forecast, the chart moves.
+5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
+6. **Measure**: treated vs holdout inside the play window with a 95% CI, `unmeasured` when the treated arm is too small, estimator priors updated from the exact counts.
 
 ## How Gen AI is used
 
@@ -32,7 +49,7 @@ Gemini 3.5 Flash on Vertex AI plans each play inside an ADK agent. It proposes t
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
+| Copy | `flash`: on the vertex backend, Approve attempts BigQuery `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy (the usual outcome on the live demo) | vernacular variants when the BigQuery call returns in time | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -44,16 +61,13 @@ The second recorded gap, `gap_chips_ds07` (recorded 10 Oct 2026), does not beat 
 
 **Live Plan run.** On the deployed service, 11 Oct, on `gemini-3.5-flash`: 22 of 24 runs model-planned, 0 fallbacks, planner p50 26.5 s, p95 31.8 s. The other 2 were not observed (the first poll returned 404 from a second instance, so their outcome is unknown); they count as not passed and are not fallbacks (`eval/raw/plan_live_2026-10-12.md`).
 
-## Team
+## The hook
 
-| Name | Role |
-|---|---|
-| Nandish | Lead, product and engineering |
-| Rinu | Co-builder |
+FSSAI, India's food regulator, sent e-commerce food business operators an advisory on 3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf), paragraph 4): "FSSAI mandates that products must have a minimum shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory, not a gazetted rule, and it leaves open 30% of what, and whether the two limits are alternatives or cumulative. **The reading below is Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule (`config/tenant.demo.toml`, `sellby_rule`); on the demo tenant either limit satisfies it, so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left (30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap type, shown on every gap card.
 
 ## Impact in numbers
 
-Every number is reproduced from a committed evidence file or a named code constant; the full table with sources is in [`docs/impact_numbers.md`](docs/impact_numbers.md). Measured 2026-09-24 on the seeded tenant.
+Figures were measured on 24 Sep 2026 on the seeded tenant, before the apparel path was removed from the tree. Every number is reproduced from a committed evidence file or a named code constant; the full table with sources is in [`docs/impact_numbers.md`](docs/impact_numbers.md).
 
 | What | Number | Label | Source |
 |---|---|---|---|
@@ -67,7 +81,7 @@ India scale, as reported by Inc42 (22 Jul 2026): Blinkit's inventory losses (exp
 
 Buyer and pricing basis: the buyer is the category or supply-chain head, who owns write-off; the basis is a fee per dark store per month or a percentage of rupees rescued against the holdout. No price point is set until a pilot measures that lift.
 
-Payback illustration, synthetic and projected, not a quote: the ₹347,356 is per 28-day run at the 5% prior; divided by 16 nodes it is about ₹21,710 per node per 28-day run. Against the ₹486 measured run cost (a floor: no plays ran in that window) the break-even is about ₹21,710 - ₹30 per node; against the Mid profile estimate of ₹2,500 to 5,000 a month (`docs/scale.md`) it is about ₹21,710 - ₹156 to ₹313 per node.
+Projected margin less run cost, illustration, synthetic and projected, not a quote: the ₹347,356 is per 28-day run at the 5% prior; divided by 16 nodes it is about ₹21,710 per node per 28-day run. Less the ₹486 measured run cost (a floor: no plays ran in that window) that is about ₹21,710 - ₹30 per node; less the Mid profile estimate of ₹2,500 to 5,000 a month (`docs/scale.md`) it is about ₹21,710 - ₹156 to ₹313 per node. This is not a break-even: no fee is set.
 
 ## Screenshots
 
@@ -79,10 +93,6 @@ Captured with Playwright against the real local stack (`make api` + `make web`, 
 | ![The 60-second beat after Approve, forecast chart moved](docs/screenshots/60-second-beat-approved-chart.png) 60-second beat: approved, chart moved | ![Play Desk with a play's guardrails, counterfactuals and trace](docs/screenshots/play-desk.png) Play Desk |
 | ![Phone view intake table after a sample pallet photo capture](docs/screenshots/phone-view-intake-table.png) Phone view: intake table | ![Outcomes screen with measured and unmeasured plays](docs/screenshots/outcomes-measured.png) Outcomes: measured |
 
-## The hook
-
-FSSAI, India's food regulator, sent e-commerce food business operators an advisory on 3 December 2024 ([file no. RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf), paragraph 4): "FSSAI mandates that products must have a minimum shelf life of 30% or at least 45 days before expiry, at the time of delivery." It is an advisory, not a gazetted rule, and it leaves open 30% of what, and whether the two limits are alternatives or cumulative. **The reading below is Taal's configurable default, not FSSAI text.** Taal applies it as a tenant-set, versioned rule (`config/tenant.demo.toml`, `sellby_rule`); on the demo tenant either limit satisfies it, so a 90-day-shelf-life pack of chips that expires in **33 days** needs 27 days left (30% of 90) and can be sold online for **6** more days. Forecasting tools treat expiry as the deadline; Taal makes the online sell-by cut-off a first-class gap type, shown on every gap card.
-
 ## Architecture
 
 ![Taal architecture: taal-web and taal-agents on Cloud Run, Gemini on Vertex AI, a per-visitor sandbox, an MCP order endpoint, Firestore, and nightly BigQuery jobs started by Cloud Scheduler](docs/architecture.svg)
@@ -90,24 +100,10 @@ FSSAI, India's food regulator, sent e-commerce food business operators an adviso
 Two paths: a per-visitor sandbox serves judges, and nightly Cloud Run jobs run on BigQuery
 (source and request paths in [`docs/architecture.md`](docs/architecture.md)).
 
-## More documentation
-
-- [`docs/design_notes.md`](docs/design_notes.md): why the loop generalizes beyond promos, and what Gemini decides versus what code never lets it decide.
-- [`docs/vendors.md`](docs/vendors.md): how Taal differs from named vendors (public pages read 2026-10-09).
-- [`docs/related_work.md`](docs/related_work.md): outside references, and consent and approval in AP2 vocabulary.
-- [`docs/hero_plays.md`](docs/hero_plays.md): the Tea and chips recordings in detail.
-- [`docs/codespaces.md`](docs/codespaces.md): running it in GitHub Codespaces.
-
-## What it does
-
-1. **Capture**: a node manager photographs a pallet; dates and counts are read with confidence scores; low-confidence rows must be confirmed before they reach inventory.
-2. **Sense** (nightly): per-SKU, per-node forecasts with promo and festival regressors; six gap types (five write-off-risk types from the forecast, plus unmet demand from real chat requests) with rupees at stake.
-3. **Plan**: an ADK Planner Agent (LlmAgent in a LoopAgent, max 3 iterations) designs a play with six deterministic tools; every number comes from the estimator and eight guardrails gate it.
-4. **Approve**: assignment with a holdout, copy with the best-before line, offers for treated customers only, the play written into the forecast, the chart moves.
-5. **Engage**: a Customer Agent grounded in node stock, offers and consent; orders go through an MCP order endpoint; STOP withdraws consent.
-6. **Measure**: treated vs holdout inside the play window with a 95% CI, `unmeasured` when the treated arm is too small, estimator priors updated from the exact counts.
-
 ## What is real, what is simulated
+
+- Provenance badges: every panel carries a LIVE, REPLAY or SYNTHETIC badge (no REAL PILOT rows exist, so none is shown); the Desk's trace and re-plan result name the run's source instead (`Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`). Approve, chat, capture and execution are live calls; Sense is nightly and replayed. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service.
+- What is real and what is simulated: see [the table](#what-is-real-what-is-simulated).
 
 BigQuery batch path status and the 27 Sep incidents: [eval/incidents_2026-09-27.md](eval/incidents_2026-09-27.md).
 
@@ -125,7 +121,7 @@ BigQuery batch path status and the 27 Sep incidents: [eval/incidents_2026-09-27.
 
 Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because the state of a re-plan run lives in process memory; a second instance would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
 
-## Production path
+## Scale, cost and pilot
 
 - **Scalability (estimate):** the Large profile (20,000 SKUs, 500 nodes, 1M customers, about 2,000 gaps a night after triage) keeps the same shape; only the Planner queue depth, BigQuery partition pruning and the triage threshold scale. No tenant that size has run, so its throughput is not measured ([`docs/scale.md`](docs/scale.md)).
 - **What breaks first:** `taal-agents` is pinned to `--max-instances 1` because re-plan run state lives in process memory (a second instance would 404 a poll), so one instance is the ceiling before anything else; then the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
@@ -149,7 +145,22 @@ Voice (Gemini Live) is not part of this submission: it is a documented stub with
 
 From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` as its fallback, both verified with real calls (`eval/raw/model_verification_2026-10-10.json`). Eval cards from before the switch ran on `gemini-2.5-flash` and have not been re-run: the 9 Oct live eval (ADK response match 38/46, exact trajectory 6/46, rationale judge 15/15; `eval/raw/live_eval_2026-10-09/`), the agent simulation, vision and customer-latency runs, and the cost figure.
 
-Live plan results are in [How Gen AI is used](#how-gen-ai-is-used). Latency numbers and test counts (464 pytest, 473 Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+Live plan results are in [How Gen AI is used](#how-gen-ai-is-used). Latency numbers and test counts (470+ pytest, 490+ Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+
+## More documentation
+
+- [`docs/design_notes.md`](docs/design_notes.md): why the loop generalizes beyond promos, and what Gemini decides versus what code never lets it decide.
+- [`docs/vendors.md`](docs/vendors.md): how Taal differs from named vendors (public pages read 2026-10-09).
+- [`docs/related_work.md`](docs/related_work.md): outside references, and consent and approval in AP2 vocabulary.
+- [`docs/hero_plays.md`](docs/hero_plays.md): the Tea and chips recordings in detail.
+- [`docs/codespaces.md`](docs/codespaces.md): running it in GitHub Codespaces.
+
+## Team
+
+| Name | Role |
+|---|---|
+| Nandish | Lead, product and engineering |
+| Rinu | Co-builder |
 
 ## Development
 
@@ -162,7 +173,7 @@ make fixtures   # rebuild committed golden plays, mutations, golden runs, evalse
 make openapi    # regenerate docs/openapi.yaml
 ```
 
-Green `make verify` (464 pytest and 473 Playwright tests, the CI gate in `.github/workflows/verify.yml`) is the only definition of done (`harness/`, `STATUS.md`). Specs: `docs/DECISIONS.md`; data model: `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`; pilot: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
+Green `make verify` (470+ pytest and 490+ Playwright tests, the CI gate in `.github/workflows/verify.yml`) is the only definition of done (`harness/`, `STATUS.md`). Specs: `docs/DECISIONS.md`; data model: `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`; pilot: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
 
 ## Licence
 

@@ -15,6 +15,7 @@ wins.
   (`services/api/approve.py`). BigQuery `ML.FORECAST` on `ARIMA_PLUS_XREG` was verified separately
   (`eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json`) and is not on the approve path or in
   any job.
+- 12 Oct 2026: approve-time BigQuery copy usually exceeds its 3 s budget; templated copy is the usual outcome; evidence in the 24 h logs and a direct timing.
 - Chat sessions are per visitor and customer (`<visitor>:<customer_id>:web`); an
   `InMemorySessionService` per visitor sandbox by default; `VertexAiSessionService` only when
   `TAAL_SESSION_BACKEND=vertex` (verified in `eval/raw/vertex_sessions_2026-09-24`; visitor-isolation
