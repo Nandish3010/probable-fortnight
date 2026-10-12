@@ -124,3 +124,39 @@ def test_two_plays_on_one_sku_leave_one_play_forecast_set(sandbox, now_asof):
     sku = skus.pop()
     mine = [r for r in sandbox.read("forecasts") if r["sku"] == sku and r.get("includes_plays")]
     assert mine and len({r["run_id"] for r in mine}) == 1 and mine[0]["run_id"].startswith("refc_play_cola_ds02_v1")
+
+
+def _with_existing_copy(store, play_id):
+    from agents.gate.store import load_catalogue
+    from jobs.sense.copy import generate_copy
+
+    row = store.find("plays", play_id=play_id)[-1]
+    play = json.loads(row["play_json"])
+    gap = store.find("gaps", gap_id=play["gap_id"])[-1]
+    product = load_catalogue(store)[play["target"]["sku"]]
+    play["copy"]["variants"] = generate_copy(play, product, None, gap["evidence"].get("expiry_date"), play["copy"]["language_set"])
+    assert play["copy"]["variants"]
+    approve_mod._save_play(store, row, play)
+    return play["copy"]["variants"]
+
+
+def test_play_with_existing_copy_makes_no_bigquery_call_and_keeps_the_response_shape(sandbox, now_asof, vertex_cfg, monkeypatch):
+    now, as_of = now_asof
+    calls: list[int] = []
+
+    def forbidden(*a, **k):
+        calls.append(1)
+        raise AssertionError("BigQuery copy must not be called for a play that already has copy")
+
+    monkeypatch.setattr(approve_mod, "generate_copy_bigquery", lambda *a, **k: [])
+    base = approve(sandbox, load_tenant(), TEA, now, as_of=as_of)  # no BigQuery rows -> templated path
+    assert base["copy"]["source"] == "templated"
+    existing = _with_existing_copy(sandbox, "play_chips_ds07_v1")
+    monkeypatch.setattr(approve_mod, "generate_copy_bigquery", forbidden)
+    resp = approve(sandbox, load_tenant(), "play_chips_ds07_v1", now, as_of=as_of)
+    assert calls == []
+    assert resp["copy"]["source"] == "existing" and resp["copy"]["variants"] == len(existing) and resp["copy"]["rejected"] == []
+    assert set(base) == set(resp) and set(base["copy"]) == set(resp["copy"])
+    assert resp["offers_written"] == resp["assignment"]["treated_n"] > 0
+    texts = {o["text"] for o in sandbox.find("offers", play_id="play_chips_ds07_v1")}
+    assert texts <= {v["text"] for v in existing}
