@@ -12,6 +12,8 @@ in the tree.
 
 ## Correction, 22 Sep: the live-Vertex and AI.GENERATE_TABLE blockers below were real, are now closed
 
+**12 Oct caveat (applies to the AI.GENERATE_TABLE item in this correction):** the 22 Sep end-to-end result was a single verified run, not the usual live outcome now. On the live demo, Approve attempts BigQuery `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy (the usual outcome on the live demo): 24 h of Cloud Run logs show 31 budget expiries and no BigQuery success, and a direct warm call takes about 3.5 to 4 s. The offer copy a customer sees is therefore usually templated.
+
 Everything under "Not measured, and why" that blamed missing Vertex credentials or a missing IAM
 grant no longer applies -- both were re-tested with real credentials in a later session and both
 now work. Specifically:

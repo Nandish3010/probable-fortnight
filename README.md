@@ -32,7 +32,7 @@ Gemini 3.5 Flash on Vertex AI plans each play inside an ADK agent. It proposes t
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
+| Copy | `flash`: on the vertex backend, Approve attempts BigQuery `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy (the usual outcome on the live demo) | vernacular variants when the BigQuery call returns in time | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
