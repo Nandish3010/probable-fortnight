@@ -6,11 +6,12 @@ Moved from the README.
 
 The 60-second beat opens on `gap_tea_ds04`: 103 units of Darjeeling Tea 100G at dark store DS-04,
 ₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a real, committed Gemini
-recording, badged `Recorded from Gemini · 12 Oct 2026`: five independent live Vertex runs
-(`harness/record_flagship_traces.py --gap gap_tea_ds04 --runs 5`, `gemini-3.5-flash`, prompt v6)
-all reached `proposed` with 0 fallbacks in 21.9 to 26.7 s, each after one schema-rejected
-`propose_play` attempt (an unexpected `id` field); `harness/seed_plays.py` seeds the best of the
-five that still validates against the tenant (run 2, first of four runs tied on margin). The play
+recording, badged `Recorded from Gemini · 12 Oct 2026`: 16 independent live Vertex runs in two sets
+(`gemini-3.5-flash`). Set b, 8 runs on the then-current prompt v6, all reached `proposed` with 0 fallbacks in
+19.1 to 28.9 s, and 7 of 8 passed on the first attempt. Set c, 8 runs on prompt v7, all reached `proposed` with
+0 fallbacks in 19.0 to 31.4 s, 7 of 8 with no rejection, and every run states both figures (the improvement over
+doing nothing and the beat over a blanket markdown). `harness/seed_plays.py` seeds the pinned run, `c/run_02`,
+which was accepted on its first attempt (pin in `eval/raw/seed_pins.json`). The play
 is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers (468 before
 consent) across 5 segments, expected margin ₹9,191 (waste avoided ₹9,397 minus transfer cost
 ₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186
