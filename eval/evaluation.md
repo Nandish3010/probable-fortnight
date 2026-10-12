@@ -440,7 +440,7 @@ sequential BigQuery waits, each with an independent 8s timeout (`timeout_s=8.0`,
 once to the load job, once to the `AI.GENERATE_TABLE` query) -- a worst case of ~16s on its own,
 before any of the rest of `/approve`'s work. Default lowered to `timeout_s=3.0` (~6s worst case
 across both waits); `services/api/approve.py`'s comment at the call site updated to match. Not
-re-measured live for the reason stated above.
+re-measured live for the reason stated above. Superseded by PR #90: the copy branch now has a hard 3 s wall-clock budget (`TAAL_COPY_BUDGET_S`) that starts at the top of `approve()`, and the templated copy is used past it.
 
 **Not done in this session, and why:** a fresh `harness/sweep_live.py` run against a live-Vertex
 server, correctly pinned with `TAAL_NOW` on the server process this time -- no Vertex credentials
