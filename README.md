@@ -12,10 +12,10 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
 1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
-2. Click **Approve** (7 to 15 s). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
+2. Click **Approve** (about 3 to 7 s; measured 12 Oct after #90, first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
 3. Click **Chat as Ravi** and the offer arrives. Then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
-Live re-plan about 27 s, Approve 7 to 15 s (recorded plays; 6 to 7 s for scripted ones); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+Live re-plan about 27 s, Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
 
 Demo video: link added at submission
 
