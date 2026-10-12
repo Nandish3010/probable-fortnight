@@ -440,7 +440,7 @@ sequential BigQuery waits, each with an independent 8s timeout (`timeout_s=8.0`,
 once to the load job, once to the `AI.GENERATE_TABLE` query) -- a worst case of ~16s on its own,
 before any of the rest of `/approve`'s work. Default lowered to `timeout_s=3.0` (~6s worst case
 across both waits); `services/api/approve.py`'s comment at the call site updated to match. Not
-re-measured live for the reason stated above.
+re-measured live for the reason stated above. Superseded by PR #90: the copy branch now has a hard 3 s wall-clock budget (`TAAL_COPY_BUDGET_S`) that starts at the top of `approve()`, and the templated copy is used past it.
 
 **Not done in this session, and why:** a fresh `harness/sweep_live.py` run against a live-Vertex
 server, correctly pinned with `TAAL_NOW` on the server process this time -- no Vertex credentials
@@ -1103,7 +1103,7 @@ One set of numbers, used identically in the README, the deck (slides 12 and 16) 
 |---|---|---|---|
 | Live plan (re-plan), deployed, planner elapsed | p50 **26.5 s**, p95 **31.8 s**; 22/24 = **92%** model-planned, 0 fallbacks; the 2 misses were unobservable (cold-instance 404) and count as not passed | 11 Oct 2026 | `eval/raw/plan_live_2026-10-12.json` |
 | Recorded planner runs | 21.8 to 27.6 s (chips, 5/5, 10 Oct); 21.9 to 26.7 s (Tea, 5/5, 12 Oct) | 10 and 12 Oct 2026 | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
-| Approve (copy and re-forecast run concurrently) | **7 to 15 s** on the recorded Gemini plays (Tea 11.4 to 15.3 s, chips 7 to 10 s); **6 to 7 s** warm for scripted plays (6.3 to 6.6 s measured on the scripted Tea fixture before it was replaced by the recording) | 12 Oct 2026 | `eval/raw/approve_timing_2026-10-12.json` (hand-transcribed from curl sessions, not a percentile estimate; the recorded-play samples are the three Tea calls at about 04:45 IST) |
+| Approve (copy and re-forecast run concurrently; copy call first, PR #90) | **about 3 to 7 s** measured 12 Oct after #90: Tea 4.0, 6.8, 3.3, 3.3 s; chips 3.3, 3.3 s (warm instance, fresh visitor per call, agents revision 00129). First call after idle takes longer. Before #90 (history): recorded plays 7 to 15 s (Tea 11.4 to 15.3 s, chips 7 to 10 s), scripted plays 6 to 7 s | 12 Oct 2026 | `eval/raw/approve_timing_2026-10-12b.json` (six curl samples, method inside); pre-#90 samples in `eval/raw/approve_timing_2026-10-12.json` |
 | Approve before that change (gemini-2.5-flash) | 8.3 s and 10.6 s | 21 and 28 Sep 2026 | `eval/raw/sweep_vertex_2026-09-21.txt`; `eval/raw/post_deploy_check_2026-09-28/summary.json` |
 | Customer agent turn (gemini-2.5-flash) | p50 4.56 s, p95 6.48 s | 28 Sep 2026 | `eval/raw/customer_latency_2026-09-28/analysis.json` |
 

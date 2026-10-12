@@ -1,0 +1,29 @@
+{
+  "what": "Approve latency on the deployed API after PR #90 (copy call submitted first under a 3 s budget; plays that already carry copy skip it). Six wall-clock samples: four Tea (the Darjeeling Tea hero play, a recorded Gemini run, gap_tea_ds04) and two chips (a recorded play).",
+  "date": "2026-10-12",
+  "measured_at": "about 09:55 IST, after the owner merged #90 (main 891f806)",
+  "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
+  "service_revision": "taal-agents-00129, serving 100% of traffic",
+  "method": {
+    "tool": "curl, one POST per sample; the number is the wall time of that request",
+    "instance": "warm: none of the six was a first call after idle; the first call after idle takes longer (the pre-#90 cold-ish call in approve_timing_2026-10-12.json was 10.1 s)",
+    "visitor": "a fresh X-Taal-Visitor value for every call, so each approve starts from a new visitor store",
+    "service": "min-instances 0, max-instances 1, concurrency 20 (agents service)"
+  },
+  "samples": [
+    { "play": "tea", "seconds": 4.0 },
+    { "play": "tea", "seconds": 6.8 },
+    { "play": "tea", "seconds": 3.3 },
+    { "play": "tea", "seconds": 3.3 },
+    { "play": "chips", "seconds": 3.3 },
+    { "play": "chips", "seconds": 3.3 }
+  ],
+  "summary": {
+    "tea_seconds": [4.0, 6.8, 3.3, 3.3],
+    "chips_seconds": [3.3, 3.3],
+    "range_seconds": [3.3, 6.8],
+    "published_range": "about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer)"
+  },
+  "caveat": "Six samples from one morning, not a percentile estimate. The range is what was measured, not a service-level target. Before #90 the same recorded plays took 7 to 15 s (see approve_timing_2026-10-12.json, kept as history).",
+  "history": "approve_timing_2026-10-12.json holds the pre-#90 samples and stays unchanged"
+}
