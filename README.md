@@ -49,7 +49,7 @@ Gemini 3.5 Flash on Vertex AI plans each play inside an ADK agent. It proposes t
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash`: on the vertex backend, Approve attempts BigQuery `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy (the usual outcome on the live demo) | vernacular variants when the BigQuery call returns in time | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
+| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only). It runs in the background when a play is proposed or opened, and Approve uses that result if it is ready or arrives within its 3 s budget; otherwise templated copy ships. The Approve response names which one shipped (`copy.source`: `bigquery`, `templated` or `existing`) | vernacular variants when the BigQuery call returns in time | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -119,12 +119,12 @@ BigQuery batch path status and the 27 Sep incidents: [eval/incidents_2026-09-27.
 | Expected margin and write-off avoided after Approve | Projected | At the default response prior; a projection on a seeded tenant. |
 | Outcomes screen | Synthetic | Labelled SYNTHETIC until a pilot runs (`docs/pilot.md`). |
 
-Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because the state of a re-plan run lives in process memory; a second instance would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
+Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because each visitor's sandbox lives on the instance's local disk (`services/api/sandbox.py`) and re-plan run state lives in process memory; a second instance would not see a visitor's earlier writes and would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
 
 ## Scale, cost and pilot
 
 - **Scalability (estimate):** the Large profile (20,000 SKUs, 500 nodes, 1M customers, about 2,000 gaps a night after triage) keeps the same shape; only the Planner queue depth, BigQuery partition pruning and the triage threshold scale. No tenant that size has run, so its throughput is not measured ([`docs/scale.md`](docs/scale.md)).
-- **What breaks first:** `taal-agents` is pinned to `--max-instances 1` because re-plan run state lives in process memory (a second instance would 404 a poll), so one instance is the ceiling before anything else; then the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
+- **What breaks first:** `taal-agents` is pinned to `--max-instances 1` because the per-visitor sandbox is on local disk and re-plan run state is in process memory (moving both to shared storage is the fix), so one instance is the ceiling before anything else; then the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
 - **Run cost:** ₹486 a month measured on the demo tenant (usage to 23 Sep, no plays in the window, list prices, not a bill). Estimates by profile: Micro ₹200 to 500, Mid ₹2,500 to 5,000 (the demo persona), Large ₹1 to 2 lakh.
 - **Pilot design:** 50 to 60 consented testers for one week, a 40 to 50% holdout, the metric pre-registered, results labelled apart from seeded numbers ([`docs/pilot.md`](docs/pilot.md)). Nothing has been measured on real customers yet.
 - **Your data:** `uv run python -m data.ingest --products products.csv --batches inventory_batches.csv --sales sales.csv --tenant config/tenant.<name>.toml --out .local/data-<name>` (details below).
