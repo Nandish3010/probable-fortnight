@@ -1,5 +1,5 @@
 {
-  "what": "Approve latency on the deployed API after the concurrent-approve change (offer copy and re-forecast run concurrently), Tea play, fresh visitor each run. Hand-transcribed from curl sessions on 12 Oct 2026 (two sessions, six samples); there is no harness output file.",
+  "what": "Approve latency on the deployed API after the concurrent-approve change (offer copy and re-forecast run concurrently), Tea play, fresh visitor each run. The six `runs` below are the scripted Tea fixture, before PR #83 replaced it with a recorded Gemini run; `recorded_plays_after_83` holds the later samples. Hand-transcribed from curl sessions on 12 Oct 2026 (two sessions, six samples); there is no harness output file.",
   "date": "2026-10-12",
   "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
   "runs": [
@@ -36,17 +36,37 @@
     }
   ],
   "summary": {
-    "warm_range_s": [
-      6.3,
-      6.6
-    ],
     "after_idle_s": 10.1,
-    "published_range": "6 to 10 s",
+    "published_range": "7 to 15 s (recorded plays); 6 to 7 s warm (scripted plays)",
     "before_change_s": [
       8.3,
       10.6
     ],
-    "before_change_source": "eval/raw/sweep_vertex_2026-09-21.txt; eval/raw/post_deploy_check_2026-09-28/summary.json"
+    "before_change_source": "eval/raw/sweep_vertex_2026-09-21.txt; eval/raw/post_deploy_check_2026-09-28/summary.json",
+    "scripted_warm_range_s": [
+      6.3,
+      6.6
+    ],
+    "recorded_range_s": [
+      7,
+      15.3
+    ]
   },
-  "caveat": "Six hand-timed samples by curl on one evening against a scale-to-zero service: five warm (6.3 to 6.6 s) and one first call after idle (10.1 s). Not a percentile estimate. Mobile was slower (7.9 s) in the field-analysis check."
+  "caveat": "Six hand-timed samples by curl on one evening against a scale-to-zero service: five warm (6.3 to 6.6 s) and one first call after idle (10.1 s). Not a percentile estimate. Mobile was slower (7.9 s) in the field-analysis check. The recorded-play samples are fewer and were taken on a shared single instance; they show the range, not a percentile. The cause is under investigation (the copy step on recorded plays).",
+  "recorded_plays_after_83": {
+    "note": "Hand-transcribed from curl sessions on 12 Oct 2026, about 04:45 IST, after the Tea play became a recorded Gemini run. Tea 394 consented; chips 352. Chips were reported as a 7 to 10 s range, not as individual samples.",
+    "tea_seconds": [
+      15.3,
+      11.4,
+      14.7
+    ],
+    "chips_range_s": [
+      7,
+      10
+    ],
+    "also_measured_by_field_analysis_tea_seconds": [
+      13.4,
+      13.8
+    ]
+  }
 }
