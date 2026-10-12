@@ -21,10 +21,10 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
         "bundle": [
             "{name}: buy with {partner} for ₹{bundle_price} today at your Kutumb Mart store. Best before {best_before}.",
             "Today at Kutumb Mart: {name} and {partner} together for ₹{bundle_price}. Best before {best_before}.",
-            "Pair {name} with {partner} and pay ₹{bundle_price} for both at your Kutumb Mart store. Best before {best_before}.",
-            "{name} plus {partner}: one bundle, ₹{bundle_price}, at your Kutumb Mart store today. Best before {best_before}.",
+            "Pair {name} with {partner} for ₹{bundle_price} at your Kutumb Mart store. Best before {best_before}.",
+            "{name} plus {partner}: one bundle for ₹{bundle_price} at your Kutumb Mart store today. Best before {best_before}.",
             "Stocking up? Get {name} with {partner} for ₹{bundle_price} at Kutumb Mart. Best before {best_before}.",
-            "Your Kutumb Mart store has a bundle today: {name} with {partner} at ₹{bundle_price}. Best before {best_before}.",
+            "Your Kutumb Mart store has a bundle today: {name} with {partner} for ₹{bundle_price}. Best before {best_before}.",
         ],
         "coupon": [
             "{name}: {discount_pct}% off today at your Kutumb Mart store. Best before {best_before}.",
