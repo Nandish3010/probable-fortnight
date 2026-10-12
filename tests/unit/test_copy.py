@@ -50,3 +50,41 @@ def test_validate_copy_requires_disclosure_only_for_near_deadline_objectives():
     variant = {"segment_id": "seg_1", "language": "en", "text": "Try this again this week!", "disclosure_included": False}
     accepted, reasons = validate_copy([variant], non_deadline_play, BEST_BEFORE)
     assert accepted == [variant] and reasons == []
+
+
+def test_templated_variants_are_distinct_for_the_seeded_tea_and_chips_plays(base_store):
+    """Row 1.3: the Copy tab showed one sentence once per segment. Each segment now gets its own
+    phrasing of the same offer, with the same facts, and every line still passes the validator."""
+    import json
+
+    from agents.gate.store import load_catalogue
+
+    catalogue = load_catalogue(base_store)
+    for play_id in ("play_tea_ds04_v1", "play_chips_ds07_v1"):
+        play = json.loads(base_store.find("plays", play_id=play_id)[-1]["play_json"])
+        gap = base_store.find("gaps", gap_id=play["gap_id"])[-1]
+        best_before = gap["evidence"].get("expiry_date")
+        params = play.get("mechanic_params") or {}
+        partner = catalogue.get(params.get("bundle_sku") or "")
+        variants = generate_copy(play, catalogue[play["target"]["sku"]], partner, best_before, play["copy"]["language_set"])
+        texts = [v["text"] for v in variants]
+        assert len(texts) == len(play["audience"]["segment_ids"]) >= 5
+        assert len(set(texts)) == len(texts), texts
+        accepted, reasons = validate_copy(variants, play, best_before)
+        assert len(accepted) == len(variants) and reasons == []
+        assert all(v["disclosure_included"] for v in variants)
+        if "bundle_price" in params:
+            assert all(f"₹{params['bundle_price']:g}" in t for t in texts)
+
+
+def test_every_phrasing_keeps_its_facts_and_languages_stay_in_step():
+    from jobs.sense.copy import TEMPLATES
+
+    needs = {"bundle": ["{name}", "{partner}", "{bundle_price}", "{best_before}"], "coupon": ["{name}", "{discount_pct}", "{best_before}"],
+             "outlet_markdown": ["{name}", "{markdown_pct}", "{best_before}"], "transfer_plus_nudge": ["{name}", "{best_before}"], "preorder": ["{name}", "{eta}"]}
+    for lang, by_mech in TEMPLATES.items():
+        for mech, slots in needs.items():
+            tpls = by_mech[mech] if isinstance(by_mech[mech], list) else [by_mech[mech]]
+            assert len(set(tpls)) == len(tpls) >= 5
+            for t in tpls:
+                assert all(sl in t for sl in slots), (lang, mech, t)

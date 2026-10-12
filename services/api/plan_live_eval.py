@@ -22,13 +22,19 @@ def load_plan_live_eval(root: Path | None = None, source: str = SOURCE) -> dict[
     try:
         raw = json.loads(((root or _ROOT) / source).read_text())
         s = raw["summary"]
-        return {
+        out = {
             "date": str(raw["date"]),
             "passed": int(s["passed"]),
             "total": int(s["total"]),
             "p50_s": float(s["p50_s"]),
             "source": source,
         }
+        # p95_s is additive and fail-soft: older evidence files without it still load.
+        try:
+            out["p95_s"] = float(s["p95_s"])
+        except (KeyError, TypeError, ValueError):
+            pass
+        return out
     except (OSError, ValueError, KeyError, TypeError) as e:
         log.info("plan_live_eval omitted from /health: %s", e)
         return None
