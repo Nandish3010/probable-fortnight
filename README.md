@@ -10,19 +10,12 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC).
 
 ## Judge quick-start
 
-Three clicks to the result, then chat. Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s; deployed via `infra/deploy.sh`; the local demo runs with `make api` + `make web`, see Development). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
-1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
-2. Click **Approve** (about 3 to 7 s; measured 12 Oct after #90, first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, a projection on a seeded tenant.
-3. Click **Chat as Ravi** and the offer arrives. Then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
+Open https://taal-web-2obkp776ca-el.a.run.app (the first load after idle takes 8 to 12 s). The demo clock is pinned to 12 Sep 2026.
+1. Click **Run the 60-second beat**: the Darjeeling Tea card shows 103 units and ₹35,020 at stake, 24 days before the online sell-by.
+2. Click **Approve** (about 3 to 7 s): 355 customers treated, 39 held out, "Recovered vs doing nothing ₹9,191".
+3. Click **Chat as Ravi**, then **Send** and **Add to cart**: the offer arrives with its best-before date, and the order totals ₹450.
 
-Live re-plan about 27 s, Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer); evidence in [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
-
-Demo video: link added at submission
-
-- Deck: [`docs/deck.pdf`](docs/deck.pdf)
-- Reset demo data restores the seeded tenant for your visitor only.
-- Provenance badges: every panel carries a LIVE, REPLAY or SYNTHETIC badge (no REAL PILOT rows exist, so none is shown); the Desk's trace and re-plan result name the run's source instead (`Recorded from Gemini · <date>`, `Scripted fixture`, `Rules (fallback)` or `Live · Gemini`). Approve, chat, capture and execution are live calls; Sense is nightly and replayed. **Change policy → re-plan** is a live, streamed Gemini call on the deployed service.
-- What is real and what is simulated: see [the table](#what-is-real-what-is-simulated).
+**Change policy → re-plan** is a live, streamed Gemini call (about 27 s). Every panel carries a LIVE, REPLAY or SYNTHETIC badge. Reset restores the seeded tenant for your visitor only. The tenant is seeded and ₹9,191 is a projection (the play still nets -₹25,829 against the ₹35,020 at stake): see [what is real, what is simulated](#what-is-real-what-is-simulated). Latency evidence: [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026). Deck: [`docs/deck.pdf`](docs/deck.pdf). Demo video: link added at submission.
 
 ## How Gen AI is used
 
@@ -32,7 +25,7 @@ Gemini 3.5 Flash on Vertex AI plans each play inside an ADK agent. It proposes t
 |---|---|---|---|
 | Vision intake | `flash` | SKU, best-before date, facings, confidence | which rows need confirmation (threshold); the sell-by date (rule) |
 | Planner | `flash` in a LoopAgent | mechanic, audience, rationale, alternatives, revision after a failed guardrail | every rupee (estimator), guardrails, holdout, play validity |
-| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only, at approve time; falls back to templates on any failure/timeout) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
+| Copy | `flash` via BigQuery `AI.GENERATE_TABLE` (vertex backend only), generated when a play is proposed or opened so it is ready at Approve; templated if it has not arrived within Approve's 3 s budget. The Approve response names which one shipped (`copy.source`) | vernacular variants | discount values, best-before disclosure (validator; runs on generated and templated copy alike) |
 | Customer agent | `flash` | dialogue, substitution reasoning, envelope | stock, offer eligibility, arm, consent, order prices |
 | Measure, Sense, Approve | none | | lift, CI, priors, assignment, forecast |
 
@@ -123,12 +116,12 @@ BigQuery batch path status and the 27 Sep incidents: [eval/incidents_2026-09-27.
 | Expected margin and write-off avoided after Approve | Projected | At the default response prior; a projection on a seeded tenant. |
 | Outcomes screen | Synthetic | Labelled SYNTHETIC until a pilot runs (`docs/pilot.md`). |
 
-Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because the state of a re-plan run lives in process memory; a second instance would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
+Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh:239`) because each visitor's sandbox lives on the instance's local disk (`services/api/sandbox.py`) and re-plan run state lives in process memory; a second instance would not see a visitor's earlier writes and would answer a poll with 404. `min-instances` stays 0, so the first request after idle is slower.
 
 ## Production path
 
 - **Scalability (estimate):** the Large profile (20,000 SKUs, 500 nodes, 1M customers, about 2,000 gaps a night after triage) keeps the same shape; only the Planner queue depth, BigQuery partition pruning and the triage threshold scale. No tenant that size has run, so its throughput is not measured ([`docs/scale.md`](docs/scale.md)).
-- **What breaks first:** `taal-agents` is pinned to `--max-instances 1` because re-plan run state lives in process memory (a second instance would 404 a poll), so one instance is the ceiling before anything else; then the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
+- **What breaks first:** `taal-agents` is pinned to `--max-instances 1` because the per-visitor sandbox is on local disk and re-plan run state is in process memory (moving both to shared storage is the fix), so one instance is the ceiling before anything else; then the Planner fan-out queue past a few thousand gaps a night if triage is set too low, then the in-process re-forecast under many concurrent Approves (`docs/scale.md`, "What breaks first").
 - **Run cost:** ₹486 a month measured on the demo tenant (usage to 23 Sep, no plays in the window, list prices, not a bill). Estimates by profile: Micro ₹200 to 500, Mid ₹2,500 to 5,000 (the demo persona), Large ₹1 to 2 lakh.
 - **Pilot design:** 50 to 60 consented testers for one week, a 40 to 50% holdout, the metric pre-registered, results labelled apart from seeded numbers ([`docs/pilot.md`](docs/pilot.md)). Nothing has been measured on real customers yet.
 - **Your data:** `uv run python -m data.ingest --products products.csv --batches inventory_batches.csv --sales sales.csv --tenant config/tenant.<name>.toml --out .local/data-<name>` (details below).
