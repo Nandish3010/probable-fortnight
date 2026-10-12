@@ -90,23 +90,26 @@ def test_a_forecast_failure_does_not_cancel_the_copy_branch(run):
 
 
 def test_wall_time_is_the_max_of_the_two_branches_not_the_sum(run):
-    """Approve has about a second of fixed local work (reading and rewriting the sandbox tables),
-    so the whole call cannot come in under 0.5 s whatever the branches do. The fakes therefore
-    stamp their own start and end, and the assertion is on the span they cover together: two 0.3 s
-    sleeps that overlap take about 0.3 s, and run back to back they would take 0.6 s."""
+    """The copy call starts at the top of approve(), underneath the assignment and the regressor
+    write, and the re-forecast starts after those. Fakes sleep 0.6 s (copy) and 0.3 s (forecast)
+    and stamp their own start and end. Back to back after the local work the call would take at
+    least pre + 0.9 s, where pre is when the forecast started; overlapped it takes about
+    max(0.6, pre + 0.3), so it must come in at least 0.2 s under the back-to-back floor."""
     stamps: dict[str, tuple[float, float]] = {}
 
-    def timed(name, ret):
+    def timed(name, secs, ret):
         def fake(*a, **k):
             t0 = time.perf_counter()
-            time.sleep(SLEEP_S)
+            time.sleep(secs)
             stamps[name] = (t0, time.perf_counter())
             return ret
 
         return fake
 
-    resp, wall = run(copy_fake=timed("copy", []), forecast_fake=timed("forecast", []))
-    span = max(e for _, e in stamps.values()) - min(s for s, _ in stamps.values())
-    print(f"\nbranch span {span:.3f}s (sequential would be {2 * SLEEP_S:.1f}s); whole approve {wall:.3f}s")
+    t_begin = time.perf_counter()
+    resp, wall = run(copy_fake=timed("copy", 0.6, []), forecast_fake=timed("forecast", 0.3, []))
+    pre = stamps["forecast"][0] - t_begin
+    print(f"\nlocal work before the forecast {pre:.3f}s; whole approve {wall:.3f}s; back to back would be >= {pre + 0.9:.3f}s")
     assert resp["status"] == "approved" and set(stamps) == {"copy", "forecast"}
-    assert SLEEP_S <= span < 0.5, f"expected about max(a, b)={SLEEP_S}s, not a + b={2 * SLEEP_S}s; got {span:.3f}s"
+    assert stamps["copy"][0] < stamps["forecast"][0] < stamps["copy"][1]
+    assert wall < pre + 0.9 - 0.2, f"copy and forecast should overlap; got {wall:.3f}s with {pre:.3f}s of local work first"

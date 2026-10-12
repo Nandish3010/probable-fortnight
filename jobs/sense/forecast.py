@@ -101,16 +101,23 @@ class SeriesModel:
         return v
 
 
-def _load_history(store: LocalStore, cluster_of: dict[str, str]) -> tuple[dict[tuple[str, str], dict[date, tuple[float, bool]]], dict[tuple[str, str], float]]:
+def _load_history(store: LocalStore, cluster_of: dict[str, str], skus: set[str] | None = None) -> tuple[dict[tuple[str, str], dict[date, tuple[float, bool]]], dict[tuple[str, str], float]]:
     """Cluster-level history and trailing-28-day node shares."""
     cluster_hist: dict[tuple[str, str], dict[date, list]] = defaultdict(lambda: defaultdict(lambda: [0.0, False]))
     node_recent: dict[tuple[str, str], float] = defaultdict(float)
     max_date: date | None = None
-    rows = store.read("sales_daily")
-    for r in rows:
-        d = date.fromisoformat(r["date"])
-        if max_date is None or d > max_date:
-            max_date = d
+    if skus:
+        # One SKU's rows only (the approve re-forecast): skip parsing the other SKUs' lines. The
+        # trailing-28-day cutoff still comes from the latest date in the WHOLE table, as before.
+        rows = store.read_where("sales_daily", "sku", sorted(skus))
+        latest = store.max_str("sales_daily", "date")
+        max_date = date.fromisoformat(latest) if latest else None
+    else:
+        rows = store.read("sales_daily")
+        for r in rows:
+            d = date.fromisoformat(r["date"])
+            if max_date is None or d > max_date:
+                max_date = d
     cutoff = (max_date or date.min) - timedelta(days=LEVEL_WINDOW - 1)
     for r in rows:
         d = date.fromisoformat(r["date"])
@@ -132,13 +139,13 @@ def forecast(store: LocalStore, as_of: date, run_id: str, skus: list[str] | None
     nodes_in_cluster: dict[str, list[str]] = defaultdict(list)
     for n in nodes:
         nodes_in_cluster[n["cluster_id"]].append(n["node_id"])
-    hist, node_recent = _load_history(store, cluster_of)
+    want = set(skus) if skus else None
+    hist, node_recent = _load_history(store, cluster_of, want)
     regs: dict[tuple[str, str, str], tuple[bool, bool]] = {}
     for r in store.read("future_regressors"):
         key = (r["date"], r["sku"], r["cluster_id"])
         prev = regs.get(key, (False, False))
         regs[key] = (prev[0] or bool(r["on_promo"]), prev[1] or bool(r["is_festival"]))
-    want = set(skus) if skus else None
     out: list[dict[str, Any]] = []
     tenant = nodes[0]["tenant_id"] if nodes else "unknown"
     for (sku, cluster), series in sorted(hist.items()):

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,44 @@ class LocalStore:
             return []
         with open(p, encoding="utf-8") as f:
             return [json.loads(line) for line in f if line.strip()]
+
+    def read_where(self, table: str, field: str, values: Iterable[Any]) -> list[dict[str, Any]]:
+        """Rows whose `field` is in `values`: the same rows, in the same order, as filtering
+        `read(table)`, but lines that cannot match are skipped before json.loads (a substring
+        pre-filter on the encoded value, then an exact check on the parsed row). Meant for the
+        big tables (sales_daily, forecasts) when a request needs one SKU."""
+        wanted = list(values)
+        if type(self).read is not LocalStore.read:
+            return [r for r in self.read(table) if r.get(field) in wanted]
+        p = self._path(table)
+        if not p.exists():
+            return []
+        tokens = {json.dumps(v, ensure_ascii=a) for v in wanted for a in (False, True)}
+        out = []
+        with open(p, encoding="utf-8") as f:
+            for line in f:
+                if any(t in line for t in tokens):
+                    r = json.loads(line)
+                    if r.get(field) in wanted:
+                        out.append(r)
+        return out
+
+    def max_str(self, table: str, field: str) -> str | None:
+        """The largest value of a string `field` over the whole table (ISO dates sort as dates).
+        Regex over the raw text when every non-blank line yields exactly one match, else a full
+        parse, so an unusual encoding costs time, never correctness."""
+        if type(self).read is not LocalStore.read:
+            vals = [r[field] for r in self.read(table) if r.get(field) is not None]
+            return max(vals) if vals else None
+        p = self._path(table)
+        if not p.exists():
+            return None
+        text = p.read_text(encoding="utf-8")
+        found = re.findall(r'"' + re.escape(field) + r'": "([^"\\]*)"', text)
+        if len(found) == text.count("\n") and text.endswith("\n") and "\n\n" not in text:
+            return max(found) if found else None
+        vals = [r[field] for r in self.read(table) if r.get(field) is not None]
+        return max(vals) if vals else None
 
     def write(self, table: str, rows: Iterable[dict[str, Any]]) -> None:
         with open(self._path(table), "w", encoding="utf-8") as f:

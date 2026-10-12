@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from functools import lru_cache
 from typing import Any
 
 TEMPLATES = {
@@ -92,7 +93,16 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
     return " ".join(parts)
 
 
-def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 6.0) -> list[dict[str, Any]]:
+@lru_cache(maxsize=4)
+def _bq_client(project: str, region: str):
+    """One BigQuery client per (project, region) for the life of the process: building it
+    (credential discovery, session setup) on every approve cost real time on the critical path."""
+    from google.cloud import bigquery
+
+    return bigquery.Client(project=project, location=region)
+
+
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 4.5) -> list[dict[str, Any]]:
     """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
     `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
     are never populated by this codebase -- LocalStore is the system of record -- so this cannot
@@ -127,7 +137,7 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     if not requests:
         return []
 
-    client = bigquery.Client(project=project, location=region)
+    client = _bq_client(project, region)
     # AI.GENERATE_TABLE reads its prompt from a column literally named `prompt` -- there is no
     # STRUCT field to rename it (`prompt_column` is rejected: "unsupported setting field"), and
     # `output_schema` must live inside the STRUCT too, not as a separate named (=>) argument
@@ -153,8 +163,16 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
         "(SELECT * FROM UNNEST(@rows)), "
         "STRUCT('copy_text STRING' AS output_schema))"
     )
-    job_config = bigquery.QueryJobConfig(query_parameters=[rows_param])
-    by_key = {(r["segment_id"], r["language"]): r["copy_text"] for r in client.query(query, job_config=job_config).result(timeout=timeout_s)}
+    # `timeout` here is NOT a cap on the call. In google-cloud-bigquery it bounds each HTTP request
+    # (a getQueryResults long-poll can itself block for the whole value, and the loop only gives up
+    # once the budget is overdrawn, so one wait can run to about twice it), and the default
+    # job_retry silently re-submits the query on jobBackendError/jobInternalError/
+    # jobRateLimitExceeded for up to 10 minutes. Together those made the "6 s" copy step take 9 to
+    # 13 s live. So: no client-side retries, a server-side job timeout, and approve() additionally
+    # enforces a hard wall-clock deadline of its own (services/api/approve.py::COPY_BUDGET_S).
+    job_config = bigquery.QueryJobConfig(query_parameters=[rows_param], job_timeout_ms=int(timeout_s * 1000))
+    job = client.query(query, job_config=job_config, timeout=timeout_s, retry=None, job_retry=None)
+    by_key = {(r["segment_id"], r["language"]): r["copy_text"] for r in job.result(timeout=timeout_s, retry=None, job_retry=None)}
 
     variants = []
     for seg in play["audience"]["segment_ids"]:
