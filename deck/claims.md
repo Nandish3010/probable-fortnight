@@ -32,8 +32,7 @@ Dates are the dates of the measurement, not of the deck.
 | 5 | Low-confidence rows must be confirmed | `agents/capture/vision.py:25` |
 | 6 | Six steps, two loops (A: play into forecast; B: outcomes into priors) | `README.md:85-90` |
 | 6 | Six gap types (Sense produces six; enum lists seven, see slide 5 row); eight guardrails | `README.md:51`; `README.md:86-87`; `agents/gate/models.py:35-38`; `agents/gate/models.py:44-46` |
-| 7 | Recorded chips run, 10 Oct, gemini-3.5-flash: 2 proposed, 1 rejected on a schema check, the second passes all eight guardrails | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `docs/hero_plays.md:24-49` |
-| 7 | Chips trace: the play's expected outcome is 24.22 units and Rs 126.42 margin; slide 15 chips lot: play net -Rs 8,468 vs blanket markdown -Rs 8,189, so behind by Rs 279 (different scope: play margin vs whole-lot counterfactual) | `eval/raw/planner_real_traces_2026-10-10/summary.json:242-245`; `eval/raw/tea_beat_api_2026-10-10.json:25-30` |
+| 7 | Recorded tea run, 12 Oct, gemini-3.5-flash: attempt 1 rejected on a schema check (extra field), attempt 2 passes all guardrails | `eval/raw/planner_real_traces_tea_2026-10-12/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/run_02/result.json`; `eval/raw/planner_real_traces_tea_2026-10-12/run_02/trace.jsonl` |
 | 7 | Trace and chat screenshots are the redesigned app (frames from the UI session, 12 Oct) | `deck/img/trace-attempts.png`; `deck/img/chat-gloss.png` |
 | 7 | Screenshots (Play Desk trace, customer chat with English gloss) | `deck/img/trace-attempts.png`; `deck/img/chat-gloss.png` |
 | 8 | Scheduler 20:00 and 20:30 UTC | `infra/deploy.sh:331`; `infra/deploy.sh:361` |
@@ -55,7 +54,7 @@ Dates are the dates of the measurement, not of the deck.
 | 10 | Buyer is the category or supply-chain head; basis per node per month or % of rupees rescued | `README.md:46`; `docs/DECISIONS.md:554` |
 | 10 | Break-even illustration: ₹347,356 per 28-day run at the 5% prior / 16 nodes (10 dark stores + 6 outlets) ≈ ₹21,710 per node; less the Mid profile cost ₹2,500 to 5,000 a month / 16 = ₹156 to ₹313 per node (the measured ₹486 / 16 ≈ ₹30 had zero plays in its window) | `README.md:48`; `eval/raw/portfolio_2026-09-24.json`; `docs/scale.md:83-85`; `eval/raw/cost_measurement_2026-09-23.json:312` |
 | 10 | 16 nodes (10 dark stores, 6 outlets) | `eval/raw/docs_truth_sweep_2026-09-27/tenant_counts.json:21` |
-| 11 | Outcomes screenshot, live app 12 Oct: Tea, 355 offered, 39 held out, no orders yet, 0.0 points, 95% CI -9.0 to +1.1, inconclusive, SYNTHETIC | `deck/img/outcomes.png` |
+| 11 | Outcomes screenshot after Fast-forward (sandbox, 12 Oct): Tea, 355 offered, 39 held out, 1 of 355 vs 0 of 39 ordered, +0.3 pp, 95% CI -8.7 to +1.6, inconclusive, SYNTHETIC | `deck/img/outcomes.png`; `eval/raw/tea_recorded_beat_2026-10-12.json:49-50`; `eval/raw/tea_recorded_beat_2026-10-12.json:85`; `eval/raw/tea_recorded_beat_2026-10-12.json:105` |
 | 11 | 70% confidence threshold for the confirm step | `agents/capture/vision.py:25` |
 | 11 | Screenshots (phone confirm step, Outcomes with SYNTHETIC badge) | `deck/img/phone-confirm.png`; `deck/img/outcomes.png` |
 | 12 | Header: measured and dated, each card names its source file; Approve card labelled hand-timed | `eval/raw/approve_timing_2026-10-12.json` |
