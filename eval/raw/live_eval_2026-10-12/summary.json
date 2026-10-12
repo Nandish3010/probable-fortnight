@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-12",
+  "model": "gemini-3.5-flash",
+  "location": "asia-south1",
+  "code_base": "origin/main f7af482, planner prompt v6",
+  "planner_deadline_s": 120,
+  "counts": {
+    "evalsets": 46,
+    "response_match_pass": 43,
+    "trajectory_pass": 1,
+    "both_pass": 1,
+    "rationale_judge_pass": 15,
+    "rationale_judge_n": 15,
+    "rationale_judge_mean": 5.0
+  },
+  "previous_run": {
+    "date": "2026-10-09",
+    "model": "gemini-2.5-flash",
+    "response_match_pass": 38,
+    "trajectory_pass": 6,
+    "both_pass": 6,
+    "rationale_judge_pass": 15
+  },
+  "result": "Run 2026-10-12 against live Vertex AI on gemini-3.5-flash. ADK planner evalsets (46, the same 46 built from the 28 Sep gemini-2.5-flash recordings): **response match 43/46** (final response matched the recording at >= 0.8; 9 Oct on gemini-2.5-flash: 38/46). Exact trajectory match passes **1/46**, so 1/46 pass both metrics (9 Oct: 6/46 and 6/46). The trajectory number fell: of the 45 trajectory failures, the recording has 2 or more propose_play attempts in 41, while gemini-3.5-flash proposed the play on its first attempt in 40 (4 needed 2 attempts, 1 needed 3); the recordings come from gemini-2.5-flash, so it measures departure from the old model's retry pattern, not planner correctness. The 3 response-match misses are evalsets whose 28 Sep recording ended with an empty final turn (reference text empty); the model returned a play in all three. Failure classes over the 45 trajectory failures (`adk_vertex/divergence.json`): 26 differ in both the propose_play retry count and the estimate/guardrail count, 17 in propose_play retries only, 2 in estimate/guardrail counts only. Rationale judge (same 15 plays and rubric as 21 Sep and 9 Oct; judge model gemini-3.5-flash): **15/15 score >= 4.0, mean 5.0/5**; the two negative sanity checks were not re-run, and a perfect score from a judge of the same model family is weak evidence. The planner prompt was v6 (origin/main f7af482); prompt v7 (PR 98) was not on main at run time, so this is not a measurement of v7. No quota or billing error occurred.",
+  "source": "`TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 TAAL_PLANNER_DEADLINE_S=120 uv run --with \"google-adk[eval]==2.9.0\" python -m harness.run_evals --out eval/raw/live_eval_2026-10-12/adk_vertex` and `uv run python -m harness.classify_eval_divergence --out eval/raw/live_eval_2026-10-12/adk_vertex/divergence.json` -> `eval/raw/live_eval_2026-10-12/adk_vertex/scores.json`, `.../divergence.json`; `uv run python -m harness.rationale_judge --plays eval/raw/rationale_judge_plays_2026-09-21/*.json --segments .local/data/segments.jsonl --policy-v2-file fixtures/policy_v2.txt --store .local/data --out eval/raw/live_eval_2026-10-12/rationale_judge.json` -> `eval/raw/live_eval_2026-10-12/rationale_judge.json` (the 3 MB `adk eval` log is not committed)"
+}

@@ -4,12 +4,13 @@ Forecast, propose, approve, offer, measure: one loop that sells at-risk stock be
 
 | Result on the judge path | Number |
 |---|---|
+| 28-day portfolio, expected margin | **₹347,356** projected at the 5% default response prior (₹1.41 to 6.19 lakh across the 2% to 10% priors); seeded tenant, projected |
 | Hero play, recovered vs doing nothing | **₹9,191**, projected on a seeded tenant (one tea lot, 103 units) |
 | Beat over a blanket 20% markdown | **+₹6,186** |
 | Customers treated / held out | 355 / 39 (synthetic orders; the effect is not measured yet) |
 | Approve | about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer) |
 | Plan live | 22 of 24 model-planned on `gemini-3.5-flash`; planner p50 26.5 s, p95 31.8 s (11 Oct) |
-| Planner evalsets | 46 built from recorded Gemini runs; response match 38/46 (9 Oct) |
+| Planner evalsets | 46 built from recorded Gemini runs; response match 43/46 on `gemini-3.5-flash` (12 Oct; 38/46 on `gemini-2.5-flash`, 9 Oct); exact trajectory 1/46 |
 | Tests and CI gate | 470+ pytest and 490+ Playwright tests in `make verify` (`.github/workflows/verify.yml`) |
 | 60-second judge path | 3 clicks: Run the 60-second beat, Approve, Chat as Ravi |
 
@@ -144,7 +145,7 @@ Voice (Gemini Live) is not part of this submission: it is a documented stub with
 
 [`eval/evaluation_table.md`](eval/evaluation_table.md) is the submission table, built by `make eval-table` from `eval/evaluation.md` and `eval/raw/`: every cell is parsed from committed output, none is typed by hand. Rows this project cannot produce yet (pilot results, billing-export cost) say so.
 
-From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` as its fallback, both verified with real calls (`eval/raw/model_verification_2026-10-10.json`). Eval cards from before the switch ran on `gemini-2.5-flash` and have not been re-run: the 9 Oct live eval (ADK response match 38/46, exact trajectory 6/46, rationale judge 15/15; `eval/raw/live_eval_2026-10-09/`), the agent simulation, vision and customer-latency runs, and the cost figure.
+From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` as its fallback, both verified with real calls (`eval/raw/model_verification_2026-10-10.json`). The planner ADK eval was re-run on `gemini-3.5-flash` on 12 Oct 2026 (46 evalsets built from recorded `gemini-2.5-flash` runs, planner prompt v6): response match 43/46 (38/46 on `gemini-2.5-flash`, 9 Oct), exact trajectory 1/46 (6/46 on 9 Oct), rationale judge 15/15 (same-family judge, weak evidence); `eval/raw/live_eval_2026-10-12/`. The trajectory number fell because the recordings contain more `propose_play` retries than `gemini-3.5-flash` makes (it proposed on the first attempt in 40 of the 45 trajectory failures), so it measures departure from the old model's retry pattern, not planner correctness. Other eval cards from before the switch ran on `gemini-2.5-flash` and have not been re-run: the agent simulation, vision and customer-latency runs, and the cost figure.
 
 Live plan results are in [How Gen AI is used](#how-gen-ai-is-used). Latency numbers and test counts (470+ pytest, 490+ Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
 

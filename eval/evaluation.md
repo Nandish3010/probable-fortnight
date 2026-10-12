@@ -1065,6 +1065,49 @@ the 4 MB `adk eval` log is not committed; no thought-signature fields were prese
   family as the planner, so this is weak evidence of rationale quality; the human-labelled
   agreement subset is still not done.
 
+## Live model evaluation, dated run (2026-10-12, gemini-3.5-flash)
+
+A second manual run of both live-model evals against Vertex AI, this time on `gemini-3.5-flash`
+(`config/models.toml` `ids.flash`), project `amru-509214`, `asia-south1`, planner deadline
+`TAAL_PLANNER_DEADLINE_S=120`. Same commands, same 46 evalsets, same criteria
+(`agents/planner/evalsets/test_config.json`: exact trajectory with args ignored, threshold 0.8;
+response match 0.8) and the same 15 plays and rubric for the judge as the 9 Oct run, so the two
+runs are comparable. Everything below is the first and only run of the day; nothing was filtered,
+and no case was re-run to improve a number. Raw files: `eval/raw/live_eval_2026-10-12/`
+(`summary.json` feeds table row 16; the 3 MB `adk eval` log is not committed). No quota or billing
+error occurred.
+
+| Metric | 9 Oct, gemini-2.5-flash | 12 Oct, gemini-3.5-flash |
+|---|---|---|
+| ADK response match (>= 0.8) | 38/46 | **43/46** |
+| Exact trajectory | 6/46 | **1/46** |
+| Pass both metrics | 6/46 | **1/46** |
+| Rationale judge (>= 4.0; mean) | 15/15; 5.0 | **15/15; 5.0** |
+
+- **Response match 43/46.** The 3 misses are evalsets whose 28 Sep recording ended in an empty
+  final turn (reference text empty, so the match score is 0.0); `gemini-3.5-flash` returned a play
+  (`DONE play_<id>_v1`) in all three, and in all 45 trajectory-failing cases it returned a play.
+- **Exact trajectory 1/46, lower than 6/46.** This is a real drop in the measured number and is
+  reported as measured. The evalsets are built from the 28 Sep `gemini-2.5-flash` recordings, which
+  mostly contain 2 or more `propose_play` attempts (41 of the 45 trajectory failures). On
+  `gemini-3.5-flash` the model proposed the play on its first attempt in 40 of those 45 (4 needed 2
+  attempts, 1 needed 3), usually calling `estimate_outcomes`, `check_guardrails`, `propose_play` once
+  each. The exact-sequence metric therefore measures departure from the old model's retry pattern,
+  not whether the plan is right; it should not be read as a regression in planner quality, and it
+  also does not show an improvement. Failure classes (`adk_vertex/divergence.json`, 45 failures): 26
+  differ in both the `propose_play` retry count and the estimate/guardrail count, 17 in
+  `propose_play` retries only, 2 in estimate/guardrail counts only.
+- **Rationale judge 15/15, mean 5.0/5**, judge model `gemini-3.5-flash`. The judge is the same
+  model family as the planner and a perfect score is weak evidence; the two negative sanity checks
+  were not re-run and the human-labelled agreement subset is still not done.
+- **What changed since 9 Oct:** the model (`gemini-2.5-flash` to `gemini-3.5-flash`, 10 Oct switch),
+  `propose_play` accepting a top-level `id` as an alias of `play_id` (removes the schema-slip retry),
+  and the thinking levels in `config/models.toml`. **Planner prompt v7 is not part of this run:** v7
+  ships in PR 98 and was not on `main` (f7af482, prompt v6) when this ran, so this does not
+  measure v7; the evalsets are replays of recordings and a v7 re-run is a separate, small cost.
+- **Not measured here:** Vertex token cost for this run (the harness does not log tokens); expected
+  at a few US dollars at list price and no quota event was seen.
+
 ## Live plan, 24 runs on the deployed API (2026-10-11)
 
 - **22 of 24 live re-plans were model-planned, 0 fell back to rules** (12 on `gap_tea_ds04`, 12 on
