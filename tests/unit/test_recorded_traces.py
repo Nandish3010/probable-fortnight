@@ -335,3 +335,46 @@ def test_seed_plays_uses_the_committed_tea_recording_and_stubs_the_rest(tmp_path
 
     for gap_id in ("gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"):
         assert by_gap[gap_id]["play"]["source"] == "scripted_stub", gap_id
+
+
+def test_a_seed_pin_overrides_the_default_choice_and_a_bad_pin_is_ignored(tmp_path, base_recording_out, data_dir):
+    raw_root = tmp_path / "raw"
+    out_dir = _copy_recording(base_recording_out, raw_root)
+    _relabel_as_vertex(out_dir, run_indices=(1, 2))
+    default_dir = tmp_path / "default"
+    shutil.copytree(data_dir, default_dir)
+    res, msg = rt.seed_from_recording(default_dir, GAP_ID, raw_root)
+    assert res is not None and "pinned" not in msg
+
+    (raw_root / "seed_pins.json").write_text(json.dumps({GAP_ID: f"{out_dir.name}/run_02"}), encoding="utf-8")
+    assert rt.read_pins(raw_root) == {GAP_ID: f"{out_dir.name}/run_02"}
+    pinned_dir = tmp_path / "pinned"
+    shutil.copytree(data_dir, pinned_dir)
+    res, msg = rt.seed_from_recording(pinned_dir, GAP_ID, raw_root)
+    assert res is not None and f"{out_dir.name}/run_02" in msg and "pinned" in msg
+
+    (raw_root / "seed_pins.json").write_text(json.dumps({GAP_ID: f"{out_dir.name}/run_99"}), encoding="utf-8")
+    bad_dir = tmp_path / "bad"
+    shutil.copytree(data_dir, bad_dir)
+    res, msg = rt.seed_from_recording(bad_dir, GAP_ID, raw_root)
+    assert res is not None and "not usable" in msg
+
+
+def test_the_seeded_tea_hero_is_the_pinned_clean_recording_with_the_unchanged_numbers(tmp_path, data_dir):
+    """The Desk's Tea exhibit: one propose_play attempt, no rejection, and a rationale that states
+    the recovered figure and the beat over a blanket markdown. The play numbers are the hero numbers
+    that README, deck and video quote (they must not move when the exhibit is re-recorded)."""
+    seed_dir = tmp_path / "seed-target"
+    shutil.copytree(data_dir, seed_dir)
+    outs = asyncio.run(sp.seed_plays(str(seed_dir)))
+    tea = next(o for o in outs if o["play"]["gap_id"] == "gap_tea_ds04")
+    play = tea["play"]
+    assert (play["expected_outcome"]["margin_inr"], play["counterfactuals"]["play_net_inr"], play["counterfactuals"]["blanket_markdown_inr"]) == (9191.29, -25828.71, 32015.18)
+    assert (play["audience"]["size_after_consent"], play["mechanic_params"]["transfer_units"]) == (394, 103)
+    assert round(play["counterfactuals"]["blanket_markdown_inr"] + play["counterfactuals"]["play_net_inr"]) == 6186
+    assert "9191" in play["rationale"].replace(",", "") and "6186" in play["rationale"].replace(",", "")
+    assert next(g for g in play["guardrails"] if g["rule"] == "cite_or_drop")["passed"]
+    summary = next(e for e in reversed(tea["events"]) if e.get("kind") == "run_summary")
+    assert summary["recorded_in"] == "eval/raw/planner_real_traces_tea_2026-10-12c"
+    proposes = [e for e in tea["events"] if "propose_play" in str(e.get("function_response", ""))]
+    assert len(proposes) == 1 and "'valid': True" in str(proposes[0]["function_response"]), "the exhibit trace shows one propose_play, accepted first time"

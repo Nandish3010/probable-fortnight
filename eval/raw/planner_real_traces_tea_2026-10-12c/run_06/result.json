@@ -1,0 +1,174 @@
+{
+  "run_id": "run_tea_ds04_v1_762a21b5",
+  "play": {
+    "citations": [
+      {
+        "ref": "gap_tea_ds04",
+        "type": "gap"
+      },
+      {
+        "ref": "est-v1",
+        "type": "estimator"
+      },
+      {
+        "ref": "v1",
+        "type": "policy"
+      },
+      {
+        "ref": "sense_20260912_baseline_2aaad73c",
+        "type": "forecast"
+      }
+    ],
+    "mechanic": "transfer_plus_nudge",
+    "mechanic_params": {
+      "transfer_to_node": "OUT-01",
+      "transfer_units": 103
+    },
+    "objective": "clear_online_sellby",
+    "alternatives": [
+      {
+        "mechanic_params": {
+          "bundle_price": 480,
+          "bundle_sku": "SKU-KHARI-200G"
+        },
+        "expected_margin_inr": 1969.01,
+        "expected_units": 27.64,
+        "rejected_because": "Policy prefers transfers for premium tea and this alternative has a lower expected margin than the transfer play.",
+        "mechanic": "bundle"
+      },
+      {
+        "rejected_because": "Policy prefers transfers for premium tea and this alternative has a lower expected margin than the transfer play.",
+        "mechanic_params": {
+          "discount_pct": 10
+        },
+        "expected_units": 27.64,
+        "mechanic": "coupon",
+        "expected_margin_inr": 1796.54
+      }
+    ],
+    "channel": "web_chat",
+    "gap_id": "gap_tea_ds04",
+    "audience": {
+      "segment_ids": [
+        "seg_2",
+        "seg_1",
+        "seg_3",
+        "seg_5",
+        "seg_6"
+      ],
+      "filters": {},
+      "size_before_consent": 468,
+      "purpose": "marketing",
+      "size_after_consent": 394
+    },
+    "counterfactuals": {
+      "do_nothing_inr": 35020.0,
+      "blanket_markdown_inr": 32015.18,
+      "blanket_markdown_pct": 20.0,
+      "play_net_inr": -25828.71
+    },
+    "expected_outcome": {
+      "units": 27.64,
+      "margin_inr": 9191.29,
+      "waste_avoided_inr": 9397.29,
+      "discount_cost_inr": 0.0,
+      "ci_low": 1.49,
+      "ci_high": 80.63,
+      "prior_n": 20.0,
+      "measured_n": 0,
+      "estimator_version": "est-v1"
+    },
+    "rationale": "This play transfers 103 units of Darjeeling Tea to Outlet 01 to avoid online sell-by breach. It targets 394 customers across high-affinity segments. This play recovers 9191.29 INR compared to doing nothing (35020.00 INR plus -25828.71 INR) and beats a blanket markdown by 6186.47 INR (32015.18 INR plus -25828.71 INR). This aligns with the policy preference for transfers over markdowns for premium tea.",
+    "play_id": "play_tea_ds04_v1",
+    "window": {
+      "start": "2026-09-12T00:00:00Z",
+      "end": "2026-10-06T23:59:59Z"
+    },
+    "target": {
+      "batch_ids": [
+        "B-TEA-DS04-01"
+      ],
+      "node_ids": [
+        "DS-04"
+      ],
+      "sku": "SKU-DARJEELING-TEA-100G",
+      "deadline_date": "2026-10-06",
+      "units": 103,
+      "deadline_type": "online_sellby"
+    },
+    "guardrails": [
+      {
+        "rule": "margin_floor",
+        "passed": true,
+        "detail": "net margin 24.44% (net price 450.00, cost 340.00) vs premium_tea floor 12.00%"
+      },
+      {
+        "rule": "frequency_cap",
+        "passed": true,
+        "detail": "all 394 customers under 2 plays in 7 days"
+      },
+      {
+        "rule": "consent_required",
+        "passed": true,
+        "detail": "audience filtered by consent: 468 -> 394"
+      },
+      {
+        "rule": "sellby_disclosure",
+        "passed": true,
+        "detail": "copy pending; best-before disclosure enforced at copy validation"
+      },
+      {
+        "rule": "subscription_protect",
+        "passed": true,
+        "detail": "transfer_plus_nudge is not a discount play"
+      },
+      {
+        "rule": "no_cannibalise_stockout",
+        "passed": true,
+        "detail": "transfer_plus_nudge does not push SKU-DARJEELING-TEA-100G; stockout rule not applicable"
+      },
+      {
+        "rule": "holdout_required",
+        "passed": true,
+        "detail": "holdout 10%, min_treated_n 20"
+      },
+      {
+        "rule": "cite_or_drop",
+        "passed": true,
+        "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+      }
+    ],
+    "holdout": {
+      "seed": "seed-play_tea_ds04_v1",
+      "min_treated_n": 20,
+      "fraction": 0.1
+    },
+    "copy": {
+      "copy_status": "pending",
+      "variants": [],
+      "language_set": [
+        "en"
+      ]
+    },
+    "created_at": "2026-09-12T03:30:00Z",
+    "status": "proposed",
+    "policy_version": "v1",
+    "trace_ref": "events/run_tea_ds04_v1_762a21b5",
+    "cost": {
+      "plan_cost_inr": 3.94,
+      "conversation_budget_inr": 51.22,
+      "pct_of_rupees_at_stake": 0.158
+    },
+    "source": "live_gemini"
+  },
+  "status": "proposed",
+  "iterations": 1,
+  "policy_version": "v1",
+  "elapsed_ms": 18940,
+  "planner_source": "model",
+  "fallback_reason": null,
+  "source": "live_gemini",
+  "wall_time_s": 18.976,
+  "started_at": "2026-10-12T15:36:42Z",
+  "finished_at": "2026-10-12T15:37:01Z"
+}
