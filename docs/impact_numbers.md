@@ -22,4 +22,4 @@ India scale, as reported (the letter itself was not opened): Inc42 (22 Jul 2026)
 
 Buyer and pricing basis: the buyer is the category / supply-chain head, who owns write-off; the basis is either a fee per dark store per month or a percentage of rupees rescued measured against the holdout (`fee = pct x rupees rescued vs holdout`). No price point is set until a pilot measures that lift.
 
-Payback illustration, synthetic and projected, not a quote: break-even fee per node per month = projected margin per node - run cost per node = ₹347,356 / 16 nodes - ₹486 / 16 nodes, about ₹21,710 - ₹30.
+Projected margin less run cost, illustration, synthetic and projected, not a quote: projected margin per node less run cost per node = ₹347,356 / 16 nodes - ₹486 / 16 nodes, about ₹21,710 - ₹30. This is not a break-even: no fee is set.
