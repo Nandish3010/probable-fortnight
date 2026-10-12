@@ -4,12 +4,14 @@ Idempotent: a second approve returns the recorded result with `note`."""
 from __future__ import annotations
 
 import copy as copylib
+import hashlib
 import json
 import logging
 import os
+import threading
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import date, datetime
 from typing import Any
@@ -29,6 +31,13 @@ logger = logging.getLogger(__name__)
 # worker thread is abandoned. generate_copy_bigquery's own timeout is a per-request bound and
 # job_retry can re-submit the query (see its comment), so this deadline is the real cap.
 COPY_BUDGET_S = float(os.environ.get("TAAL_COPY_BUDGET_S", "3.0"))
+# The same AI.GENERATE_TABLE call measures about 3-4 s (jobs/sense/copy.py), at or past the budget
+# above, so run inside Approve it mostly lost to the templates. It is therefore also run ahead of
+# Approve -- when a play is proposed, when a play is opened, and for the seeded proposed plays at
+# startup -- with this much more generous timeout, off any request's critical path. Approve then
+# finds the result ready (see `copy_ahead`). TAAL_COPY_AHEAD=0 turns it off.
+COPY_AHEAD_TIMEOUT_S = float(os.environ.get("TAAL_COPY_AHEAD_TIMEOUT_S", "20"))
+COPY_AHEAD_RETRY_S = 300.0  # a failed attempt for the same copy inputs is not repeated sooner than this
 
 
 class WindowExpired(Exception):
@@ -53,7 +62,7 @@ def _writeoff(series: dict[str, float], on_hand: int, deadline: str, unit_cost: 
     return round(max(0.0, on_hand - sold) * unit_cost, 2)
 
 
-def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str]:
+def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]], timeout_s: float | None = None) -> tuple[list[dict[str, Any]], str]:
     """The templated variants, replaced slot by slot by AI.GENERATE_TABLE output (vertex backend
     only) when it returns within COPY_BUDGET_S (3.0 s, a hard wall-clock cap enforced in approve();
     generate_copy_bigquery's own timeout_s is kept just under it). Approve is on the demo's critical
@@ -67,7 +76,7 @@ def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: s
             project = os.environ.get(models["vertex"]["project_env"])
             if not project:
                 raise RuntimeError(f"{models['vertex']['project_env']} not set")
-            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"], timeout_s=max(1.0, COPY_BUDGET_S - 0.2))
+            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"], timeout_s=timeout_s if timeout_s is not None else max(1.0, COPY_BUDGET_S - 0.2))
             if bq_variants:
                 # Per (segment, language) slot: keep the BigQuery variant only if the same
                 # deterministic validator that gates templated copy accepts it; any slot it
@@ -81,6 +90,96 @@ def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: s
         logger.warning("copy generation via BigQuery AI.GENERATE_TABLE failed, falling back to templates: %s", e)
         variants, source = templated, "templated"
     return variants, source
+
+
+# ----------------------------------------------------------------------------- copy ahead of Approve
+#
+# Keyed by a fingerprint of everything the copy is built from (product, mechanic and its numbers,
+# segments, languages, best-before), never by play_id alone: an edited or re-planned play with
+# different numbers misses and falls back to the in-Approve call. Per process, like the rest of the
+# serving state; a miss only costs the old behaviour. Only BigQuery output is kept: a templated
+# result is what Approve computes anyway, in microseconds.
+_AHEAD: dict[str, Future] = {}
+_AHEAD_FAILED: dict[str, float] = {}
+_AHEAD_LOCK = threading.Lock()
+_AHEAD_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="copy-ahead")
+
+
+def copy_ahead_enabled() -> bool:
+    if os.environ.get("TAAL_COPY_AHEAD", "1") == "0":
+        return False
+    try:
+        return load_models()["backend"] == "vertex"
+    except Exception:
+        return False
+
+
+def _copy_inputs(store: LocalStore, play: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None, str | None]:
+    catalogue = load_catalogue(store)
+    product = catalogue[play["target"]["sku"]]
+    partner = catalogue.get((play.get("mechanic_params") or {}).get("bundle_sku") or "")
+    gaps = store.find("gaps", gap_id=play["gap_id"])
+    best_before = gaps[-1]["evidence"].get("expiry_date") if gaps else None
+    return product, partner, best_before
+
+
+def copy_fingerprint(play: dict[str, Any], product: dict[str, Any], partner: dict[str, Any] | None, best_before: str | None) -> str:
+    key = {
+        "sku": play["target"]["sku"], "name": product.get("name"), "partner": (partner or {}).get("name"),
+        "mechanic": play["mechanic"], "params": play.get("mechanic_params") or {}, "objective": play.get("objective"),
+        "segments": play["audience"]["segment_ids"], "languages": play["copy"]["language_set"], "best_before": best_before,
+    }
+    return hashlib.sha256(json.dumps(key, sort_keys=True, default=str).encode()).hexdigest()[:24]
+
+
+def _copy_ahead_work(play: dict[str, Any], product: dict[str, Any], partner: dict[str, Any] | None, best_before: str | None, fp: str) -> tuple[list[dict[str, Any]], str]:
+    t0 = time.perf_counter()
+    templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
+    variants, source = _bigquery_copy(play, product, best_before, templated, timeout_s=COPY_AHEAD_TIMEOUT_S)
+    took = time.perf_counter() - t0
+    if source != "bigquery":
+        with _AHEAD_LOCK:
+            _AHEAD.pop(fp, None)
+            _AHEAD_FAILED[fp] = time.monotonic()
+        logger.warning("copy ahead of Approve for %s did not produce BigQuery copy (%.1f s)", play.get("play_id"), took)
+    else:
+        logger.info("copy ahead of Approve for %s ready from BigQuery in %.1f s", play.get("play_id"), took)
+    return variants, source
+
+
+def schedule_copy_ahead(store: LocalStore, play: dict[str, Any]) -> bool:
+    """Start the BigQuery copy for `play` in the background unless it is already ready, already
+    running, failed recently, or the play already carries copy. Never raises; returns whether a
+    new job was started."""
+    try:
+        if not copy_ahead_enabled() or play.get("status") not in (None, "proposed", "modified") or (play.get("copy") or {}).get("variants"):
+            return False
+        product, partner, best_before = _copy_inputs(store, play)
+        fp = copy_fingerprint(play, product, partner, best_before)
+        with _AHEAD_LOCK:
+            if fp in _AHEAD or time.monotonic() - _AHEAD_FAILED.get(fp, -1e9) < COPY_AHEAD_RETRY_S:
+                return False
+            _AHEAD[fp] = _AHEAD_POOL.submit(_copy_ahead_work, copylib.deepcopy(play), product, partner, best_before, fp)
+        return True
+    except Exception as e:
+        logger.warning("could not schedule copy ahead of Approve for %s: %s", play.get("play_id"), e)
+        return False
+
+
+def schedule_copy_ahead_for_store(store: LocalStore, limit: int = 8) -> int:
+    """The seeded proposed plays, largest rupees at stake first (the hero play leads)."""
+    if not copy_ahead_enabled():
+        return 0
+    stake = {g["gap_id"]: float(g.get("rupees_at_stake") or 0) for g in store.read("gaps")}
+    plays = [json.loads(r["play_json"]) for r in store.read("plays") if r.get("status") == "proposed"]
+    plays.sort(key=lambda p: -stake.get(p["gap_id"], 0.0))
+    return sum(schedule_copy_ahead(store, p) for p in plays[:limit])
+
+
+def _copy_ahead_future(play: dict[str, Any], product: dict[str, Any], partner: dict[str, Any] | None, best_before: str | None) -> Future | None:
+    fp = copy_fingerprint(play, product, partner, best_before)
+    with _AHEAD_LOCK:
+        return _AHEAD.get(fp)
 
 
 def _reforecast(store: LocalStore, as_of: date, run_id: str, play: dict[str, Any], stale_rows: bool) -> tuple[list[dict[str, Any]], int]:
@@ -154,7 +253,12 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     templated: list[dict[str, Any]] = []
     if not use_existing:
         templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
-        copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated)
+        # Copy already generated (or still generating) ahead of Approve for these exact inputs is
+        # taken instead of starting a second query; it gets the same budget below, so a job still
+        # in flight costs Approve no more than its own call would have.
+        copy_future = _copy_ahead_future(play, product, partner, best_before) if copy_ahead_enabled() else None
+        if copy_future is None:
+            copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated)
     # --- assignment by hash
     pctx = _planner_ctx(store, tenant)
     # An assortment_gap play's real, demonstrated askers live in the gap's evidence, never the
@@ -204,6 +308,9 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
             variants, copy_source = copy_future.result(timeout=max(0.0, COPY_BUDGET_S - (time.perf_counter() - t_copy)))
         except FutureTimeout:
             logger.warning("copy generation via BigQuery passed its %.1f s budget, using the templated variants", COPY_BUDGET_S)
+            variants, copy_source = templated, "templated"
+        except Exception as e:  # a copy-ahead job that died; the in-Approve branch never raises
+            logger.warning("copy generated ahead of Approve failed, using the templated variants: %s", e)
             variants, copy_source = templated, "templated"
     pool.shutdown(wait=False, cancel_futures=True)
     if forecast_error is not None:
