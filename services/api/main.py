@@ -149,10 +149,9 @@ class AssignmentOut(BaseModel):
 class CopyOut(BaseModel):
     variants: int
     rejected: list[str]
-    # "bigquery" (AI.GENERATE_TABLE, at or ahead of Approve), "templated" (the fallback), "existing"
-    # (the play already carried copy). Was computed but dropped from the wire, so no one outside
-    # the server could check which one a demo Approve actually used.
-    source: str
+    # Where the accepted variants came from: "existing" (the play already carried valid copy),
+    # "bigquery" (AI.GENERATE_TABLE output) or "templated". Additive (12 Oct 2026); optional.
+    source: str | None = None
 
 
 class ApproveResponseOut(BaseModel):
