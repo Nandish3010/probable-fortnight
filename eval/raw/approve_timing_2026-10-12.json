@@ -1,0 +1,52 @@
+{
+  "what": "Approve latency on the deployed API after the concurrent-approve change (offer copy and re-forecast run concurrently), Tea play, fresh visitor each run. Hand-transcribed from curl sessions on 12 Oct 2026 (two sessions, six samples); there is no harness output file.",
+  "date": "2026-10-12",
+  "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
+  "runs": [
+    {
+      "by": "backend-docs",
+      "seconds": 6.4,
+      "state": "warm"
+    },
+    {
+      "by": "backend-docs",
+      "seconds": 6.6,
+      "state": "warm"
+    },
+    {
+      "by": "backend-docs",
+      "seconds": 10.1,
+      "state": "first call after idle (cold-ish), not a warm sample"
+    },
+    {
+      "by": "field-analysis live check",
+      "seconds": 6.64,
+      "state": "warm",
+      "server_elapsed_ms": 6326
+    },
+    {
+      "by": "field-analysis live check",
+      "seconds": 6.32,
+      "state": "warm"
+    },
+    {
+      "by": "field-analysis live check",
+      "seconds": 6.44,
+      "state": "warm"
+    }
+  ],
+  "summary": {
+    "warm_range_s": [
+      6.3,
+      6.6
+    ],
+    "after_idle_s": 10.1,
+    "published_range": "6 to 10 s",
+    "before_change_s": [
+      8.3,
+      10.6
+    ],
+    "before_change_source": "eval/raw/sweep_vertex_2026-09-21.txt; eval/raw/post_deploy_check_2026-09-28/summary.json"
+  },
+  "caveat": "Six hand-timed samples by curl on one evening against a scale-to-zero service: five warm (6.3 to 6.6 s) and one first call after idle (10.1 s). Not a percentile estimate. Mobile was slower (7.9 s) in the field-analysis check."
+}

@@ -108,7 +108,7 @@ DECISIONS calls out for a manual policy-change beat rather than a fully automate
 | Planner Agent fan-out, 50 gaps, Batch API | The Batch API fan-out design in §18.3 has not been built; nothing in this repo submits a Batch job. |
 | BigQuery bytes scanned, one Sense run | Sense reads/writes `LocalStore`, not BigQuery, in this codebase today (verified: `grep -rn "bigquery.Client" agents/ services/ jobs/ data/ harness/` finds no hits outside the new `jobs/sense/copy.py::generate_copy_bigquery`). There is no BigQuery job for Sense to have a bytes-scanned figure. |
 | ~~`AI.GENERATE_TABLE` end-to-end copy generation~~ | **No longer true as of 22 Sep -- see the correction at the top of this file.** Now working end-to-end through a real `/approve` call, three real bugs fixed. Left struck through here rather than deleted so the "blocked, needs IAM" history stays visible. |
-| Planner live re-plan latency (p50/p95) and fallback rate at the 45 s deadline | No Google Cloud credential exists in this build container (`google.auth.exceptions.DefaultCredentialsError: File /root/.gcp/taal-deploy-key.json was not found.`), so neither the 5 independent recorded real-Gemini planner runs nor the 10 live re-plans this metric would need against a real Vertex backend could be produced. `harness/record_flagship_traces.py` and `harness/measure_live_rerun.py` are committed and produce this the moment a credential exists -- see "Planner: recorded traces and live re-plan (2026-09-27)" below for the exact commands. A stub-backend harness check of `harness/measure_live_rerun.py`'s own mechanics exists (`eval/raw/planner_rerun_harness_check_2026-09-27/`) but is explicitly labelled `"synthetic (stub backend) -- harness validation, not a Gemini latency"`, never this metric. |
+| Planner live re-plan latency (p50/p95) and fallback rate at the 45 s deadline | No Google Cloud credential exists in this build container (`google.auth.exceptions.DefaultCredentialsError: File /root/.gcp/taal-deploy-key.json was not found.`), so neither the 5 independent recorded real-Gemini planner runs nor the 10 live re-plans this metric would need against a real Vertex backend could be produced. `harness/record_flagship_traces.py` and `harness/measure_live_rerun.py` are committed and produce this the moment a credential exists -- see "Planner: recorded traces and live re-plan (2026-09-27)" below for the exact commands. A stub-backend harness check of `harness/measure_live_rerun.py`'s own mechanics exists (`eval/raw/planner_rerun_harness_check_2026-09-27/`) but is explicitly labelled `"synthetic (stub backend) -- harness validation, not a Gemini latency"`, never this metric. **Superseded 11 Oct 2026:** measured on the deployed service, 22 of 24 model-planned, planner p50 26.5 s, p95 31.8 s, 0 fallbacks at the 90 s deadline (`gemini-3.5-flash`; section "Latency, one story" below). |
 
 ### Note on row 5: two real bugs found and fixed to get this number at all
 
@@ -1093,3 +1093,18 @@ the 4 MB `adk eval` log is not committed; no thought-signature fields were prese
   Ravi's order is ₹450; the projected write-off moves from ₹35,186 to ₹28,659 (unchanged). Fast-forward
   with one synthetic order: +0.3 pp, 95% CI -8.7 to +1.6, inconclusive. These replace the scripted
   fixture's ₹7,498, 291 / 32 and ₹4,493.
+
+
+## Latency, one story (gemini-3.5-flash, 12 Oct 2026)
+
+One set of numbers, used identically in the README, the deck (slides 12 and 16) and the `/health` `plan_live_eval` block that the Plan live chip reads. Anything on `gemini-2.5-flash` (before the 10 Oct switch) is labelled as such and has not been re-run.
+
+| Step | Number | Date | Evidence |
+|---|---|---|---|
+| Live plan (re-plan), deployed, planner elapsed | p50 **26.5 s**, p95 **31.8 s**; 22/24 = **92%** model-planned, 0 fallbacks; the 2 misses were unobservable (cold-instance 404) and count as not passed | 11 Oct 2026 | `eval/raw/plan_live_2026-10-12.json` |
+| Recorded planner runs | 21.8 to 27.6 s (chips, 5/5, 10 Oct); 21.9 to 26.7 s (Tea, 5/5, 12 Oct) | 10 and 12 Oct 2026 | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
+| Approve (copy and re-forecast run concurrently) | **6 to 10 s** warm: 6.3 to 6.6 s measured, 10.1 s on the first call after idle | 12 Oct 2026 | `eval/raw/approve_timing_2026-10-12.json` (hand-transcribed from curl sessions: six samples, five warm and one first call after idle; not a percentile estimate) |
+| Approve before that change (gemini-2.5-flash) | 8.3 s and 10.6 s | 21 and 28 Sep 2026 | `eval/raw/sweep_vertex_2026-09-21.txt`; `eval/raw/post_deploy_check_2026-09-28/summary.json` |
+| Customer agent turn (gemini-2.5-flash) | p50 4.56 s, p95 6.48 s | 28 Sep 2026 | `eval/raw/customer_latency_2026-09-28/analysis.json` |
+
+The numbers are server-side planner time; a visitor's click-to-result adds polling, so a live click was seen to take 26 to 47 s on 12 Oct (field re-audit). Test counts at the same date: 464 pytest test functions and 473 Playwright tests in `make verify` (the CI gate, `.github/workflows/verify.yml`), plus 24 live-stack tests in a second CI job.
