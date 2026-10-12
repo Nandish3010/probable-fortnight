@@ -1,0 +1,18 @@
+{
+  "what": "Server-side split of POST /approve on the deployed API before the latency fix, one fresh visitor per call, read from the response fields elapsed_ms (whole approve) and forecast.latency_ms (the re-forecast alone). Hand-transcribed from curl on 12 Oct 2026; there is no harness output file.",
+  "date": "2026-10-12",
+  "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
+  "runs": [
+    {"play_id": "play_tea_ds04_v1", "wall_s": 7.94, "elapsed_ms": 7700, "forecast_latency_ms": 2462},
+    {"play_id": "play_chips_ds07_v1", "wall_s": 10.39, "elapsed_ms": 10153, "forecast_latency_ms": 2607},
+    {"play_id": "play_tea_ds04_v1", "wall_s": 13.67, "elapsed_ms": 13417, "forecast_latency_ms": 2591},
+    {"play_id": "play_chips_ds07_v1", "wall_s": 7.24, "elapsed_ms": 7002, "forecast_latency_ms": 2475}
+  ],
+  "local_reference": {
+    "where": "laptop, stub backend, FastAPI TestClient, fresh sandbox",
+    "before_fix": "approve 1.5 s for both plays, forecast 0.5 s (so the live forecast ran about 5x slower than the laptop)",
+    "after_fix": "approve 0.4 s for both plays, forecast 0.2 s"
+  },
+  "reading": "The same play ranged from 7.0 to 13.4 s on identical inputs while the forecast stayed at 2.5 s, so the variable part is the BigQuery copy branch. google-cloud-bigquery applies result(timeout=) per HTTP request and its default job_retry re-submits the query on backend and rate-limit errors, so the 6 s timeout did not cap that branch. The fixed floor (about 7 s) is local CPU work that ran in front of the copy call.",
+  "caveat": "Four samples, one afternoon, a scale-to-zero service shared with other sessions. The Cloud Run logs for the warning 'copy generation via BigQuery AI.GENERATE_TABLE failed' were not readable from this machine; they would show how often the copy call fails or exceeds its budget."
+}
