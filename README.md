@@ -10,7 +10,7 @@ Forecast, propose, approve, offer, measure: one loop that sells at-risk stock be
 | Approve | about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer) |
 | Plan live | 22 of 24 model-planned on `gemini-3.5-flash`; planner p50 26.5 s, p95 31.8 s (11 Oct) |
 | Planner evalsets | 46 built from recorded Gemini runs; response match 38/46 (9 Oct) |
-| Tests and CI gate | 464 pytest and 473 Playwright tests in `make verify` (`.github/workflows/verify.yml`) |
+| Tests and CI gate | 470+ pytest and 490+ Playwright tests in `make verify` (`.github/workflows/verify.yml`) |
 | 60-second judge path | 3 clicks: Run the 60-second beat, Approve, Chat as Ravi |
 
 [Live app](https://taal-web-2obkp776ca-el.a.run.app) · [Deck](docs/deck.pdf) · Video (link added at submission) · [API health](https://taal-agents-2obkp776ca-el.a.run.app/health)
@@ -145,7 +145,7 @@ Voice (Gemini Live) is not part of this submission: it is a documented stub with
 
 From 10 Oct 2026 the live model is `gemini-3.5-flash` in asia-south1 (`gemini-2.5-flash` retires on Vertex on 20 Oct 2026), with `gemini-3.5-flash-lite` as its fallback, both verified with real calls (`eval/raw/model_verification_2026-10-10.json`). Eval cards from before the switch ran on `gemini-2.5-flash` and have not been re-run: the 9 Oct live eval (ADK response match 38/46, exact trajectory 6/46, rationale judge 15/15; `eval/raw/live_eval_2026-10-09/`), the agent simulation, vision and customer-latency runs, and the cost figure.
 
-Live plan results are in [How Gen AI is used](#how-gen-ai-is-used). Latency numbers and test counts (464 pytest, 473 Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
+Live plan results are in [How Gen AI is used](#how-gen-ai-is-used). Latency numbers and test counts (470+ pytest, 490+ Playwright, in `make verify`): [`eval/evaluation.md`](eval/evaluation.md#latency-one-story-gemini-35-flash-12-oct-2026).
 
 ## More documentation
 
@@ -173,7 +173,7 @@ make fixtures   # rebuild committed golden plays, mutations, golden runs, evalse
 make openapi    # regenerate docs/openapi.yaml
 ```
 
-Green `make verify` (464 pytest and 473 Playwright tests, the CI gate in `.github/workflows/verify.yml`) is the only definition of done (`harness/`, `STATUS.md`). Specs: `docs/DECISIONS.md`; data model: `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`; pilot: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
+Green `make verify` (470+ pytest and 490+ Playwright tests, the CI gate in `.github/workflows/verify.yml`) is the only definition of done (`harness/`, `STATUS.md`). Specs: `docs/DECISIONS.md`; data model: `docs/DATA_MODEL.md`; architecture: `docs/architecture.md`; scale and cost: `docs/scale.md`; pilot: `docs/pilot.md`; privacy: `docs/privacy.md`; API: `docs/openapi.yaml`.
 
 ## Licence
 
