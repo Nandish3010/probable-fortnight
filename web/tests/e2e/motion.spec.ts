@@ -41,26 +41,67 @@ test.describe("motion, no preference", () => {
     expect(d).toBe(2000);
   });
 
-  test("the decision card's projected figure counts up once over 600 ms, with the final value in the DOM text from the start", async ({ page }) => {
+  test("the decision card's projected figure never counts: the final value is the text from the first frame, brought in by a short fade", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.addInitScript(() => {
-      const w = window as unknown as { __seen: string[]; __ghost: boolean };
+      const w = window as unknown as { __seen: { t: number; text: string }[]; __overlay: boolean };
       w.__seen = [];
-      w.__ghost = false;
-      new MutationObserver(() => {
+      w.__overlay = false;
+      const note = () => {
         const el = document.querySelector('[data-testid="preview-figure-amount"]');
-        if (el) w.__seen.push(el.textContent ?? "");
-        if (document.querySelector('[data-testid="preview-figure-count"]')) w.__ghost = true;
-      }).observe(document, { childList: true, subtree: true, characterData: true });
+        if (el) w.__seen.push({ t: performance.now(), text: el.textContent ?? "" });
+        if (document.querySelector('[data-testid="preview-figure-count"]')) w.__overlay = true;
+      };
+      new MutationObserver(note).observe(document, { childList: true, subtree: true, characterData: true });
+      const loop = () => {
+        note();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
     });
     await page.goto("/");
     const amount = page.getByTestId("preview-figure-amount");
     await expect(amount).toHaveText("₹9,191");
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __ghost: boolean }).__ghost)).toBe(true);
-    const seen = await page.evaluate(() => (window as unknown as { __seen: string[] }).__seen);
-    expect(new Set(seen)).toEqual(new Set(["₹9,191"])); // the real text never showed another value
-    await expect(page.getByTestId("preview-figure-count")).toHaveCount(0, { timeout: 3000 }); // and the count ends
-    await expect(amount).toHaveText("₹9,191");
+    // let the first 400 ms after it appeared go by, then read everything that was ever on screen
+    await page.waitForTimeout(500);
+    const { seen, overlay } = await page.evaluate(() => {
+      const w = window as unknown as { __seen: { t: number; text: string }[]; __overlay: boolean };
+      return { seen: w.__seen, overlay: w.__overlay };
+    });
+    expect(overlay).toBe(false); // no aria-hidden counting copy any more
+    expect(seen.length).toBeGreaterThan(5);
+    expect(new Set(seen.map((s) => s.text))).toEqual(new Set(["₹9,191"])); // never another value, from the first sighting on
+    // the figure is final at about 0, 100 and 300 ms after it first appeared
+    const t0 = seen[0].t;
+    for (const at of [0, 100, 300]) {
+      const near = seen.find((s) => s.t - t0 >= at);
+      expect(near?.text, `at ~${at} ms`).toBe("₹9,191");
+    }
+    await expect(page.getByTestId("preview-figure-count")).toHaveCount(0);
+  });
+
+  test("the figure's fade is opacity only and no longer than 200 ms", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+      const w = window as unknown as { __fade: { duration: number; props: string[] } | null };
+      w.__fade = null;
+      const loop = () => {
+        for (const a of document.getAnimations()) {
+          if (/figureFade/.test((a as CSSAnimation).animationName ?? "") && !w.__fade) {
+            const e = a.effect as KeyframeEffect;
+            w.__fade = { duration: Number(e.getComputedTiming().duration), props: Array.from(new Set(e.getKeyframes().flatMap((k) => Object.keys(k)))) };
+          }
+        }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("preview-figure-amount")).toHaveText("₹9,191");
+    const fade = await page.evaluate(() => (window as unknown as { __fade: { duration: number; props: string[] } | null }).__fade);
+    expect(fade).not.toBeNull();
+    expect(fade!.duration).toBeLessThanOrEqual(200);
+    expect(fade!.props.filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p))).toEqual(["opacity"]);
   });
 
   test("hover is colour and border only: no lift, no scale", async ({ page }) => {
@@ -82,7 +123,7 @@ test.describe("motion, no preference", () => {
 });
 
 test.describe("motion, reduced", () => {
-  test("nothing rises, nothing pulses, and the figure shows its final value with no count-up copy", async ({ page }) => {
+  test("nothing rises, nothing pulses, and the figure shows its final value with no fade and no counting copy", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
@@ -91,7 +132,7 @@ test.describe("motion, reduced", () => {
     const running = await page.evaluate(() =>
       document.getAnimations().filter((a) => {
         const n = (a as CSSAnimation).animationName;
-        return (n === "rise" || n === "livePulse") && a.playState === "running";
+        return (n === "rise" || n === "livePulse" || /figureFade/.test(n)) && a.playState === "running";
       }).length,
     );
     expect(running).toBe(0);
