@@ -1,0 +1,100 @@
+{
+  "what": "Approve latency on the deployed API after batch 2 (PR #103, main e388a4b). Six wall-clock samples on the two hero plays (three Tea, three chips), plus one sample each on two other seeded plays. Same method and schema as approve_timing_2026-10-12b.json.",
+  "date": "2026-10-13",
+  "measured_at": "about 11:25 IST, minutes after the deploy and the green smoke job of main run 38349023772",
+  "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
+  "service_revision": "taal-agents-00141-lhz, serving 100% of traffic (taal-web-00079-pp5 for the web service)",
+  "method": {
+    "tool": "curl, one POST per sample; seconds is the wall time of that request (time_total)",
+    "instance": "warm: the instance had just served the post-deploy smoke job, so no sample is a first call after idle. No cold first call was measured in this set; the first call after idle still takes longer (about 8 to 12 s per the 12 Oct measurements) and is not part of the published range.",
+    "visitor": "a fresh X-Taal-Visitor value for every call, so each approve starts from a new visitor store",
+    "service": "min-instances 0, max-instances 1, concurrency 20 (agents service)"
+  },
+  "samples": [
+    {
+      "play": "tea",
+      "play_id": "play_tea_ds04_v1",
+      "seconds": 2.145,
+      "server_elapsed_ms": 1934,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "chips",
+      "play_id": "play_chips_ds07_v1",
+      "seconds": 2.409,
+      "server_elapsed_ms": 2173,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "tea",
+      "play_id": "play_tea_ds04_v1",
+      "seconds": 2.145,
+      "server_elapsed_ms": 1910,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "chips",
+      "play_id": "play_chips_ds07_v1",
+      "seconds": 2.116,
+      "server_elapsed_ms": 1904,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "tea",
+      "play_id": "play_tea_ds04_v1",
+      "seconds": 2.137,
+      "server_elapsed_ms": 1917,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "chips",
+      "play_id": "play_chips_ds07_v1",
+      "seconds": 2.506,
+      "server_elapsed_ms": 2260,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    }
+  ],
+  "other_seeded_plays": [
+    {
+      "play": "quinoa",
+      "play_id": "play_quinoa_out02_v1",
+      "seconds": 2.216,
+      "server_elapsed_ms": 1981,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "kaju",
+      "play_id": "play_kaju_ds01_v1",
+      "seconds": 2.206,
+      "server_elapsed_ms": 1956,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    }
+  ],
+  "summary": {
+    "tea_seconds": [
+      2.145,
+      2.145,
+      2.137
+    ],
+    "chips_seconds": [
+      2.409,
+      2.116,
+      2.506
+    ],
+    "range_seconds": [
+      2.1,
+      2.5
+    ],
+    "published_range": "about 2 to 3 s warm (measured 13 Oct after batch 2; first call after idle takes longer)"
+  },
+  "caveat": "Eight samples from a few minutes of one morning, not a percentile estimate. The range is what was measured, not a service-level target. Every sample carried stored, BigQuery-generated copy (copy.source existing, provenance bigquery_pregenerated), so none of them waited on a model call inside Approve.",
+  "history": "approve_timing_2026-10-13.json holds the earlier 13 Oct samples taken right after batch 1 (about 1.3 to 3.3 s, some templated copy); approve_timing_2026-10-12.json (pre-#90) and approve_timing_2026-10-12b.json (after #90, 3.3 to 6.8 s) stay unchanged"
+}
