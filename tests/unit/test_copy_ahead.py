@@ -47,7 +47,7 @@ def _bq(calls: list, delay: float = 0.0):
     def fake(play, product, best_before, languages, **k):
         calls.append(k.get("timeout_s"))
         time.sleep(delay)
-        return [dict(v, text="Fresh pick: " + v["text"]) for v in generate_copy(play, product, None, best_before, languages)]
+        return [dict(v, text="Pick of the week: " + v["text"]) for v in generate_copy(play, product, None, best_before, languages)]
 
     return fake
 
@@ -89,7 +89,7 @@ def test_seeded_plays_get_bigquery_copy_ahead_and_approve_uses_it(sandbox, no_st
     resp = approve(sandbox, load_tenant(), TEA, now, as_of=datetime.fromisoformat(as_of).date())
     assert resp["copy"]["source"] == "bigquery" and resp["copy"]["rejected"] == []
     offers = sandbox.find("offers", play_id=TEA)
-    assert offers and all(o["text"].startswith("Fresh pick: ") for o in offers)
+    assert offers and all(o["text"].startswith("Pick of the week: ") for o in offers)
 
 
 def test_a_job_still_in_flight_is_awaited_not_duplicated(sandbox, no_stored_copy, now_asof, vertex_cfg, monkeypatch):

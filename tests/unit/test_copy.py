@@ -88,3 +88,90 @@ def test_every_phrasing_keeps_its_facts_and_languages_stay_in_step():
             assert len(set(tpls)) == len(tpls) >= 5
             for t in tpls:
                 assert all(sl in t for sl in slots), (lang, mech, t)
+
+
+# --- claims the offer does not make: rejected by the runtime validator, English and Kannada ---------
+
+import json
+
+import pytest
+
+from jobs.sense import copy_pregenerated as _cp
+from jobs.sense.copy import _bq_prompt_text, unsupported_claim
+
+
+def _variant(text, lang="en"):
+    return {"segment_id": "seg_1", "language": lang, "text": text, "disclosure_included": True}
+
+
+@pytest.mark.parametrize("text", [
+    "Freshly stocked for today! Best before 15 Oct 2026.",
+    "Just arrived and perfectly fresh. Best before 15 Oct 2026.",
+    "Fresh stock for your weekly shop. Best before 15 Oct 2026.",
+    "ತಾಜಾ ಸ್ಟಾಕ್ ಈಗ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026.",
+    "ಈಗಷ್ಟೇ ಬಂದಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026.",
+])
+def test_freshness_claims_are_rejected_for_every_mechanic_but_preorder(text):
+    for mechanic in ("bundle", "outlet_markdown", "coupon", "transfer_plus_nudge"):
+        play = {**PLAY, "mechanic": mechanic}
+        lang = "kn" if any("ಀ" <= c <= "೿" for c in text) else "en"
+        accepted, reasons = validate_copy([_variant(text, lang)], play, BEST_BEFORE)
+        assert accepted == [] and any("does not make" in r for r in reasons), (mechanic, text)
+    assert unsupported_claim(text, "preorder") is None  # stock arriving soon may be called fresh
+
+
+@pytest.mark.parametrize("text", [
+    "Your Darjeeling Tea 100G is waiting in your cart. Best before 15 Oct 2026.",
+    "Complete your order now. Best before 15 Oct 2026.",
+    "Your reservation is confirmed. Best before 15 Oct 2026.",
+    "Reserved for you at the outlet. Best before 15 Oct 2026.",
+    "We saved a pack for you. Best before 15 Oct 2026.",
+    "Limited time only. Best before 15 Oct 2026.",
+    "Today only! Best before 15 Oct 2026.",
+    "Last chance to pick it up. Best before 15 Oct 2026.",
+    "A new arrival at your store. Best before 15 Oct 2026.",
+    "ನಿಮ್ಮ ಕಾರ್ಟ್‌ನಲ್ಲಿ ಕಾಯುತ್ತಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026.",
+])
+def test_unsupported_claims_are_rejected_for_every_mechanic(text):
+    for mechanic in ("bundle", "outlet_markdown", "coupon", "transfer_plus_nudge", "preorder"):
+        play = {**PLAY, "mechanic": mechanic}
+        lang = "kn" if any("ಀ" <= c <= "೿" for c in text) else "en"
+        accepted, reasons = validate_copy([_variant(text, lang)], play, BEST_BEFORE)
+        assert accepted == [] and any("does not make" in r for r in reasons), (mechanic, text)
+
+
+def test_supported_wording_is_not_rejected():
+    ok, reasons = validate_copy([_variant("Masala Chips 200G with Cola Classic 250ML for Rs 61. Best before 15 Oct 2026."),
+                                 _variant("Add Masala Chips 200G to your usual order this week. Best before 15 Oct 2026.")], PLAY, BEST_BEFORE)
+    assert len(ok) == 2 and reasons == []
+
+
+def test_templated_copy_never_makes_those_claims():
+    for mechanic in ("bundle", "outlet_markdown", "coupon", "transfer_plus_nudge", "preorder"):
+        play = {**PLAY, "mechanic": mechanic, "mechanic_params": {"bundle_price": 61, "discount_pct": 10, "markdown_pct": 10}}
+        for v in generate_copy(play, PRODUCT, {"name": "Cola Classic 250ML"}, BEST_BEFORE, ["en", "kn"]):
+            assert unsupported_claim(v["text"], mechanic) is None, (mechanic, v["text"])
+
+
+def test_prompt_angle_has_no_freshness_wording_and_the_prompt_forbids_the_claims():
+    from jobs.sense.copy import SEGMENT_ANGLES
+
+    assert not any("fresh" in a.lower() for a in SEGMENT_ANGLES)
+    p = _bq_prompt_text("Darjeeling Tea 100G", "transfer_plus_nudge", None, None, "2026-11-20", "en", SEGMENT_ANGLES[1])
+    assert "never mention a cart or an order" in p and "Do not call the stock fresh or newly arrived" in p
+    assert "newly arrived" not in _bq_prompt_text("Cola Zero 500ML", "preorder", None, None, None, "en")
+
+
+def test_committed_pregenerated_copy_makes_none_of_those_claims(base_store):
+    """Over the committed fixture: no non-preorder variant says fresh/just arrived (EN or KN), and
+    no variant of any play mentions a cart, an order or a reservation it does not make."""
+    _cp.clear_cache()
+    fixture = _cp.load_fixture(_cp.FIXTURE_PATH)
+    assert fixture
+    for play_id, entry in fixture.items():
+        mechanic = json.loads(base_store.find("plays", play_id=play_id)[-1]["play_json"])["mechanic"]
+        for v in entry["variants"]:
+            assert unsupported_claim(v["text"], mechanic) is None, (play_id, v["segment_id"], v["language"], v["text"])
+            if mechanic != "preorder":
+                low = v["text"].lower()
+                assert not any(w in low for w in ("fresh", "just arrived")) and "ತಾಜಾ" not in v["text"] and "ಈಗಷ್ಟೇ" not in v["text"]

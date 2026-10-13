@@ -79,7 +79,7 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "{name} is now on the shelf at your nearest Kutumb Mart outlet. Best before {best_before}.",
             "Picking up groceries this week? {name} is now stocked at your nearest Kutumb Mart outlet. Best before {best_before}.",
             "New at your nearest Kutumb Mart outlet: {name}. Best before {best_before}.",
-            "{name} has just arrived at a Kutumb Mart outlet close to you. Best before {best_before}.",
+            "{name} is available at a Kutumb Mart outlet close to you. Best before {best_before}.",
             "Drop in to your nearest Kutumb Mart outlet: {name} is available now. Best before {best_before}.",
         ],
     },
@@ -124,7 +124,7 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ಈ ವಾರ ದಿನಸಿ ಖರೀದಿಗೆ ಹೋಗುತ್ತೀರಾ? {name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಇದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಹೊಸದಾಗಿ ಲಭ್ಯ: {name}. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
-            "{name} ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಈಗಷ್ಟೇ ಬಂದಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ದೊರೆಯುತ್ತದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಬನ್ನಿ: {name} ಈಗ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
         ],
     },
@@ -171,7 +171,7 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
 # facts, so they cannot introduce a number or date.
 SEGMENT_ANGLES = (
     "Lead with the offer itself.",
-    "Open with why now: the timing and freshness.",
+    "Open with why now: the timing.",
     "Use a warm, friendly tone and speak to the customer directly.",
     "Make it a single crisp sentence.",
     "Frame it as a helpful reminder for the weekly shop.",
@@ -221,7 +221,8 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
         parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
     if best_before:
         parts.append(f"State the best-before date {best_before} plainly.")
-    parts.append("Do not invent any other number or date. Describe only this offer: never say anything is free, never mention a cart, and promise nothing else. Keep it under 40 words.")
+    no_fresh = "" if mechanic == "preorder" else " Do not call the stock fresh or newly arrived."
+    parts.append("Do not invent any other number or date. Describe only this offer: never say anything is free, never mention a cart or an order, and promise nothing else." + no_fresh + " Keep it under 40 words.")
     if angle:
         parts.append(angle)
     return " ".join(parts)
@@ -320,6 +321,27 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     return variants
 
 
+# Claims no offer here makes. validate_copy rejects a variant that makes one, so output from the
+# model (BigQuery copy ahead of Approve, in Approve or pre-generated) falls back to the templated
+# line instead of shipping it. English and Kannada. Found in live copy: "waiting in your cart"
+# on a transfer-and-nudge play (nothing is in anyone's cart), "freshly stocked" on a bundle that
+# clears stock near its best-before date, "just arrived" on an outlet markdown.
+_FALSE_CLAIMS_ALL = re.compile(
+    r"\b(?:free|gift|complimentary|guarantee[sd]?|moved|cart|your order|your reservation|reserved for you|we saved"
+    r"|limited[- ]time|today only|only today|last chance|new arrivals?|hurry|while stocks? last)\b|ಕಾರ್ಟ್|ಕಾರ್ಟ",
+    re.IGNORECASE,
+)
+# Freshness claims are wrong for stock sold down near its best-before date; only a preorder (stock
+# arriving soon) can say fresh stock is coming.
+_FALSE_CLAIMS_NOT_PREORDER = re.compile(r"\b(?:fresh|freshly|just arrived)\b|ತಾಜಾ|ಈಗಷ್ಟೇ", re.IGNORECASE)
+
+
+def unsupported_claim(text: str, mechanic: str) -> str | None:
+    """The first claim in `text` that the offer does not make, or None."""
+    m = _FALSE_CLAIMS_ALL.search(text) or (None if mechanic == "preorder" else _FALSE_CLAIMS_NOT_PREORDER.search(text))
+    return m.group(0) if m else None
+
+
 def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_before: str | None) -> tuple[list[dict[str, Any]], list[str]]:
     """Reject a variant whose numbers disagree with the play or which omits the best-before line
     on a near-deadline play. Returns (accepted, reasons)."""
@@ -334,6 +356,10 @@ def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_bef
             if found and all(abs(f - float(pct)) > 0.01 for f in found):
                 reasons.append(f"{v['segment_id']}/{v['language']}: discount {found} != {pct}")
                 continue
+        claim = unsupported_claim(text, play.get("mechanic", ""))
+        if claim:
+            reasons.append(f"{v['segment_id']}/{v['language']}: claims the offer does not make: {claim!r}")
+            continue
         if need_disclosure and not v.get("disclosure_included"):
             reasons.append(f"{v['segment_id']}/{v['language']}: best-before missing")
             continue

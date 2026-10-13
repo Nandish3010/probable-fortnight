@@ -28,7 +28,7 @@ from typing import Any
 from agents.gate.config import load_models
 from agents.gate.store import LocalStore, load_catalogue
 from harness.seed_plays import DEMO_GAPS
-from jobs.sense.copy import _fmt_date, generate_copy_bigquery, validate_copy
+from jobs.sense.copy import _fmt_date, generate_copy_bigquery, unsupported_claim, validate_copy
 from jobs.sense.copy_pregenerated import FIXTURE_PATH, METHOD, fingerprint
 
 WARMUP_TIMEOUT_S = 300.0
@@ -36,8 +36,6 @@ CALL_TIMEOUT_S = 60.0
 ATTEMPTS = 8
 CHUNK = 2  # segments per BigQuery call
 _NUM = re.compile(r"\d+(?:[.,]\d+)*")
-# Claims the offer does not make. The prompt forbids them; this rejects a variant that makes one anyway.
-_FALSE_CLAIMS = re.compile(r"\b(free|cart|gift|complimentary|guarantee[sd]?|moved)\b", re.IGNORECASE)
 
 
 def allowed_numbers(play: dict[str, Any], best_before: str | None, partner_name: str = "", product_name: str = "") -> set[str]:
@@ -62,9 +60,9 @@ def slot_problems(v: dict[str, Any], play: dict[str, Any], best_before: str | No
     extra = [n for n in _NUM.findall(v["text"]) if n not in allowed]
     if extra:
         problems.append(f"{v['segment_id']}/{v['language']}: numbers not in the play's facts: {extra}")
-    claim = _FALSE_CLAIMS.search(v["text"])
+    claim = unsupported_claim(v["text"], play["mechanic"])
     if claim:
-        problems.append(f"{v['segment_id']}/{v['language']}: claims the offer does not make: {claim.group(0)!r}")
+        problems.append(f"{v['segment_id']}/{v['language']}: claims the offer does not make: {claim!r}")
     if play["mechanic"] == "bundle" and v["language"] == "en" and partner and partner.get("name"):
         head = re.sub(r"[^A-Za-z ]", " ", partner["name"]).split()
         if head and head[0].lower() not in v["text"].lower():
