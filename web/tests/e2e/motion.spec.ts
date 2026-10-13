@@ -26,6 +26,8 @@ test.describe("motion, no preference", () => {
   test("the rise leaves nothing behind: after it ends no transform or stacking context stays on the blocks", async ({ page }) => {
     await page.goto("/outcomes");
     await page.waitForTimeout(700);
+    // a slow runner may still be playing a rise: wait for the animations themselves, not a longer timer
+    await page.waitForFunction(() => document.getAnimations().every((a) => (a as CSSAnimation).animationName !== "rise"));
     const left = await page.evaluate(() => Array.from(document.querySelectorAll("main.page > *")).filter((el) => getComputedStyle(el).transform !== "none").length);
     expect(left).toBe(0);
   });

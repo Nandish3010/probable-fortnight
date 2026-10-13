@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { RiseGate } from "../components/RiseGate";
 import { SandboxBanner } from "../components/SandboxBanner";
 import { SiteFooter } from "../components/SiteFooter";
 import TopNav from "../components/TopNav";
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+        <RiseGate />
         <TopNav />
         <SandboxBanner />
         {children}
