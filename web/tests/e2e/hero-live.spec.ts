@@ -127,7 +127,8 @@ test.describe("the link starts Plan live on the Desk, once", () => {
     await page.goto("/desk?plan=live");
     await expect(page.getByTestId("plan-live")).toHaveText("Planning live…");
     await expect(page).toHaveURL(/\/desk$/);
-    await page.waitForTimeout(1500);
+    await expect.poll(() => mockCalls(page, "/rerun")).toBe(1);
+    await page.waitForTimeout(1200);
     expect(await mockCalls(page, "/rerun")).toBe(1);
     await page.reload();
     await expect(page.getByTestId("play-detail")).toBeVisible();
@@ -144,13 +145,15 @@ test.describe("the link starts Plan live on the Desk, once", () => {
     await page.goto("/desk?x=1&plan=live");
     await expect(page.getByTestId("plan-live")).toHaveText("Planning live…");
     await expect(page).toHaveURL(/\/desk\?x=1$/);
+    await expect.poll(() => mockCalls(page, "/rerun")).toBe(1); // the request follows the policy read
+    await page.waitForTimeout(800);
     expect(await mockCalls(page, "/rerun")).toBe(1);
   });
 
   test("a 409 (a re-plan is already running) is shown as the Desk always shows it, with no second start", async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem("taal_mock_fault", JSON.stringify({ "/rerun": { kind: "conflict" } })));
     await page.goto("/desk?plan=live");
-    await expect(page.getByText("A re-plan is already running")).toBeVisible();
+    await expect(page.getByText("A re-plan is already running")).toBeVisible(); // the one request was made and refused
     await page.waitForTimeout(1200);
     expect(await mockCalls(page, "/rerun")).toBe(1);
   });
@@ -164,6 +167,8 @@ test.describe("the Desk on a phone", () => {
     await expect(page.getByTestId("play-detail")).toBeVisible();
     await expect(page.getByTestId("plan-live")).toHaveText("Planning live…");
     await assertNoHorizontalOverflow(page);
+    await expect.poll(() => mockCalls(page, "/rerun")).toBe(1);
+    await page.waitForTimeout(800);
     expect(await mockCalls(page, "/rerun")).toBe(1);
   });
 });
