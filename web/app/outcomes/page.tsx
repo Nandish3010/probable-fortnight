@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
+import { BasisTag } from "../../components/BasisTag";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
 import { Details } from "../../components/Details";
 import { ErrorCard } from "../../components/ErrorCard";
@@ -41,19 +42,22 @@ function PortfolioCard() {
         <Badge kind="synthetic" detail="batch job, not a live measurement" />
       </div>
       <p className="muted">
-        Every gap Taal found in one scan of the stock ({dayMonth(PORTFOLIO.as_of)}), planned by the same rule-based
-        drafter and estimator behind every play on this page. No model calls. This is a projection across the
-        portfolio, not a measurement.
+        Every gap in one scan of the stock ({dayMonth(PORTFOLIO.as_of)}), planned by the rule-based drafter and
+        estimator. No model calls. A projection, not a measurement.
       </p>
       <div className="portfolio-card__stats">
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
           <span className="portfolio-card__label">Total at stake</span>
-          <span className="muted">across {count(totals.gaps)} gaps</span>
+          <BasisTag basis="assumption" />
+          <span className="muted" data-testid="portfolio-gap-count">
+            across {count(totals.gaps)} gaps
+          </span>
         </div>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
           <span className="portfolio-card__label">Expected recovered</span>
+          <BasisTag basis="assumption" />
           <span className="muted">
             margin across {count(planned.count)} planned plays, with {inr(planned.expected_waste_avoided_inr)} of write-off
             avoided on {count(planned.expected_units)} units
@@ -63,7 +67,8 @@ function PortfolioCard() {
           <span className="portfolio-card__number">{count(planned.count)}</span>
           <span className="portfolio-card__label">Plans drafted</span>
           <span className="muted">
-            for {count(totals.gaps)} gaps; {count(planned.eligible_no_play)} more were eligible but no draft passed every check
+            for {count(totals.gaps)} gaps
+            {planned.eligible_no_play > 0 ? `; ${count(planned.eligible_no_play)} more were eligible but no draft passed every check` : ""}
           </span>
         </div>
       </div>
@@ -247,6 +252,7 @@ function SummaryCard({
   onRun: () => void;
   measureResult: MeasureResponse | null;
 }) {
+  const measured = outcome !== undefined && (outcome.lift_pp ?? outcome.lift) != null;
   const crossesZero = outcome ? (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0 : false;
   // A fast-forwarded row whose range crosses zero is inconclusive by definition, even from an API that
   // does not send the flag.
@@ -271,14 +277,18 @@ function SummaryCard({
         <>
           <div className={styles.figures}>
             <div className={styles.figure} data-testid="summary-difference">
-              <span className={styles.figureLabel}>Response-rate difference, treated minus holdout</span>
+              <span className={styles.figureLabel}>
+                Response-rate difference, treated minus holdout <BasisTag basis="measured" />
+              </span>
               <span className={styles.figureValue}>{pointsFromPp(lift)} points</span>
               {lo != null && hi != null ? (
                 <span className={styles.figureNote}>95% CI {pointsFromPp(lo)} to {pointsFromPp(hi)} points</span>
               ) : null}
             </div>
             <div className={styles.figure} data-testid="summary-ceo">
-              <span className={styles.figureLabel}>CEO number: margin recovered per ₹1 of discount</span>
+              <span className={styles.figureLabel}>
+                CEO number: margin recovered per ₹1 of discount <BasisTag basis="measured" />
+              </span>
               {inconclusive ? (
                 <span className={styles.figureValueMuted}>withheld: inconclusive</span>
               ) : outcome.margin_per_discount_rupee != null ? (
@@ -322,12 +332,16 @@ function SummaryCard({
         </div>
       )}
 
-      <div className={styles.runRow}>
-        <button type="button" className="button-primary" onClick={onRun} disabled={measuring} data-testid="run-measure">
-          {measuring ? "Measuring…" : "Run Measure"}
-        </button>
-        <p className={styles.runNote}>Nothing in your session is measured until you click Run Measure.</p>
-      </div>
+      {/* Once a measured row exists for the visitor's play the card shows its result; the button and
+          the "nothing is measured" sentence belong to the empty state only. */}
+      {measured ? null : (
+        <div className={styles.runRow}>
+          <button type="button" className="button-primary" onClick={onRun} disabled={measuring} data-testid="run-measure">
+            {measuring ? "Measuring…" : "Run Measure"}
+          </button>
+          <p className={styles.runNote}>Nothing in your session is measured until you click Run Measure.</p>
+        </div>
+      )}
       {measureResult ? (
         <p className={styles.runNote} role="status" data-testid="measure-result">
           {measureResult.plays} play{measureResult.plays === 1 ? "" : "s"} joined against orders:{" "}
@@ -455,11 +469,10 @@ export default function OutcomesPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <div className="card__header">
         <h1>Outcomes</h1>
-        <Badge kind={isMockMode() ? "replay" : "live"} detail="/outcomes" />
+        <Badge kind="synthetic" detail="simulated orders, no pilot yet" />
       </div>
       <p className="muted">
-        Your measured result comes first. Below it: what the whole portfolio projects, one worked example, and every
-        play that has been measured.
+        Your measured result first, then the portfolio projection and a worked example.
       </p>
 
       <SummaryCard

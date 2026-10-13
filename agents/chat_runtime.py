@@ -146,6 +146,18 @@ def _strip_known_note(text: str) -> str:
     return text
 
 
+_NODE_ID_RE = re.compile(r"\b(?:DS|OUT)-\d{2}\b")
+
+
+def name_nodes(text: str, nodes: list[dict[str, Any]]) -> str:
+    """Replace a raw store id in a reply ("DS-04") with the store's name ("Dark store 04"): a
+    customer is never shown a node id, whatever the model echoed from the context note."""
+    if not text or not _NODE_ID_RE.search(text):
+        return text
+    names = {n["node_id"]: re.sub(r"\s*\(.*\)\s*$", "", n.get("name") or "") for n in nodes}
+    return _NODE_ID_RE.sub(lambda m: names.get(m.group(0)) or "your store", text)
+
+
 def drop_dangling_close(text: str) -> str:
     """No reply ends with a ")" that closes nothing: drop trailing unmatched ")" (and the space before it)."""
     text = text.rstrip()
@@ -373,6 +385,8 @@ class ChatRuntime:
         latency_ms = int((time.perf_counter() - t0) * 1000)
         _log_timing(session_id, latency_ms, session_io)
         env = clamp(parse_envelope(final_text))
+        if _NODE_ID_RE.search(env.get("text") or ""):
+            env["text"] = name_nodes(env["text"], store.read("nodes"))
         if reply:
             # A tool-composed receipt or refusal (place_order, apply_offer) replaces whatever the model wrote: amounts and refusals come from code.
             env["text"] = reply

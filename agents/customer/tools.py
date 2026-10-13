@@ -102,6 +102,14 @@ def _customer_memory(ctx, customer_id: str, limit: int = 5) -> list[dict[str, An
     return out
 
 
+def _node_name(ctx, node_id: str) -> str | None:
+    """The store's customer-facing name ("Dark store 04"), from the nodes table: the node row's
+    name without its trailing "(North Bengaluru)" cluster note. None when the node is unknown."""
+    rows = ctx.store.find("nodes", node_id=node_id)
+    name = (rows[-1].get("name") or "") if rows else ""
+    return re.sub(r"\s*\(.*\)\s*$", "", name) or None
+
+
 def get_customer_context(customer_id: str) -> dict:
     """Home node, language, pending offers (treated arm only), arms per play and marketing consent."""
     ctx = current()
@@ -121,7 +129,7 @@ def get_customer_context(customer_id: str) -> dict:
             if arms.get(o["play_id"]) != "treated" or assign_arm(customer_id, play["holdout"]["seed"], float(play["holdout"]["fraction"])) != "treated":
                 continue
             offers.append({"play_id": o["play_id"], "text": o["text"], "best_before_date": o.get("best_before_date"), "sku": o.get("sku"), "mechanic": o.get("mechanic"), "mechanic_params": o.get("mechanic_params", {})})
-    return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent, "memory": _customer_memory(ctx, customer_id)}
+    return {"customer_id": customer_id, "home_node_id": c["home_node_id"], "home_node_name": _node_name(ctx, c["home_node_id"]), "language": c.get("language", "en"), "display_name": c.get("display_name"), "pending_offers": offers, "arms": arms, "consent_marketing": consent, "memory": _customer_memory(ctx, customer_id)}
 
 
 def context_summary(context: dict, turn_language: str | None = None) -> str:
@@ -140,7 +148,10 @@ def context_summary(context: dict, turn_language: str | None = None) -> str:
     Kannada reply. Callers on the deterministic stub path (no live model to steer) can omit it;
     it then falls back to the stored preference alone, same as before."""
     lang = "Kannada" if (turn_language or context.get("language")) == "kn" else "English"
-    bits = [f"home store {context['home_node_id']}", f"reply in {lang} for this turn"]
+    node_id, node_name = context["home_node_id"], context.get("home_node_name")
+    # Say the store by its name; the id is only what the stock tools take as node_id.
+    store_note = f"home store {node_name} (node_id {node_id} is for tool calls only, never say it to the customer)" if node_name else f"home store {node_id}"
+    bits = [store_note, f"reply in {lang} for this turn"]
     if context.get("consent_marketing"):
         offers = context.get("pending_offers") or []
         if offers:

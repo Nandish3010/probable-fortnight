@@ -31,9 +31,15 @@ function anchorElements(anchor: string): HTMLElement[] {
   return Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${anchor}"]`)).filter((el) => el.getClientRects().length > 0);
 }
 
-/** Every Approve button on screen and the decision row around it: the popover keeps clear of both. */
+/** Every Approve button on screen, the decision row around it, and the headline figure: the popover
+ * keeps clear of all of them (the figure is the number the visitor is meant to read). */
 function approveRects(): Rect[] {
   const out: Rect[] = [];
+  for (const id of ["recovered-figure-amount", "approve-recovered-amount"]) {
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>(`[data-testid="${id}"]`))) {
+      if (el.getClientRects().length > 0) out.push(toRect(el.getBoundingClientRect()));
+    }
+  }
   for (const el of anchorElements(APPROVE_ANCHOR)) {
     out.push(toRect(el.getBoundingClientRect()));
     const row = el.closest<HTMLElement>('[data-testid="decision"]');

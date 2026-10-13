@@ -288,6 +288,12 @@ for (const [name, viewport] of [["1280x800", DESKTOP], ["375x812", PHONE]] as co
         for (const a of approves) {
           expect(intersects(pop, a), `step ${i + 1}: popover ${JSON.stringify(pop)} covers Approve ${JSON.stringify(a)}`).toBe(false);
         }
+        // nor the headline figure: the number the tour is about must stay readable
+        const figure = page.getByTestId("recovered-figure-amount").first();
+        if (await figure.isVisible()) {
+          const f = await box(figure);
+          expect(intersects(pop, f), `step ${i + 1}: popover ${JSON.stringify(pop)} covers the figure ${JSON.stringify(f)}`).toBe(false);
+        }
         expect(pop.left).toBeGreaterThanOrEqual(0);
         expect(pop.top).toBeGreaterThanOrEqual(0);
         expect(pop.left + pop.width).toBeLessThanOrEqual(viewport.width);

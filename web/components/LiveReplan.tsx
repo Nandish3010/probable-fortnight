@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getRerunStatus, streamRerun } from "../lib/api";
 import { ModelChip } from "./ModelChip";
+import { PlanProgress } from "./PlanProgress";
 import { TraceView } from "./traceRows";
 import type { RerunAccepted, RerunResult, TraceEvent } from "../lib/types";
 
@@ -109,11 +110,12 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
   return (
     <div className="live-replan" data-testid="live-replan" ref={root}>
       <p className="live-replan__status">
-        {headerLine} <ModelChip />
+        {headerLine} {accepted.backend === "vertex" ? <ModelChip /> : null}
       </p>
       <p className="muted live-replan__timing">
         {elapsedS} s elapsed · falls back to rules after {Math.round(accepted.deadline_s)} s
       </p>
+      <PlanProgress events={records} backend={accepted.backend} />
       <TraceView events={records} label="Live re-plan trace" />
       {error ? (
         <p className="error" data-testid="live-replan-error">

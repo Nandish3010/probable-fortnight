@@ -81,7 +81,7 @@ const STATES: State[] = [
   {
     name: "outcomes: after Run Measure",
     open: async (page) => {
-      await seedApprovedChips(page);
+      // no approval seeded: with a measured row the card no longer offers the button
       await page.goto("/outcomes");
       await page.getByRole("button", { name: "Run Measure" }).click();
       await page.getByTestId("measure-result").waitFor();

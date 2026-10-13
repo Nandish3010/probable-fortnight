@@ -46,8 +46,8 @@ test.describe("judge-mode landing", () => {
     await expect(beat.getByTestId("gap-ids")).toContainText(HERO.skuId);
     await expect(beat.getByTestId("gap-ids")).toContainText("gap_tea_ds04");
     await expect(beat.getByTestId("play-ids")).toContainText("transfer_plus_nudge");
-    // the card says where the play came from (a scripted fixture here), not "recorded" by default
-    await expect(beat.getByTestId("play-card").locator(".badge--scripted")).toBeVisible();
+    // the card says where the play came from (a recorded Gemini run here), not "scripted" by default
+    await expect(beat.getByTestId("play-card").locator(".badge--recorded")).toBeVisible();
   });
 
   test("the gap card states the countdown once and explains the sell-by rule only for a sell-by gap", async ({ page }) => {
@@ -68,14 +68,14 @@ test.describe("judge-mode landing", () => {
     const result = page.getByTestId("approve-result");
     await expect(result).toBeVisible({ timeout: 30_000 });
 
-    // The mock approve for the Tea play (lib/mockData.ts): 323 consented, 291 treated, 32 holdout
-    await expect(result.getByTestId("audience-chain")).toHaveText("323 consented: 291 treated and 32 holdout");
+    // The mock approve for the Tea play (lib/mockData.ts): 394 consented, 355 treated, 39 holdout
+    await expect(result.getByTestId("audience-chain")).toHaveText("394 consented: 355 treated and 39 holdout");
     await expect(result.locator(".chip")).toHaveCount(0); // the chain replaces the old holdout/treated chip
 
-    // Tea: a transfer play, so recovered = margin (7,498) = waste avoided 7,704 minus transfer cost 206
+    // Tea: a transfer play, so recovered = margin (9,191) = waste avoided 9,397 minus transfer cost 206
     const figure = result.getByTestId("approve-recovered");
-    await expect(figure).toContainText("Recovered vs doing nothing ₹7,498");
-    await expect(figure.getByTestId("approve-recovered-parts")).toContainText("waste avoided (at cost) ₹7,704 minus transfer cost ₹206");
+    await expect(figure).toContainText("Recovered vs doing nothing ₹9,191");
+    await expect(figure.getByTestId("approve-recovered-parts")).toContainText("waste avoided (at cost) ₹9,397 minus transfer cost ₹206");
 
     await expect(result.getByTestId("writeoff-caption")).toContainText(
       "What-if forecast using the past promo lift. Not the play's own estimate.",
@@ -110,7 +110,7 @@ test.describe("judge-mode landing", () => {
     const log = page.getByTestId("chat-log").first();
     await page.getByRole("button", { name: "Send" }).first().click();
 
-    await expect(log).toContainText(/Best before|ಬಳಕೆಗೆ/, { timeout: 6_000 });
+    await expect(log).toContainText(/Best[- ]before|ಬಳಕೆಗೆ/, { timeout: 6_000 });
   });
 });
 

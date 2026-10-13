@@ -47,7 +47,7 @@ def _bq(calls: list, delay: float = 0.0):
     def fake(play, product, best_before, languages, **k):
         calls.append(k.get("timeout_s"))
         time.sleep(delay)
-        return [dict(v, text="Fresh pick: " + v["text"]) for v in generate_copy(play, product, None, best_before, languages)]
+        return [dict(v, text="Pick of the week: " + v["text"]) for v in generate_copy(play, product, None, best_before, languages)]
 
     return fake
 
@@ -60,12 +60,23 @@ def _play(store, play_id):
     return json.loads(store.find("plays", play_id=play_id)[-1]["play_json"])
 
 
+@pytest.fixture
+def no_stored_copy(sandbox):
+    """The seeded plays now carry pre-generated BigQuery copy (fixtures/copy_pregenerated.json) and
+    Approve reuses it, so copy-ahead skips them. These tests are about plays proposed without
+    stored copy, so strip the variants from the sandbox's plays."""
+    for row in sandbox.read("plays"):
+        play = json.loads(row["play_json"])
+        play["copy"]["variants"] = []
+        approve_mod._save_play(sandbox, row, play)
+
+
 def _wait_all():
     for f in list(approve_mod._AHEAD.values()):
         f.result(timeout=5)
 
 
-def test_seeded_plays_get_bigquery_copy_ahead_and_approve_uses_it(sandbox, now_asof, vertex_cfg, monkeypatch):
+def test_seeded_plays_get_bigquery_copy_ahead_and_approve_uses_it(sandbox, no_stored_copy, now_asof, vertex_cfg, monkeypatch):
     now, as_of = now_asof
     calls: list = []
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", _bq(calls))
@@ -78,10 +89,10 @@ def test_seeded_plays_get_bigquery_copy_ahead_and_approve_uses_it(sandbox, now_a
     resp = approve(sandbox, load_tenant(), TEA, now, as_of=datetime.fromisoformat(as_of).date())
     assert resp["copy"]["source"] == "bigquery" and resp["copy"]["rejected"] == []
     offers = sandbox.find("offers", play_id=TEA)
-    assert offers and all(o["text"].startswith("Fresh pick: ") for o in offers)
+    assert offers and all(o["text"].startswith("Pick of the week: ") for o in offers)
 
 
-def test_a_job_still_in_flight_is_awaited_not_duplicated(sandbox, now_asof, vertex_cfg, monkeypatch):
+def test_a_job_still_in_flight_is_awaited_not_duplicated(sandbox, no_stored_copy, now_asof, vertex_cfg, monkeypatch):
     now, as_of = now_asof
     calls: list = []
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", _bq(calls, delay=0.6))
@@ -90,7 +101,7 @@ def test_a_job_still_in_flight_is_awaited_not_duplicated(sandbox, now_asof, vert
     assert len(calls) == 1 and resp["copy"]["source"] == "bigquery"
 
 
-def test_scheduling_twice_starts_one_job(sandbox, vertex_cfg, monkeypatch):
+def test_scheduling_twice_starts_one_job(sandbox, no_stored_copy, vertex_cfg, monkeypatch):
     calls: list = []
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", _bq(calls, delay=0.2))
     play = _play(sandbox, TEA)
@@ -99,7 +110,7 @@ def test_scheduling_twice_starts_one_job(sandbox, vertex_cfg, monkeypatch):
     assert len(calls) == 1
 
 
-def test_changed_numbers_miss_the_ready_copy(sandbox, now_asof, vertex_cfg, monkeypatch):
+def test_changed_numbers_miss_the_ready_copy(sandbox, no_stored_copy, now_asof, vertex_cfg, monkeypatch):
     """Copy is keyed by what it is built from: a play whose mechanic numbers changed after the
     copy was generated must not ship the old numbers."""
     calls: list = []
@@ -114,7 +125,7 @@ def test_changed_numbers_miss_the_ready_copy(sandbox, now_asof, vertex_cfg, monk
     assert approve_mod._copy_ahead_future(changed, product, partner, best_before) is None
 
 
-def test_a_failed_job_is_not_cached_and_approve_falls_back_to_its_own_call(sandbox, now_asof, vertex_cfg, monkeypatch):
+def test_a_failed_job_is_not_cached_and_approve_falls_back_to_its_own_call(sandbox, no_stored_copy, now_asof, vertex_cfg, monkeypatch):
     now, as_of = now_asof
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", lambda *a, **k: [])
     assert schedule_copy_ahead(sandbox, _play(sandbox, TEA))
@@ -135,3 +146,14 @@ def test_off_on_the_stub_backend_and_by_flag(sandbox, vertex_cfg, monkeypatch):
     monkeypatch.delenv("TAAL_COPY_AHEAD")
     monkeypatch.setattr(approve_mod, "load_models", lambda: {"backend": "stub"})
     assert schedule_copy_ahead_for_store(sandbox) == 0 and approve_mod._AHEAD == {}
+
+
+def test_stored_copy_comes_first_then_copy_ahead(sandbox, now_asof, vertex_cfg, monkeypatch):
+    """Order: valid copy already on the play (the pre-generated fixture) -> copy-ahead result ->
+    one call inside Approve -> templates. A seeded play with stored copy is never sent to
+    BigQuery: copy-ahead skips it and Approve reuses it."""
+    now, as_of = now_asof
+    monkeypatch.setattr(approve_mod, "generate_copy_bigquery", _forbidden)
+    assert not schedule_copy_ahead(sandbox, _play(sandbox, TEA))
+    resp = approve(sandbox, load_tenant(), TEA, now, as_of=datetime.fromisoformat(as_of).date())
+    assert resp["copy"]["source"] == "existing" and resp["copy"]["provenance"] == "bigquery_pregenerated"

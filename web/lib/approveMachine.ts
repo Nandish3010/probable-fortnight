@@ -8,6 +8,7 @@
 // Step ticks, the collapse of the step list, the reveal of the result body, the delta chip and the
 // final settle are reducer actions fired on a timeline by the panel; nothing here reads a clock.
 import type { ApiError } from "./apiError";
+import { PROVENANCE } from "./planSteps";
 import type { ApproveResponse } from "./types";
 
 export type ApprovePhase = "idle" | "submitting" | "animating" | "settled" | "error" | "alreadyApproved";
@@ -164,4 +165,42 @@ export function clockTime(iso: string | null | undefined): string | null {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }).format(d);
+}
+
+/** What the response says about where the offer copy came from, in the two places it is shown: `badge`
+ * is the chip on the result ("Copy: ..."), `step` is the provenance line on the "Writing the offer" step.
+ * Both come from this one function, from `copy.source` and `copy.provenance` of POST /approve and nothing
+ * else, so the two can never disagree. "bigquery" is Gemini via BigQuery. "existing" is copy stored with
+ * the play: with provenance "bigquery_pregenerated" it is Gemini via BigQuery (pre-generated), otherwise
+ * "stored with the play". "templated" is the template (the step line adds that BigQuery was attempted under
+ * a budget; this is the only case where it says so). An absent or empty source, a source that is not a
+ * string, and a source this code has not seen all give null: no badge, no step line, and never a BigQuery
+ * or template claim the field does not make. Never inferred from timing or from any other field. */
+export function copySourceParts(
+  copy: { source?: unknown; provenance?: unknown } | null | undefined,
+): { badge: string; step: string } | null {
+  const source = copy?.source;
+  if (typeof source !== "string" || source === "") return null;
+  switch (source) {
+    case "bigquery":
+      return { badge: "Copy: Gemini via BigQuery", step: "Gemini via BigQuery" };
+    case "existing":
+      return copy?.provenance === "bigquery_pregenerated"
+        ? { badge: "Copy: Gemini via BigQuery (pre-generated)", step: "Gemini via BigQuery (pre-generated)" }
+        : { badge: "Copy: stored with the play", step: "stored with the play" };
+    case "templated":
+      return { badge: "Copy: template", step: PROVENANCE.offerCopy };
+    default:
+      return null;
+  }
+}
+
+/** The badge next to the offer copy on the Approve result, or null when the response names no known source. */
+export function copySourceLabel(copy: { source?: unknown; provenance?: unknown } | null | undefined): string | null {
+  return copySourceParts(copy)?.badge ?? null;
+}
+
+/** The provenance line on the "Writing the offer" step once the response has arrived (see copySourceParts). */
+export function copyStepLine(copy: { source?: unknown; provenance?: unknown } | null | undefined): string | null {
+  return copySourceParts(copy)?.step ?? null;
 }

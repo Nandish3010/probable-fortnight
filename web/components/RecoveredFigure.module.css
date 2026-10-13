@@ -13,12 +13,15 @@
 .amount {
   display: block;
   font-size: var(--fs-figure);
-  line-height: var(--lh-figure);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-tight);
-  /* --good-text, not --good: the teal fill colour is under 4.5:1 as text on white. */
-  color: var(--good-text);
-  font-variant-numeric: tabular-nums lining-nums;
+  /* The serif has no descender-heavy digits: a tight line keeps Approve inside the first screen. */
+  line-height: 1.05;
+  /* Instrument Serif, weight 400, only at 28 px and up (--fs-figure is 28 px on a phone, 40 px
+     from 768 px). The figure is ink: colour is for state, and a projection is not a state. */
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: var(--serif-tracking);
+  color: var(--text);
+  font-variant-numeric: lining-nums;
 }
 
 .parts {
@@ -55,4 +58,21 @@
   border-color: var(--state-na-bd);
   background: var(--state-na-bg);
   color: var(--state-na-fg);
+}
+
+/* The count-up: the real figure keeps its place and its text but is not drawn while the aria-hidden
+   copy counts over it (600 ms, once). */
+.amountWrap {
+  display: block;
+  position: relative;
+}
+
+.amountCounting {
+  visibility: hidden;
+}
+
+.ghost {
+  position: absolute;
+  inset: 0 auto auto 0;
+  white-space: nowrap;
 }

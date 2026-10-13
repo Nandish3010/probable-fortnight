@@ -159,16 +159,16 @@ test.describe("Play Desk: plain language, one figure, honest checks", () => {
     );
   });
 
-  test("a transfer play's bar no longer counts the avoided waste twice (Tea ends at -₹27,522, ahead of the markdown)", async ({ page }) => {
+  test("a transfer play's bar no longer counts the avoided waste twice (Tea ends at -₹25,829, ahead of the markdown)", async ({ page }) => {
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Darjeeling Tea 100G/ }).first().click();
     const card = page.getByTestId("play-detail");
     const bars = card.locator(".counterfactuals");
-    await expect(bars.locator(".counterfactuals__row").nth(2).locator(".counterfactuals__value")).toHaveText("-₹27,522");
-    await expect(bars.getByTestId("comparison-line")).toHaveText("Beats a blanket 20% markdown by ₹4,493");
+    await expect(bars.locator(".counterfactuals__row").nth(2).locator(".counterfactuals__value")).toHaveText("-₹25,829");
+    await expect(bars.getByTestId("comparison-line")).toHaveText("Beats a blanket 20% markdown by ₹6,186");
     // "This play" is highlighted, and tagged Recommended because it keeps the most of the three
     await expect(bars.locator(".counterfactuals__row--play .counterfactuals__tag")).toHaveText("Recommended");
-    await expect(card.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹7,498");
+    await expect(card.getByTestId("recovered-figure")).toContainText("Recovered vs doing nothing ₹9,191");
   });
 
   test("the holdout slider locks once the play is approved", async ({ page }) => {

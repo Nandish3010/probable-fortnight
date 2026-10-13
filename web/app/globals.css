@@ -1,62 +1,63 @@
 :root {
-  --bg: #f4f5fb;
+  /* Palette B, "ink on warm paper". Colour carries meaning only: teal = LIVE, red = write-off or
+     error, amber = warning, green = passed. The accent is ink. Every text pair is checked in
+     tests/e2e/contrast-tokens.spec.ts. */
+  --bg: #faf8f4;
   --surface: #ffffff;
-  --surface-alt: #f1f2f9;
+  --surface-alt: #f4f1ea;
   --surface-raised: #ffffff;
-  --border: #e2e4ef;
-  --border-strong: #cdd0e3;
-  --text: #14161f;
-  /* Secondary text only. 5.6:1 on --bg, 6.1:1 on --surface (tests/e2e/contrast-tokens.spec.ts). */
-  --text-muted: #5b6272;
-  --accent: #4f46e5;
-  --accent-strong: #4338ca;
-  --accent-soft: #eef0fe;
-  --accent-2: #ea580c;
+  --border: #e6e2d8;
+  --border-strong: #d2ccbd;
+  --text: #1c1a16;
+  /* Secondary text only. 6.2:1 on --bg, 6.5:1 on --surface (tests/e2e/contrast-tokens.spec.ts). */
+  --text-muted: #625d52;
+  /* Ink: primary buttons, selected rows, the focus ring. */
+  --accent: #1c1a16;
+  --accent-strong: #38342c;
+  --accent-soft: #efebe0;
+  --accent-2: #625d52;
+  /* Teal is for LIVE dots and fills only; --live-text is the readable teal. */
   --teal: #0d9488;
-  --danger: #c0362c;
-  --warn: #b6790f;
-  --good: #0d9488;
+  --danger: #b3261e;
+  --warn: #8f5d00;
+  --good: #1b7a43;
   --live: #0d9488;
-  --replay: #6366a3;
-  /* Darker than --live/--replay/--text-muted specifically for text on a badge's tinted light
-     background -- the base tokens are used elsewhere (dot animation, chart bars) at a contrast
-     ratio that only works against a plain surface, not against their own 14% tint. */
-  --live-text: #096f66;
-  --replay-text: #595b92;
-  --muted-badge-text: #454a55;
-  /* "recorded" (Recorded from Gemini) and "rules" (Rules fallback) badges (Badge.tsx): the same
-     darker-for-light-mode / same-as-base-for-dark-mode pattern as --live-text/--replay-text
-     above, each verified >=4.5:1 against its own kind's 14% tint on --surface. */
-  --recorded-text: #a83f08;
-  --warn-text: #875a0b;
-  /* Text colours for the semantic states. Teal, red and amber are fills, borders and icons;
-     anything a person has to read uses these. --good-text is an alias of --live-text. */
-  --good-text: var(--live-text);
-  --danger-text: #a52b22;
-  /* Label colour on a solid --accent fill (buttons). White in light mode; the dark-mode accent
-     is light, so white on it is only about 3:1 and the label is near-black instead. */
-  --on-accent: #ffffff;
-  --focus: #4f46e5;
+  --replay: #625d52;
+  --live-text: #0a766c;
+  --replay-text: #625d52;
+  --muted-badge-text: #4d493f;
+  --recorded-text: #1c1a16;
+  --warn-text: #8f5d00;
+  --good-text: #1b7a43;
+  --danger-text: #b3261e;
+  /* Label colour on a solid --accent fill (buttons). */
+  --on-accent: #faf8f4;
+  --focus: #1c1a16;
 
-  /* Semantic states (design_spec.md 4.2). The bg and border derive from tokens that already flip
-     in dark mode; only the -fg tokens that are not themselves aliases are overridden in dark. */
+  /* Tints: the background of a status badge or notice; its text uses the state colour. */
+  --tint-live: #e6f4f2;
+  --tint-good: #e3f1e8;
+  --tint-warn: #f7ecd3;
+  --tint-danger: #fbe7e4;
+
+  /* Semantic states (design_spec.md 4.2). */
   --state-pass-fg: var(--good-text);
-  --state-pass-bg: color-mix(in srgb, var(--live) 14%, var(--surface));
-  --state-pass-bd: color-mix(in srgb, var(--live) 35%, transparent);
-  --state-na-fg: #454a55;
+  --state-pass-bg: var(--tint-good);
+  --state-pass-bd: color-mix(in srgb, var(--good) 35%, transparent);
+  --state-na-fg: #4d493f;
   --state-na-bg: color-mix(in srgb, var(--text-muted) 10%, var(--surface));
   --state-na-bd: color-mix(in srgb, var(--text-muted) 30%, transparent);
-  --state-pending-fg: #454a55;
+  --state-pending-fg: #4d493f;
   --state-pending-bg: transparent;
   --state-pending-bd: color-mix(in srgb, var(--text-muted) 55%, transparent);
   --state-fallback-fg: var(--warn-text);
-  --state-fallback-bg: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  --state-fallback-bg: var(--tint-warn);
   --state-fallback-bd: color-mix(in srgb, var(--warn) 40%, transparent);
-  --state-synthetic-fg: #454a55;
+  --state-synthetic-fg: #4d493f;
   --state-synthetic-bg: color-mix(in srgb, var(--text-muted) 12%, var(--surface));
   --state-synthetic-bd: color-mix(in srgb, var(--text-muted) 45%, transparent);
   --state-fail-fg: var(--danger-text);
-  --state-fail-bg: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  --state-fail-bg: var(--tint-danger);
   --state-fail-bd: color-mix(in srgb, var(--danger) 40%, transparent);
 
   /* Type scale (design_spec.md 2.2): 12 / 14 / 16 / 18 / 22 / 28 / 40, weights 400 / 500 / 600. */
@@ -94,12 +95,14 @@
   --tap: 44px;
   --nav-h: 56px;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
-  --shadow-card: 0 1px 2px rgba(20, 22, 31, 0.05), 0 1px 1px rgba(20, 22, 31, 0.04);
-  --shadow-raised: 0 12px 28px -8px rgba(45, 40, 90, 0.18), 0 2px 6px rgba(20, 22, 31, 0.06);
-  --shadow-pop: 0 24px 48px -12px rgba(45, 40, 90, 0.28), 0 4px 10px rgba(20, 22, 31, 0.08);
+  /* 10 px surfaces, 6 px buttons and inputs; pills only for status chips. */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  /* Resting surfaces carry a hairline border, not a shadow. Shadows are for menus and modals. */
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-pop: 0 24px 48px -12px rgba(28, 26, 22, 0.28), 0 4px 10px rgba(28, 26, 22, 0.08);
   --max-width: 1080px;
   --max-prose: 68ch;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -109,84 +112,95 @@
      Kannada second (Plex has no Kannada glyphs), the system stack last as the fallback. */
   --font-sans: var(--font-plex-sans), var(--font-noto-kannada), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Instrument Serif: the landing hero sentence and headline figures at 28 px and up, only. */
+  --font-serif: var(--font-instrument-serif), "Times New Roman", Georgia, serif;
+  --serif-tracking: -0.01em;
 }
 
 @media (min-width: 768px) {
   :root {
-    --fs-figure: var(--fs-3xl);
+    /* 36 px, not 40: the figure and Approve must both sit in the first screen of a 1280 x 800 window, on a
+       slower renderer too. */
+    --fs-figure: 2.25rem;
     --lh-figure: var(--lh-3xl);
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0a0b11;
-    --surface: #14161f;
-    --surface-alt: #1b1d29;
-    --surface-raised: #191b26;
-    --border: #272b38;
-    --border-strong: #363b4d;
-    --text: #eef0f7;
-    --text-muted: #9aa0b3;
-    --accent: #8b85f7;
-    --accent-strong: #a5b0fb;
-    --accent-soft: #1d1c33;
-    --accent-2: #fb923c;
-    --teal: #2dd4bf;
-    --danger: #ef6a5f;
-    --warn: #e0ab4e;
-    --good: #2dd4bf;
-    --live: #2dd4bf;
-    --replay: #9aa1e8;
-    --live-text: #2dd4bf;
-    --replay-text: #9aa1e8;
-    --muted-badge-text: #9aa0b3;
-    --recorded-text: #fb923c;
-    --warn-text: #e0ab4e;
-    --danger-text: #ef6a5f;
-    --on-accent: #0a0b11;
-    --state-na-fg: #aab0c2;
-    --state-pending-fg: #aab0c2;
-    --state-synthetic-fg: #aab0c2;
-    --focus: #8b85f7;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --bg: #12110f;
+    --surface: #1b1a17;
+    --surface-alt: #23211e;
+    --surface-raised: #201f1b;
+    --border: #2a2823;
+    --border-strong: #3b3830;
+    --text: #efeae0;
+    --text-muted: #a39d90;
+    --accent: #efeae0;
+    --accent-strong: #ffffff;
+    --accent-soft: #2a2823;
+    --accent-2: #a39d90;
+    --teal: #3cc9bb;
+    --danger: #f07a70;
+    --warn: #e3aa3c;
+    --good: #58c783;
+    --live: #3cc9bb;
+    --replay: #a39d90;
+    --live-text: #3cc9bb;
+    --replay-text: #a39d90;
+    --muted-badge-text: #a39d90;
+    --recorded-text: #efeae0;
+    --warn-text: #e3aa3c;
+    --good-text: #58c783;
+    --danger-text: #f07a70;
+    --on-accent: #12110f;
+    --tint-live: #12302d;
+    --tint-good: #16301f;
+    --tint-warn: #352a12;
+    --tint-danger: #3a1b18;
+    --state-na-fg: #b7b1a4;
+    --state-pending-fg: #b7b1a4;
+    --state-synthetic-fg: #b7b1a4;
+    --focus: #efeae0;
     --shadow-pop: 0 28px 56px -14px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.45);
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #0a0b11;
-  --surface: #14161f;
-  --surface-alt: #1b1d29;
-  --surface-raised: #191b26;
-  --border: #272b38;
-  --border-strong: #363b4d;
-  --text: #eef0f7;
-  --text-muted: #9aa0b3;
-  --accent: #8b85f7;
-  --accent-strong: #a5b0fb;
-  --accent-soft: #1d1c33;
-  --accent-2: #fb923c;
-  --teal: #2dd4bf;
-  --danger: #ef6a5f;
-  --warn: #e0ab4e;
-  --good: #2dd4bf;
-  --live: #2dd4bf;
-  --replay: #9aa1e8;
-  --live-text: #2dd4bf;
-  --replay-text: #9aa1e8;
-  --muted-badge-text: #9aa0b3;
-  --recorded-text: #fb923c;
-  --warn-text: #e0ab4e;
-  --danger-text: #ef6a5f;
-  --on-accent: #0a0b11;
-  --state-na-fg: #aab0c2;
-  --state-pending-fg: #aab0c2;
-  --state-synthetic-fg: #aab0c2;
-  --focus: #8b85f7;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-raised: 0 16px 32px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --bg: #12110f;
+  --surface: #1b1a17;
+  --surface-alt: #23211e;
+  --surface-raised: #201f1b;
+  --border: #2a2823;
+  --border-strong: #3b3830;
+  --text: #efeae0;
+  --text-muted: #a39d90;
+  --accent: #efeae0;
+  --accent-strong: #ffffff;
+  --accent-soft: #2a2823;
+  --accent-2: #a39d90;
+  --teal: #3cc9bb;
+  --danger: #f07a70;
+  --warn: #e3aa3c;
+  --good: #58c783;
+  --live: #3cc9bb;
+  --replay: #a39d90;
+  --live-text: #3cc9bb;
+  --replay-text: #a39d90;
+  --muted-badge-text: #a39d90;
+  --recorded-text: #efeae0;
+  --warn-text: #e3aa3c;
+  --good-text: #58c783;
+  --danger-text: #f07a70;
+  --on-accent: #12110f;
+  --tint-live: #12302d;
+  --tint-good: #16301f;
+  --tint-warn: #352a12;
+  --tint-danger: #3a1b18;
+  --state-na-fg: #b7b1a4;
+  --state-pending-fg: #b7b1a4;
+  --state-synthetic-fg: #b7b1a4;
+  --focus: #efeae0;
   --shadow-pop: 0 28px 56px -14px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
@@ -223,6 +237,13 @@ a {
 a:hover {
   color: var(--accent-strong);
   text-decoration: underline;
+}
+
+/* The accent is ink, so a plain link is told apart from the text around it by its underline. */
+a:not([class]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 h1, h2, h3, h4 {
@@ -340,15 +361,6 @@ code, .id {
   }
 }
 
-@keyframes pulseDot {
-  0%, 100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent);
-  }
-  70% {
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--live) 0%, transparent);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
@@ -366,7 +378,7 @@ code, .id {
   box-shadow: var(--shadow-card);
   padding: 16px 18px;
   margin-block-end: 14px;
-  transition: box-shadow 0.18s var(--ease), border-color 0.18s var(--ease), transform 0.18s var(--ease);
+  transition: border-color 130ms ease;
 }
 
 .card__header {
@@ -500,7 +512,7 @@ code, .id {
 }
 
 .badge--live {
-  background: color-mix(in srgb, var(--live) 14%, var(--surface));
+  background: var(--tint-live);
   color: var(--live-text);
   border-color: color-mix(in srgb, var(--live) 35%, transparent);
 }
@@ -526,12 +538,12 @@ code, .id {
 
 /* Play provenance kinds (SourceBadge.tsx / PlanSource): "Recorded from Gemini" is a committed,
    validated real-Gemini planner transcript -- distinct from a REPLAY (an unspecified recorded
-   fixture) or SYNTHETIC (fabricated data). --recorded-text is a darkened --accent-2 verified
-   >=4.5:1 against this tint on --surface in light mode; dark mode reuses --accent-2 itself. */
+   fixture) or SYNTHETIC (fabricated data). It is neutral (ink on a hairline
+   border): amber is reserved for warnings, so a recorded run is told apart by its label. */
 .badge--recorded {
-  background: color-mix(in srgb, var(--accent-2) 14%, var(--surface));
+  background: transparent;
   color: var(--recorded-text);
-  border-color: color-mix(in srgb, var(--accent-2) 35%, transparent);
+  border-color: var(--border-strong);
 }
 
 /* "Scripted fixture": the stub backend standing in for Gemini (scripted_stub) -- visually grouped
@@ -547,7 +559,7 @@ code, .id {
    SYNTHETIC. --warn-text is a darkened --warn verified >=4.5:1 in light mode; dark mode reuses
    --warn itself. */
 .badge--rules {
-  background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  background: var(--tint-warn);
   color: var(--warn-text);
   border-color: color-mix(in srgb, var(--warn) 35%, transparent);
 }
@@ -555,7 +567,7 @@ code, .id {
 /* "Live · Gemini": a real Vertex call in progress or just completed -- same tokens and pulsing
    dot as LIVE, a different label for the more specific claim. */
 .badge--live-gemini {
-  background: color-mix(in srgb, var(--live) 14%, var(--surface));
+  background: var(--tint-live);
   color: var(--live-text);
   border-color: color-mix(in srgb, var(--live) 35%, transparent);
 }
@@ -585,6 +597,7 @@ code, .id {
 }
 
 .chip--inconclusive {
+  position: relative;
   font-family: inherit;
   font-weight: 600;
   color: var(--warn-text);
@@ -592,6 +605,22 @@ code, .id {
   cursor: help;
 }
 
+
+/* Chips that can be focused or tapped (the tooltip) keep a 44 px target without growing the chip. */
+.chip--inconclusive::after {
+  content: "";
+  position: absolute;
+  inset: -9px -4px;
+}
+
+/* The raw-detail disclosures in trace rows are tapped on a phone: 44 px there. */
+@media (max-width: 767px), (pointer: coarse) {
+  .trace-panel__raw summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+}
 
 .guardrails__code {
   font-size: var(--fs-xs);
@@ -640,13 +669,11 @@ code, .id {
   font-weight: var(--fw-semibold);
   cursor: pointer;
   box-shadow: var(--shadow-card);
-  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s ease;
+  transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
 }
 
 .hero__cta:hover {
   background: var(--accent-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-raised);
 }
 
 .approve-button {
@@ -661,13 +688,11 @@ code, .id {
   cursor: pointer;
   width: 100%;
   box-shadow: var(--shadow-card);
-  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s ease;
+  transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
 }
 
 .approve-button:hover:not(:disabled) {
   background: var(--accent-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-raised);
 }
 
 .approve-button:disabled {
@@ -684,6 +709,7 @@ button {
    confirm/replan/measure/replay actions) get a real secondary button treatment
    instead of the browser default, without touching any of their onClick logic. */
 button:not([class]) {
+  min-height: var(--tap);
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -692,7 +718,7 @@ button:not([class]) {
   font-weight: 600;
   font-size: var(--fs-sm);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  transition: border-color 130ms ease, background-color 130ms ease, color 130ms ease;
   box-shadow: var(--shadow-card);
 }
 
@@ -703,7 +729,7 @@ button:not([class]):hover:not(:disabled) {
 }
 
 button:not([class]):active:not(:disabled) {
-  transform: translateY(1px);
+  background: var(--accent-soft);
 }
 
 button:not([class]):disabled {
@@ -719,43 +745,6 @@ textarea:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 767px) {
-  .card-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.card-link {
-  display: block;
-  text-decoration: none;
-  color: var(--text);
-  transition: transform 0.18s var(--ease);
-}
-
-.card-link:hover {
-  text-decoration: none;
-  transform: translateY(-2px);
-}
-
-.card-link:hover .card {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: var(--shadow-raised);
-}
-
-.card-link__icon {
-  display: inline-flex;
-  margin-right: 8px;
-  vertical-align: -3px;
-  color: var(--accent);
 }
 
 /* ---------- gap card ---------- */
@@ -996,9 +985,17 @@ textarea:focus-visible {
 
 .footer__links {
   display: flex;
-  gap: 16px;
+  gap: 8px 20px;
   flex-wrap: wrap;
   margin-bottom: 12px;
+}
+
+/* Footer links are tapped: 44 px tall targets. */
+.footer__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  min-width: var(--tap);
 }
 
 .sim-box {
@@ -1027,13 +1024,11 @@ textarea:focus-visible {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--good);
-  animation: pulseDot 1.8s ease-out infinite;
+  background: var(--live);
 }
 
 .health-strip__item--amber .health-strip__dot {
   background: var(--warn);
-  animation: none;
 }
 
 .health-strip__ts {
@@ -1135,6 +1130,7 @@ textarea:focus-visible {
 }
 
 .holdout-control input[type="range"] {
+  min-height: var(--tap);
   flex: 1 1 8rem;
   min-width: 0;
 }
@@ -1161,12 +1157,11 @@ textarea:focus-visible {
   cursor: pointer;
   color: var(--text);
   box-shadow: var(--shadow-card);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  transition: border-color 130ms ease, background-color 130ms ease;
 }
 
 .inbox__item:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-  transform: translateX(2px);
 }
 
 .inbox__item--active {
@@ -1187,7 +1182,7 @@ textarea:focus-visible {
    the other form-like sections around it. */
 .rationale-section {
   padding: 16px 18px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--accent-soft);
 }
@@ -1227,6 +1222,8 @@ textarea:focus-visible {
 }
 
 .lang-toggle button {
+  min-height: var(--tap);
+  min-width: var(--tap);
   padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -1255,8 +1252,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
-  padding: 3px 8px;
-  border-left: 3px solid transparent;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
 }
 
@@ -1264,9 +1260,10 @@ textarea:focus-visible {
   min-width: 0;
 }
 
-/* "This play": a 3px accent edge and a soft accent fill (design_spec.md 5.2). */
+/* "This play": an ink outline and a soft warm fill (design_spec.md 5.2). */
 .counterfactuals__row--play {
-  border-left-color: var(--accent);
+  /* An inset ring, not a border: the row keeps its height and nothing shifts. */
+  box-shadow: inset 0 0 0 1px var(--accent);
   background: var(--accent-soft);
 }
 
@@ -1321,7 +1318,7 @@ textarea:focus-visible {
 
 .counterfactuals__comparison {
   font-weight: var(--fw-semibold);
-  margin: 6px 0 4px;
+  margin: 4px 0 2px;
 }
 
 .counterfactuals__diverging-track {
@@ -1450,6 +1447,14 @@ textarea:focus-visible {
   color: inherit;
 }
 
+/* Tapped on a phone or a touch screen: 44 px. A mouse keeps the compact row, so Approve stays inside
+   the first screen of a 1280 x 800 window. */
+@media (max-width: 767px), (pointer: coarse) {
+  .guardrails-disclosure > summary {
+    min-height: var(--tap);
+  }
+}
+
 .guardrails-disclosure > summary:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -1530,7 +1535,6 @@ textarea:focus-visible {
   gap: 2px;
   font-size: var(--fs-sm);
   padding: 7px 9px;
-  border-left: 3px solid transparent;
   border-bottom: 1px solid var(--border);
   border-radius: 4px;
   transition: background 0.12s ease;
@@ -1571,19 +1575,15 @@ textarea:focus-visible {
   padding: 0 4px;
 }
 
-.trace-panel__event--error { border-left-color: var(--danger); }
-.trace-panel__event--ok { border-left-color: var(--live-text); }
-.trace-panel__event--warn { border-left-color: var(--warn); }
-
-.trace-panel__event--error .trace-panel__body { color: var(--danger); }
-.trace-panel__event--ok .trace-panel__body { color: var(--live-text); }
-.trace-panel__event--warn .trace-panel__body { color: var(--warn); }
+.trace-panel__event--error .trace-panel__body { color: var(--danger-text); }
+.trace-panel__event--ok .trace-panel__body { color: var(--good-text); }
+.trace-panel__event--warn .trace-panel__body { color: var(--warn-text); }
 
 /* The guardrail-failure / revision markers are the single most important visual cue in the
    panel -- a judge scanning the timeline must be able to spot "this failed, and here is the fix
    that followed" without reading a line of JSON. */
 .trace-panel__event--guardrail-fail {
-  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  background: var(--tint-danger);
 }
 
 /* The --warn/--error body-text colors are tuned for a plain surface background; combined with
@@ -1606,23 +1606,21 @@ textarea:focus-visible {
 }
 
 .trace-panel__marker--fail {
-  color: var(--danger);
-  /* A lighter tint than the row background above -- axe measured the previous 16% mix at
-     4.33:1 against --danger, just under the 4.5:1 AA threshold. */
-  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger-text);
+  background: var(--tint-danger);
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .trace-panel__marker--revision {
-  color: var(--accent-strong);
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-strong);
 }
 
 .trace-panel__marker--pass {
-  color: var(--live-text);
-  background: color-mix(in srgb, var(--live) 8%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--live) 40%, transparent);
+  color: var(--good-text);
+  background: var(--tint-good);
+  border: 1px solid color-mix(in srgb, var(--good) 40%, transparent);
 }
 
 .trace-panel__marker--pending {
@@ -1651,22 +1649,16 @@ textarea:focus-visible {
   gap: 6px;
 }
 
+/* One row per attempt, separated by hairlines: not a card each. The marker chip (rejected / passed
+   all guardrails) says the state in words, so no coloured edge or tint is needed. */
 .trace-attempt {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
   font-size: var(--fs-sm);
-  background: var(--surface);
 }
 
-.trace-attempt--rejected {
-  border-left-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
-}
-
-.trace-attempt--accepted {
-  border-left-color: var(--live-text);
+.trace-attempt:first-child {
+  border-top: none;
 }
 
 .trace-attempt__head {
@@ -1687,6 +1679,8 @@ textarea:focus-visible {
 }
 
 .trace-panel__invocation {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
   font-family: var(--font-mono), monospace;
   font-size: var(--fs-xs);
 }
@@ -1753,6 +1747,106 @@ textarea:focus-visible {
   margin: 0 0 10px;
 }
 
+/* "assumption" or "measured" beside a number: what it rests on. A small outlined tag; dashed for an
+   assumption, solid for a measurement. No colour. */
+.basis {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.25rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.portfolio-card__stat .basis {
+  align-self: flex-start;
+  margin-block: 2px;
+}
+
+.basis--measured {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* The compact step list of a live plan: a tick as each step completes, and what produced it. */
+.plan-progress {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-progress__step {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-areas: "mark label state" ". prov prov";
+  align-items: center;
+  column-gap: var(--space-2);
+  min-height: 28px;
+  font-size: var(--fs-sm);
+}
+
+.plan-progress__mark {
+  grid-area: mark;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.plan-progress__mark--done {
+  background: var(--state-pass-bg);
+  border: 1px solid var(--state-pass-bd);
+  color: var(--state-pass-fg);
+}
+
+.plan-progress__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+}
+
+.plan-progress__mark--working .plan-progress__dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-progress__label {
+  grid-area: label;
+  font-weight: var(--fw-medium);
+}
+
+.plan-progress__step[data-state="waiting"] .plan-progress__label {
+  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+}
+
+.plan-progress__prov {
+  grid-area: prov;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.plan-progress__state {
+  grid-area: state;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+
 .re-plan-result__meta {
   display: flex;
   align-items: center;
@@ -1811,13 +1905,11 @@ textarea:focus-visible {
   color: var(--text);
   padding: 6px;
   box-shadow: var(--shadow-card);
-  transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  transition: border-color 130ms ease;
 }
 
 .photo-choice:hover {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-raised);
 }
 
 .photo-choice[aria-pressed="true"] {
@@ -1999,13 +2091,12 @@ textarea:focus-visible {
   font-size: var(--fs-sm);
   cursor: pointer;
   box-shadow: var(--shadow-card);
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+  transition: border-color 130ms ease, background-color 130ms ease;
 }
 
 .camera-button:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   background: color-mix(in srgb, var(--accent) 6%, var(--surface-alt));
-  transform: translateY(-1px);
 }
 
 .camera-button__icon {
@@ -2268,7 +2359,7 @@ textarea:focus-visible {
   font-weight: var(--fw-semibold);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--accent-strong);
+  color: var(--text);
 }
 
 /* ---------- portfolio card (Outcomes) ---------- */
@@ -2296,7 +2387,7 @@ textarea:focus-visible {
   font-weight: var(--fw-semibold);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--accent-strong);
+  color: var(--text);
 }
 
 .portfolio-card__table {
@@ -2335,10 +2426,9 @@ textarea:focus-visible {
   font-size: var(--fs-sm);
   line-height: 1.55;
   color: var(--text);
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  /* A paragraph, not a panel: nothing in it is interactive. */
+  padding: 8px 0 0;
+  border-top: 1px solid var(--border);
   margin: 0 0 16px;
 }
 
@@ -2489,8 +2579,8 @@ input[type="checkbox"] {
 .feedback__preamble {
   margin: 0 0 10px;
   padding: 8px 12px;
-  border-inline-start: 3px solid var(--accent);
   background: var(--surface-alt);
+  border-radius: var(--radius-sm);
   font-style: italic;
 }
 
@@ -2662,20 +2752,9 @@ input[type="checkbox"] {
   word-break: break-all;
 }
 
-/* Results: one validated chart hue per mode (dataviz validator: light #4f46e5 on the light
-   surface, dark #7c72ff on #14161f -- the dark UI accent #8b85f7 fails the dark lightness band). */
+/* Results: the bars are ink (colour is for state, not for decoration). */
 :root {
-  --chart-bar: #4f46e5;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --chart-bar: #7c72ff;
-  }
-}
-
-:root[data-theme="dark"] {
-  --chart-bar: #7c72ff;
+  --chart-bar: var(--accent);
 }
 
 .results__kpis {
@@ -2796,5 +2875,56 @@ main:focus-visible {
 
   .counterfactuals__diverging-track {
     border-color: CanvasText;
+  }
+}
+
+/* ---------- motion ----------
+   Everything that moves is here, inside no-preference: under prefers-reduced-motion every element
+   renders its final state at once and nothing pulses. Hover and focus are colour and border only
+   (110 to 150 ms, set where each control is styled). */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes livePulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Entrance: the first six blocks of a page rise 8 px and fade in over 240 ms, 40 ms apart. It plays
+     when the page is first painted (the route mounts <main>), never again; `backwards` leaves nothing
+     applied afterwards, so no stacking context or transform stays behind. */
+  main.page > :nth-child(-n + 6) {
+    animation: rise 240ms cubic-bezier(0, 0, 0.38, 0.9) backwards;
+  }
+  /* Closed by components/RiseGate 500 ms after a route's first paint: a block that arrives later
+     (loaded content replacing a skeleton) does not rise. The declared name, duration and delay stay;
+     zero iterations is what stops it. */
+  html[data-rise="off"] main.page > :nth-child(-n + 6) {
+    animation-iteration-count: 0;
+  }
+  main.page > :nth-child(2) { animation-delay: 40ms; }
+  main.page > :nth-child(3) { animation-delay: 80ms; }
+  main.page > :nth-child(4) { animation-delay: 120ms; }
+  main.page > :nth-child(5) { animation-delay: 160ms; }
+  main.page > :nth-child(6) { animation-delay: 200ms; }
+
+  /* LIVE: a slow opacity pulse on the dot, 2 s. Static under reduced motion. */
+  .badge--live::before,
+  .badge--live-gemini::before,
+  .health-strip__item:not(.health-strip__item--amber) .health-strip__dot {
+    animation: livePulse 2s ease-in-out infinite;
   }
 }

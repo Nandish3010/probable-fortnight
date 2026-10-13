@@ -1,0 +1,44 @@
+{
+  "what": "Approve latency and copy.source on the deployed API right after batch 1 (#100, main e4cefa5) went live: copy-ahead at startup, template fallback when the background BigQuery call stalled. Three wall-clock samples.",
+  "date": "2026-10-13",
+  "measured_at": "about 08:00 IST, after the main run (verify, live-test, deploy, smoke) finished",
+  "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
+  "service_revision": "taal-agents-00139-zcf",
+  "method": {
+    "visitor": "a fresh X-Taal-Visitor per call, plays unapproved",
+    "note": "timings and copy.source as recorded by the session that ran the calls; no raw curl output was kept"
+  },
+  "samples": [
+    {
+      "play": "play_tea_ds04_v1",
+      "seconds": 2.3,
+      "copy": {
+        "variants": 5,
+        "source": "bigquery"
+      },
+      "treated": 355,
+      "held_out": 39
+    },
+    {
+      "play": "play_chips_ds07_v1",
+      "seconds": 3.3,
+      "copy": {
+        "variants": 6,
+        "source": "templated"
+      },
+      "treated": 323,
+      "held_out": 29
+    },
+    {
+      "play": "play_tea_ds04_v1",
+      "seconds": 1.3,
+      "copy": {
+        "variants": 5,
+        "source": "bigquery"
+      },
+      "treated": 355,
+      "held_out": 39
+    }
+  ],
+  "reading": "Tea: the background job had BigQuery copy ready (4.4 s at startup), so Approve took 1.3 to 2.3 s. Chips: its background call did not finish in time, so templates shipped. The pre-generated fixture (batch 2) removes that dependency for all 7 seeded plays."
+}

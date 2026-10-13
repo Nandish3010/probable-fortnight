@@ -79,7 +79,7 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "{name} is now on the shelf at your nearest Kutumb Mart outlet. Best before {best_before}.",
             "Picking up groceries this week? {name} is now stocked at your nearest Kutumb Mart outlet. Best before {best_before}.",
             "New at your nearest Kutumb Mart outlet: {name}. Best before {best_before}.",
-            "{name} has just arrived at a Kutumb Mart outlet close to you. Best before {best_before}.",
+            "{name} is available at a Kutumb Mart outlet close to you. Best before {best_before}.",
             "Drop in to your nearest Kutumb Mart outlet: {name} is available now. Best before {best_before}.",
         ],
     },
@@ -124,7 +124,7 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ಈ ವಾರ ದಿನಸಿ ಖರೀದಿಗೆ ಹೋಗುತ್ತೀರಾ? {name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಇದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಹೊಸದಾಗಿ ಲಭ್ಯ: {name}. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
-            "{name} ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಈಗಷ್ಟೇ ಬಂದಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "{name} ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ದೊರೆಯುತ್ತದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ಗೆ ಬನ್ನಿ: {name} ಈಗ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
         ],
     },
@@ -165,7 +165,41 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
     return variants
 
 
-def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, best_before: str | None, language: str) -> str:
+# One angle per audience segment (index modulo the list), appended to that segment's prompt. The
+# model is near-deterministic for an identical prompt, so without this every segment of a play got
+# the same sentence back. The angles ask for a different shape of the same message and carry no
+# facts, so they cannot introduce a number or date.
+SEGMENT_ANGLES = (
+    "Lead with the offer itself.",
+    "Open with why now: the timing.",
+    "Use a warm, friendly tone and speak to the customer directly.",
+    "Make it a single crisp sentence.",
+    "Frame it as a helpful reminder for the weekly shop.",
+    "Mention how easy it is to pick up on the next store visit.",
+    "Start with the product name.",
+    "Sound like a neighbourhood shopkeeper giving a tip.",
+)
+
+
+def _offer_facts(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, partner_name: str | None) -> str:
+    """The offer, stated as plain facts, so the model describes this offer and none it makes up.
+    Found live: given only "Mechanic: transfer_plus_nudge" it wrote "a free tea ... moved to your
+    cart", and for a bundle it dropped the partner product entirely."""
+    if mechanic == "bundle" and partner_name and bundle_price is not None:
+        return f"Offer: {sku_name} and {partner_name} bought together for Rs {bundle_price:g}; name both products."
+    if mechanic in ("coupon", "outlet_markdown") and discount_pct is not None:
+        where = " in store" if mechanic == "outlet_markdown" else ""
+        return f"Offer: {discount_pct:g}% off {sku_name}{where}."
+    return {
+        "transfer_plus_nudge": f"Offer: {sku_name} is now available at the customer's nearest Kutumb Mart outlet. Nothing is free and there is no discount.",
+        "preorder": f"Offer: {sku_name} can be reserved now and is arriving soon. There is no discount.",
+        "usual_order_addon": f"Offer: add {sku_name} to the customer's usual order this week.",
+        "substitution": f"Offer: {sku_name} is back in stock at the customer's store.",
+        "subscription_nudge": f"Offer: the customer's {sku_name} subscription can be delivered early this week.",
+    }.get(mechanic, f"Offer: {sku_name} is available.")
+
+
+def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, best_before: str | None, language: str, angle: str | None = None, partner_name: str | None = None) -> str:
     """Same instructions as data/bigquery/sense/08_copy.sql's prompt_text CONCAT, ported to
     Python because the minimal BigQuery path (see generate_copy_bigquery) builds its request
     rows here rather than reading them back out of `taal.plays`/`taal.products`, which this
@@ -180,14 +214,17 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
     which `validate_copy` then rejected as a disclosure mismatch every time -- found live: the
     model correctly wrote the date it was told to, and was discarded anyway because the check
     compares against `best_before`, the same field the templated path is built from."""
-    parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}."]
+    parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}.", _offer_facts(sku_name, mechanic, discount_pct, bundle_price, partner_name)]
     if discount_pct is not None:
         parts.append(f"Discount: {discount_pct:g}% -- copy this number exactly, do not change it.")
     if bundle_price is not None:
         parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
     if best_before:
         parts.append(f"State the best-before date {best_before} plainly.")
-    parts.append("Do not invent any other number or date. Keep it under 40 words.")
+    no_fresh = "" if mechanic == "preorder" else " Do not call the stock fresh or newly arrived."
+    parts.append("Do not invent any other number or date. Describe only this offer: never say anything is free, never mention a cart or an order, and promise nothing else." + no_fresh + " Keep it under 40 words.")
+    if angle:
+        parts.append(angle)
     return " ".join(parts)
 
 
@@ -200,7 +237,7 @@ def _bq_client(project: str, region: str):
     return bigquery.Client(project=project, location=region)
 
 
-def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 4.5) -> list[dict[str, Any]]:
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 4.5, angle_order: list[str] | None = None, partner_name: str | None = None) -> list[dict[str, Any]]:
     """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
     `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
     are never populated by this codebase -- LocalStore is the system of record -- so this cannot
@@ -227,8 +264,11 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     params = play.get("mechanic_params") or {}
     discount_pct = params.get("discount_pct") or params.get("markdown_pct")
     bundle_price = params.get("bundle_price")
+    # `angle_order` fixes each segment's angle by its place in the full segment list, so a retry for
+    # a subset of segments (harness/pregenerate_copy.py) keeps every segment on its own angle.
+    order = {seg: i for i, seg in enumerate(angle_order or play["audience"]["segment_ids"])}
     requests = [
-        (seg, lang, _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, best_before, lang))
+        (seg, lang, _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, best_before, lang, SEGMENT_ANGLES[order.get(seg, 0) % len(SEGMENT_ANGLES)], partner_name))
         for seg in play["audience"]["segment_ids"]
         for lang in languages
     ]
@@ -281,6 +321,27 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     return variants
 
 
+# Claims no offer here makes. validate_copy rejects a variant that makes one, so output from the
+# model (BigQuery copy ahead of Approve, in Approve or pre-generated) falls back to the templated
+# line instead of shipping it. English and Kannada. Found in live copy: "waiting in your cart"
+# on a transfer-and-nudge play (nothing is in anyone's cart), "freshly stocked" on a bundle that
+# clears stock near its best-before date, "just arrived" on an outlet markdown.
+_FALSE_CLAIMS_ALL = re.compile(
+    r"\b(?:free|gift|complimentary|guarantee[sd]?|moved|cart|your order|your reservation|reserved for you|we saved"
+    r"|freshly made|freshest|just in time|limited[- ]time|today only|only today|last chance|new arrivals?|hurry|while stocks? last)\b|ಕಾರ್ಟ್|ಕಾರ್ಟ",
+    re.IGNORECASE,
+)
+# Freshness claims are wrong for stock sold down near its best-before date; only a preorder (stock
+# arriving soon) can say fresh stock is coming.
+_FALSE_CLAIMS_NOT_PREORDER = re.compile(r"\b(?:fresh|freshly|just arrived)\b|ತಾಜಾ|ಈಗಷ್ಟೇ", re.IGNORECASE)
+
+
+def unsupported_claim(text: str, mechanic: str) -> str | None:
+    """The first claim in `text` that the offer does not make, or None."""
+    m = _FALSE_CLAIMS_ALL.search(text) or (None if mechanic == "preorder" else _FALSE_CLAIMS_NOT_PREORDER.search(text))
+    return m.group(0) if m else None
+
+
 def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_before: str | None) -> tuple[list[dict[str, Any]], list[str]]:
     """Reject a variant whose numbers disagree with the play or which omits the best-before line
     on a near-deadline play. Returns (accepted, reasons)."""
@@ -295,6 +356,10 @@ def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_bef
             if found and all(abs(f - float(pct)) > 0.01 for f in found):
                 reasons.append(f"{v['segment_id']}/{v['language']}: discount {found} != {pct}")
                 continue
+        claim = unsupported_claim(text, play.get("mechanic", ""))
+        if claim:
+            reasons.append(f"{v['segment_id']}/{v['language']}: claims the offer does not make: {claim!r}")
+            continue
         if need_disclosure and not v.get("disclosure_included"):
             reasons.append(f"{v['segment_id']}/{v['language']}: best-before missing")
             continue

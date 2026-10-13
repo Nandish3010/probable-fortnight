@@ -134,7 +134,7 @@ test.describe("outcomes: summary card first", () => {
     await expect(card).toContainText("Total at stake");
     await expect(card).toContainText("Expected recovered");
     await expect(card).toContainText("Plans drafted");
-    await expect(card).toContainText("₹17,95,464");
+    await expect(card).toContainText("₹17,79,021");
     // no thousands-style grouping of a six-figure number inside the card
     const text = await card.innerText();
     expect(text).not.toMatch(/\d{1,3}(,\d{3}){2,}/);

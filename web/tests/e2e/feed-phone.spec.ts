@@ -47,17 +47,17 @@ test.describe("feed: order and labels", () => {
     await expect(page.getByRole("button", { name: "Run the 60-second beat" })).toHaveCount(0);
   });
 
-  test("every card shows its own source honestly (only the chips flagship has a recorded Gemini run)", async ({ page }) => {
+  test("every card shows its own source honestly (Tea and Chips have a recorded Gemini run)", async ({ page }) => {
     await page.goto("/");
-    // mocks/plays.json: Tea and Quinoa are scripted; Chips (card 3) is the committed real-Gemini recording
-    for (const n of [1, 2]) {
+    // mocks/plays.json: Tea (card 1) and Chips (card 3) are committed real-Gemini recordings; Quinoa is scripted
+    for (const n of [1, 3]) {
       const card = page.getByTestId(`feed-card-${n}`);
-      await expect(card.locator(".badge").first()).toContainText("Scripted fixture");
-      await expect(card).not.toContainText("Recorded from Gemini");
+      await expect(card.locator(".badge").first()).toContainText("Recorded from Gemini");
+      await expect(card).not.toContainText("Scripted fixture");
     }
-    const chips = page.getByTestId("feed-card-3");
-    await expect(chips.locator(".badge").first()).toContainText("Recorded from Gemini");
-    await expect(chips).not.toContainText("Scripted fixture");
+    const quinoa = page.getByTestId("feed-card-2");
+    await expect(quinoa.locator(".badge").first()).toContainText("Scripted fixture");
+    await expect(quinoa).not.toContainText("Recorded from Gemini");
   });
 
   test("the feed is one column, and the chat panel follows it", async ({ page }) => {
@@ -92,7 +92,7 @@ test.describe("feed: the sticky decision row", () => {
     const approve1 = item(page, 1).getByTestId("approve-button");
     await expect(approve1).toBeInViewport({ ratio: 1 });
     expect((await approve1.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await expect(item(page, 1).getByTestId("decision")).toContainText("₹7,498");
+    await expect(item(page, 1).getByTestId("decision")).toContainText("₹9,191");
     await page.evaluate(() => window.scrollBy(0, 500));
     await expect(approve1).toBeInViewport({ ratio: 1 });
 

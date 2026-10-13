@@ -9,9 +9,10 @@ import {
   TIMELINE,
   approveReducer,
   clockTime,
+  copySourceLabel,
   initialApproveState,
 } from "../lib/approveMachine";
-import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, requestChat } from "../lib/chatBridge";
+import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, requestChat } from "../lib/chatBridge";
 import { inr } from "../lib/format";
 import { audienceChain, playImpact } from "../lib/impact";
 import { prefersReducedMotion } from "../lib/motion";
@@ -106,6 +107,7 @@ export function ApprovePanel({
   const impact = playImpact(play);
   const result = state.result;
   const chain = result ? audienceChain(result.assignment) : null;
+  const copyLabel = copySourceLabel(result?.copy);
   const showButton = phase === "idle" || phase === "submitting" || phase === "error";
   const motionOn = state.animate;
   const approvedTime = clockTime(state.approvedAt);
@@ -296,9 +298,15 @@ export function ApprovePanel({
 
   // ---- follow-ups ----
 
+  // One click sends the opening message; the chat panel ignores a repeat for the same customer, and
+  // this latch stops a double click from navigating to /chat twice when no panel is on the page.
+  const askedAt = useRef(0);
   function chatAsCustomer() {
     const id = customer?.customer_id;
-    if (!requestChat("prefill", DEMO_MESSAGE, id)) router.push(chatUrlFor("prefill", id));
+    const now = Date.now();
+    if (now - askedAt.current < 1500) return;
+    askedAt.current = now;
+    if (!requestChat("ask", demoMessageFor(customer?.language), id)) router.push(chatUrlFor("ask", id));
   }
   function seeHoldout() {
     if (!requestChat("holdout", DEMO_MESSAGE)) router.push(chatUrlFor("holdout"));
@@ -356,6 +364,7 @@ export function ApprovePanel({
           collapsed={state.collapsed}
           seconds={seconds}
           elapsedMs={state.elapsedMs}
+          copy={result?.copy}
         />
       ) : null}
 
@@ -414,6 +423,14 @@ export function ApprovePanel({
             </p>
           )}
 
+          {copyLabel ? (
+            <p className={styles.copySource}>
+              <span className="chip" title="Where the offer copy came from" data-testid="copy-source">
+                {copyLabel}
+              </span>
+            </p>
+          ) : null}
+
           <div className={styles.previewRow}>
             <MeenaPreview
               state={preview}
@@ -426,7 +443,7 @@ export function ApprovePanel({
                 Chat as {customerName}
               </button>
               <button type="button" className={styles.follow} onClick={seeHoldout} data-testid="see-holdout">
-                See what the holdout group sees
+                See the holdout view
               </button>
             </div>
           </div>

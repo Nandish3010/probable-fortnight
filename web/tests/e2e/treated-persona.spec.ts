@@ -47,5 +47,7 @@ test.describe("lib/treatedPersona: treatedCustomerFor", () => {
     expect(chatUrlFor("prefill", "CUST-RAVI")).toBe("/chat?as=prefill&customer=CUST-RAVI");
     expect(chatUrlFor("prefill")).toBe("/chat?as=prefill");
     expect(chatUrlFor("holdout")).toBe("/chat?as=holdout");
+    expect(chatUrlFor("ask", "CUST-RAVI")).toBe("/chat?as=ask&customer=CUST-RAVI");
+    expect(chatUrlFor("ask")).toBe("/chat?as=ask");
   });
 });

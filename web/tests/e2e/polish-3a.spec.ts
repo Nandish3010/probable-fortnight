@@ -55,9 +55,9 @@ test.describe("the approved result", () => {
     await expect(heading).not.toContainText("₹");
     await expect(heading).not.toContainText("recovered");
     // the recovered figure appears twice in the result (the number, then the chip), never in the heading
-    await expect(result.getByTestId("approve-recovered-amount")).toHaveText("₹7,498");
-    await expect(result.getByTestId("approve-recovered-delta")).toHaveText("+₹7,498 vs doing nothing");
-    const mentions = await result.evaluate((el) => (el.textContent ?? "").split("₹7,498").length - 1);
+    await expect(result.getByTestId("approve-recovered-amount")).toHaveText("₹9,191");
+    await expect(result.getByTestId("approve-recovered-delta")).toHaveText("+₹9,191 vs doing nothing");
+    const mentions = await result.evaluate((el) => (el.textContent ?? "").split("₹9,191").length - 1);
     expect(mentions).toBe(2);
   });
 

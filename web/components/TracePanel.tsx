@@ -7,7 +7,7 @@ import { recordedEvents } from "../lib/recorded";
 import { Badge } from "./Badge";
 import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
-import { traceDurationMs } from "../lib/health";
+import { showsModelChip, traceDurationMs } from "../lib/health";
 import { ModelChip } from "./ModelChip";
 import { SourceBadge } from "./SourceBadge";
 import { TraceView } from "./traceRows";
@@ -99,7 +99,7 @@ export function TracePanel({ runId }: { runId: string }) {
       <div className="trace-panel__header">
         <SourceBadge source={response.source} recordedAt={runSummary?.recorded_at ?? response.recorded_at} fallbackReason={runSummary?.fallback_reason} />
         {fromRecorded ? <Badge kind="replay" detail="recorded copy, live service not answering" /> : null}
-        <ModelChip latencyMs={traceDurationMs(events)} />
+        {showsModelChip(runSummary?.source ?? response.source) ? <ModelChip latencyMs={traceDurationMs(events)} runModel={runSummary?.model} /> : null}
         <button type="button" onClick={replay} disabled={replaying}>
           {replaying ? "Replaying (4x)…" : "Replay at 4x"}
         </button>

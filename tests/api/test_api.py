@@ -144,6 +144,16 @@ def test_approve_reports_copy_source_and_writes_distinct_variants(client):
         assert len(texts) == a["copy"]["variants"] and len(set(texts)) == len(texts)
 
 
+def test_approve_reports_copy_provenance_for_pregenerated_plays(client):
+    """copy.provenance is additive and optional: a seeded play carrying the committed
+    AI.GENERATE_TABLE copy (fixtures/copy_pregenerated.json) reports source "existing" with
+    provenance "bigquery_pregenerated"; the field is always one of the known strings."""
+    a = client.post("/approve", json={"play_id": "play_tea_ds04_v1"}, headers=_h("v-prov")).json()
+    assert a["copy"]["source"] == "existing"
+    assert a["copy"]["provenance"] == "bigquery_pregenerated"
+    assert client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-prov2")).json()["copy"]["provenance"] in {"bigquery_pregenerated", "existing", "bigquery", "templated"}
+
+
 def test_approve_after_window_end_is_rejected_not_silently_inverted(client, monkeypatch):
     """services/api/approve.py used to rewrite play["window"]["start"] to "now" unconditionally,
     even when "now" is already past the original window end (whenever TAAL_NOW is unset and the
@@ -193,7 +203,7 @@ def test_chat_sse_and_json(client):
     # the offer text here is in English, not the Kannada it used to be under the scripted stub.
     # Kannada offer delivery is still covered by fixtures/conversations/01_offer_delivered_kn.json
     # (a scripted-stub play with the tenant's full language set).
-    assert frames and ("Best before" in frames[0]["text"] or "15 Oct 2026" in frames[0]["text"]) and frames[0]["latency_ms"] >= 0
+    assert frames and any(m in frames[0]["text"] for m in ("Best before", "Best-before", "15 Oct 2026", "2026-10-15")) and frames[0]["latency_ms"] >= 0
     r2 = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Do you have Cola Zero?"}, headers={**_h("v-chat"), "Accept": "application/json"})
     env = r2.json()[0]
     assert env["list"]["rows"] and len(env["list"]["rows"]) <= 10
@@ -491,5 +501,5 @@ def test_customers_demo_includes_a_real_holdout_customer(client):
     client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-cust"))
     meena = client.post("/chat", json={"session_id": "CUST-MEENA:web", "text": "Any offers today?"}, headers={**_h("v-cust"), "Accept": "application/json"}).json()[0]
     theirs = client.post("/chat", json={"session_id": f"{holdout['customer_id']}:web", "text": "Any offers today?"}, headers={**_h("v-cust"), "Accept": "application/json"}).json()[0]
-    assert "Best before" in meena["text"] or "ಬಳಕೆಗೆ" in meena["text"]
-    assert "Best before" not in theirs["text"] and "ಬಳಕೆಗೆ" not in theirs["text"]
+    assert any(m in meena["text"] for m in ("Best before", "Best-before", "ಬಳಕೆಗೆ"))
+    assert not any(m in theirs["text"] for m in ("Best before", "Best-before", "ಬಳಕೆಗೆ"))

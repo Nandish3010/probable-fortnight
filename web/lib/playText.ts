@@ -114,7 +114,7 @@ export interface AudienceEstimate {
   /** Held back so the result can be measured (at least one when there is anyone to hold back). */
   holdout: number;
   treated: number;
-  /** "about 291 of 323 consented customers get the offer; about 32 are held back to measure the result." */
+  /** "about 355 of 394 consented customers get the offer; about 39 are held back to measure the result." */
   text: string;
 }
 

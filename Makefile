@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces deck deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces pregenerate-copy deck deploy clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -112,6 +112,9 @@ eval-gaps:        ## pick the 50 planner evalset gaps (stratified) -> eval/raw/p
 
 planner-traces:   ## one recorded planner run per selected gap -> eval/raw/planner_traces_<date>/ (set TAAL_MODEL_BACKEND=vertex)
 	uv run python -m harness.record_planner_traces
+
+pregenerate-copy: ## demo plays' offer copy via BigQuery AI.GENERATE_TABLE -> fixtures/copy_pregenerated.json (set TAAL_MODEL_BACKEND=vertex, GOOGLE_CLOUD_PROJECT; run `make generate` first)
+	uv run python -m harness.pregenerate_copy
 
 eval:             ## planner evalset (stub or vertex per TAAL_MODEL_BACKEND)
 	uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals

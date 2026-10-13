@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { OFFER_PRICE_50 } from "./offerCopy";
 import { API, asVisitor, collectConsoleErrors, expectNoConsoleErrors, shot, visitorHeaders } from "./helpers";
 
 async function say(page: import("@playwright/test").Page, text: string) {
@@ -19,11 +20,11 @@ test.describe("Meena: chat", () => {
     // Kannada even for this Kannada-preference customer (observed live, both in and out of CI),
     // so check the stable facts instead: a reply arrived, and no price is disclosed.
     await expect(log.locator(".chat-msg--agent").first()).toBeVisible();
-    await expect(log.getByText(/for ₹50\b/)).toHaveCount(0);
+    await expect(log.getByText(OFFER_PRICE_50)).toHaveCount(0);
 
     await page.request.post(`${API}/approve`, { headers: visitorHeaders(vid), data: { play_id: "play_chips_ds07_v1" } });
     await say(page, "Any offers today?");
-    await expect(log.getByText(/for ₹50\b/).last()).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(OFFER_PRICE_50).last()).toBeVisible({ timeout: 15_000 });
     await shot(page, "meena-01-offer");
 
     // The live Gemini-backed Customer Agent replies in Kannada for this Kannada-preference
@@ -98,14 +99,14 @@ test.describe("customer picker: differentiation", () => {
     const log = page.getByTestId("chat-log");
     // The price can appear twice in one message (the text and its citation line), so match
     // either occurrence rather than requiring exactly one.
-    await expect(log.getByText(/for ₹50\b/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(OFFER_PRICE_50).first()).toBeVisible({ timeout: 15_000 });
 
     // switch to the holdout customer: a fresh conversation, no offer, ever
     await select.selectOption({ label: await select.locator("option", { hasText: "holdout" }).textContent() as string });
     await expect(log.getByText('No messages yet. Try "Any offers today?"')).toBeVisible();
     await say(page, "Any offers today?");
     await expect(log.locator(".chat-msg--agent").first()).toBeVisible({ timeout: 15_000 });
-    await expect(log.getByText(/for ₹50\b/)).toHaveCount(0);
+    await expect(log.getByText(OFFER_PRICE_50)).toHaveCount(0);
     await expectNoConsoleErrors(errors);
   });
 });

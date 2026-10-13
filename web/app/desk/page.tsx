@@ -7,6 +7,9 @@ import { Icon } from "../../components/icons";
 import { InboxRow } from "../../components/InboxRow";
 import { LiveReplan } from "../../components/LiveReplan";
 import { ModelChip } from "../../components/ModelChip";
+import { PlanEvalChip } from "../../components/PlanEvalChip";
+import { buildAttempts } from "../../components/traceAttempts";
+import { showsModelChip } from "../../lib/health";
 import { PlayCard } from "../../components/PlayCard";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { SourceBadge } from "../../components/SourceBadge";
@@ -226,6 +229,16 @@ export default function PlayDeskPage() {
   }, []);
 
   const selected = plays.find((p) => p.play_id === selectedId) ?? null;
+  // The payload's `iterations` counts model text turns, not drafts, so it can read 1 while the trace
+  // lists two attempts. Say what the trace shows; fall back to the payload only without a trace.
+  const rerunAttempts = liveTrace ? buildAttempts(liveTrace).length : 0;
+  const rerunEffort =
+    rerunAttempts > 0
+      ? `${rerunAttempts} attempt${rerunAttempts === 1 ? "" : "s"}`
+      : typeof rerunResult?.iterations === "number" && rerunResult.iterations > 0
+        ? `${rerunResult.iterations} iteration${rerunResult.iterations === 1 ? "" : "s"}`
+        : null;
+  const rerunRunModel = liveTrace?.find((e) => e.kind === "run_summary")?.model ?? null;
 
   // Focus follows a phone's screen change: the play card's title on the detail screen, the row that
   // was open on the inbox screen.
@@ -392,7 +405,8 @@ export default function PlayDeskPage() {
                   </div>
                   <p className="muted trace-section__hint">
                     The trace below is the recorded run. <strong>Plan live</strong> runs the planner on this gap now and
-                    streams each tool call and guardrail check as it happens, with the time elapsed.
+                    streams each tool call and guardrail check as it happens, with the time elapsed.{" "}
+                    <PlanEvalChip />
                   </p>
                   {planError ? (
                     <ErrorCard
@@ -443,11 +457,11 @@ export default function PlayDeskPage() {
                           </p>
                           <p className="re-plan-result__meta">
                             <SourceBadge source={rerunResult.source} fallbackReason={rerunResult.fallback_reason} />
-                            {typeof rerunResult.iterations === "number" ? (
-                              <span className="muted"> {rerunResult.iterations} iteration{rerunResult.iterations === 1 ? "" : "s"}</span>
-                            ) : null}
+                            {rerunEffort ? <span className="muted" data-testid="rerun-effort"> {rerunEffort}</span> : null}
                             {" "}
-                            <ModelChip latencyMs={rerunResult.elapsed_ms} plainTimeWithoutModel />
+                            {showsModelChip(rerunResult.source) ? (
+                              <ModelChip latencyMs={rerunResult.elapsed_ms} plainTimeWithoutModel runModel={rerunRunModel} />
+                            ) : null}
                           </p>
                         </>
                       )}

@@ -1,3 +1,4 @@
+import { DEMO_MESSAGE, DEMO_MESSAGE_KN, demoMessageFor } from "../../lib/chatBridge";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
 import { approveSettled, assertNoHorizontalOverflow, injectMockFaults, openBeat, setMockDelay } from "./helpers";
@@ -32,10 +33,16 @@ test.describe("after Approve, the offer goes to a customer in the play's audienc
     await expect(page.locator("#chat-panel h3")).toHaveText("Chat as Ravi");
     await expect(page.getByTestId("chat-customer-note")).toContainText("In the treated group once you approve");
 
-    await page.getByTestId("chat-as-customer").click();
-    await expect(page.getByLabel("Message")).toBeFocused();
-    await expect(page.getByLabel("Message")).toHaveValue("Any offers today?");
+    // One click sends the opening message (nothing is left pre-filled), and a double click sends it once.
+    await page.getByTestId("chat-as-customer").dblclick();
     await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-RAVI");
+    const mine = page.getByTestId("chat-log").locator(".chat-msg--customer");
+    await expect(mine).toHaveText("Any offers today?");
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--agent").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByLabel("Message")).toHaveValue("");
+    await page.getByTestId("chat-as-customer").click(); // a later click does not send the same opening message again
+    await page.waitForTimeout(400);
+    await expect(mine).toHaveCount(1);
   });
 
   test("the holdout follow-up still picks the holdout customer after the Tea approve", async ({ page }) => {
@@ -59,18 +66,22 @@ test.describe("after Approve, the offer goes to a customer in the play's audienc
     await expect(card.getByTestId("meena-preview")).toContainText("What Meena receives");
     await expect(card.getByTestId("chat-as-customer")).toHaveText("Chat as Meena");
     await card.getByTestId("chat-as-customer").click();
-    await expect(page).toHaveURL(/\/chat\?as=prefill&customer=CUST-MEENA/);
+    await expect(page).toHaveURL(/\/chat\?as=ask&customer=CUST-MEENA/);
     await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-MEENA");
-    await expect(page.getByLabel("Message")).toHaveValue("Any offers today?");
+    // Meena's language is Kannada, so the opening message is the Kannada question, not the English one
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("ಇಂದು ಯಾವುದಾದರೂ ಆಫರ್ ಇದೆಯಾ?");
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--agent").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByLabel("Message")).toHaveValue("");
   });
 
   test("on the Desk, Tea's 'Chat as Ravi' opens /chat as Ravi", async ({ page }) => {
     const card = await approveOnDesk(page, /Darjeeling Tea 100G/);
     await expect(card.getByTestId("chat-as-customer")).toHaveText("Chat as Ravi");
     await card.getByTestId("chat-as-customer").click();
-    await expect(page).toHaveURL(/\/chat\?as=prefill&customer=CUST-RAVI/);
+    await expect(page).toHaveURL(/\/chat\?as=ask&customer=CUST-RAVI/);
     await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-RAVI");
     await expect(page.locator("#chat-panel h3")).toHaveText("Chat as Ravi");
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("Any offers today?");
   });
 
   test("/chat opens on the customer of the play the visitor approved last; before any approval it is Meena", async ({ page }) => {
@@ -120,7 +131,9 @@ test.describe("model chip and trace header", () => {
     const trace = page.getByTestId("play-detail").locator(".trace-panel").first();
     const chip = trace.getByTestId("model-chip");
     await expect(chip).toHaveText(/^gemini-3\.5-flash( · \d+\.\d s)?$/);
-    await expect(chip).toHaveAttribute("title", /Fallback: gemini-3\.5-flash-lite/);
+    // the tooltip names the run's own model; today's fallback configuration is not part of the run
+    await expect(chip).toHaveAttribute("title", /^Model: gemini-3\.5-flash\. Run time: /);
+    await expect(chip).not.toHaveAttribute("title", /Fallback/);
     await expect(chip).not.toContainText("lite");
     // the four provenance badges are untouched
     await expect(trace.getByText("Recorded from Gemini")).toBeVisible();
@@ -133,25 +146,28 @@ test.describe("model chip and trace header", () => {
     await expect(trace.locator("ol.trace-panel__list")).toHaveAttribute("aria-label", /^Agent trace for run run_/);
   });
 
-  test("when /health names no model the chip is absent and the header is otherwise unchanged", async ({ page }) => {
+  test("when /health names no model the chip falls back to the model the run itself recorded", async ({ page }) => {
     await injectMockFaults(page, { "/health": { kind: "http" } });
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
     const trace = page.getByTestId("play-detail").locator(".trace-panel").first();
     await expect(trace.getByText("Recorded from Gemini")).toBeVisible();
     await expect(trace.getByRole("button", { name: /Replay at 4x/ })).toBeVisible();
-    await expect(page.getByTestId("model-chip")).toHaveCount(0);
+    await expect(trace.getByTestId("model-chip")).toHaveText(/^gemini-3\.5-flash( · \d+\.\d s)?$/);
+    await expect(trace.getByTestId("model-chip")).not.toHaveAttribute("title", /Fallback/);
   });
 
-  test("Plan live shows the chip in the live panel and the run time on the result", async ({ page }) => {
+  test("Plan live on the scripted (stub) backend shows no model chip, in flight or on the result", async ({ page }) => {
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
     const card = page.getByTestId("play-detail");
     await card.getByTestId("plan-live").click();
     const live = card.getByTestId("live-replan");
-    await expect(live.getByTestId("model-chip")).toHaveText("gemini-3.5-flash"); // exact: no run time while the run is in flight
+    await expect(live).toBeVisible();
+    await expect(live.getByTestId("model-chip")).toHaveCount(0); // the mock backend is the scripted stub
     await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 10_000 });
-    await expect(card.locator(".re-plan-result__meta").getByTestId("model-chip")).toHaveText("gemini-3.5-flash · 1.2 s");
+    await expect(card.locator(".re-plan-result__meta").getByTestId("model-chip")).toHaveCount(0);
+    await expect(card.locator(".re-plan-result__meta").getByText("Scripted fixture")).toBeVisible();
   });
 });
 
@@ -188,5 +204,32 @@ test.describe("demo path: no horizontal overflow at 360 px", () => {
     await page.getByTestId("model-chip").first().waitFor();
     await page.getByTestId("trace-technical-details").first().locator("summary").click();
     await assertNoHorizontalOverflow(page);
+  });
+});
+
+test.describe("the opening message follows the customer's language", () => {
+  test("demoMessageFor: Kannada for a Kannada customer, English for everyone else", () => {
+    expect(demoMessageFor("kn")).toBe(DEMO_MESSAGE_KN);
+    expect(demoMessageFor("Kannada")).toBe(DEMO_MESSAGE_KN);
+    expect(demoMessageFor("en")).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor("hi")).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor(undefined)).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor(null)).toBe(DEMO_MESSAGE);
+    expect(DEMO_MESSAGE_KN).toBe("ಇಂದು ಯಾವುದಾದರೂ ಆಫರ್ ಇದೆಯಾ?");
+    expect(DEMO_MESSAGE).toBe("Any offers today?");
+  });
+  test("Chat as Ravi (English) sends the English message; Chat as Meena (Kannada) sends the Kannada one", async ({ page }) => {
+    // Ravi: the Tea beat on the landing, the chat panel is on the page
+    await openBeat(page);
+    await approveButton(page).click();
+    await approveSettled(page);
+    await expect(page.getByTestId("chat-as-customer")).toHaveText("Chat as Ravi");
+    await page.getByTestId("chat-as-customer").click();
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("Any offers today?");
+    // Meena: the chips play on the Desk (no chat panel there), through /chat?as=ask
+    const card = await approveOnDesk(page, /Masala Chips 200G/);
+    await expect(card.getByTestId("chat-as-customer")).toHaveText("Chat as Meena");
+    await card.getByTestId("chat-as-customer").click();
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText(DEMO_MESSAGE_KN);
   });
 });

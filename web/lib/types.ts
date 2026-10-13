@@ -330,6 +330,20 @@ export interface HealthResponse {
   server_now?: string;
   /** Optional: the model id that serves when the primary is unavailable (e.g. "gemini-3.5-flash-lite"). */
   model_fallback?: string;
+  /** Optional, top-level: the model id the planner uses (read first; the vertex check detail is the fallback). */
+  model?: string;
+  /** Optional: "vertex" or "stub". */
+  backend?: string;
+  /** Optional: the committed live-plan evaluation (date it ran, plans that passed, plans run, median seconds). Absent on older deploys. */
+  plan_live_eval?: PlanLiveEval;
+}
+
+export interface PlanLiveEval {
+  date: string;
+  passed: number;
+  total: number;
+  p50_s: number;
+  source?: string;
 }
 
 export interface ForecastPoint {
@@ -374,6 +388,10 @@ export interface ApproveResponse {
   forecast: Forecast;
   source: Source;
   note?: string;
+  /** Optional: where the offer copy came from. Read only from `copy.source` ("bigquery" | "templated" |
+   * "existing") and `copy.provenance` ("bigquery_pregenerated" on stored copy that BigQuery generated
+   * earlier); an API that does not send them shows no badge. */
+  copy?: { source?: string; provenance?: string };
   /** When the play was approved (ISO), if the API says. Read-only: the UI never sends it. */
   approved_at?: string;
 }
@@ -440,6 +458,8 @@ export interface TraceEvent {
   source?: PlanSource;
   status?: "proposed" | "no_play" | "skipped";
   fallback_reason?: string | null;
+  /** run_summary only: the model id the planner ran ("stub-planner" for the scripted backend). */
+  model?: string;
   // A seeded recording's run_summary only (harness/recorded_traces.py's _seeded_trace_text):
   // when this run_summary was recorded, distinct from the run itself (`timestamp` above).
   recorded_at?: string;
