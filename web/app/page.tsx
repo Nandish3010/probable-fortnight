@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "../components/Badge";
 import { ChatPanel } from "../components/ChatPanel";
 import { DecisionFeed, FeedSkeleton } from "../components/DecisionFeed";
+import { DecisionPreview } from "../components/DecisionPreview";
 import { ErrorCard } from "../components/ErrorCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
 import { Icon } from "../components/icons";
@@ -27,6 +28,7 @@ import styles from "./page.module.css";
 
 const HERO_LINE =
   "Taal finds the stock you will throw away and sells it first: legally, to the right people, with a holdout to prove it.";
+const SUBLINE = "A planner proposes, you approve, and a holdout group measures what it did.";
 
 interface Beat {
   gap: Gap | null;
@@ -69,6 +71,8 @@ export default function LandingPage() {
   // Bumped by Reset so the feed loads afresh.
   const [feedKey, setFeedKey] = useState(0);
   const [beatStarted, setBeatStarted] = useState(false);
+  // The prefetched hero gap and play, shown as the decision card before the button is pressed.
+  const [preview, setPreview] = useState<Beat | null>(null);
   const [gap, setGap] = useState<Gap | null>(null);
   const [play, setPlay] = useState<Play | null>(null);
   // True once a live read has come back, so "nothing to show" is not mistaken for "still loading".
@@ -88,6 +92,9 @@ export default function LandingPage() {
   useEffect(() => {
     if (isPhoneNow()) return; // the phone feed reads its own data
     if (!prefetch.current) prefetch.current = startPrefetch();
+    prefetch.current.promise.then(setPreview, () => {
+      // not shown: the click loads afresh and shows its own outcome
+    });
   }, []);
 
   async function runTheBeat() {
@@ -136,6 +143,8 @@ export default function LandingPage() {
       setGap(null);
       setPlay(null);
       prefetch.current = isPhoneNow() ? null : startPrefetch();
+      setPreview(null);
+      prefetch.current?.promise.then(setPreview, () => {});
       setConfirmReset(false);
     } catch (e) {
       setResetError(toApiError(e, "/reset"));
@@ -160,21 +169,27 @@ export default function LandingPage() {
     beatPanelRef.current?.querySelector<HTMLElement>("[data-card-title]")?.focus({ preventScroll: true });
   }, [beatReady]);
 
+  // public/loop.svg is a copy of docs/loop.svg (the one source; `npm run sync:loop` refreshes it,
+  // tests/e2e/loop-svg.spec.ts fails when the two differ).
+  const loop = (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className={styles.loop}
+      src="/loop.svg"
+      width={1600}
+      height={400}
+      alt="The Taal loop in five steps: Forecast, Propose, Approve, Offer, Measure. An arrow returns from Measure to Forecast, labelled priors update."
+      data-testid="loop-diagram"
+    />
+  );
+
   return (
     <main id="main-content" tabIndex={-1} className="page">
       <section className={`${styles.top} ${beatReady ? styles.topCompact : ""}`}>
         <h1 className={styles.heroLine}>{HERO_LINE}</h1>
-        {/* public/loop.svg is a copy of docs/loop.svg (the one source; `npm run sync:loop` refreshes it,
-            tests/e2e/loop-svg.spec.ts fails when the two differ). */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className={styles.loop}
-          src="/loop.svg"
-          width={1600}
-          height={400}
-          alt="The Taal loop in five steps: Forecast, Propose, Approve, Offer, Measure. An arrow returns from Measure to Forecast, labelled priors update."
-          data-testid="loop-diagram"
-        />
+        <p className={styles.subline}>{SUBLINE}</p>
+        {/* Phones: the loop (hidden on narrow screens) and the legend row, as before. */}
+        {phone ? loop : null}
         <div className={styles.meta}>
           <p
             className={styles.clock}
@@ -211,23 +226,34 @@ export default function LandingPage() {
                 <PlayCard play={play} gap={gap} mode="hero" now={serverNow} />
               </div>
             ) : (
-              <div className="card">
-                <h2>Run the 60-second beat</h2>
-                <p className="muted">
-                  One click opens a real stock gap, its pre-proposed play, and stops at Approve.
-                </p>
+              <div className={`card ${styles.decisionCard}`}>
                 {!beatStarted ? (
-                  <button type="button" className="hero__cta" onClick={runTheBeat}>
-                    Run the 60-second beat
-                  </button>
+                  <DecisionPreview gap={preview?.gap ?? null} play={preview?.play ?? null} now={serverNow}>
+                    <button type="button" className="hero__cta" onClick={runTheBeat}>
+                      Run the 60-second beat
+                    </button>
+                    <p className={styles.assure}>No sign-in. Synthetic data, labelled.</p>
+                  </DecisionPreview>
                 ) : beatError ? (
-                  <ErrorCard error={beatError} onRetry={runTheBeat} onShowRecorded={showRecordedBeat} />
+                  <>
+                    <h2>Run the 60-second beat</h2>
+                    <ErrorCard error={beatError} onRetry={runTheBeat} onShowRecorded={showRecordedBeat} />
+                  </>
                 ) : usingRecorded ? (
-                  <p className="muted">No recorded copy of this gap is available.</p>
+                  <>
+                    <h2>Run the 60-second beat</h2>
+                    <p className="muted">No recorded copy of this gap is available.</p>
+                  </>
                 ) : beatLoaded ? (
-                  <p className="muted">No plan has been proposed for this gap yet.</p>
+                  <>
+                    <h2>Run the 60-second beat</h2>
+                    <p className="muted">No plan has been proposed for this gap yet.</p>
+                  </>
                 ) : (
-                  <p className="muted">Loading gap and play…</p>
+                  <>
+                    <h2>Run the 60-second beat</h2>
+                    <p className="muted">Loading gap and play…</p>
+                  </>
                 )}
               </div>
             )}
@@ -237,50 +263,49 @@ export default function LandingPage() {
         </>
       )}
 
-      <section className="card-grid">
-        <Link className="card-link" href="/desk">
-          <div className="card">
-            <div className="card__header">
-              <h3>
-                <span className="card-link__icon">
-                  <Icon name="inbox" size={24} />
-                </span>
-                Play Desk
-              </h3>
+      {/* Desktop: the loop sits under the decision, so the card is what the first screen shows. */}
+      {phone ? null : <div className={styles.loopRow}>{loop}</div>}
+
+      <nav aria-label="Where to go next">
+        <ul className={styles.ruled}>
+          <li>
+            <Link className={styles.ruledLink} href="/desk">
+              <span className={styles.ruledIcon}>
+                <Icon name="inbox" size={24} />
+              </span>
+              <span className={styles.ruledText}>
+                <strong>Play Desk</strong>
+                <span className="muted">Inbox ranked by rupees at stake, guardrails, trace, policy editor.</span>
+              </span>
               <Badge kind="live" detail="live reads" />
-            </div>
-            <p className="muted">Inbox ranked by rupees at stake, guardrails, trace, policy editor.</p>
-          </div>
-        </Link>
-        <Link className="card-link" href="/phone">
-          <div className="card">
-            <div className="card__header">
-              <h3>
-                <span className="card-link__icon">
-                  <Icon name="smartphone" size={24} />
-                </span>
-                Phone view
-              </h3>
+            </Link>
+          </li>
+          <li>
+            <Link className={styles.ruledLink} href="/phone">
+              <span className={styles.ruledIcon}>
+                <Icon name="smartphone" size={24} />
+              </span>
+              <span className={styles.ruledText}>
+                <strong>Phone view</strong>
+                <span className="muted">Priya&apos;s capture-to-gap flow. Own upload is experimental.</span>
+              </span>
               <Badge kind="replay" detail="sample pallet photo" />
-            </div>
-            <p className="muted">Priya&apos;s capture-to-gap flow. Own upload is experimental.</p>
-          </div>
-        </Link>
-        <Link className="card-link" href="/outcomes">
-          <div className="card">
-            <div className="card__header">
-              <h3>
-                <span className="card-link__icon">
-                  <Icon name="trending-up" size={24} />
-                </span>
-                Outcomes
-              </h3>
+            </Link>
+          </li>
+          <li>
+            <Link className={styles.ruledLink} href="/outcomes">
+              <span className={styles.ruledIcon}>
+                <Icon name="trending-up" size={24} />
+              </span>
+              <span className={styles.ruledText}>
+                <strong>Outcomes</strong>
+                <span className="muted">Treated vs holdout, the CEO number, unmeasured plays.</span>
+              </span>
               <Badge kind="synthetic" detail="no pilot yet" />
-            </div>
-            <p className="muted">Treated vs holdout, the CEO number, unmeasured plays.</p>
-          </div>
-        </Link>
-      </section>
+            </Link>
+          </li>
+        </ul>
+      </nav>
 
       <footer className="footer">
         <div className="footer__links">
@@ -303,7 +328,7 @@ export default function LandingPage() {
            on it on the way to the beat. It asks first. */}
         <div className={styles.footerActions}>
           <div className={styles.footerRow}>
-            <button type="button" onClick={() => setConfirmReset(true)} disabled={resetting}>
+            <button type="button" className={styles.quietButton} onClick={() => setConfirmReset(true)} disabled={resetting}>
               {resetting ? "Resetting…" : "Reset demo data"}
             </button>
             {resetNote ? <p className={`muted ${styles.resetNote}`}>{resetNote}</p> : null}
