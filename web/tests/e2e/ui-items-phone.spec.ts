@@ -14,8 +14,14 @@ test.describe("landing on a phone: loop diagram", () => {
   test("between 641 and 767 px it is full width and does not push the page sideways", async ({ page }) => {
     await page.setViewportSize({ width: 700, height: 900 });
     await page.goto("/");
+    // Hydration has finished once the phone layout is mounted; the image is measured only after it has
+    // loaded, so the box is read from a settled page and not from a node that is about to be swapped.
+    await expect(page.getByTestId("phone-landing")).toBeVisible();
     const img = page.getByTestId("loop-diagram");
     await expect(img).toBeVisible();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.isConnected && el.complete && el.naturalWidth > 0))
+      .toBe(true);
     const [imgW, mainW] = await Promise.all([
       img.evaluate((el) => el.getBoundingClientRect().width),
       page.locator("main").evaluate((el) => el.getBoundingClientRect().width),
