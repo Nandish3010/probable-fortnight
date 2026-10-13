@@ -10,13 +10,28 @@ recording, badged `Recorded from Gemini · 12 Oct 2026`: 16 independent live Ver
 (`gemini-3.5-flash`). Set b, 8 runs on the then-current prompt v6, all reached `proposed` with 0 fallbacks in
 19.1 to 28.9 s, and 7 of 8 passed on the first attempt. Set c, 8 runs on prompt v7, all reached `proposed` with
 0 fallbacks in 19.0 to 31.4 s, 7 of 8 with no rejection, and every run states both figures (the improvement over
-doing nothing and the beat over a blanket markdown). `harness/seed_plays.py` seeds the pinned run, `c/run_02`,
-which was accepted on its first attempt (pin in `eval/raw/seed_pins.json`). The play
-is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers (468 before
-consent) across 5 segments, expected margin ₹9,191 (waste avoided ₹9,397 minus transfer cost
-₹206), and it passed all eight guardrails. It beats a blanket 20% markdown by ₹6,186
-(`counterfactuals.play_net_inr` on the play; `GET /plays`; snapshot in
-`eval/raw/tea_recorded_beat_2026-10-12.json`, recorded runs in
+doing nothing and the beat over a blanket markdown). `harness/seed_plays.py` seeds the pinned run, `c/run_02`
+(pin in `eval/raw/seed_pins.json`): one `propose_play` attempt, accepted first time, no rejection, 26.8 s.
+
+What the figures are:
+
+- **₹9,191** (9,191.29) is the estimator's recovered-versus-doing-nothing figure: the play's expected margin,
+  waste avoided ₹9,397 minus transfer cost ₹206 (`expected_outcome.margin_inr`). The play still nets -₹25,829
+  against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing, projected on a seeded tenant.
+- **₹6,186** (6,186.47) is derived, not a stored estimator field: the blanket 20% markdown's loss (₹32,015.18,
+  `counterfactuals.blanket_markdown_inr`) minus the play's loss (₹25,828.71, `counterfactuals.play_net_inr`
+  = -25,828.71), i.e. `blanket_markdown_inr + play_net_inr`. It is one of the two sums `cite_or_drop` accepts as
+  cited (`cited_numbers` in `agents/gate/guardrails.py`; the other is `do_nothing_inr + play_net_inr` = 9,191.29), so
+  the rationale may state it.
+- **What is checked and when.** `cite_or_drop` checks only the numbers in the rationale of the final proposal
+  (`propose_play`), against the play's own fields. The earlier `check_guardrails` call in the trace ran on a
+  draft with an empty rationale, so its `cite_or_drop` line says "0 number(s) in rationale" and cites no
+  numbers; it is not a vacuous pass of the figures. The final proposal's rationale states 9191.29, 6186.47 and 394,
+  and passes.
+
+The play is a transfer of the 103 units to OUT-01 plus a nudge to 394 consented customers (468 before
+consent) across 5 segments, and it passed all eight guardrails (snapshot in
+`eval/raw/tea_recorded_beat_2026-10-12.json`, `GET /plays`; recorded runs in
 `eval/raw/planner_real_traces_tea_2026-10-12b/` and `-12c/`). Approval assigns 355 treated and 39
 holdout customers by hash, writes the play into `future_regressors`, and moves the projected
 write-off from ₹35,186 to ₹28,659 (local approve on the seeded tenant, 12 Oct 2026; the deployed
@@ -30,7 +45,7 @@ recording, badged `Recorded from Gemini · 10 Oct 2026`: five independent live V
 (`harness/record_flagship_traces.py --gap gap_chips_ds07 --runs 5`, `TAAL_MODEL_BACKEND=vertex`,
 `gemini-3.5-flash`, prompt v6) all reached `proposed` with 0 fallbacks in 21.8 to 27.6 s;
 `harness/seed_plays.py` picked run 5 to seed the play. Run 5 needed a second `propose_play`
-attempt (the first was rejected on a schema error, an unexpected `id` field), then passed all eight
+attempt (the first slipped on the schema, an unexpected `id` field; it was not a guardrail rejection), then passed all eight
 guardrails: a bundle of Masala Chips 200G with Cola Classic 250ML, ₹50 for the pair, offered to 352
 consented customers (426 before consent) across 6 segments through the web-chat channel. The model
 considered and rejected a Coconut Water bundle at ₹55, an Orange Juice bundle at ₹50 and a transfer
