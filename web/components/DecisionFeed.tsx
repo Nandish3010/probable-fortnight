@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ErrorCard } from "./ErrorCard";
 import { GapCard } from "./GapCard";
 import { PlayCard } from "./PlayCard";
@@ -52,7 +52,16 @@ export function FeedSkeleton() {
  * Only gaps that have a plan to decide on follow the hero; a hero gap with no plan degrades to the
  * gap alone. Cards beyond the hero have no recorded Gemini run, so each shows its own source
  * badge (Scripted fixture, Rules (fallback), ...) rather than borrowing the hero's. */
-export function DecisionFeed({ now, onHeroPlay }: { now?: Date; onHeroPlay?: (play: Play | null) => void }) {
+export function DecisionFeed({
+  now,
+  onHeroPlay,
+  afterFirst,
+}: {
+  now?: Date;
+  onHeroPlay?: (play: Play | null) => void;
+  /** Rendered under the first decision card (the phone landing puts the compact loop there). */
+  afterFirst?: ReactNode;
+}) {
   const [state, setState] = useState<FeedState>({ status: "loading" });
   // Restarts the "Waking the demo" clock when Retry loads again.
   const [loadEpoch, setLoadEpoch] = useState(0);
@@ -104,11 +113,8 @@ export function DecisionFeed({ now, onHeroPlay }: { now?: Date; onHeroPlay?: (pl
   if (state.status === "loading") {
     return (
       <div className={styles.feed}>
-        <div role="status" aria-busy="true" data-testid="feed-loading">
-          <span className="visually-hidden">Loading the top decisions</span>
-          <FeedSkeleton />
-        </div>
-        {/* Under the placeholders, so the cards that replace them are what the eye lands on. */}
+        {/* Above the placeholders: on a phone they fill the screen and the note would sit far below it.
+            No control is here to move (Approve arrives with the cards), so nothing shifts under a finger. */}
         <WakingNotice
           phase={wakePhase}
           onRetry={() => {
@@ -116,6 +122,10 @@ export function DecisionFeed({ now, onHeroPlay }: { now?: Date; onHeroPlay?: (pl
             void load();
           }}
         />
+        <div role="status" aria-busy="true" data-testid="feed-loading">
+          <span className="visually-hidden">Loading the top decisions</span>
+          <FeedSkeleton />
+        </div>
       </div>
     );
   }
@@ -188,6 +198,7 @@ export function DecisionFeed({ now, onHeroPlay }: { now?: Date; onHeroPlay?: (pl
                   </p>
                 </>
               )}
+              {i === 0 ? afterFirst : null}
               {decided ? (
                 <div className={styles.next} data-testid="feed-next">
                   {next ? (

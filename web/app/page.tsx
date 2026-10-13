@@ -9,11 +9,13 @@ import { DecisionPreview } from "../components/DecisionPreview";
 import { ErrorCard } from "../components/ErrorCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
 import { Icon } from "../components/icons";
+import { LoopCompact } from "../components/LoopCompact";
 import { PlayCard } from "../components/PlayCard";
 import { ResetDialog } from "../components/ResetDialog";
 import { StateLegend } from "../components/StateLegend";
 import { Tour } from "../components/Tour";
 import { WakingNotice } from "../components/WakingNotice";
+import { WatchPlanLive } from "../components/WatchPlanLive";
 import { COLD_START_OPTS, getGaps, getPlays, resetDemoData } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { formatDemoDate } from "../lib/format";
@@ -239,7 +241,7 @@ export default function LandingPage() {
 
       {phone ? (
         <section className={styles.phoneLanding} data-testid="phone-landing">
-          <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} />
+          <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} afterFirst={<LoopCompact />} />
           <ChatPanel play={feedPlay} wakingNotice={feedPlay !== null} />
         </section>
       ) : (
@@ -266,6 +268,7 @@ export default function LandingPage() {
                     <button type="button" className="hero__cta" onClick={runTheBeat}>
                       Run the 60-second beat
                     </button>
+                    <WatchPlanLive />
                     <p className={styles.assure}>No sign-in. Synthetic data, labelled.</p>
                   </DecisionPreview>
                 ) : beatError ? (
