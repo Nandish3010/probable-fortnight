@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { API, SHOTS, asVisitor, visitorHeaders } from "./helpers";
+import { OFFER_PRICE_50 } from "./offerCopy";
 
 // Frames for deck slides 6 (trace attempts + chat) and 10 (phone confirm + Outcomes), captured from the
 // redesigned UI against the local stack (see `make live-test`). Written next to the other live
@@ -75,8 +76,9 @@ test.describe("Deck frames", () => {
     // A Kannada question (code-mixed, as customers write): the reply comes back in Kannada with an English gloss.
     await page.getByPlaceholder("Type a message…").fill("ನಮಸ್ಕಾರ, ಇಂದು ಯಾವುದಾದರೂ offers ಇದೆಯೇ?");
     await page.getByRole("button", { name: "Send" }).click();
-    await expect(log.getByText(/₹50ಕ್ಕೆ/)).toBeVisible({ timeout: 15_000 });
-    await expect(log.getByText(/for ₹50\b/)).toBeVisible();
+    await expect(log.getByText(/(?:₹|Rs\.?\s?)50ಕ್ಕೆ/)).toBeVisible({ timeout: 15_000 });
+    // The Kannada line and its English gloss both carry the price, so pin this check to the gloss.
+    await expect(log.getByTestId("english-gloss")).toContainText(OFFER_PRICE_50);
     await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/slide06-chat.png` });
   });
 

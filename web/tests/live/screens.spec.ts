@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { SHOTS, asVisitor, shot } from "./helpers";
+import { OFFER_PRICE_50 } from "./offerCopy";
 
 // Screenshot-only capture for docs/screenshots/, against the real stack (see `make live-test`).
 // The gap card's "days remaining" is computed client-side against the browser's wall clock, while
@@ -149,7 +150,7 @@ test.describe("Screenshots: Meena's customer chat, Kannada offer", () => {
     // cited. The screenshot itself may or may not show Kannada text depending on what the model
     // produced this run; capturing a guaranteed-Kannada shot for the deck is a manual concern,
     // not something this CI gate can force.
-    await expect(log.getByText(/₹50\b/)).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(OFFER_PRICE_50)).toBeVisible({ timeout: 15_000 });
     // the chat panel alone, so the deck's UX card shows the offer rather than page chrome
     await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/meena-offer-kannada.png` });
   });
