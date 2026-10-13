@@ -35,7 +35,7 @@ export function DecisionPreview({
       {why && impact ? (
         <>
           <p className={styles.why}>{why.text}</p>
-          <RecoveredFigure impact={impact} testId="preview-figure" />
+          <RecoveredFigure impact={impact} testId="preview-figure" countOnce />
           <p className={styles.honesty}>A projection, not a measurement.</p>
         </>
       ) : (
