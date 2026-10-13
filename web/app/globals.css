@@ -604,6 +604,7 @@ code, .id {
 }
 
 .chip--inconclusive {
+  position: relative;
   font-family: inherit;
   font-weight: 600;
   color: var(--warn-text);
@@ -611,6 +612,22 @@ code, .id {
   cursor: help;
 }
 
+
+/* Chips that can be focused or tapped (the tooltip) keep a 44 px target without growing the chip. */
+.chip--inconclusive::after {
+  content: "";
+  position: absolute;
+  inset: -9px -4px;
+}
+
+/* The raw-detail disclosures in trace rows are tapped on a phone: 44 px there. */
+@media (max-width: 767px), (pointer: coarse) {
+  .trace-panel__raw summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+}
 
 .guardrails__code {
   font-size: var(--fs-xs);
@@ -703,6 +720,7 @@ button {
    confirm/replan/measure/replay actions) get a real secondary button treatment
    instead of the browser default, without touching any of their onClick logic. */
 button:not([class]) {
+  min-height: var(--tap);
   padding: 8px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -978,9 +996,17 @@ textarea:focus-visible {
 
 .footer__links {
   display: flex;
-  gap: 16px;
+  gap: 8px 20px;
   flex-wrap: wrap;
   margin-bottom: 12px;
+}
+
+/* Footer links are tapped: 44 px tall targets. */
+.footer__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  min-width: var(--tap);
 }
 
 .sim-box {
@@ -1117,6 +1143,7 @@ textarea:focus-visible {
 }
 
 .holdout-control input[type="range"] {
+  min-height: var(--tap);
   flex: 1 1 8rem;
   min-width: 0;
 }
@@ -1209,6 +1236,8 @@ textarea:focus-visible {
 }
 
 .lang-toggle button {
+  min-height: var(--tap);
+  min-width: var(--tap);
   padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -1432,6 +1461,14 @@ textarea:focus-visible {
   color: inherit;
 }
 
+/* Tapped on a phone or a touch screen: 44 px. A mouse keeps the compact row, so Approve stays inside
+   the first screen of a 1280 x 800 window. */
+@media (max-width: 767px), (pointer: coarse) {
+  .guardrails-disclosure > summary {
+    min-height: var(--tap);
+  }
+}
+
 .guardrails-disclosure > summary:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -1512,7 +1549,6 @@ textarea:focus-visible {
   gap: 2px;
   font-size: var(--fs-sm);
   padding: 7px 9px;
-  border-left: 3px solid transparent;
   border-bottom: 1px solid var(--border);
   border-radius: 4px;
   transition: background 0.12s ease;
@@ -1553,13 +1589,9 @@ textarea:focus-visible {
   padding: 0 4px;
 }
 
-.trace-panel__event--error { border-left-color: var(--danger); }
-.trace-panel__event--ok { border-left-color: var(--good-text); }
-.trace-panel__event--warn { border-left-color: var(--warn); }
-
-.trace-panel__event--error .trace-panel__body { color: var(--danger); }
+.trace-panel__event--error .trace-panel__body { color: var(--danger-text); }
 .trace-panel__event--ok .trace-panel__body { color: var(--good-text); }
-.trace-panel__event--warn .trace-panel__body { color: var(--warn); }
+.trace-panel__event--warn .trace-panel__body { color: var(--warn-text); }
 
 /* The guardrail-failure / revision markers are the single most important visual cue in the
    panel -- a judge scanning the timeline must be able to spot "this failed, and here is the fix
@@ -1631,22 +1663,16 @@ textarea:focus-visible {
   gap: 6px;
 }
 
+/* One row per attempt, separated by hairlines: not a card each. The marker chip (rejected / passed
+   all guardrails) says the state in words, so no coloured edge or tint is needed. */
 .trace-attempt {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
   font-size: var(--fs-sm);
-  background: var(--surface);
 }
 
-.trace-attempt--rejected {
-  border-left-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
-}
-
-.trace-attempt--accepted {
-  border-left-color: var(--good-text);
+.trace-attempt:first-child {
+  border-top: none;
 }
 
 .trace-attempt__head {
@@ -2350,7 +2376,7 @@ textarea:focus-visible {
   font-weight: var(--fw-semibold);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--accent-strong);
+  color: var(--text);
 }
 
 /* ---------- portfolio card (Outcomes) ---------- */
@@ -2378,7 +2404,7 @@ textarea:focus-visible {
   font-weight: var(--fw-semibold);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--accent-strong);
+  color: var(--text);
 }
 
 .portfolio-card__table {
@@ -2417,10 +2443,9 @@ textarea:focus-visible {
   font-size: var(--fs-sm);
   line-height: 1.55;
   color: var(--text);
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  /* A paragraph, not a panel: nothing in it is interactive. */
+  padding: 8px 0 0;
+  border-top: 1px solid var(--border);
   margin: 0 0 16px;
 }
 
@@ -2571,8 +2596,8 @@ input[type="checkbox"] {
 .feedback__preamble {
   margin: 0 0 10px;
   padding: 8px 12px;
-  border-inline-start: 3px solid var(--accent);
   background: var(--surface-alt);
+  border-radius: var(--radius-sm);
   font-style: italic;
 }
 

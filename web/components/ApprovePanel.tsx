@@ -443,7 +443,7 @@ export function ApprovePanel({
                 Chat as {customerName}
               </button>
               <button type="button" className={styles.follow} onClick={seeHoldout} data-testid="see-holdout">
-                See what the holdout group sees
+                See the holdout view
               </button>
             </div>
           </div>

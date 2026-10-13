@@ -42,9 +42,8 @@ function PortfolioCard() {
         <Badge kind="synthetic" detail="batch job, not a live measurement" />
       </div>
       <p className="muted">
-        Every gap Taal found in one scan of the stock ({dayMonth(PORTFOLIO.as_of)}), planned by the same rule-based
-        drafter and estimator behind every play on this page. No model calls. This is a projection across the
-        portfolio, not a measurement.
+        Every gap in one scan of the stock ({dayMonth(PORTFOLIO.as_of)}), planned by the rule-based drafter and
+        estimator. No model calls. A projection, not a measurement.
       </p>
       <div className="portfolio-card__stats">
         <div className="portfolio-card__stat">
@@ -473,8 +472,7 @@ export default function OutcomesPage() {
         <Badge kind="synthetic" detail="simulated orders, no pilot yet" />
       </div>
       <p className="muted">
-        Your measured result comes first. Below it: what the whole portfolio projects, one worked example, and every
-        play that has been measured.
+        Your measured result first, then the portfolio projection and a worked example.
       </p>
 
       <SummaryCard

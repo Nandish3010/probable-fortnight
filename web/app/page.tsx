@@ -277,7 +277,7 @@ export default function LandingPage() {
                 <strong>Play Desk</strong>
                 <span className="muted">Inbox ranked by rupees at stake, guardrails, trace, policy editor.</span>
               </span>
-              <Badge kind="live" detail="live reads" />
+              <span className={styles.ruledNote}>live reads</span>
             </Link>
           </li>
           <li>
@@ -289,7 +289,7 @@ export default function LandingPage() {
                 <strong>Phone view</strong>
                 <span className="muted">Priya&apos;s capture-to-gap flow. Own upload is experimental.</span>
               </span>
-              <Badge kind="replay" detail="sample pallet photo" />
+              <span className={styles.ruledNote}>replay: sample pallet photo</span>
             </Link>
           </li>
           <li>
@@ -301,7 +301,7 @@ export default function LandingPage() {
                 <strong>Outcomes</strong>
                 <span className="muted">Treated vs holdout, the CEO number, unmeasured plays.</span>
               </span>
-              <Badge kind="synthetic" detail="no pilot yet" />
+              <span className={styles.ruledNote}>synthetic: no pilot yet</span>
             </Link>
           </li>
         </ul>

@@ -10,7 +10,7 @@ export default function ChatPage() {
   return (
     <main id="main-content" tabIndex={-1} className="page">
       <h1>Customer chat</h1>
-      <p className="muted">Full-page version of the customer chat used in the landing hero. Switch customer below to see a different home store, language, or the holdout arm getting no offer.</p>
+      <p className="muted">Switch customer to see another store, a different language, or the holdout group getting no offer.</p>
       <ChatPanel />
     </main>
   );
