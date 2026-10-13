@@ -8,7 +8,9 @@ import styles from "./ForecastChart.module.css";
 
 const DEFAULT_WIDTH = 560;
 const TICK_COUNT_LABEL_W = 52; // left margin: three tick labels and the rotated axis title
-const PAD = { top: 34, bottom: 30, left: TICK_COUNT_LABEL_W, right: 14 };
+// top: two label rows above the plot (the lift legend's first line, then "Offer window" and the legend's second line)
+const PAD = { top: 48, bottom: 30, left: TICK_COUNT_LABEL_W, right: 14 };
+const LIFT_KEY_W = 112; // width reserved for the lift legend's longer line, "because of the play"
 const LABEL_H = 12; // the SVG is drawn 1:1 with CSS pixels, so every label is 12 px at its rendered size
 
 const tickText = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
@@ -99,15 +101,12 @@ export function ForecastChart({ forecast, animate = false }: { forecast: Forecas
   const [playY, baseY] = separate(playLabelY, baseLabelY, LABEL_H + 4);
   const labelX = winX + 6;
 
-  // The lift label sits right of the window, with a short leader to the shaded area.
-  let peak = startIdx;
-  for (let i = startIdx; i <= endIdx; i += 1) {
-    if (series[i].play_p50 - series[i].baseline_p50 > series[peak].play_p50 - series[peak].baseline_p50) peak = i;
-  }
-  const hasLift = series[peak].play_p50 - series[peak].baseline_p50 > 0.05;
-  const peakMidY = (y(series[peak].play_p50) + y(series[peak].baseline_p50)) / 2;
-  const liftX = Math.min(x(endIdx) + 18, width - 150);
-  const liftY = peakMidY - 6;
+  // The lift legend sits in the band above the plot, right-aligned, so it can never touch a line,
+  // the shaded areas or an axis: the plot is clear of text at every width and for any series.
+  const hasLift = series.some((p) => p.play_p50 - p.baseline_p50 > 0.05);
+  const liftX = width - PAD.right - LIFT_KEY_W;
+  const liftRow2Y = PAD.top - 10;
+  const liftRow1Y = liftRow2Y - LABEL_H - 2;
 
   const summary = chartSummary(series, forecast.play_window.start, forecast.play_window.end);
   const motion = animate ? styles.animate : "";
@@ -158,13 +157,12 @@ export function ForecastChart({ forecast, animate = false }: { forecast: Forecas
           </text>
 
           {hasLift ? (
-            <g className={styles.labelIn}>
-              <line x1={liftX - 4} y1={liftY + 4} x2={x(peak)} y2={peakMidY} className={styles.leader} />
-              <circle cx={x(peak)} cy={peakMidY} r={3} className={styles.leaderDot} />
-              <text x={liftX} y={liftY} className={`${styles.label} ${styles.labelPlay}`}>
+            <g className={styles.labelIn} data-testid="chart-lift-key">
+              <rect x={liftX - 14} y={liftRow1Y - 9} width={10} height={10} rx={2} className={styles.liftKey} />
+              <text x={liftX} y={liftRow1Y} className={`${styles.label} ${styles.labelPlay}`}>
                 Extra units sold
               </text>
-              <text x={liftX} y={liftY + LABEL_H + 2} className={`${styles.label} ${styles.labelPlay}`}>
+              <text x={liftX} y={liftRow2Y} className={`${styles.label} ${styles.labelPlay}`}>
                 because of the play
               </text>
             </g>
