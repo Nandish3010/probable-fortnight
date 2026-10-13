@@ -9,6 +9,35 @@ export async function assertNoHorizontalOverflow(page: Page): Promise<void> {
   expect(scrollWidth, `document is ${scrollWidth}px wide in a ${clientWidth}px viewport`).toBeLessThanOrEqual(clientWidth);
 }
 
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The viewport rectangles of several elements, read in ONE page.evaluate after two animation frames,
+ * so a spec that compares their positions never reads one box before a layout change and the other
+ * after it (two separate boundingBox() calls can straddle a reflow and miss by a sub-pixel).
+ * Same coordinates as boundingBox(): relative to the main frame's viewport.
+ */
+export async function settledRects(...locators: Locator[]): Promise<Rect[]> {
+  const page = locators[0].page();
+  const handles = await Promise.all(locators.map((l) => l.elementHandle()));
+  try {
+    return await page.evaluate(async (els) => {
+      await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+      return els.map((el) => {
+        const r = (el as Element).getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      });
+    }, handles);
+  } finally {
+    await Promise.all(handles.map((h) => h.dispose()));
+  }
+}
+
 export type MockFaultKind = "network" | "timeout" | "http" | "model_unavailable" | "conflict" | "not_found" | "rate_limited";
 
 export interface MockFaultSpec {

@@ -207,15 +207,19 @@ export default function LandingPage() {
 
   // public/loop.svg is a copy of docs/loop.svg (the one source; `npm run sync:loop` refreshes it,
   // tests/e2e/loop-svg.spec.ts fails when the two differ).
-  const loop = (
+  // Two copies, placed and shown by CSS alone (page.module.css): under the headline on a phone, under
+  // the decision on a desktop. The server render and the first client render do not know which layout
+  // the browser has, so placing one copy by script moved the diagram (a new node, a jump) right after
+  // hydration. Both copies stay mounted; only the one that is laid out carries the test id.
+  const loopImg = (className: string, active: boolean) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className={styles.loop}
+      className={`${styles.loop} ${className}`.trim()}
       src="/loop.svg"
       width={1600}
       height={400}
       alt="The Taal loop in five steps: Forecast, Propose, Approve, Offer, Measure. An arrow returns from Measure to Forecast, labelled priors update."
-      data-testid="loop-diagram"
+      data-testid={active ? "loop-diagram" : undefined}
     />
   );
 
@@ -224,8 +228,8 @@ export default function LandingPage() {
       <section className={`${styles.top} ${beatReady ? styles.topCompact : ""}`}>
         <h1 className={styles.heroLine}>{HERO_LINE}</h1>
         <p className={styles.subline}>{SUBLINE}</p>
-        {/* Phones: the loop (hidden on narrow screens) and the legend row, as before. */}
-        {phone ? loop : null}
+        {/* Phones (641 to 767 px): the loop, and the legend row. Hidden at 640 px and below and on a desktop. */}
+        {loopImg(styles.loopPhone, phone)}
         <div className={styles.meta}>
           <p
             className={styles.clock}
@@ -303,7 +307,7 @@ export default function LandingPage() {
       )}
 
       {/* Desktop: the loop sits under the decision, so the card is what the first screen shows. */}
-      {phone ? null : <div className={styles.loopRow}>{loop}</div>}
+      <div className={styles.loopRow}>{loopImg("", !phone)}</div>
 
       <nav aria-label="Where to go next">
         <ul className={styles.ruled}>

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBeat } from "./helpers";
+import { openBeat, settledRects } from "./helpers";
 
 // Phase 3A polish from the 2B review (toast placement, the heading, the disclosure), the desktop
 // layouts that must not change, and the switch between the desktop and phone landing.
@@ -108,8 +108,7 @@ test.describe("desktop layouts are unchanged", () => {
     await expect(detail).toBeVisible();
     await expect(page.getByLabel("Play inbox")).toBeVisible();
     await expect(page.getByTestId("desk-back")).toBeHidden();
-    const i = (await page.getByTestId("inbox-pane").boundingBox())!;
-    const d = (await detail.boundingBox())!;
+    const [i, d] = await settledRects(page.getByTestId("inbox-pane"), detail);
     expect(d.x).toBeGreaterThan(i.x + i.width - 1);
     expect(Math.abs(d.y - i.y)).toBeLessThan(80);
     await expect(page.getByTestId("inbox-heading")).toHaveText("Top 7 of 16 gaps by rupees at stake");

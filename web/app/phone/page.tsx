@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Badge } from "../../components/Badge";
 import { Details } from "../../components/Details";
 import { ErrorCard } from "../../components/ErrorCard";
 import { GapCard } from "../../components/GapCard";
@@ -14,6 +15,7 @@ import { label } from "../../lib/labels";
 import { prefersReducedMotion } from "../../lib/motion";
 import { recordSpot } from "../../lib/progressStore";
 import { relativeDate } from "../../lib/format";
+import { visionProvenance, type VisionProvenance } from "../../lib/visionProvenance";
 import { useServerNow } from "../../lib/useServerNow";
 import type { ApproveResponse, ExecutionStep, Gap, Mechanic, Play, VisionRow } from "../../lib/types";
 
@@ -70,6 +72,9 @@ export default function PhoneViewPage() {
   // file's own data URL. Kept separate from photo_ref/selectedPhoto, which are API-facing values.
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [rows, setRows] = useState<VisionRow[] | null>(null);
+  // Where the read on screen came from (replay of a recorded read, a live upload, ...), from the
+  // /capture response's model_id. Null until a read lands, and null again when the photo is cleared.
+  const [provenance, setProvenance] = useState<VisionProvenance | null>(null);
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>({});
   const [dateOverrides, setDateOverrides] = useState<Record<number, string>>({});
   const [capturing, setCapturing] = useState(false);
@@ -150,6 +155,7 @@ export default function PhoneViewPage() {
     try {
       const res = await capture({ node_id: nodeId, photo_ref: photoRef, image_data_url: imageDataUrl });
       setRows(res.rows);
+      setProvenance(visionProvenance(res.model_id, !!photoRef && !imageDataUrl));
       setConfirmed({});
       setDateOverrides({});
       setConfirmSkipped([]);
@@ -197,6 +203,7 @@ export default function PhoneViewPage() {
     setOwnFileName(null);
     setPreviewSrc(null);
     setRows(null);
+    setProvenance(null);
     setConfirmed({});
     setDateOverrides({});
     setConfirmSkipped([]);
@@ -391,6 +398,11 @@ export default function PhoneViewPage() {
 
             {rows ? (
               <>
+                {provenance ? (
+                  <p className="vision-source" data-testid="vision-source" data-source={provenance.source}>
+                    <Badge kind={provenance.kind} detail={provenance.detail} title={provenance.title} />
+                  </p>
+                ) : null}
                 <table className="intake-table" data-testid="intake-table">
                   <thead>
                     <tr>

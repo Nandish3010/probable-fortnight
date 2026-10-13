@@ -124,7 +124,7 @@ test.describe("Play Desk: plain language, one figure, honest checks", () => {
     const card = await openChips(page);
     const section = card.getByTestId("card-checks");
     // mocks/plays.json, chips: 5 checked and held, 2 had nothing to check, 1 waits for the copy
-    await expect(section.getByTestId("guardrail-summary")).toHaveText("8 checks: 5 passed, 2 not applicable, 1 pending");
+    await expect(section.getByTestId("guardrail-summary")).toHaveText("8 checks: 5 passed, 2 not applicable, 1 checked when the offer is written");
     // nothing failed, so the list is collapsed until asked for
     await expect(section.getByTestId("guardrails-disclosure")).not.toHaveAttribute("open", "");
     await expect(section.locator("li.guardrails__item").first()).toBeHidden();

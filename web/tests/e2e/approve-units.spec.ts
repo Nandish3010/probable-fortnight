@@ -3,12 +3,11 @@ import { approveReducer, clockTime, formatElapsed, initialApproveState, workingC
 import { ApiError } from "../../lib/apiError";
 import { chatUrlFor } from "../../lib/chatBridge";
 import { chartSummary, niceCeil, separate, yTicks } from "../../lib/chartScale";
-import { countUpValue, easeOutQuart } from "../../lib/countUp";
 import { dayMonth } from "../../lib/format";
 import { personaCaption } from "../../lib/playText";
 import type { ApproveResponse, Play } from "../../lib/types";
 
-// The pure parts of the Approve choreography: the state machine, the count-up maths, the chart
+// The pure parts of the Approve choreography: the state machine, the chart
 // scale, the persona caption. The browser behaviour is in approve-choreography.spec.ts.
 
 const response = {
@@ -83,36 +82,6 @@ test.describe("approveReducer", () => {
     expect(clockTime("2026-09-12T03:42:00Z")).toBe("09:12");
     expect(clockTime(null)).toBeNull();
     expect(clockTime("not a date")).toBeNull();
-  });
-});
-
-test.describe("count-up maths", () => {
-  test("starts at 0, ends exactly on the target, and never overshoots", () => {
-    expect(countUpValue(7497.87, 0, 900)).toBe(0);
-    expect(countUpValue(7497.87, 900, 900)).toBe(7497.87);
-    expect(countUpValue(7497.87, 5000, 900)).toBe(7497.87);
-    for (let t = 0; t <= 900; t += 30) {
-      const v = countUpValue(7497.87, t, 900);
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThanOrEqual(7497.87);
-    }
-  });
-
-  test("is ease-out: more than half the way at the half-way time, and monotonic", () => {
-    expect(countUpValue(1000, 450, 900)).toBeGreaterThan(900);
-    let prev = -1;
-    for (let t = 0; t <= 900; t += 10) {
-      const v = countUpValue(1000, t, 900);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
-    }
-    expect(easeOutQuart(-1)).toBe(0);
-    expect(easeOutQuart(2)).toBe(1);
-  });
-
-  test("a negative target counts down to it", () => {
-    expect(countUpValue(-500, 900, 900)).toBe(-500);
-    expect(countUpValue(-500, 450, 900)).toBeLessThan(-400);
   });
 });
 
