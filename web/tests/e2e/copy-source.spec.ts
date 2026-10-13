@@ -3,17 +3,27 @@ import { test, expect, type Page } from "@playwright/test";
 import { copySourceLabel } from "../../lib/approveMachine";
 import { FAKE_API, approveSettled, assertNoHorizontalOverflow, beatHandlers, fakeApi, forceLiveApi, mockFixture, okJson, openBeat } from "./helpers";
 
-// The badge next to the offer copy after Approve reads copy.source of the /approve response and nothing
-// else: "bigquery" -> "Copy: Gemini via BigQuery", any other string -> "Copy: template", absent -> no badge.
+// The badge next to the offer copy after Approve reads copy.source (and copy.provenance) of the /approve
+// response and nothing else: "bigquery" -> "Copy: Gemini via BigQuery"; "existing" + provenance
+// "bigquery_pregenerated" -> "Copy: Gemini via BigQuery (pre-generated)"; "existing" alone -> "Copy: stored
+// with the play"; "templated" -> "Copy: template"; absent, empty or unknown -> no badge.
 // mocks/approve.json carries no copy field (like today's live API), so each case injects it through
 // the fake API.
 
 test.describe("copySourceLabel", () => {
-  test("only copy.source decides", () => {
+  test("only copy.source and copy.provenance decide", () => {
     expect(copySourceLabel({ source: "bigquery" })).toBe("Copy: Gemini via BigQuery");
+    expect(copySourceLabel({ source: "bigquery", provenance: "bigquery_pregenerated" })).toBe("Copy: Gemini via BigQuery");
+    expect(copySourceLabel({ source: "existing", provenance: "bigquery_pregenerated" })).toBe("Copy: Gemini via BigQuery (pre-generated)");
+    expect(copySourceLabel({ source: "existing" })).toBe("Copy: stored with the play");
+    expect(copySourceLabel({ source: "existing", provenance: "something-else" })).toBe("Copy: stored with the play");
     expect(copySourceLabel({ source: "templated" })).toBe("Copy: template");
-    expect(copySourceLabel({ source: "existing" })).toBe("Copy: template");
-    expect(copySourceLabel({ source: "something-new" })).toBe("Copy: template");
+    expect(copySourceLabel({ source: "templated", provenance: "bigquery_pregenerated" })).toBe("Copy: template");
+    // never a BigQuery or template claim the field does not make
+    expect(copySourceLabel({ source: "something-new" })).toBeNull();
+    expect(copySourceLabel({ source: "something-new", provenance: "bigquery_pregenerated" })).toBeNull();
+    expect(copySourceLabel({ provenance: "bigquery_pregenerated" })).toBeNull();
+    expect(copySourceLabel({ source: "" })).toBeNull();
     expect(copySourceLabel({})).toBeNull();
     expect(copySourceLabel({ source: undefined })).toBeNull();
     expect(copySourceLabel({ source: 3 })).toBeNull();
@@ -39,17 +49,29 @@ test.describe("copy-source badge", () => {
     await expect(badge(page)).toHaveText("Copy: Gemini via BigQuery");
     await expect(badge(page)).toHaveAttribute("title", "Where the offer copy came from");
   });
+  test("existing with provenance bigquery_pregenerated: 'Copy: Gemini via BigQuery (pre-generated)'", async ({ page }) => {
+    await approveWith(page, { source: "existing", provenance: "bigquery_pregenerated" });
+    await expect(badge(page)).toHaveText("Copy: Gemini via BigQuery (pre-generated)");
+  });
+  test("existing alone: 'Copy: stored with the play', no BigQuery claim", async ({ page }) => {
+    await approveWith(page, { source: "existing" });
+    await expect(badge(page)).toHaveText("Copy: stored with the play");
+    await expect(page.getByTestId("approve-result")).not.toContainText(/BigQuery/);
+  });
   test("templated: 'Copy: template'", async ({ page }) => {
     await approveWith(page, { source: "templated" });
     await expect(badge(page)).toHaveText("Copy: template");
   });
-  test("existing, and a value the UI has not seen, also read 'Copy: template'", async ({ page }) => {
-    await approveWith(page, { source: "existing" });
-    await expect(badge(page)).toHaveText("Copy: template");
-  });
-  test("an unknown value reads 'Copy: template', never a model claim", async ({ page }) => {
+  test("an unknown source shows no badge: neither BigQuery nor template is claimed", async ({ page }) => {
     await approveWith(page, { source: "gemini-direct" });
-    await expect(badge(page)).toHaveText("Copy: template");
+    await expect(badge(page)).toHaveCount(0);
+    await expect(page.getByTestId("approve-result")).not.toContainText(/Copy:/);
+    await approveWith(page, { source: "gemini-direct", provenance: "bigquery_pregenerated" });
+    await expect(badge(page)).toHaveCount(0);
+  });
+  test("the step line stays 'templated' only while the copy source is absent or templated", async ({ page }) => {
+    await approveWith(page, { source: "existing", provenance: "bigquery_pregenerated" });
+    await expect(page.getByTestId("step-provenance").filter({ hasText: "templated" })).toHaveCount(0);
   });
   test("absent field (today's live API): no badge, and nothing about copy is claimed", async ({ page }) => {
     await approveWith(page, undefined);

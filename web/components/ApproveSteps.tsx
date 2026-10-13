@@ -6,11 +6,11 @@ import { Icon } from "./icons";
 import styles from "./ApproveSteps.module.css";
 
 /** What produced each Approve step. The offer copy is a template: BigQuery is attempted under a
- * budget, and the line never says it wrote the offer. When the response itself says the copy came
- * from BigQuery (`copy.source`), the copy badge on the result is the statement and this line is left
- * off rather than contradict it. */
+ * budget, and the line never says it wrote the offer. Once the response names a copy source other than
+ * "templated" (bigquery, existing, or anything else), the copy badge on the result is the statement and
+ * this line is left off rather than contradict it. */
 function provenance(i: number, copySource: string | null): string | null {
-  if (i === 0) return copySource === "bigquery" ? null : PROVENANCE.offerCopy;
+  if (i === 0) return copySource === null || copySource === "templated" ? PROVENANCE.offerCopy : null;
   return PROVENANCE.deterministic;
 }
 

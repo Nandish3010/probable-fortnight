@@ -166,11 +166,23 @@ export function clockTime(iso: string | null | undefined): string | null {
   return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }).format(d);
 }
 
-/** The badge next to the offer copy, from `copy.source` of POST /approve and nothing else: "bigquery" reads
- * "Copy: Gemini via BigQuery", any other string reads "Copy: template", and an absent (or non-string) field
- * gives null, so no badge is drawn. Never inferred from timing or from any other field. */
-export function copySourceLabel(copy: { source?: unknown } | null | undefined): string | null {
+/** The badge next to the offer copy, from `copy.source` and `copy.provenance` of POST /approve and
+ * nothing else. "bigquery" reads "Copy: Gemini via BigQuery". "existing" is copy stored with the play: with
+ * provenance "bigquery_pregenerated" it reads "Copy: Gemini via BigQuery (pre-generated)", otherwise "Copy:
+ * stored with the play". "templated" reads "Copy: template". An absent or empty source, a source that is not
+ * a string, and a source this code has not seen all give null: no badge, and never a BigQuery or template
+ * claim the field does not make. Never inferred from timing or from any other field. */
+export function copySourceLabel(copy: { source?: unknown; provenance?: unknown } | null | undefined): string | null {
   const source = copy?.source;
-  if (typeof source !== "string") return null;
-  return source === "bigquery" ? "Copy: Gemini via BigQuery" : "Copy: template";
+  if (typeof source !== "string" || source === "") return null;
+  switch (source) {
+    case "bigquery":
+      return "Copy: Gemini via BigQuery";
+    case "existing":
+      return copy?.provenance === "bigquery_pregenerated" ? "Copy: Gemini via BigQuery (pre-generated)" : "Copy: stored with the play";
+    case "templated":
+      return "Copy: template";
+    default:
+      return null;
+  }
 }

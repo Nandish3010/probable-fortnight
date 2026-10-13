@@ -110,7 +110,7 @@ test.describe("judge-mode landing", () => {
     const log = page.getByTestId("chat-log").first();
     await page.getByRole("button", { name: "Send" }).first().click();
 
-    await expect(log).toContainText(/Best before|ಬಳಕೆಗೆ/, { timeout: 6_000 });
+    await expect(log).toContainText(/Best[- ]before|ಬಳಕೆಗೆ/, { timeout: 6_000 });
   });
 });
 

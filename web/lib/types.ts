@@ -389,8 +389,9 @@ export interface ApproveResponse {
   source: Source;
   note?: string;
   /** Optional: where the offer copy came from. Read only from `copy.source` ("bigquery" | "templated" |
-   * "existing"); an API that does not send it shows no badge. */
-  copy?: { source?: string };
+   * "existing") and `copy.provenance` ("bigquery_pregenerated" on stored copy that BigQuery generated
+   * earlier); an API that does not send them shows no badge. */
+  copy?: { source?: string; provenance?: string };
   /** When the play was approved (ISO), if the API says. Read-only: the UI never sends it. */
   approved_at?: string;
 }
