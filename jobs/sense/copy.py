@@ -328,7 +328,7 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
 # clears stock near its best-before date, "just arrived" on an outlet markdown.
 _FALSE_CLAIMS_ALL = re.compile(
     r"\b(?:free|gift|complimentary|guarantee[sd]?|moved|cart|your order|your reservation|reserved for you|we saved"
-    r"|limited[- ]time|today only|only today|last chance|new arrivals?|hurry|while stocks? last)\b|ಕಾರ್ಟ್|ಕಾರ್ಟ",
+    r"|freshly made|freshest|just in time|limited[- ]time|today only|only today|last chance|new arrivals?|hurry|while stocks? last)\b|ಕಾರ್ಟ್|ಕಾರ್ಟ",
     re.IGNORECASE,
 )
 # Freshness claims are wrong for stock sold down near its best-before date; only a preorder (stock

@@ -128,6 +128,9 @@ def test_freshness_claims_are_rejected_for_every_mechanic_but_preorder(text):
     "Today only! Best before 15 Oct 2026.",
     "Last chance to pick it up. Best before 15 Oct 2026.",
     "A new arrival at your store. Best before 15 Oct 2026.",
+    "Freshly made and ready. Best before 15 Oct 2026.",
+    "Enjoy it at its freshest. Best before 15 Oct 2026.",
+    "Just in time for the weekend. Best before 15 Oct 2026.",
     "ನಿಮ್ಮ ಕಾರ್ಟ್‌ನಲ್ಲಿ ಕಾಯುತ್ತಿದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ 15 Oct 2026.",
 ])
 def test_unsupported_claims_are_rejected_for_every_mechanic(text):
