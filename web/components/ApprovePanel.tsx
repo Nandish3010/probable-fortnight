@@ -11,7 +11,7 @@ import {
   clockTime,
   initialApproveState,
 } from "../lib/approveMachine";
-import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, requestChat } from "../lib/chatBridge";
+import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, requestChat } from "../lib/chatBridge";
 import { inr } from "../lib/format";
 import { audienceChain, playImpact } from "../lib/impact";
 import { prefersReducedMotion } from "../lib/motion";
@@ -304,7 +304,7 @@ export function ApprovePanel({
     const now = Date.now();
     if (now - askedAt.current < 1500) return;
     askedAt.current = now;
-    if (!requestChat("ask", DEMO_MESSAGE, id)) router.push(chatUrlFor("ask", id));
+    if (!requestChat("ask", demoMessageFor(customer?.language), id)) router.push(chatUrlFor("ask", id));
   }
   function seeHoldout() {
     if (!requestChat("holdout", DEMO_MESSAGE)) router.push(chatUrlFor("holdout"));

@@ -1,3 +1,4 @@
+import { DEMO_MESSAGE, DEMO_MESSAGE_KN, demoMessageFor } from "../../lib/chatBridge";
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
 import { approveSettled, assertNoHorizontalOverflow, injectMockFaults, openBeat, setMockDelay } from "./helpers";
@@ -67,7 +68,8 @@ test.describe("after Approve, the offer goes to a customer in the play's audienc
     await card.getByTestId("chat-as-customer").click();
     await expect(page).toHaveURL(/\/chat\?as=ask&customer=CUST-MEENA/);
     await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-MEENA");
-    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("Any offers today?");
+    // Meena's language is Kannada, so the opening message is the Kannada question, not the English one
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("ಇಂದು ಯಾವುದಾದರೂ ಆಫರ್ ಇದೆಯಾ?");
     await expect(page.getByTestId("chat-log").locator(".chat-msg--agent").first()).toBeVisible({ timeout: 8000 });
     await expect(page.getByLabel("Message")).toHaveValue("");
   });
@@ -202,5 +204,32 @@ test.describe("demo path: no horizontal overflow at 360 px", () => {
     await page.getByTestId("model-chip").first().waitFor();
     await page.getByTestId("trace-technical-details").first().locator("summary").click();
     await assertNoHorizontalOverflow(page);
+  });
+});
+
+test.describe("the opening message follows the customer's language", () => {
+  test("demoMessageFor: Kannada for a Kannada customer, English for everyone else", () => {
+    expect(demoMessageFor("kn")).toBe(DEMO_MESSAGE_KN);
+    expect(demoMessageFor("Kannada")).toBe(DEMO_MESSAGE_KN);
+    expect(demoMessageFor("en")).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor("hi")).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor(undefined)).toBe(DEMO_MESSAGE);
+    expect(demoMessageFor(null)).toBe(DEMO_MESSAGE);
+    expect(DEMO_MESSAGE_KN).toBe("ಇಂದು ಯಾವುದಾದರೂ ಆಫರ್ ಇದೆಯಾ?");
+    expect(DEMO_MESSAGE).toBe("Any offers today?");
+  });
+  test("Chat as Ravi (English) sends the English message; Chat as Meena (Kannada) sends the Kannada one", async ({ page }) => {
+    // Ravi: the Tea beat on the landing, the chat panel is on the page
+    await openBeat(page);
+    await approveButton(page).click();
+    await approveSettled(page);
+    await expect(page.getByTestId("chat-as-customer")).toHaveText("Chat as Ravi");
+    await page.getByTestId("chat-as-customer").click();
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("Any offers today?");
+    // Meena: the chips play on the Desk (no chat panel there), through /chat?as=ask
+    const card = await approveOnDesk(page, /Masala Chips 200G/);
+    await expect(card.getByTestId("chat-as-customer")).toHaveText("Chat as Meena");
+    await card.getByTestId("chat-as-customer").click();
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText(DEMO_MESSAGE_KN);
   });
 });

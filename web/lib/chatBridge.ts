@@ -8,6 +8,15 @@
 export const DEMO_CUSTOMER_ID = "CUST-MEENA";
 /** The opening message of the demo, sent by the preview and by the "Chat as ..." follow-up. */
 export const DEMO_MESSAGE = "Any offers today?";
+/** The same question in Kannada ("Is there any offer today?"), the opening message for a Kannada customer. */
+export const DEMO_MESSAGE_KN = "ಇಂದು ಯಾವುದಾದರೂ ಆಫರ್ ಇದೆಯಾ?";
+
+/** The opening message for a customer: Kannada for a Kannada customer ("kn", or "kannada"), English for
+ * everyone else and for an unknown language. */
+export function demoMessageFor(language: string | null | undefined): string {
+  const l = (language ?? "").trim().toLowerCase();
+  return l === "kn" || l === "kannada" ? DEMO_MESSAGE_KN : DEMO_MESSAGE;
+}
 
 export const CHAT_REQUEST_EVENT = "taal:chat-request";
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
-import { CHAT_REQUEST_EVENT, DEMO_CUSTOMER_ID, DEMO_MESSAGE, type ChatRequestDetail } from "../lib/chatBridge";
+import { CHAT_REQUEST_EVENT, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, type ChatRequestDetail } from "../lib/chatBridge";
 import { langAttr, languageName, replyLanguage, uniqueByLabel, containsKannada } from "../lib/lang";
 import { label as idLabel } from "../lib/labels";
 import { prefersReducedMotion } from "../lib/motion";
@@ -206,7 +206,8 @@ export function ChatPanel({
       if (wanted && wanted !== activeIdRef.current && customers.some((c) => c.customer_id === wanted && c.role !== "holdout")) {
         switchRef.current(wanted);
       }
-      sendRef.current(DEMO_MESSAGE);
+      const pick = wanted && customers.some((c) => c.customer_id === wanted && c.role !== "holdout") ? wanted : activeIdRef.current;
+      sendRef.current(demoMessageFor(customers.find((c) => c.customer_id === pick)?.language));
     } else if (as === "prefill") {
       const wanted = pendingCustomer.current;
       if (wanted && wanted !== activeIdRef.current && customers.some((c) => c.customer_id === wanted && c.role !== "holdout")) {
