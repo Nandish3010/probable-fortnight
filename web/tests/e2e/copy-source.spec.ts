@@ -5,7 +5,7 @@ import { FAKE_API, approveSettled, assertNoHorizontalOverflow, beatHandlers, fak
 
 // The badge next to the offer copy after Approve reads copy.source (and copy.provenance) of the /approve
 // response and nothing else: "bigquery" -> "Copy: Gemini via BigQuery"; "existing" + provenance
-// "bigquery_pregenerated" -> "Copy: Gemini via BigQuery (pre-generated)"; "existing" alone -> "Copy: stored
+// "bigquery_pregenerated" -> "Copy: written ahead with BigQuery + Gemini"; "existing" alone -> "Copy: stored
 // with the play"; "templated" -> "Copy: template"; absent, empty or unknown -> no badge.
 // mocks/approve.json carries no copy field (like today's live API), so each case injects it through
 // the fake API.
@@ -14,7 +14,8 @@ test.describe("copySourceLabel", () => {
   test("only copy.source and copy.provenance decide", () => {
     expect(copySourceLabel({ source: "bigquery" })).toBe("Copy: Gemini via BigQuery");
     expect(copySourceLabel({ source: "bigquery", provenance: "bigquery_pregenerated" })).toBe("Copy: Gemini via BigQuery");
-    expect(copySourceLabel({ source: "existing", provenance: "bigquery_pregenerated" })).toBe("Copy: Gemini via BigQuery (pre-generated)");
+    // live BigQuery copy is the only thing that says "via BigQuery"; stored copy says it was written ahead
+    expect(copySourceLabel({ source: "existing", provenance: "bigquery_pregenerated" })).toBe("Copy: written ahead with BigQuery + Gemini");
     expect(copySourceLabel({ source: "existing" })).toBe("Copy: stored with the play");
     expect(copySourceLabel({ source: "existing", provenance: "something-else" })).toBe("Copy: stored with the play");
     expect(copySourceLabel({ source: "templated" })).toBe("Copy: template");
@@ -49,9 +50,12 @@ test.describe("copy-source badge", () => {
     await expect(badge(page)).toHaveText("Copy: Gemini via BigQuery");
     await expect(badge(page)).toHaveAttribute("title", "Where the offer copy came from");
   });
-  test("existing with provenance bigquery_pregenerated: 'Copy: Gemini via BigQuery (pre-generated)'", async ({ page }) => {
+  test("existing with provenance bigquery_pregenerated: 'Copy: written ahead with BigQuery + Gemini'", async ({ page }) => {
     await approveWith(page, { source: "existing", provenance: "bigquery_pregenerated" });
-    await expect(badge(page)).toHaveText("Copy: Gemini via BigQuery (pre-generated)");
+    await expect(badge(page)).toHaveText("Copy: written ahead with BigQuery + Gemini");
+    // the step line says the same, without the prefix, and never calls pre-written copy "generated for this Approve"
+    await expect(page.getByTestId("approve-step").nth(0).getByTestId("step-provenance")).toHaveText("written ahead with BigQuery + Gemini");
+    await expect(page.getByTestId("approve-result")).not.toContainText(/pre-generated/);
   });
   test("existing alone: 'Copy: stored with the play', no BigQuery claim", async ({ page }) => {
     await approveWith(page, { source: "existing" });

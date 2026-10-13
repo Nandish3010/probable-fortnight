@@ -31,7 +31,7 @@
 }
 
 /* The green delta chip on the Approve result. Its box is always laid out (opacity only), so it
-   appearing at the end of the count-up moves nothing. */
+   appearing moves nothing. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -60,19 +60,20 @@
   color: var(--state-na-fg);
 }
 
-/* The count-up: the real figure keeps its place and its text but is not drawn while the aria-hidden
-   copy counts over it (600 ms, once). */
-.amountWrap {
-  display: block;
-  position: relative;
-}
+/* The figure never counts: its final text is there from the first frame. When it appears it fades
+   in over 160 ms (opacity only, nothing moves); `backwards` leaves nothing applied afterwards.
+   Under prefers-reduced-motion there is no fade at all. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes figureFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 
-.amountCounting {
-  visibility: hidden;
-}
-
-.ghost {
-  position: absolute;
-  inset: 0 auto auto 0;
-  white-space: nowrap;
+  .fade {
+    animation: figureFade 160ms ease-out backwards;
+  }
 }

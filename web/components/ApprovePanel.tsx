@@ -39,8 +39,6 @@ const PENDING_NAME = "the customer";
 /** The name of the default demo customer, used only when the list cannot be read. */
 const FALLBACK_NAME = "Meena";
 
-const COUNT_UP = { delayMs: 0, durationMs: 900 } as const;
-
 function sleep(ms: number): Promise<null> {
   return new Promise((resolve) => setTimeout(() => resolve(null), ms));
 }
@@ -51,7 +49,7 @@ function sleep(ms: number): Promise<null> {
  * alreadyApproved. T0 is the moment the response arrives.
  *
  * Nothing here fakes progress. While the request is in flight all three step labels are "working"
- * and the timer counts real seconds; the ticks, the line draw, the count-up and the preview slide
+ * and the timer counts real seconds; the ticks, the line draw, the figure's fade-in and the preview slide
  * all start at T0. Under prefers-reduced-motion the same information renders at once.
  */
 export function ApprovePanel({
@@ -403,7 +401,7 @@ export function ApprovePanel({
           <RecoveredFigure
             impact={impact}
             testId="approve-recovered"
-            countUp={{ run: phase === "animating", ...COUNT_UP }}
+            fade={motionOn && phase === "animating"}
             chip={state.chipShown}
           />
 

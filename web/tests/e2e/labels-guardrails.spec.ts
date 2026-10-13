@@ -81,9 +81,10 @@ test.describe("guardrail tri-state", () => {
     expect(s).toMatchObject({ total: 8, pass: 5, not_applicable: 3, pending: 0, fail: 0 });
   });
 
-  test("pending and failed are listed only when present; a single check is singular", () => {
-    expect(summarizeGuardrails([g("copy pending; x"), g("holdout 10%"), g("bad", false)]).text).toBe("3 checks: 1 passed, 1 pending, 1 failed");
-    expect(summarizeGuardrails([g("holdout 10%")]).text).toBe("1 check: 1 passed");
+  test("pending (checked when the offer is written) and failed are listed only when present; a single check is singular", () => {
+    expect(summarizeGuardrails([g("copy pending; x"), g("holdout 10%"), g("bad", false)]).text).toBe("3 checks: 1 passed, 1 checked when the offer is written, 1 failed");
+    expect(summarizeGuardrails([g("copy pending; x"), g("copy pending; y"), g("holdout 10%")]).text).toBe("3 checks: 1 passed, 2 checked when the offer is written");
+    expect(summarizeGuardrails([g("holdout 10%")]).text).toBe("1 check: 1 passed"); // nothing pending: the text is unchanged
     expect(summarizeGuardrails([]).text).toBe("0 checks: 0 passed");
   });
 });

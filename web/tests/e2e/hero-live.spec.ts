@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
-import { FAKE_API, assertNoHorizontalOverflow, beatHandlers, fakeApi, forceLiveApi, mockCalls, mockFixture, okJson } from "./helpers";
+import { FAKE_API, assertNoHorizontalOverflow, beatHandlers, fakeApi, forceLiveApi, mockCalls, mockFixture, okJson, settledRects } from "./helpers";
 
 // The landing's second way in: "Watch Gemini plan a play live" (a quiet link beside the one primary
 // button, with the committed pass-rate chip), which opens the Desk on the flagship gap and starts
@@ -28,7 +28,7 @@ test.describe("the secondary action on the landing (1280 x 800)", () => {
     await expect(link).toHaveText(GEMINI_LABEL);
     await expect(page.getByRole("link", { name: GEMINI_LABEL })).toHaveAttribute("href", "/desk?plan=live");
     const cta = page.getByRole("button", { name: "Run the 60-second beat" });
-    const [a, b] = [(await cta.boundingBox())!, (await link.boundingBox())!];
+    const [a, b] = await settledRects(cta, link);
     expect(Math.abs(a.y + a.height / 2 - (b.y + b.height / 2))).toBeLessThan(a.height); // the same row
     expect(b.x).toBeGreaterThan(a.x + a.width - 1);
     expect(b.height).toBeGreaterThanOrEqual(44);
@@ -56,7 +56,7 @@ test.describe("the secondary action on the landing (1280 x 800)", () => {
     await expect(chip).toHaveText(EVAL_TEXT);
     await expect(chip).not.toContainText(/live/i);
     await expect(chip).toHaveAttribute("title", /24 live planner runs on 2026-10-11/);
-    const [l, c] = [(await page.getByTestId("watch-plan-live").boundingBox())!, (await chip.boundingBox())!];
+    const [l, c] = await settledRects(page.getByTestId("watch-plan-live"), chip);
     expect(c.y).toBeGreaterThanOrEqual(l.y + l.height - 1); // under the link, in its column
     expect(c.y - (l.y + l.height)).toBeLessThan(12);
     expect(Math.abs(c.x - l.x)).toBeLessThan(12);
@@ -182,9 +182,7 @@ test.describe("the compact loop on a phone", () => {
     await expect(loop.getByRole("listitem")).toHaveText(["Spot", "Plan", "Approve", "Offer", "Measure"]);
     await expect(page.getByTestId("loop-diagram")).toBeHidden();
     // under the first decision card, before the second
-    const card = (await page.getByTestId("feed-card-1").boundingBox())!;
-    const second = (await page.getByTestId("feed-item-2").boundingBox())!;
-    const box = (await loop.boundingBox())!;
+    const [card, second, box] = await settledRects(page.getByTestId("feed-card-1"), page.getByTestId("feed-item-2"), loop);
     expect(box.y).toBeGreaterThanOrEqual(card.y + card.height - 1);
     expect(box.y + box.height).toBeLessThanOrEqual(second.y + 1);
     // the same words as the stepper in the nav
