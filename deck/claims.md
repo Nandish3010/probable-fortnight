@@ -90,7 +90,7 @@ Dates are the dates of the measurement, not of the deck.
 | 15 | Projected at 5%: ₹347,356 margin, ₹706,183 waste avoided | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json`; `docs/impact_math.md` |
 | 15 | Measured on real customers: none yet | `docs/pilot.md:19-20` |
 | 15 | 7 usable responses; 3 of 7 write off weekly or daily | `eval/raw/feedback_summary_2026-10-09/summary.md:7-9`; `eval/raw/feedback_summary_2026-10-09/summary.md:72-73` |
-| 16 | Least-privilege accounts, stored CI key, managed secrets | `infra/README.md:101-108`; `.github/workflows/verify.yml:95`; `infra/README.md:103-107` |
+| 16 | Today: services run as owner-role deploy identity; CI uses a stored key; secrets in managed store. Next: least-privilege service accounts and workload identity | `infra/README.md:94-109` (owner role, deviation not yet corrected); `.github/workflows/verify.yml:93-95` (stored key credentials_json); `infra/README.md:225-227`; `infra/README.md:239-241` (Secret Manager) |
 | 16 | Models pinned (gemini-3.5-flash, Flash-Lite fallback); gemini-2.5-flash retires 20 Oct 2026 | `config/models.toml:23`; `docs/DECISIONS.md:52` |
 | 16 | Measured: Sense 3.8 s (local, 300 SKUs), chat p50 4.56 s, p95 6.48 s (50 calls, 28 Sep, gemini-2.5-flash; same as slide 12); live plan p50 26.5 s and p95 31.8 s (22/24, 11 Oct); Approve about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer) | `docs/scale.md:11`; `eval/raw/customer_latency_2026-09-28/analysis.json:5-8`; `eval/raw/plan_live_2026-10-12.json`; `eval/raw/approve_timing_2026-10-12b.json` |
 | 16 | Estimate: 20,000 SKUs, 500 nodes; breaks first: max-instances 1 with re-plan state in process memory, then the planner queue | `docs/scale.md:37-38`; `docs/scale.md:95-97`; `infra/deploy.sh:239` |
