@@ -220,6 +220,16 @@ Considered and declined on 11 Oct 2026: `min-instances` stays 0 on `taal-agents`
 through judging, and the 8 to 12 s cold start is accepted. If that decision is ever reversed,
 `infra/min_instances.sh on|off` (needs `GOOGLE_CLOUD_PROJECT` and `REGION`) toggles `min-instances` 1/0.
 
+### Keep-warm pings (instead of min-instances), added 13 Oct 2026
+
+`min-instances` still stays 0. To soften the cold start for a judge's first hit, two Cloud Scheduler
+jobs in `asia-south1` send a plain GET: `taal-agents-warm` (every 5 minutes, `/health`, no model call
+and no BigQuery) and `taal-web-keepwarm` (every 10 minutes, `/`, a prerendered page that makes no API
+call). They need no auth and send no visitor header. The commands are in `infra/keepwarm.sh`
+(`create`, `pause`, `resume`, `delete`). They replace pinning an instance and are paused after judging
+(6 Nov 2026): `./infra/keepwarm.sh pause`. The two keep-warm jobs plus the two nightly jobs make four
+in this project, one over the free tier of three per billing account (about $0.10 a month).
+
 ## Not in this directory
 
 - Secret values (API keys, service-account keys) -- created out of band in Secret Manager and
