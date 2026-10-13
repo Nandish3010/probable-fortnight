@@ -9,6 +9,7 @@ import {
   mockFixture,
   okJson,
   openBeat,
+  settledRects,
 } from "./helpers";
 
 // E1: under 768 px the landing is a feed of the top decisions (components/DecisionFeed.tsx), run on
@@ -41,8 +42,7 @@ test.describe("feed: order and labels", () => {
     await expect(item(page, 2).getByTestId("why-now")).toContainText("₹11,210");
     await expect(item(page, 3).getByTestId("why-now")).toContainText("₹9,200");
     // the hero line sits above the feed, and there is no beat button to press
-    const h1 = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
-    const first = (await item(page, 1).boundingBox())!;
+    const [h1, first] = await settledRects(page.getByRole("heading", { level: 1 }), item(page, 1));
     expect(first.y).toBeGreaterThan(h1.y + h1.height - 1);
     await expect(page.getByRole("button", { name: "Run the 60-second beat" })).toHaveCount(0);
   });
@@ -63,8 +63,7 @@ test.describe("feed: order and labels", () => {
   test("the feed is one column, and the chat panel follows it", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("feed-item-3").waitFor();
-    const chat = (await page.locator(".chat-panel").boundingBox())!;
-    const last = (await item(page, 3).boundingBox())!;
+    const [chat, last] = await settledRects(page.locator(".chat-panel"), item(page, 3));
     expect(chat.y).toBeGreaterThanOrEqual(last.y + last.height - 1);
     for (const n of [1, 2, 3]) {
       const box = (await page.getByTestId(`feed-card-${n}`).boundingBox())!;
