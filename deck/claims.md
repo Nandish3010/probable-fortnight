@@ -102,4 +102,5 @@ Dates are the dates of the measurement, not of the deck.
 | 17 | Vision harness built; synthetic photos only so far | `eval/evaluation_table.md`; `Makefile` |
 | 17 | BigQuery path built, flag off | `docs/scale.md:40-47`; `infra/deploy.sh:294` |
 | 18 | Repo and live app URLs | `README.md:33` |
+| 18 | Demo video card: QR and short URL point to the Drive link (same link as the README links table) | `README.md:33` |
 | 18 | Recap: Rs 9,191 recovered vs doing nothing, projected, seeded tenant; 22 of 24 live plans on gemini-3.5-flash, p50 26.5 s (11 Oct); holdout synthetic and inconclusive | `eval/raw/tea_recorded_beat_2026-10-12.json:25-26`; `eval/raw/plan_live_2026-10-12.json` |
