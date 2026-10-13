@@ -18,11 +18,14 @@ import { getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
 import { toApiError, type ApiError } from "../../lib/apiError";
 import { pct } from "../../lib/format";
 import { collapseRuns, inboxHeading } from "../../lib/inbox";
+import { HERO_GAP_ID } from "../../lib/hero";
 import { label } from "../../lib/labels";
 import { recordPlan } from "../../lib/progressStore";
 import { recordedGaps, recordedPlays } from "../../lib/recorded";
 import { isPhoneNow } from "../../lib/useMediaQuery";
 import { useServerNow } from "../../lib/useServerNow";
+import { useWaking } from "../../lib/useWaking";
+import { WakingNotice } from "../../components/WakingNotice";
 import { TraceView } from "../../components/traceRows";
 import type { ApproveResponse, Gap, Play, RerunAccepted, RerunResult, TraceEvent } from "../../lib/types";
 
@@ -59,6 +62,12 @@ export default function PlayDeskPage() {
   const [liveTrace, setLiveTrace] = useState<TraceEvent[] | null>(null);
 
   const [planStarting, setPlanStarting] = useState(false);
+  // "?plan=live" (the landing's "Watch ... plan a play live"): select the flagship play and start Plan
+  // live on it, once. "armed" until the plays have loaded and the flagship play is selected, then
+  // "started"; a ref, so a re-render, React's dev-only second effect run or the plays arriving twice
+  // can never start a second run. The param is removed from the address as soon as it is read.
+  const autoPlan = useRef<"off" | "armed" | "started">("off");
+  const [loadEpoch, setLoadEpoch] = useState(0);
   const [planError, setPlanError] = useState<ApiError | null>(null);
   const [loadError, setLoadError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,7 +143,12 @@ export default function PlayDeskPage() {
     // A phone opened on #play=<id> (a shared link, a reload) lands on that play's detail screen.
     const wanted = playIdFromHash();
     const fromHash = wanted ? playList.find((p) => p.play_id === wanted) : undefined;
-    if (fromHash && isPhoneNow()) {
+    const flagship = autoPlan.current === "armed" ? playList.find((p) => p.gap_id === HERO_GAP_ID) : undefined;
+    if (autoPlan.current === "armed" && !flagship) autoPlan.current = "off"; // this tenant has no flagship play: nothing to start
+    if (flagship) {
+      setSelectedId(flagship.play_id);
+      if (isPhoneNow()) setScreen("detail");
+    } else if (fromHash && isPhoneNow()) {
       setSelectedId(fromHash.play_id);
       setScreen("detail");
     } else if (playList.length > 0) {
@@ -148,6 +162,7 @@ export default function PlayDeskPage() {
 
   async function loadPlays() {
     const seq = ++loadSeq.current;
+    setLoadEpoch((n) => n + 1);
     setLoading(true);
     setLoadError(null);
     setUsingRecorded(false);
@@ -171,6 +186,17 @@ export default function PlayDeskPage() {
   }
 
   useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("plan") === "live" && autoPlan.current === "off") {
+        autoPlan.current = "armed";
+        params.delete("plan");
+        const rest = params.toString();
+        window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}${window.location.hash}`);
+      }
+    } catch {
+      // no address to read: the Desk simply opens as usual
+    }
     loadPlays();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -270,6 +296,18 @@ export default function PlayDeskPage() {
     }
   }, [selected]);
 
+  // "Plan live" from the landing link: once the flagship play is the selected one (the effect above has
+  // reset the panel for it), start the run. Runs at most once per page load.
+  useEffect(() => {
+    if (autoPlan.current !== "armed" || !selected || selected.gap_id !== HERO_GAP_ID) return;
+    autoPlan.current = "started";
+    void handlePlanLive(selected.gap_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
+  // "Waking the demo": the first plays still loading after a moment (the service sleeps when idle).
+  const wakePhase = useWaking(loading && plays.length === 0, false, loadEpoch);
+
   const gap = selected ? gapsById[selected.gap_id] : undefined;
   const approved = selected ? selected.status === "approved" || approvedIds.has(selected.play_id) : false;
 
@@ -303,6 +341,7 @@ export default function PlayDeskPage() {
               />
             ))}
             {groups.length === 0 && loading ? <p className="muted">Loading plays…</p> : null}
+            {groups.length === 0 && loading ? <WakingNotice phase={wakePhase} onRetry={loadPlays} /> : null}
             {groups.length === 0 && !loading && !loadError ? <p className="muted">No plays yet.</p> : null}
           </div>
         </div>

@@ -66,7 +66,7 @@ def pregenerated_variants(play: dict[str, Any], best_before: str | None, fixture
     accepted, reasons = validate_copy(variants, play, best_before)
     if not variants or reasons or len(accepted) != len(variants):
         return None
-    return [dict(v) for v in variants]
+    return [dict(v) for v in accepted]
 
 
 def provenance_of(play: dict[str, Any], best_before: str | None, variants: list[dict[str, Any]], fixture: dict[str, Any] | None = None) -> str | None:

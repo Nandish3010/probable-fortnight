@@ -186,7 +186,7 @@ def _offer_facts(sku_name: str, mechanic: str, discount_pct: float | None, bundl
     Found live: given only "Mechanic: transfer_plus_nudge" it wrote "a free tea ... moved to your
     cart", and for a bundle it dropped the partner product entirely."""
     if mechanic == "bundle" and partner_name and bundle_price is not None:
-        return f"Offer: {sku_name} and {partner_name} bought together for Rs {bundle_price:g}; name both products."
+        return f"Offer: {sku_name} and {partner_name} bought together for ₹{bundle_price:g}; name both products."
     if mechanic in ("coupon", "outlet_markdown") and discount_pct is not None:
         where = " in store" if mechanic == "outlet_markdown" else ""
         return f"Offer: {discount_pct:g}% off {sku_name}{where}."
@@ -218,7 +218,7 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
     if discount_pct is not None:
         parts.append(f"Discount: {discount_pct:g}% -- copy this number exactly, do not change it.")
     if bundle_price is not None:
-        parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
+        parts.append(f"Bundle price: ₹{bundle_price:g} -- copy this number exactly.")
     if best_before:
         parts.append(f"State the best-before date {best_before} plainly.")
     no_fresh = "" if mechanic == "preorder" else " Do not call the stock fresh or newly arrived."
@@ -342,6 +342,15 @@ def unsupported_claim(text: str, mechanic: str) -> str | None:
     return m.group(0) if m else None
 
 
+_RUPEE_RE = re.compile(r"\bRs\.?\s*(?=\d)")
+
+
+def normalize_rupee(text: str) -> str:
+    """Rewrite "Rs 50", "Rs. 50" and "Rs.50" to "₹50" (the form templates and the UI use). Only a
+    case-sensitive "Rs" directly before a digit is touched; everything else is returned unchanged."""
+    return _RUPEE_RE.sub("₹", text)
+
+
 def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_before: str | None) -> tuple[list[dict[str, Any]], list[str]]:
     """Reject a variant whose numbers disagree with the play or which omits the best-before line
     on a near-deadline play. Returns (accepted, reasons)."""
@@ -366,5 +375,5 @@ def validate_copy(variants: list[dict[str, Any]], play: dict[str, Any], best_bef
         if best_before and need_disclosure and not _date_stated(best_before, text):
             reasons.append(f"{v['segment_id']}/{v['language']}: best-before date mismatch")
             continue
-        ok.append(v)
+        ok.append({**v, "text": normalize_rupee(text)})
     return ok, reasons

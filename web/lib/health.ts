@@ -74,7 +74,7 @@ export function modelChipText(info: ModelInfo, latencyMs?: number | null): { tex
   return { text: lat ? `${info.model} · ${lat}` : info.model, title };
 }
 
-/** "Live plans: 22/24 passed (11 Oct), p50 26.5 s" from /health `plan_live_eval`; null when the field is
+/** "Committed eval: 22/24 passed (11 Oct), p50 26.5 s" from /health `plan_live_eval`; null when the field is
  * absent or malformed (older deploys do not carry it), so the chip simply does not render. */
 export function planLiveEvalText(ev: Partial<PlanLiveEval> | null | undefined): string | null {
   if (!ev) return null;
@@ -82,7 +82,7 @@ export function planLiveEvalText(ev: Partial<PlanLiveEval> | null | undefined): 
   if (typeof passed !== "number" || typeof total !== "number" || !Number.isFinite(passed) || !Number.isFinite(total) || total <= 0 || passed < 0 || passed > total) return null;
   const when = date ? dayMonth(date) : "";
   const p50 = typeof p50_s === "number" && Number.isFinite(p50_s) && p50_s > 0 ? `, p50 ${p50_s.toFixed(1)} s` : "";
-  return `Live plans: ${passed}/${total} passed${when ? ` (${when})` : ""}${p50}`;
+  return `Committed eval: ${passed}/${total} passed${when ? ` (${when})` : ""}${p50}`;
 }
 
 /** Which provenances may carry the model chip: only runs a model actually authored. A scripted

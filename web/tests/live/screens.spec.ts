@@ -3,6 +3,10 @@ import { SHOTS, asVisitor, shot } from "./helpers";
 import { OFFER_PRICE_50 } from "./offerCopy";
 
 // Screenshot-only capture for docs/screenshots/, against the real stack (see `make live-test`).
+// Files land in eval/runs/screens (SHOTS). The six that docs/screenshots.md embeds are written under
+// exactly those names: judge-mode-landing, 60-second-beat-gap-card, 60-second-beat-approved-chart,
+// play-desk, phone-view-intake-table, outcomes-measured; the other frames keep their older names.
+// Full-page frames come from `shot` (helpers.ts: tall viewport clipped to the content height).
 // The gap card's "days remaining" is computed client-side against the browser's wall clock, while
 // the seeded demo data is dated relative to the server's TAAL_NOW; run this on any day other than
 // the demo's own date and the two drift apart, which is exactly what happened here (the sandbox's
@@ -41,22 +45,25 @@ async function freezeClock(page: import("@playwright/test").Page) {
 }
 
 test.describe("Screenshots: judge landing, approve, chat, reset", () => {
-  test("capture judge-02..05", async ({ page }) => {
+  test("capture the landing, judge-02..05", async ({ page }) => {
     await freezeClock(page);
     await asVisitor(page, "shots-judge");
     await page.goto("/");
     await expect(page.getByTestId("demo-clock")).toContainText("Nothing you do here persists.");
+    await expect(page.getByText(/300 SKUs/)).toBeVisible(); // the footer's scan line has loaded
+    await page.waitForTimeout(800);
+    await shot(page, "judge-mode-landing");
 
     await page.getByRole("button", { name: "Run the 60-second beat" }).click();
     const beat = page.getByTestId("beat-panel");
     // HERO_GAP_ID (app/page.tsx): the Darjeeling Tea lot at Dark store 4.
     await expect(beat.getByTestId("why-now")).toContainText("₹35,020");
     await expect(beat.locator(".gap-card__stats .stat__value").nth(2)).toHaveText(/^\d+d$/); // days left: the stats sit in the card's Details, closed by default
-    await shot(page, "judge-02-gap-card");
+    await shot(page, "60-second-beat-gap-card");
 
     await beat.getByRole("button", { name: "Approve" }).click();
     await expect(page.locator("svg.forecast-chart")).toBeVisible({ timeout: 30_000 });
-    await shot(page, "judge-03-approved-chart");
+    await shot(page, "60-second-beat-approved-chart");
 
     // After the Tea approve the chat panel is on Ravi, who is in Tea's audience.
     const chat = page.getByTestId("chat-log");
@@ -71,6 +78,20 @@ test.describe("Screenshots: judge landing, approve, chat, reset", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Reset", exact: true }).click(); // Reset asks first
     await expect(page.getByRole("button", { name: "Reset demo data" })).toBeEnabled();
     await shot(page, "judge-05-after-reset");
+  });
+});
+
+test.describe("Screenshots: Play Desk", () => {
+  test("capture play-desk with the Tea trace open", async ({ page }) => {
+    await freezeClock(page);
+    await asVisitor(page, "shots-desk");
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Darjeeling Tea 100G/ }).first().click();
+    const trace = page.getByTestId("play-detail").locator(".trace-panel").first();
+    await expect(trace.getByTestId("trace-attempts")).toBeVisible();
+    await expect(page.getByTestId("play-detail")).toContainText("₹35,020");
+    await page.waitForTimeout(6000); // the live-model chips and the trace settle
+    await shot(page, "play-desk");
   });
 });
 
@@ -91,7 +112,7 @@ test.describe("Screenshots: Outcomes, settled", () => {
     await page.getByRole("button", { name: "Run Measure" }).click();
     await expect(page.getByText(/measured, .* unmeasured/)).toBeVisible({ timeout: 15_000 });
     await page.waitForTimeout(500); // let the row fade-in animation finish before the shot
-    await shot(page, "mgmt-02-measured");
+    await shot(page, "outcomes-measured");
   });
 });
 
@@ -105,7 +126,8 @@ test.describe("Screenshots: Priya phone intake, gap card, approve, execution", (
     await page.getByRole("button", { name: "Pallet 1" }).click();
     const table = page.getByTestId("intake-table");
     await expect(table).toBeVisible();
-    await shot(page, "priya-02-intake");
+    await page.waitForTimeout(800);
+    await shot(page, "phone-view-intake-table");
 
     // Pallet 1's current fixture (regenerated from a real Gemini read, see eval/evaluation.md's
     // 21 Sep vision-accuracy correction) reads all rows at high confidence, so no per-row "Yes"

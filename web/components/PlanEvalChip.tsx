@@ -5,7 +5,8 @@ import { planLiveEvalText } from "../lib/health";
 import { readHealthOnce } from "./ModelChip";
 import styles from "./ModelChip.module.css";
 
-/** `Live plans: 22/24 passed (11 Oct), p50 26.5 s`: the committed live-plan evaluation, read from
+/** `Committed eval: 22/24 passed (11 Oct), p50 26.5 s`: the committed live-plan evaluation (a dated record,
+ * not a live reading), read from
  * /health `plan_live_eval`. Renders nothing while loading, when /health fails, or on a deploy whose
  * /health does not carry the field yet. */
 export function PlanEvalChip() {

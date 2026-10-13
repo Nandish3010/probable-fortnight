@@ -28,7 +28,13 @@ from typing import Any
 from agents.gate.config import load_models
 from agents.gate.store import LocalStore, load_catalogue
 from harness.seed_plays import DEMO_GAPS
-from jobs.sense.copy import _fmt_date, generate_copy_bigquery, unsupported_claim, validate_copy
+from jobs.sense.copy import (
+    _fmt_date,
+    generate_copy_bigquery,
+    normalize_rupee,
+    unsupported_claim,
+    validate_copy,
+)
 from jobs.sense.copy_pregenerated import FIXTURE_PATH, METHOD, fingerprint
 
 WARMUP_TIMEOUT_S = 300.0
@@ -206,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
             "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
             "model": model_id, "location": region, "method": METHOD,
             "fingerprint": fingerprint(play, best_before), "best_before": best_before,
-            "variants": [{k: v[k] for k in ("segment_id", "language", "text", "disclosure_included")} for v in variants],
+            "variants": [{**{k: v[k] for k in ("segment_id", "language", "text", "disclosure_included")}, "text": normalize_rupee(v["text"])} for v in variants],
         }
         print(f"  stored {len(variants)} variant(s)")
 
