@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { COLD_START_OPTS, getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
+import { getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { CHAT_REQUEST_EVENT, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, type ChatRequestDetail } from "../lib/chatBridge";
 import { langAttr, languageName, replyLanguage, uniqueByLabel, containsKannada } from "../lib/lang";
@@ -102,7 +102,7 @@ export function ChatPanel({
   useEffect(() => {
     if (!showCustomerPicker) return;
     let current = true;
-    getDemoCustomers(playId, COLD_START_OPTS)
+    getDemoCustomers(playId)
       .then((list) => current && setCustomers(list))
       .catch(() => current && setCustomers([]))
       .finally(() => current && setCustomersLoaded(true));

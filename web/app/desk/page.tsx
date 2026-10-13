@@ -14,7 +14,7 @@ import { PlayCard } from "../../components/PlayCard";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { SourceBadge } from "../../components/SourceBadge";
 import { TracePanel } from "../../components/TracePanel";
-import { COLD_START_OPTS, getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
+import { getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
 import { toApiError, type ApiError } from "../../lib/apiError";
 import { pct } from "../../lib/format";
 import { collapseRuns, inboxHeading } from "../../lib/inbox";
@@ -167,7 +167,7 @@ export default function PlayDeskPage() {
     setLoadError(null);
     setUsingRecorded(false);
     try {
-      const [playList, gapList] = await Promise.all([getPlays(undefined, COLD_START_OPTS), getGaps(undefined, COLD_START_OPTS)]);
+      const [playList, gapList] = await Promise.all([getPlays(), getGaps()]);
       if (seq !== loadSeq.current) return;
       applyLoaded(playList, gapList);
     } catch (e) {

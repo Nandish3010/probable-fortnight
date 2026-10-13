@@ -7,7 +7,7 @@ import { GapCard } from "./GapCard";
 import { PlayCard } from "./PlayCard";
 import { Skeleton } from "./Skeleton";
 import { Badge } from "./Badge";
-import { COLD_START_OPTS, getGaps, getPlays } from "../lib/api";
+import { getGaps, getPlays } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { pickFeed, FEED_SIZE, type FeedItem } from "../lib/feed";
 import { inr } from "../lib/format";
@@ -76,7 +76,7 @@ export function DecisionFeed({
     const seq = ++loadSeq.current;
     setState({ status: "loading" });
     try {
-      const [gaps, plays] = await Promise.all([getGaps(undefined, COLD_START_OPTS), getPlays(undefined, COLD_START_OPTS)]);
+      const [gaps, plays] = await Promise.all([getGaps(), getPlays()]);
       if (seq !== loadSeq.current) return;
       const items = pickFeed(gaps, plays, HERO_GAP_ID);
       setState({ status: "ready", items, recorded: false });

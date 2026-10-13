@@ -8,7 +8,9 @@ import { useEffect, useState } from "react";
 
 /** How long a first load may be pending before the notice appears. */
 export const WAKE_AFTER_MS = 1500;
-/** How long before the notice stops reassuring and offers Retry. */
+/** How long a load may stay pending before the notice stops reassuring and offers Retry. Reads time out at
+ * 10 s today (lib/api.ts DEFAULT_TIMEOUT_MS), so in practice the Retry variant comes from a failed first
+ * read; this is the ceiling for a load given a longer budget. */
 export const SLOW_AFTER_MS = 45_000;
 
 export type WakingPhase = "idle" | "waking" | "slow";

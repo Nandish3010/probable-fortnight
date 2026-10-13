@@ -16,7 +16,7 @@ import { StateLegend } from "../components/StateLegend";
 import { Tour } from "../components/Tour";
 import { WakingNotice } from "../components/WakingNotice";
 import { WatchPlanLive } from "../components/WatchPlanLive";
-import { COLD_START_OPTS, getGaps, getPlays, resetDemoData } from "../lib/api";
+import { getGaps, getPlays, resetDemoData } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { formatDemoDate } from "../lib/format";
 import { HERO_GAP_ID } from "../lib/hero";
@@ -41,12 +41,12 @@ interface Beat {
 
 /** The hero gap and its play; the biggest gap there is when the tenant does not have the hero. */
 async function loadBeat(): Promise<Beat> {
-  const [gaps, heroPlays] = await Promise.all([getGaps(undefined, COLD_START_OPTS), getPlays({ gap_id: HERO_GAP_ID }, COLD_START_OPTS)]);
+  const [gaps, heroPlays] = await Promise.all([getGaps(), getPlays({ gap_id: HERO_GAP_ID })]);
   let chosen = gaps.find((g) => g.gap_id === HERO_GAP_ID) ?? null;
   let plays = heroPlays;
   if (!chosen) {
     chosen = gaps[0] ?? null;
-    plays = chosen ? await getPlays({ gap_id: chosen.gap_id }, COLD_START_OPTS) : [];
+    plays = chosen ? await getPlays({ gap_id: chosen.gap_id }) : [];
   }
   return { gap: chosen, play: plays[0] ?? null };
 }
