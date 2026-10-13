@@ -114,34 +114,42 @@ test.describe("submitting: honest steps and timer", () => {
 });
 
 test.describe("T0: the result", () => {
-  test("the count-up runs 0 to the canonical figure, ends exactly on it, with the delta chip and the heading", async ({ page }) => {
+  test("the Approve figure never counts: it is the canonical figure from the first frame it exists, with the delta chip and the heading", async ({ page }) => {
     await openBeat(page);
     await page.evaluate(() => {
-      const w = window as unknown as { __amounts: string[]; __stop: boolean };
+      const w = window as unknown as { __amounts: { t: number; text: string }[]; __stop: boolean; __fade: number | null };
       w.__amounts = [];
       w.__stop = false;
+      w.__fade = null;
       const loop = () => {
         const el = document.querySelector('[data-testid="approve-recovered-amount"]');
-        const text = el?.textContent ?? "";
-        const list = w.__amounts;
-        if (el && list[list.length - 1] !== text) list.push(text);
+        if (el) w.__amounts.push({ t: performance.now(), text: el.textContent ?? "" });
+        for (const a of document.getAnimations()) {
+          if (/figureFade/.test((a as CSSAnimation).animationName ?? "") && w.__fade === null) w.__fade = Number((a.effect as KeyframeEffect).getComputedTiming().duration);
+        }
         if (!w.__stop) requestAnimationFrame(loop);
       };
       requestAnimationFrame(loop);
     });
     await approveButton(page).click();
     await approveSettled(page);
-    const amounts = await page.evaluate(() => {
-      (window as unknown as { __stop: boolean }).__stop = true;
-      return (window as unknown as { __amounts: string[] }).__amounts;
+    const { amounts, fade } = await page.evaluate(() => {
+      const w = window as unknown as { __amounts: { t: number; text: string }[]; __stop: boolean; __fade: number | null };
+      w.__stop = true;
+      return { amounts: w.__amounts, fade: w.__fade };
     });
-    const toNumber = (t: string) => Number(t.replace(/[^\d-]/g, ""));
-    expect(amounts[0]).toBe("₹0");
-    expect(amounts.length).toBeGreaterThan(5); // it really counted
-    expect(amounts[amounts.length - 1]).toBe(RECOVERED);
-    const values = amounts.map(toNumber);
-    for (let i = 1; i < values.length; i += 1) expect(values[i]).toBeGreaterThanOrEqual(values[i - 1]); // monotonic: no overshoot
-    expect(Math.max(...values)).toBe(toNumber(RECOVERED));
+    // it was on screen for the whole result sequence (about a second and a half) ...
+    expect(amounts.length).toBeGreaterThan(20);
+    expect(amounts[amounts.length - 1].t - amounts[0].t).toBeGreaterThan(500);
+    // ... and every frame of it read the final figure: no "₹0", no 3,598 on the way to 9,191
+    expect(new Set(amounts.map((a) => a.text))).toEqual(new Set([RECOVERED]));
+    for (const at of [0, 100, 300]) {
+      const near = amounts.find((a) => a.t - amounts[0].t >= at);
+      expect(near?.text, `at ~${at} ms`).toBe(RECOVERED);
+    }
+    // it comes in by a short opacity fade, not by counting
+    expect(fade).not.toBeNull();
+    expect(fade!).toBeLessThanOrEqual(200);
 
     const result = page.getByTestId("approve-result");
     await expect(result.getByRole("heading", { name: "Approved: Darjeeling Tea 100G" })).toBeFocused();
@@ -203,7 +211,7 @@ test.describe("T0: the result", () => {
     for (const y of samples) expect(Math.abs((y ?? 0) - (first ?? 0))).toBeLessThanOrEqual(1);
   });
 
-  test("reduced motion: everything is there at once, the same information, no count-up, no slide", async ({ page }) => {
+  test("reduced motion: everything is there at once, the same information, no fade, no slide", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await openBeat(page);
     await approveButton(page).click();
@@ -213,6 +221,7 @@ test.describe("T0: the result", () => {
     await expect(result).toHaveAttribute("data-phase", "settled");
     await expect(result).toHaveAttribute("data-motion", "off");
     await expect(result.getByTestId("approve-recovered-amount")).toHaveText(RECOVERED);
+    await expect(result.getByTestId("approve-recovered-amount")).toHaveCSS("animation-name", "none"); // no fade either
     await expect(result.getByTestId("approve-recovered-delta")).toHaveCSS("opacity", "1");
     await expect(page.getByTestId("approve-steps-summary")).toBeVisible();
     await expect(page.getByTestId("approve-toast")).toBeVisible(); // it carries information, so it still appears

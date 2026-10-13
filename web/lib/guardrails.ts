@@ -40,7 +40,9 @@ export interface GuardrailSummary {
   not_applicable: number;
   pending: number;
   fail: number;
-  /** "8 checks: 5 passed, 3 not applicable" (pending and failed are listed only when non-zero). */
+  /** "8 checks: 5 passed, 3 not applicable" (the pending and failed groups are listed only when non-zero).
+   * A pending check is the best-before disclosure, enforced when the offer copy is validated, so the
+   * summary says when it is checked: "1 checked when the offer is written", not a bare "1 pending". */
   text: string;
 }
 
@@ -50,7 +52,7 @@ export function summarizeGuardrails(guardrails: readonly Pick<Guardrail, "passed
   const total = guardrails.length;
   const parts = [`${counts.pass} passed`];
   if (counts.not_applicable) parts.push(`${counts.not_applicable} not applicable`);
-  if (counts.pending) parts.push(`${counts.pending} pending`);
+  if (counts.pending) parts.push(`${counts.pending} checked when the offer is written`);
   if (counts.fail) parts.push(`${counts.fail} failed`);
   return { total, ...counts, text: `${total} check${total === 1 ? "" : "s"}: ${parts.join(", ")}` };
 }

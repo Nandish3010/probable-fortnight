@@ -1,0 +1,22 @@
+{
+  "what": "Does the keep-warm scheduler pair hold both Cloud Run services warm with min-instances at 0? Quiet window of 30+ minutes with only the pings hitting the services, then the first real requests.",
+  "date": "2026-10-13",
+  "jobs": {
+    "taal-agents-warm": "*/5 * * * * UTC, GET agents /health",
+    "taal-web-keepwarm": "*/10 * * * * UTC, GET web / (prerendered static page, no API call)"
+  },
+  "window": "quiet from 15:20 IST (last manual request) to 15:50 IST; first requests at about 15:50 IST on follow-up deploy fbbcf0a (taal-agents-00143-8v9, taal-web-00080-72v)",
+  "instance_count": {
+    "source": "Cloud Monitoring run.googleapis.com/container/instance_count, 5-minute max, summed per service",
+    "taal_agents": "2 at 15:10 to 15:15 IST (deploy overlap), then 1 in every 5-minute bucket to 15:50 IST",
+    "taal_web": "2 at 15:10 to 15:15 IST (deploy overlap), then 1 in every 5-minute bucket to 15:50 IST"
+  },
+  "first_requests_after_quiet_window": {
+    "web_root_seconds": 0.341,
+    "chips_approve_seconds": 1.653,
+    "chips_approve_server_elapsed_ms": 1356,
+    "chips_copy": "source existing, provenance bigquery_pregenerated"
+  },
+  "reading": "Both services stayed at one instance the whole window, so the first real hit was warm: web root 0.34 s, Approve 1.65 s (no 8 to 12 s cold start).",
+  "caveat": "No cold baseline was taken: taal-agents-warm already pinged every 5 minutes before this window, so taal-agents never idled to 0 and the web service got its pings from 14:28 IST. One round only. The 8 to 12 s cold start quoted elsewhere is from earlier measurements, not repeated here. instance_count includes idle instances, so it does not prove billing time."
+}

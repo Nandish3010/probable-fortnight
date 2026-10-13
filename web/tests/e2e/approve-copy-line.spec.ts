@@ -12,8 +12,8 @@ const CASES = [
   {
     name: "existing + bigquery_pregenerated",
     copy: { source: "existing", provenance: "bigquery_pregenerated" },
-    badge: "Copy: Gemini via BigQuery (pre-generated)",
-    step: "Gemini via BigQuery (pre-generated)",
+    badge: "Copy: written ahead with BigQuery + Gemini",
+    step: "written ahead with BigQuery + Gemini",
   },
   { name: "existing alone", copy: { source: "existing" }, badge: "Copy: stored with the play", step: "stored with the play" },
   { name: "templated", copy: { source: "templated" }, badge: "Copy: template", step: "templated (BigQuery attempted under a budget)" },
