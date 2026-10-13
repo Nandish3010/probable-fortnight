@@ -6,7 +6,12 @@ AI.GENERATE_TABLE call: the model was asked to state the play's online-sellby de
 validate_copy checked for the physical expiry (`best_before`) instead, so every disclosure-
 compliant BigQuery variant was silently discarded and approve() always fell back to templates.
 """
-from jobs.sense.copy import generate_copy, validate_copy
+import json
+
+import pytest
+
+from jobs.sense import copy_pregenerated as _cp
+from jobs.sense.copy import _bq_prompt_text, generate_copy, unsupported_claim, validate_copy
 
 PLAY = {
     "objective": "clear_online_sellby",
@@ -91,13 +96,6 @@ def test_every_phrasing_keeps_its_facts_and_languages_stay_in_step():
 
 
 # --- claims the offer does not make: rejected by the runtime validator, English and Kannada ---------
-
-import json
-
-import pytest
-
-from jobs.sense import copy_pregenerated as _cp
-from jobs.sense.copy import _bq_prompt_text, unsupported_claim
 
 
 def _variant(text, lang="en"):
