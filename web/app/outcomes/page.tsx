@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
+import { BasisTag } from "../../components/BasisTag";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
 import { Details } from "../../components/Details";
 import { ErrorCard } from "../../components/ErrorCard";
@@ -49,6 +50,7 @@ function PortfolioCard() {
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
           <span className="portfolio-card__label">Total at stake</span>
+          <BasisTag basis="assumption" />
           <span className="muted" data-testid="portfolio-gap-count">
             across {count(totals.gaps)} gaps
           </span>
@@ -56,6 +58,7 @@ function PortfolioCard() {
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
           <span className="portfolio-card__label">Expected recovered</span>
+          <BasisTag basis="assumption" />
           <span className="muted">
             margin across {count(planned.count)} planned plays, with {inr(planned.expected_waste_avoided_inr)} of write-off
             avoided on {count(planned.expected_units)} units
@@ -275,14 +278,18 @@ function SummaryCard({
         <>
           <div className={styles.figures}>
             <div className={styles.figure} data-testid="summary-difference">
-              <span className={styles.figureLabel}>Response-rate difference, treated minus holdout</span>
+              <span className={styles.figureLabel}>
+                Response-rate difference, treated minus holdout <BasisTag basis="measured" />
+              </span>
               <span className={styles.figureValue}>{pointsFromPp(lift)} points</span>
               {lo != null && hi != null ? (
                 <span className={styles.figureNote}>95% CI {pointsFromPp(lo)} to {pointsFromPp(hi)} points</span>
               ) : null}
             </div>
             <div className={styles.figure} data-testid="summary-ceo">
-              <span className={styles.figureLabel}>CEO number: margin recovered per ₹1 of discount</span>
+              <span className={styles.figureLabel}>
+                CEO number: margin recovered per ₹1 of discount <BasisTag basis="measured" />
+              </span>
               {inconclusive ? (
                 <span className={styles.figureValueMuted}>withheld: inconclusive</span>
               ) : outcome.margin_per_discount_rupee != null ? (

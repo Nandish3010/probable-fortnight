@@ -364,6 +364,7 @@ export function ApprovePanel({
           collapsed={state.collapsed}
           seconds={seconds}
           elapsedMs={state.elapsedMs}
+          copySource={typeof result?.copy?.source === "string" ? result.copy.source : null}
         />
       ) : null}
 

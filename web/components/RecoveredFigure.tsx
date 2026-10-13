@@ -3,6 +3,7 @@
 import { inr, inrSigned } from "../lib/format";
 import { useCountUp } from "../lib/countUp";
 import type { PlayImpact } from "../lib/impact";
+import { BasisTag } from "./BasisTag";
 import { Icon } from "./icons";
 import styles from "./RecoveredFigure.module.css";
 
@@ -59,6 +60,8 @@ export function RecoveredFigure({
         </span>
       ) : null}
       <p className={styles.parts} data-testid={`${testId}-parts`}>
+        {/* Every figure here is projected from the estimator; "measured" appears only on Outcomes, from the holdout. */}
+        <BasisTag basis="assumption" />{" "}
         {impact.components.map((c, i) => (
           <span key={c.label}>
             {i > 0 ? (c.inr < 0 ? " minus " : " plus ") : ""}

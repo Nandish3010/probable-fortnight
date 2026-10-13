@@ -1,8 +1,18 @@
 "use client";
 
 import { APPROVE_STEPS, formatElapsed, workingCopy } from "../lib/approveMachine";
+import { PROVENANCE } from "../lib/planSteps";
 import { Icon } from "./icons";
 import styles from "./ApproveSteps.module.css";
+
+/** What produced each Approve step. The offer copy is a template: BigQuery is attempted under a
+ * budget, and the line never says it wrote the offer. When the response itself says the copy came
+ * from BigQuery (`copy.source`), the copy badge on the result is the statement and this line is left
+ * off rather than contradict it. */
+function provenance(i: number, copySource: string | null): string | null {
+  if (i === 0) return copySource === "bigquery" ? null : PROVENANCE.offerCopy;
+  return PROVENANCE.deterministic;
+}
 
 /**
  * The three things Approve does, shown honestly (design_spec.md 6.2). The backend answers once, so
@@ -15,6 +25,7 @@ export function ApproveSteps({
   collapsed,
   seconds,
   elapsedMs,
+  copySource = null,
 }: {
   /** 0 while waiting; 1 to 3 as the response's ticks land. */
   ticked: number;
@@ -23,6 +34,8 @@ export function ApproveSteps({
   seconds: number;
   /** Click to response, once known. */
   elapsedMs: number | null;
+  /** `copy.source` of the response, when it has one. */
+  copySource?: string | null;
 }) {
   const waiting = elapsedMs === null;
   return (
@@ -37,7 +50,14 @@ export function ApproveSteps({
                   <span className={`${styles.mark} ${done ? styles.markDone : ""}`} aria-hidden="true">
                     {done ? <Icon name="check" size={14} /> : <span className={styles.dot} />}
                   </span>
-                  <span className={styles.label}>{label}</span>
+                  <span className={styles.label}>
+                    {label}
+                    {provenance(i, copySource) ? (
+                      <span className={styles.prov} data-testid="step-provenance">
+                        {provenance(i, copySource)}
+                      </span>
+                    ) : null}
+                  </span>
                   <span className={styles.state}>{done ? "done" : "working"}</span>
                 </li>
               );

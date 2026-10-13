@@ -1735,6 +1735,106 @@ textarea:focus-visible {
   margin: 0 0 10px;
 }
 
+/* "assumption" or "measured" beside a number: what it rests on. A small outlined tag; dashed for an
+   assumption, solid for a measurement. No colour. */
+.basis {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.25rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.portfolio-card__stat .basis {
+  align-self: flex-start;
+  margin-block: 2px;
+}
+
+.basis--measured {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* The compact step list of a live plan: a tick as each step completes, and what produced it. */
+.plan-progress {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-progress__step {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-areas: "mark label state" ". prov prov";
+  align-items: center;
+  column-gap: var(--space-2);
+  min-height: 28px;
+  font-size: var(--fs-sm);
+}
+
+.plan-progress__mark {
+  grid-area: mark;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.plan-progress__mark--done {
+  background: var(--state-pass-bg);
+  border: 1px solid var(--state-pass-bd);
+  color: var(--state-pass-fg);
+}
+
+.plan-progress__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+}
+
+.plan-progress__mark--working .plan-progress__dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.plan-progress__label {
+  grid-area: label;
+  font-weight: var(--fw-medium);
+}
+
+.plan-progress__step[data-state="waiting"] .plan-progress__label {
+  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+}
+
+.plan-progress__prov {
+  grid-area: prov;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+.plan-progress__state {
+  grid-area: state;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+
 .re-plan-result__meta {
   display: flex;
   align-items: center;
