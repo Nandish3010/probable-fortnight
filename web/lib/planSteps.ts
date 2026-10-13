@@ -8,9 +8,12 @@ export const PROVENANCE = {
   gemini: "Gemini on Vertex AI",
   deterministic: "deterministic, in the service",
   scripted: "scripted fixture, no model call",
-  /** The offer copy written at Approve: a template; a BigQuery attempt is made under a budget. It
-   * never says the offer was written by BigQuery or by a model. */
+  /** The offer-copy step line when the response says the copy was templated (copy.source "templated"): a
+   * BigQuery attempt is made under a budget. It never says the offer was written by BigQuery or by a model.
+   * Shown only through copyStepLine() in approveMachine.ts, which derives it from the response. */
   offerCopy: "templated (BigQuery attempted under a budget)",
+  /** The offer-copy step line while Approve is in flight: no claim about the source, which is not known yet. */
+  offerCopyPending: "Writing the offer copy; its source is shown when Approve finishes",
 } as const;
 
 export type PlanStepId = "cost" | "estimate" | "draft" | "guardrails";

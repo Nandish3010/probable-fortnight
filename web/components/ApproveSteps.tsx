@@ -1,18 +1,20 @@
 "use client";
 
-import { APPROVE_STEPS, formatElapsed, workingCopy } from "../lib/approveMachine";
+import { APPROVE_STEPS, copyStepLine, formatElapsed, workingCopy } from "../lib/approveMachine";
 import { PROVENANCE } from "../lib/planSteps";
 import { Icon } from "./icons";
 import styles from "./ApproveSteps.module.css";
 
-/** What produced each Approve step. The offer copy is a template: BigQuery is attempted under a
- * budget, and the line never says it wrote the offer. Once the response names a copy source other than
- * "templated" (bigquery, existing, or anything else), the copy badge on the result is the statement and
- * this line is left off rather than contradict it. */
-function provenance(i: number, copySource: string | null): string | null {
-  if (i === 0) return copySource === null || copySource === "templated" ? PROVENANCE.offerCopy : null;
+/** What produced each Approve step. While the request is in flight the copy step makes no claim about
+ * its source (it is not known yet). Once the response arrives the line comes from copyStepLine(), the same
+ * mapping as the badge on the result (copySourceLabel), so the two cannot disagree; a response that names
+ * no known source gets no line at all. */
+function provenance(i: number, waiting: boolean, copy: CopyInfo): string | null {
+  if (i === 0) return waiting ? PROVENANCE.offerCopyPending : copyStepLine(copy);
   return PROVENANCE.deterministic;
 }
+
+type CopyInfo = { source?: unknown; provenance?: unknown } | null | undefined;
 
 /**
  * The three things Approve does, shown honestly (design_spec.md 6.2). The backend answers once, so
@@ -25,7 +27,7 @@ export function ApproveSteps({
   collapsed,
   seconds,
   elapsedMs,
-  copySource = null,
+  copy = null,
 }: {
   /** 0 while waiting; 1 to 3 as the response's ticks land. */
   ticked: number;
@@ -34,8 +36,8 @@ export function ApproveSteps({
   seconds: number;
   /** Click to response, once known. */
   elapsedMs: number | null;
-  /** `copy.source` of the response, when it has one. */
-  copySource?: string | null;
+  /** `copy` of the response (source, provenance), when it has one. */
+  copy?: CopyInfo;
 }) {
   const waiting = elapsedMs === null;
   return (
@@ -45,6 +47,7 @@ export function ApproveSteps({
           <ol className={styles.list}>
             {APPROVE_STEPS.map((label, i) => {
               const done = i < ticked;
+              const line = provenance(i, waiting, copy);
               return (
                 <li key={label} className={styles.item} data-state={done ? "done" : "working"} data-testid="approve-step">
                   <span className={`${styles.mark} ${done ? styles.markDone : ""}`} aria-hidden="true">
@@ -52,9 +55,9 @@ export function ApproveSteps({
                   </span>
                   <span className={styles.label}>
                     {label}
-                    {provenance(i, copySource) ? (
+                    {line ? (
                       <span className={styles.prov} data-testid="step-provenance">
-                        {provenance(i, copySource)}
+                        {line}
                       </span>
                     ) : null}
                   </span>

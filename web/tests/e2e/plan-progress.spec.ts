@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { approveSettled } from "./helpers";
 import { PROVENANCE, planSteps } from "../../lib/planSteps";
 import type { TraceEvent } from "../../lib/types";
 
@@ -85,13 +86,15 @@ test.describe("Plan live: the step list streams", () => {
 });
 
 test.describe("Approve: step provenance", () => {
-  test("the three steps say what produced them; the offer line is templated and does not credit BigQuery with writing it", async ({ page }) => {
+  test("the three steps say what produced them; the copy step names no source until the response does, and never credits BigQuery with writing the offer", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Run the 60-second beat" }).click();
     await page.getByTestId("beat-panel").getByRole("button", { name: "Approve" }).click();
     const steps = page.getByTestId("approve-step");
     await expect(steps).toHaveCount(3);
-    await expect(steps.nth(0).getByTestId("step-provenance")).toHaveText("templated (BigQuery attempted under a budget)");
+    await approveSettled(page);
+    // mocks/approve.json carries no copy field, so the response names no source: no claim at all on step 1.
+    await expect(steps.nth(0).getByTestId("step-provenance")).toHaveCount(0);
     await expect(steps.nth(1).getByTestId("step-provenance")).toHaveText("deterministic, in the service");
     await expect(steps.nth(2).getByTestId("step-provenance")).toHaveText("deterministic, in the service");
   });
