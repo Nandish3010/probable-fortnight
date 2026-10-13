@@ -12,7 +12,7 @@ Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Clou
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; lift +0.3 pp, 95% CI -8.7 to +1.6 | inconclusive, synthetic |
 | Live Plan | 22/24 Gemini-authored, p50 26.5 s | `gemini-3.5-flash`, 11 Oct |
-| Approve | 1.4 to 1.5 s warm | 13 Oct, `taal-agents-00143-8v9` |
+| Approve | 1.4 to 1.7 s warm | 13 Oct, `taal-agents-00143-8v9` |
 | Evalsets | 43/46 response match, 1/46 strict trajectory | 12 Oct |
 | Tests | 500+ pytest, 600+ Playwright cases | `make verify` gate |
 
@@ -64,7 +64,7 @@ Prompt v6 was measured; v7, which the Tea recording uses, was not. The set is a 
 
 **Tests, by suite:** 293 unit, 112 agents, 53 API, 31 SQL and 22 contract pytest functions (511), plus 575 e2e and 32 live Playwright cases (grep counts, 14 Oct). **CI:** `make verify` runs on every pull request; a push to `main` deploys to Cloud Run only after it is green, then a smoke job checks health, a real gap, a real approve and a chat reply.
 
-**Approve timing:** 2.1 to 2.5 s warm on `taal-agents-00141-lhz` (`approve_timing_2026-10-13b.json`), then 1.4 to 1.5 s on `taal-agents-00143-8v9` with web `taal-web-00080-72v` (`approve_timing_2026-10-13c.json`, four warm samples, not a percentile). A first call after idle is slower.
+**Approve timing:** 2.1 to 2.5 s warm on `taal-agents-00141-lhz` (`approve_timing_2026-10-13b.json`), then 1.4 to 1.7 s on `taal-agents-00143-8v9` with web `taal-web-00080-72v` (`approve_timing_2026-10-13c.json`, five warm samples, not a percentile). A first call after idle is slower.
 
 The agent simulation, vision, latency and run-cost cards ran on `gemini-2.5-flash` in September and were not re-run. Full narrative: [`docs/eval_narrative.md`](docs/eval_narrative.md), [`eval/evaluation.md`](eval/evaluation.md).
 

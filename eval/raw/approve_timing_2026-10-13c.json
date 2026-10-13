@@ -1,5 +1,5 @@
 {
-  "what": "Approve latency on the deployed API after the follow-up deploy. Three warm fresh-visitor Approves on 13 Oct (tea, chips, quinoa), plus one Approve on 14 Oct measured by the README builder. Same method and schema as approve_timing_2026-10-13b.json.",
+  "what": "Approve latency on the deployed API after the follow-up deploy. Four warm fresh-visitor Approves on 13 Oct (tea, chips, quinoa at 15:20 IST, chips at 15:50 IST), plus one Approve on 14 Oct measured by the README builder. Same method and schema as approve_timing_2026-10-13b.json.",
   "date": "2026-10-13",
   "measured_at": "13 Oct about 15:20 IST, right after the follow-up deploy; one further sample on 14 Oct (time not recorded)",
   "endpoint": "POST /approve on https://taal-agents-2obkp776ca-el.a.run.app",
@@ -10,16 +10,57 @@
     "visitor": "a fresh X-Taal-Visitor value for every call"
   },
   "samples": [
-    { "play": "chips", "seconds": 1.434, "server_elapsed_ms": 1209, "copy_source": "existing", "copy_provenance": "bigquery_pregenerated" },
-    { "play": "tea", "seconds": 1.456, "server_elapsed_ms": 1226, "copy_source": "existing", "copy_provenance": "bigquery_pregenerated" },
-    { "play": "quinoa", "seconds": 1.409, "server_elapsed_ms": 1188, "copy_source": "existing", "copy_provenance": "bigquery_pregenerated" }
+    {
+      "play": "chips",
+      "seconds": 1.434,
+      "server_elapsed_ms": 1209,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "tea",
+      "seconds": 1.456,
+      "server_elapsed_ms": 1226,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "quinoa",
+      "seconds": 1.409,
+      "server_elapsed_ms": 1188,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated"
+    },
+    {
+      "play": "chips",
+      "seconds": 1.653,
+      "server_elapsed_ms": 1356,
+      "copy_source": "existing",
+      "copy_provenance": "bigquery_pregenerated",
+      "note": "13 Oct about 15:50 IST, first Chips Approve after a 30-minute window with only the scheduler pings (from eval/raw/keepwarm_verification_2026-10-13.json)"
+    }
   ],
-  "web_root": { "request": "GET web root, 13 Oct", "seconds": 0.335 },
-  "sample_14_oct": { "measured_by": "README builder", "date": "2026-10-14", "seconds": 1.51, "copy_source": "existing", "copy_provenance": "bigquery_pregenerated" },
-  "summary": {
-    "range_seconds_13_oct": [1.409, 1.456],
-    "range_seconds_all_four": [1.409, 1.51]
+  "web_root": {
+    "request": "GET web root, 13 Oct",
+    "seconds": 0.335
   },
-  "caveat": "A handful of warm samples (three on 13 Oct, one on 14 Oct), not a percentile estimate. The range is what was measured, not a service-level target. Every sample carried stored, BigQuery-generated copy (copy.source existing, provenance bigquery_pregenerated). The first call after idle is slower and was not measured here.",
+  "sample_14_oct": {
+    "measured_by": "README builder",
+    "date": "2026-10-14",
+    "seconds": 1.51,
+    "copy_source": "existing",
+    "copy_provenance": "bigquery_pregenerated"
+  },
+  "summary": {
+    "range_seconds_13_oct": [
+      1.409,
+      1.653
+    ],
+    "range_seconds_all_five": [
+      1.409,
+      1.653
+    ]
+  },
+  "caveat": "A handful of warm samples (four on 13 Oct, one on 14 Oct), not a percentile estimate. The range is what was measured, not a service-level target. Every sample carried stored, BigQuery-generated copy (copy.source existing, provenance bigquery_pregenerated). The first call after idle is slower and was not measured here.",
   "history": "approve_timing_2026-10-13b.json holds the earlier 13 Oct samples on taal-agents-00141-lhz (2.1 to 2.5 s)"
 }
