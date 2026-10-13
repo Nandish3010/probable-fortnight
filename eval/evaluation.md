@@ -12,7 +12,7 @@ in the tree.
 
 ## Correction, 22 Sep: the live-Vertex and AI.GENERATE_TABLE blockers below were real, are now closed
 
-**12 Oct caveat (applies to the AI.GENERATE_TABLE item in this correction):** the 22 Sep end-to-end result was a single verified run, not the usual live outcome now. On the live demo, Approve attempts BigQuery `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy (the usual outcome on the live demo): 24 h of Cloud Run logs show 31 budget expiries and no BigQuery success, and a direct warm call takes about 3.5 to 4 s. The offer copy a customer sees is therefore usually templated.
+**12 Oct caveat (applies to the AI.GENERATE_TABLE item in this correction), updated 13 Oct:** the 22 Sep end-to-end result was a single verified run. On 12 Oct a call made inside Approve under its 3 s budget usually lost: 24 h of Cloud Run logs showed 31 budget expiries and no BigQuery success, and a direct warm call takes about 3.5 to 4 s. Since batch 1 went live on 13 Oct the call also runs ahead of Approve (at startup for the seeded proposed plays), and `copy.source` read `bigquery` for the Tea hero (Approve 1.3 to 2.3 s) and `templated` for chips. With the pre-generated-copy change, all 7 seeded plays carry BigQuery copy generated ahead of time (`fixtures/copy_pregenerated.json`) and Approve reuses it (`copy.source` `existing`, `copy.provenance` `bigquery_pregenerated`); no BigQuery call is made at click time for them. Templated copy remains the fallback for plays without stored copy.
 
 Everything under "Not measured, and why" that blamed missing Vertex credentials or a missing IAM
 grant no longer applies -- both were re-tested with real credentials in a later session and both
