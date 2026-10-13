@@ -15,6 +15,7 @@ import threading
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any, Literal
@@ -38,7 +39,7 @@ from services.feedback.store import feedback_backend
 from services.feedback.summary import exclusion_config as feedback_exclusion_config
 from services.feedback.summary import summarize as summarize_feedback
 
-from .approve import WindowExpired
+from .approve import WindowExpired, schedule_copy_ahead, schedule_copy_ahead_for_store
 from .approve import approve as do_approve
 from .health_probes import firestore_check, sessions_check
 from .plan_live_eval import load_plan_live_eval
@@ -48,7 +49,23 @@ VERSION = "0.1.0"
 # Committed live-plan evidence summary for /health (None when the file is missing).
 _PLAN_LIVE_EVAL = load_plan_live_eval()
 log = logging.getLogger(__name__)
-app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.")
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    # Offer copy for the seeded proposed plays is generated in BigQuery while the instance warms,
+    # so a judge's first Approve finds it ready (services/api/approve.py, "copy ahead of Approve").
+    # Background threads only; startup never waits on, or fails because of, BigQuery.
+    try:
+        started = schedule_copy_ahead_for_store(LocalStore(base_dir()))
+        if started:
+            log.info("copy ahead of Approve: %d seeded play(s) scheduled", started)
+    except Exception as e:
+        log.warning("copy ahead of Approve not scheduled at startup: %s", e)
+    yield
+
+
+app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping plays with a holdout: sense, plan, approve, engage, measure.", lifespan=_lifespan)
 # allow_origin_regex=r"https?://.*" with allow_credentials=True used to reflect literally any
 # calling origin back with credentials enabled -- any site can make a credentialed
 # cross-origin request (carrying the taal_visitor sandbox cookie) against this public,
@@ -132,6 +149,9 @@ class AssignmentOut(BaseModel):
 class CopyOut(BaseModel):
     variants: int
     rejected: list[str]
+    # Where the accepted variants came from: "existing" (the play already carried valid copy),
+    # "bigquery" (AI.GENERATE_TABLE output) or "templated". Additive (12 Oct 2026); optional.
+    source: str | None = None
 
 
 class ApproveResponseOut(BaseModel):
@@ -362,7 +382,9 @@ def play(play_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any]
     rows = store.find("plays", play_id=play_id)
     if not rows:
         raise HTTPException(404, f"unknown play {play_id}")
-    return _play_json(rows[-1])
+    out = _play_json(rows[-1])
+    schedule_copy_ahead(store, out)  # opening a play is the cue that an Approve may follow
+    return out
 
 
 @app.post("/plan")
@@ -474,6 +496,8 @@ def _run_replan_worker(store: LocalStore, vid: str, gap_id: str, policy_text: st
         # A short message only -- never a stack trace, and never anything from the environment.
         _finish_run(vid, run_id, "error", {"run_id": run_id, "status": "error", "error": str(e)[:300]})
         return
+    if out.get("play"):
+        schedule_copy_ahead(store, out["play"])  # a fresh proposal: its copy is ready by the time anyone clicks Approve
     result = {
         "run_id": out["run_id"], "status": out["status"], "play": out["play"], "policy_version": out.get("policy_version", version),
         "iterations": out["iterations"], "elapsed_ms": out.get("elapsed_ms"), "source": out.get("source"),

@@ -301,6 +301,13 @@ def cited_numbers(draft: dict[str, Any]) -> list[float]:
     # quotes them, and they are as much the play's own fields as expected_outcome is.
     for key in ("expected_outcome", "counterfactuals", "alternatives", "target", "mechanic_params", "audience", "holdout", "guardrails"):
         _walk_numbers(draft.get(key) or {}, acc)
+    # The two headline sums the planner prompt (v7) asks the rationale to state: recovered versus doing
+    # nothing (do_nothing_inr + play_net_inr) and the beat over a blanket markdown (blanket_markdown_inr
+    # + play_net_inr). They are exact sums of estimator fields, so they are as cited as the fields are.
+    cf = draft.get("counterfactuals") or {}
+    if all(isinstance(cf.get(k), int | float) and not isinstance(cf.get(k), bool) for k in ("do_nothing_inr", "blanket_markdown_inr", "play_net_inr")):
+        acc.append(float(cf["do_nothing_inr"]) + float(cf["play_net_inr"]))
+        acc.append(float(cf["blanket_markdown_inr"]) + float(cf["play_net_inr"]))
     # Percent forms of fractions (holdout 0.1 -> 10) and rupee values expressed in whole rupees.
     acc.extend(v * 100.0 for v in list(acc) if 0 < abs(v) < 1)
     return acc

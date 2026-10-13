@@ -17,7 +17,7 @@ flowchart TB
   Sessions[("Vertex AI Sessions<br/>Agent Engine; off-by-default flag")]
   Sched["Cloud Scheduler<br/>20:00 / 20:30 UTC"]
   Jobs["taal-sense · taal-measure<br/>Cloud Run Jobs, nightly"]
-  BQ[("BigQuery (dataset taal)<br/>forecasts, gaps, plays, outcomes;<br/>AI.GENERATE_TABLE writes offer copy")]
+  BQ[("BigQuery (dataset taal)<br/>forecasts, gaps, plays, outcomes;<br/>AI.GENERATE_TABLE: copy attempt, 3 s budget")]
 
   Browser <--> Web
   Web <--> Agents
@@ -139,7 +139,7 @@ tests prove what the model's output must pass through, not how good the model is
 |---|---|---|
 | Reading SKU, best-before date and count from a pallet photo, with a confidence per field | `agents/capture/vision.py:99` (`_vertex_rows`) | `tests/agents/test_vision.py:12`: rows validate against the schema; low-confidence rows are flagged |
 | Proposing the play: shape, mechanic (and its parameters), audience segments, rationale; revising after a failed guardrail | `agents/planner/agent.py:101` (`LlmAgent` in a `LoopAgent`, max 3 iterations) | `tests/agents/test_planner.py:50`: the chips coupon fails the margin floor and the revision is a different, passing play |
-| Offer copy wording, per segment and language (vertex backend only, at approve time; templated otherwise) | `jobs/sense/copy.py:95` (`AI.GENERATE_TABLE` at `:151`), gated by `validate_copy` at `:168` | `tests/unit/test_copy.py:39`: a variant stating the wrong best-before date is rejected |
+| Offer copy wording, per segment and language (vertex backend only; Approve attempts `AI.GENERATE_TABLE` under a 3 s budget and falls back to templated copy, the usual outcome on the live demo) | `jobs/sense/copy.py:95` (`AI.GENERATE_TABLE` at `:151`), gated by `validate_copy` at `:168` | `tests/unit/test_copy.py:39`: a variant stating the wrong best-before date is rejected |
 | What to say to a customer, and which tool to call | `agents/customer/agent.py:38`, turn loop `agents/chat_runtime.py:160`, envelope clamped at `:180` | `tests/agents/test_customer.py:31` (every scripted conversation in `fixtures/conversations/`); `:88`: the exact on-hand count never reaches the customer |
 
 | Never decided by Gemini | Code | Enforced by |

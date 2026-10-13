@@ -12,7 +12,7 @@ from the fixture file. It is not the play the live demo shows. The live chips pl
 Gemini run of 10 Oct (`eval/raw/planner_real_traces_2026-10-10/run_05/`): Masala Chips with Cola
 Classic 250ML at ₹50, 352 consented customers (323 treated, 29 holdout), expected margin ₹126.42.
 Its net is -₹8,468.14 against -₹8,188.78 for a blanket 20% markdown, so the blanket markdown still
-wins on that lot by about ₹279; the beat gap, Tea (`gap_tea_ds04`, also a recorded Gemini run, 12 Oct), beats it by ₹6,186.
+wins on that lot by about ₹279; the beat gap, Tea (`gap_tea_ds04`, also a recorded Gemini run, 12 Oct), beats it by ₹6,186 (derived: the blanket markdown's loss minus the play's loss; see `hero_plays.md`).
 
 ## Inputs (all cited)
 

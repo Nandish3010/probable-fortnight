@@ -97,6 +97,8 @@ def test_health_includes_plan_live_eval(client):
     d = client.get("/health", headers={"X-Taal-Visitor": "v-plan-live"}).json()
     assert d["plan_live_eval"] == api_main._PLAN_LIVE_EVAL
     assert d["plan_live_eval"]["passed"] <= d["plan_live_eval"]["total"]
+    committed = json.loads((Path(__file__).resolve().parents[2] / "eval/raw/plan_live_2026-10-12.json").read_text())["summary"]
+    assert d["plan_live_eval"]["p95_s"] == committed["p95_s"] and d["plan_live_eval"]["p50_s"] == committed["p50_s"]
 
 
 def test_health_omits_plan_live_eval_when_file_missing(client, monkeypatch):
@@ -130,6 +132,16 @@ def test_approve_is_idempotent_and_moves_the_forecast(client):
     b = client.post("/approve", json={"play_id": "play_chips_ds07_v1"}, headers=_h("v-approve")).json()
     assert "already approved" in b["note"] and b["source"] == "recorded"
     assert b["assignment"] == a["assignment"]
+
+
+def test_approve_reports_copy_source_and_writes_distinct_variants(client):
+    for play_id in ("play_chips_ds07_v1", "play_tea_ds04_v1"):
+        a = client.post("/approve", json={"play_id": play_id}, headers=_h("v-copy-" + play_id)).json()
+        assert a["copy"]["source"] in {"existing", "bigquery", "templated"}
+        assert a["copy"]["variants"] >= 2
+        written = client.get(f"/plays/{play_id}", headers=_h("v-copy-" + play_id)).json()["copy"]["variants"]
+        texts = [v["text"] for v in written]
+        assert len(texts) == a["copy"]["variants"] and len(set(texts)) == len(texts)
 
 
 def test_approve_after_window_end_is_rejected_not_silently_inverted(client, monkeypatch):
