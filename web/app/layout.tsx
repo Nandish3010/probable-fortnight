@@ -54,6 +54,15 @@ const plexMono = localFont({
   adjustFontFallback: "Arial",
 });
 
+// Instrument Serif (OFL): the landing hero sentence and headline figures only, at 28 px and up,
+// weight 400. Never in tables, never for small numbers (globals.css --font-serif).
+const instrumentSerif = localFont({
+  src: [{ path: "./fonts/InstrumentSerif-Regular-latin.woff2", weight: "400", style: "normal" }],
+  variable: "--font-instrument-serif",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+
 // The default title is the landing page's; every other route sets its own in its layout.tsx.
 export const metadata: Metadata = {
   title: "Taal: sell what the forecast says you'll throw away",
@@ -63,7 +72,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} ${notoKannada.variable}`}>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} ${notoKannada.variable} ${instrumentSerif.variable}`}>
       <body>
         <a href="#main-content" className="skip-link">
           Skip to main content

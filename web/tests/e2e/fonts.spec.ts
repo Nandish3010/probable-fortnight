@@ -35,6 +35,24 @@ test.describe("fonts", () => {
     console.log(`--font-sans = ${tokens.sans}`);
   });
 
+  test("Instrument Serif is self-hosted and sets the landing hero sentence from 768 px up (weight 400)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    const serif = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--font-serif").trim());
+    const family = families(serif)[0];
+    expect(family, serif).toMatch(/instrumentSerif/i);
+    const h1 = await page.getByRole("heading", { level: 1 }).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { family: cs.fontFamily, size: parseFloat(cs.fontSize), weight: cs.fontWeight };
+    });
+    expect(families(h1.family)[0]).toBe(family);
+    expect(h1.size).toBeGreaterThanOrEqual(28);
+    expect(h1.weight).toBe("400");
+    await page.evaluate(() => document.fonts.ready);
+    const loaded = await page.evaluate(() => Array.from(document.fonts).filter((f) => f.status === "loaded").map((f) => f.family.replace(/['"]/g, "")));
+    expect(loaded).toContain(family);
+  });
+
   test("Plex Sans and Plex Mono faces load on the landing page", async ({ page }) => {
     await page.goto("/");
     const tokens = await page.evaluate(() => {

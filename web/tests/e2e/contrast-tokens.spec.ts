@@ -100,6 +100,30 @@ test.describe("contrast tokens (>= 4.5:1)", () => {
     }
   });
 
+  test("palette B: every state colour reads on the page, the surface and its own tint, in both themes", () => {
+    const pairs: Array<[string, string]> = [
+      ["--live-text", "--tint-live"],
+      ["--good-text", "--tint-good"],
+      ["--warn-text", "--tint-warn"],
+      ["--danger-text", "--tint-danger"],
+    ];
+    for (const [theme, tokens] of [["light", light], ["dark", dark]] as const) {
+      for (const bg of ["--bg", "--surface"]) {
+        for (const fg of ["--live-text", "--warn-text", "--replay-text", "--muted-badge-text", "--text", "--recorded-text"]) {
+          const r = contrast(resolve(tokens, fg), resolve(tokens, bg));
+          expect(r, `${theme} ${fg} on ${bg} ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(MIN);
+        }
+      }
+      for (const [fg, tint] of pairs) {
+        const r = contrast(resolve(tokens, fg), resolve(tokens, tint));
+        expect(r, `${theme} ${fg} on ${tint} ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(MIN);
+      }
+      // the ink button: its label on the fill
+      const r = contrast(resolve(tokens, "--on-accent"), resolve(tokens, "--accent"));
+      expect(r, `${theme} --on-accent on --accent ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(MIN);
+    }
+  });
+
   test("a token that differs between light and dark is declared in both dark blocks, with the same value", () => {
     for (const name of Object.keys(darkAttr)) {
       expect(darkMedia[name], `${name} is missing from the prefers-color-scheme block`).toBe(darkAttr[name]);
