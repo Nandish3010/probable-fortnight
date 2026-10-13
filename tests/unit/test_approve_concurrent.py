@@ -26,6 +26,13 @@ def run(sandbox, data_dir, monkeypatch):
     monkeypatch.setenv("TAAL_FAKE_PROJECT", "fake-project")
     monkeypatch.setattr(approve_mod, "load_models", lambda: {"backend": "vertex", "vertex": {"project_env": "TAAL_FAKE_PROJECT", "location": "fake-region"}, "ids": {"flash": "fake-model"}})
 
+    # a seeded play may carry committed pre-generated copy, which approve reuses without any
+    # BigQuery call; these tests are about the approve-time copy branch, so start from no copy
+    row = sandbox.find("plays", play_id=PLAY_ID)[-1]
+    seeded = json.loads(row["play_json"])
+    seeded["copy"]["variants"], seeded["copy"]["copy_status"] = [], "pending"
+    approve_mod._save_play(sandbox, row, seeded)
+
     def go(copy_fake=None, forecast_fake=None):
         monkeypatch.setattr(approve_mod, "generate_copy_bigquery", copy_fake or (lambda *a, **k: calls["copy"].append(time.perf_counter()) or []))
         if forecast_fake is not None:
