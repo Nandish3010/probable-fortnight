@@ -226,7 +226,7 @@ def test_prompt_states_the_offer_and_the_partner_and_forbids_made_up_claims():
     from jobs.sense.copy import _bq_prompt_text
 
     bundle = _bq_prompt_text("Masala Chips 200G", "bundle", None, 50.0, "2026-10-15", "en", "Lead with the offer itself.", "Cola Classic 250ML")
-    assert "Masala Chips 200G and Cola Classic 250ML bought together for Rs 50" in bundle and "2026-10-15" in bundle
+    assert "Masala Chips 200G and Cola Classic 250ML bought together for ₹50" in bundle and "2026-10-15" in bundle
     tea = _bq_prompt_text("Darjeeling Tea 100G", "transfer_plus_nudge", None, None, "2026-11-20", "en")
     assert "nearest Kutumb Mart outlet" in tea and "Nothing is free" in tea and "never mention a cart" in tea
     assert "10% off Quinoa 500G in store" in _bq_prompt_text("Quinoa 500G", "outlet_markdown", 10.0, None, None, "en")

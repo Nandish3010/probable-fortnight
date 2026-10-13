@@ -50,7 +50,7 @@ SELECT
     'Write one short, plain, non-pushy message in ', lang, ' for a grocery customer. ',
     'Product: ', ap.sku_name, '. Mechanic: ', ap.mechanic, '. ',
     IF(ap.discount_pct IS NOT NULL, CONCAT('Discount: ', ap.discount_pct, '% -- copy this number exactly, do not change it. '), ''),
-    IF(ap.bundle_price IS NOT NULL, CONCAT('Bundle price: Rs ', ap.bundle_price, ' -- copy this number exactly. '), ''),
+    IF(ap.bundle_price IS NOT NULL, CONCAT('Bundle price: ₹', ap.bundle_price, ' -- copy this number exactly. '), ''),
     IF(ap.deadline_type = 'online_sellby', CONCAT('State the best-before date ', ap.deadline_date, ' plainly. '), ''),
     'Do not invent any other number or date. Keep it under 40 words. ',
     'Output disclosure_included = true only if the best-before date appears verbatim in copy_text.'

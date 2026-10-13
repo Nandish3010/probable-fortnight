@@ -11,7 +11,13 @@ import json
 import pytest
 
 from jobs.sense import copy_pregenerated as _cp
-from jobs.sense.copy import _bq_prompt_text, generate_copy, unsupported_claim, validate_copy
+from jobs.sense.copy import (
+    _bq_prompt_text,
+    generate_copy,
+    normalize_rupee,
+    unsupported_claim,
+    validate_copy,
+)
 
 PLAY = {
     "objective": "clear_online_sellby",
@@ -38,7 +44,7 @@ def test_validate_copy_accepts_a_variant_that_states_best_before_in_iso_form():
     # rather than reformatting it -- the validator must accept that form too, not just "%d %b %Y".
     variant = {"segment_id": "seg_1", "language": "en", "text": f"Bundle for Rs 61. Best before: {BEST_BEFORE}.", "disclosure_included": True}
     accepted, reasons = validate_copy([variant], PLAY, BEST_BEFORE)
-    assert accepted == [variant] and reasons == []
+    assert accepted == [{**variant, "text": f"Bundle for ₹61. Best before: {BEST_BEFORE}."}] and reasons == []
 
 
 def test_validate_copy_rejects_a_variant_stating_the_wrong_date():
@@ -176,3 +182,24 @@ def test_committed_pregenerated_copy_makes_none_of_those_claims(base_store):
             if mechanic != "preorder":
                 low = v["text"].lower()
                 assert not any(w in low for w in ("fresh", "just arrived")) and "ತಾಜಾ" not in v["text"] and "ಈಗಷ್ಟೇ" not in v["text"]
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("Chips for Rs 50 today", "Chips for ₹50 today"),
+    ("Chips for Rs. 50 today", "Chips for ₹50 today"),
+    ("Chips for Rs.50 today", "Chips for ₹50 today"),
+    ("Chips for ₹50 today", "Chips for ₹50 today"),
+    ("Chips with no price, best before 2026-10-15", "Chips with no price, best before 2026-10-15"),
+    ("Rs 50 and Rs. 61.50", "₹50 and ₹61.50"),
+    ("Doors and Rsvp 5", "Doors and Rsvp 5"),
+])
+def test_normalize_rupee(text, expected):
+    assert normalize_rupee(text) == expected
+
+
+def test_validate_copy_renders_rupee_sign_without_mutating_input():
+    original = _variant("Masala Chips 200G with Cola Classic 250ML for Rs 61. Best before 15 Oct 2026.")
+    snapshot = dict(original)
+    ok, reasons = validate_copy([original], PLAY, BEST_BEFORE)
+    assert reasons == [] and ok[0]["text"] == "Masala Chips 200G with Cola Classic 250ML for ₹61. Best before 15 Oct 2026."
+    assert original == snapshot and ok[0] is not original
