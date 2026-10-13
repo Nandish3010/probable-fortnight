@@ -13,7 +13,7 @@ Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Clou
 | Live Plan | 22/24 Gemini-authored, p50 26.5 s | `gemini-3.5-flash`, 11 Oct |
 | Approve | about 1.5 to 2.5 s warm | 13 Oct |
 | Evalsets | 43/46 response match, 1/46 strict trajectory | 12 Oct, [Evidence](#evidence) |
-| Tests | 511 pytest, 607 Playwright | `make verify` gate |
+| Tests | 500+ pytest functions, 600+ Playwright cases | `make verify` gate, counts by suite below |
 
 Sources: `eval/raw/tea_recorded_beat_2026-10-12.json`, `plan_live_2026-10-12.json`, `approve_timing_2026-10-13b.json`, `live_eval_2026-10-12/`.
 
