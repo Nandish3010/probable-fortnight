@@ -31,6 +31,15 @@ def vertex_cfg(monkeypatch):
     monkeypatch.setattr(approve_mod, "load_models", lambda: {"backend": "vertex", "vertex": {"project_env": "TAAL_FAKE_PROJECT", "location": "fake-region"}, "ids": {"flash": "fake-model"}})
 
 
+def _without_copy(store, play_id):
+    """Reset a seeded play to "no copy yet", so the test exercises the approve-time copy path even
+    when the play was seeded with committed pre-generated BigQuery copy (fixtures/copy_pregenerated.json)."""
+    row = store.find("plays", play_id=play_id)[-1]
+    play = json.loads(row["play_json"])
+    play["copy"]["variants"], play["copy"]["copy_status"] = [], "pending"
+    approve_mod._save_play(store, row, play)
+
+
 def test_tea_approve_local_wall_time_is_bounded(sandbox, now_asof):
     now, as_of = now_asof
     t0 = time.perf_counter()
@@ -65,6 +74,7 @@ def test_a_hung_bigquery_copy_is_cut_at_the_budget_and_templates_are_used(sandbo
         return []
 
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", hung)
+    _without_copy(sandbox, TEA)
     t0 = time.perf_counter()
     resp = approve(sandbox, load_tenant(), TEA, now, as_of=as_of)
     wall = time.perf_counter() - t0
@@ -89,6 +99,7 @@ def test_copy_call_starts_before_the_local_work_and_overlaps_it(sandbox, now_aso
 
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", copy_fake)
     monkeypatch.setattr(approve_mod, "forecast", forecast_spy)
+    _without_copy(sandbox, TEA)
     t0 = time.perf_counter()
     approve(sandbox, load_tenant(), TEA, now, as_of=as_of)
     wall = time.perf_counter() - t0
@@ -149,6 +160,7 @@ def test_play_with_existing_copy_makes_no_bigquery_call_and_keeps_the_response_s
         raise AssertionError("BigQuery copy must not be called for a play that already has copy")
 
     monkeypatch.setattr(approve_mod, "generate_copy_bigquery", lambda *a, **k: [])
+    _without_copy(sandbox, TEA)
     base = approve(sandbox, load_tenant(), TEA, now, as_of=as_of)  # no BigQuery rows -> templated path
     assert base["copy"]["source"] == "templated"
     existing = _with_existing_copy(sandbox, "play_chips_ds07_v1")

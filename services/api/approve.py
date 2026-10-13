@@ -22,6 +22,7 @@ from agents.gate.store import LocalStore, OverlayStore, load_catalogue
 from agents.planner.context import PlannerContext
 from agents.planner.tools import eligible_audience
 from jobs.sense.copy import generate_copy, generate_copy_bigquery, validate_copy
+from jobs.sense.copy_pregenerated import provenance_of
 from jobs.sense.forecast import forecast, series_for
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ def _writeoff(series: dict[str, float], on_hand: int, deadline: str, unit_cost: 
     return round(max(0.0, on_hand - sold) * unit_cost, 2)
 
 
-def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]], timeout_s: float | None = None) -> tuple[list[dict[str, Any]], str]:
+def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: str | None, templated: list[dict[str, Any]], timeout_s: float | None = None, partner_name: str | None = None) -> tuple[list[dict[str, Any]], str]:
     """The templated variants, replaced slot by slot by AI.GENERATE_TABLE output (vertex backend
     only) when it returns within COPY_BUDGET_S (3.0 s, a hard wall-clock cap enforced in approve();
     generate_copy_bigquery's own timeout_s is kept just under it). Approve is on the demo's critical
@@ -76,7 +77,7 @@ def _bigquery_copy(play: dict[str, Any], product: dict[str, Any], best_before: s
             project = os.environ.get(models["vertex"]["project_env"])
             if not project:
                 raise RuntimeError(f"{models['vertex']['project_env']} not set")
-            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"], timeout_s=timeout_s if timeout_s is not None else max(1.0, COPY_BUDGET_S - 0.2))
+            bq_variants = generate_copy_bigquery(play, product, best_before, play["copy"]["language_set"], project=project, region=models["vertex"]["location"], model_id=models["ids"]["flash"], timeout_s=timeout_s if timeout_s is not None else max(1.0, COPY_BUDGET_S - 0.2), partner_name=partner_name)
             if bq_variants:
                 # Per (segment, language) slot: keep the BigQuery variant only if the same
                 # deterministic validator that gates templated copy accepts it; any slot it
@@ -135,7 +136,7 @@ def copy_fingerprint(play: dict[str, Any], product: dict[str, Any], partner: dic
 def _copy_ahead_work(play: dict[str, Any], product: dict[str, Any], partner: dict[str, Any] | None, best_before: str | None, fp: str) -> tuple[list[dict[str, Any]], str]:
     t0 = time.perf_counter()
     templated = generate_copy(play, product, partner, best_before, play["copy"]["language_set"])
-    variants, source = _bigquery_copy(play, product, best_before, templated, timeout_s=COPY_AHEAD_TIMEOUT_S)
+    variants, source = _bigquery_copy(play, product, best_before, templated, timeout_s=COPY_AHEAD_TIMEOUT_S, partner_name=(partner or {}).get("name"))
     took = time.perf_counter() - t0
     if source != "bigquery":
         with _AHEAD_LOCK:
@@ -258,7 +259,7 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
         # in flight costs Approve no more than its own call would have.
         copy_future = _copy_ahead_future(play, product, partner, best_before) if copy_ahead_enabled() else None
         if copy_future is None:
-            copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated)
+            copy_future = pool.submit(_bigquery_copy, copylib.deepcopy(play), product, best_before, templated, None, (partner or {}).get("name"))
     # --- assignment by hash
     pctx = _planner_ctx(store, tenant)
     # An assortment_gap play's real, demonstrated askers live in the gap's evidence, never the
@@ -301,8 +302,13 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     run_id = f"refc_{play_id}_{now.strftime('%H%M%S')}"
     forecast_future = pool.submit(_reforecast, store, as_of, run_id, play, stale_rows)
     forecast_error = forecast_future.exception()
+    copy_provenance = None
     if use_existing:
         variants, copy_source = existing, "existing"
+        # "bigquery_pregenerated" only when the stored variants are exactly the committed
+        # AI.GENERATE_TABLE output for this play (jobs/sense/copy_pregenerated.py); otherwise the
+        # provenance is just the source ("existing": a recorded or seeded play that carried copy).
+        copy_provenance = provenance_of(play, best_before, existing)
     else:
         try:
             variants, copy_source = copy_future.result(timeout=max(0.0, COPY_BUDGET_S - (time.perf_counter() - t_copy)))
@@ -343,7 +349,7 @@ def approve(store: LocalStore, tenant: TenantConfig, play_id: str, now: datetime
     resp = {
         "play_id": play_id, "status": play["status"],
         "assignment": {"treated_n": len(treated), "holdout_n": len(holdout), "seed": play["holdout"]["seed"], "fraction": play["holdout"]["fraction"], "eligible_n": len(eligible), "excluded_subscribers": len([c for c in ids if c in subscribers]) if play["mechanic"] in ("coupon", "outlet_markdown", "bundle") else 0},
-        "offers_written": len(offers), "regressor_rows_touched": touched, "copy": {"variants": len(accepted), "rejected": reasons, "source": copy_source},
+        "offers_written": len(offers), "regressor_rows_touched": touched, "copy": {"variants": len(accepted), "rejected": reasons, "source": copy_source, "provenance": copy_provenance or copy_source},
         # The model that actually ran: jobs/sense/forecast.py's local seasonal-xreg forecaster,
         # not the BigQuery ML.FORECAST/ARIMA_PLUS_XREG function -- that function was verified
         # separately against real BigQuery (eval/raw/bigquery_arima_xreg_forecast_2026-09-23.json)

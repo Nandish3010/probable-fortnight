@@ -152,6 +152,10 @@ class CopyOut(BaseModel):
     # Where the accepted variants came from: "existing" (the play already carried valid copy),
     # "bigquery" (AI.GENERATE_TABLE output) or "templated". Additive (12 Oct 2026); optional.
     source: str | None = None
+    # How the copy came about: "bigquery_pregenerated" (the stored variants are the committed
+    # AI.GENERATE_TABLE output for this play, fixtures/copy_pregenerated.json), otherwise the
+    # same value as `source`. Additive (13 Oct 2026); optional.
+    provenance: str | None = None
 
 
 class ApproveResponseOut(BaseModel):

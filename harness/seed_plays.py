@@ -9,22 +9,49 @@ validates against the current tenant, keeps the scripted stub exactly as before.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 
+from agents.gate.store import LocalStore
 from agents.planner.run import run_planner_async
 from harness.recorded_traces import seed_from_recording
+from jobs.sense.copy_pregenerated import pregenerated_variants
 
 DEMO_GAPS = ["gap_chips_ds07", "gap_tea_ds04", "gap_cola_ds07", "gap_cola_ds02", "gap_kaju_ds01", "gap_kaju_ds03", "gap_quinoa_out02"]
 FLAGSHIP_GAP = "gap_chips_ds07"  # planned first, so its recording sees an empty play store
 
 
+def _apply_pregenerated_copy(data_dir: str, result: dict) -> None:
+    """Put the committed BigQuery copy (fixtures/copy_pregenerated.json, harness/pregenerate_copy.py)
+    onto the seeded play when it still matches the play the copy was generated for and every
+    variant validates. Approve then reuses it instead of calling BigQuery on its 3 s path. A play
+    with no entry, or whose entry no longer fits, keeps the templated path."""
+    play = result.get("play")
+    if not play:
+        return
+    store = LocalStore(data_dir)
+    gaps = store.find("gaps", gap_id=play["gap_id"])
+    rows = store.find("plays", play_id=play["play_id"])
+    if not gaps or not rows:
+        return
+    variants = pregenerated_variants(play, gaps[-1]["evidence"].get("expiry_date"))
+    if variants is None:
+        return
+    play["copy"]["variants"], play["copy"]["copy_status"] = variants, "generated"
+    row = dict(rows[-1])
+    row["play_json"] = json.dumps(play, ensure_ascii=False)
+    store.upsert("plays", "play_id", row)
+    print(f"seed: {play['play_id']}: loaded {len(variants)} pre-generated BigQuery copy variant(s)")
+
+
 async def _seed_one(data_dir: str, gap_id: str) -> dict:
     result, message = seed_from_recording(data_dir, gap_id)
     print(f"seed: {message}")
-    if result is not None:
-        return result
-    return await run_planner_async(data_dir, gap_id)
+    if result is None:
+        result = await run_planner_async(data_dir, gap_id)
+    _apply_pregenerated_copy(data_dir, result)
+    return result
 
 
 async def seed_plays(data_dir: str) -> list[dict]:

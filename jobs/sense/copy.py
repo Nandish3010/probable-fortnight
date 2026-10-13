@@ -165,7 +165,41 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
     return variants
 
 
-def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, best_before: str | None, language: str) -> str:
+# One angle per audience segment (index modulo the list), appended to that segment's prompt. The
+# model is near-deterministic for an identical prompt, so without this every segment of a play got
+# the same sentence back. The angles ask for a different shape of the same message and carry no
+# facts, so they cannot introduce a number or date.
+SEGMENT_ANGLES = (
+    "Lead with the offer itself.",
+    "Open with why now: the timing and freshness.",
+    "Use a warm, friendly tone and speak to the customer directly.",
+    "Make it a single crisp sentence.",
+    "Frame it as a helpful reminder for the weekly shop.",
+    "Mention how easy it is to pick up on the next store visit.",
+    "Start with the product name.",
+    "Sound like a neighbourhood shopkeeper giving a tip.",
+)
+
+
+def _offer_facts(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, partner_name: str | None) -> str:
+    """The offer, stated as plain facts, so the model describes this offer and none it makes up.
+    Found live: given only "Mechanic: transfer_plus_nudge" it wrote "a free tea ... moved to your
+    cart", and for a bundle it dropped the partner product entirely."""
+    if mechanic == "bundle" and partner_name and bundle_price is not None:
+        return f"Offer: {sku_name} and {partner_name} bought together for Rs {bundle_price:g}; name both products."
+    if mechanic in ("coupon", "outlet_markdown") and discount_pct is not None:
+        where = " in store" if mechanic == "outlet_markdown" else ""
+        return f"Offer: {discount_pct:g}% off {sku_name}{where}."
+    return {
+        "transfer_plus_nudge": f"Offer: {sku_name} is now available at the customer's nearest Kutumb Mart outlet. Nothing is free and there is no discount.",
+        "preorder": f"Offer: {sku_name} can be reserved now and is arriving soon. There is no discount.",
+        "usual_order_addon": f"Offer: add {sku_name} to the customer's usual order this week.",
+        "substitution": f"Offer: {sku_name} is back in stock at the customer's store.",
+        "subscription_nudge": f"Offer: the customer's {sku_name} subscription can be delivered early this week.",
+    }.get(mechanic, f"Offer: {sku_name} is available.")
+
+
+def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bundle_price: float | None, best_before: str | None, language: str, angle: str | None = None, partner_name: str | None = None) -> str:
     """Same instructions as data/bigquery/sense/08_copy.sql's prompt_text CONCAT, ported to
     Python because the minimal BigQuery path (see generate_copy_bigquery) builds its request
     rows here rather than reading them back out of `taal.plays`/`taal.products`, which this
@@ -180,14 +214,16 @@ def _bq_prompt_text(sku_name: str, mechanic: str, discount_pct: float | None, bu
     which `validate_copy` then rejected as a disclosure mismatch every time -- found live: the
     model correctly wrote the date it was told to, and was discarded anyway because the check
     compares against `best_before`, the same field the templated path is built from."""
-    parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}."]
+    parts = [f"Write one short, plain, non-pushy message in {language} for a grocery customer.", f"Product: {sku_name}. Mechanic: {mechanic}.", _offer_facts(sku_name, mechanic, discount_pct, bundle_price, partner_name)]
     if discount_pct is not None:
         parts.append(f"Discount: {discount_pct:g}% -- copy this number exactly, do not change it.")
     if bundle_price is not None:
         parts.append(f"Bundle price: Rs {bundle_price:g} -- copy this number exactly.")
     if best_before:
         parts.append(f"State the best-before date {best_before} plainly.")
-    parts.append("Do not invent any other number or date. Keep it under 40 words.")
+    parts.append("Do not invent any other number or date. Describe only this offer: never say anything is free, never mention a cart, and promise nothing else. Keep it under 40 words.")
+    if angle:
+        parts.append(angle)
     return " ".join(parts)
 
 
@@ -200,7 +236,7 @@ def _bq_client(project: str, region: str):
     return bigquery.Client(project=project, location=region)
 
 
-def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 4.5) -> list[dict[str, Any]]:
+def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_before: str | None, languages: list[str], project: str, region: str, model_id: str, dataset: str = "taal", timeout_s: float = 4.5, angle_order: list[str] | None = None, partner_name: str | None = None) -> list[dict[str, Any]]:
     """A real `AI.GENERATE_TABLE` call over the Vertex-connected remote model
     `{dataset}.{model_id}_remote` (created by infra/deploy.sh). `taal.plays` and `taal.products`
     are never populated by this codebase -- LocalStore is the system of record -- so this cannot
@@ -227,8 +263,11 @@ def generate_copy_bigquery(play: dict[str, Any], product: dict[str, Any], best_b
     params = play.get("mechanic_params") or {}
     discount_pct = params.get("discount_pct") or params.get("markdown_pct")
     bundle_price = params.get("bundle_price")
+    # `angle_order` fixes each segment's angle by its place in the full segment list, so a retry for
+    # a subset of segments (harness/pregenerate_copy.py) keeps every segment on its own angle.
+    order = {seg: i for i, seg in enumerate(angle_order or play["audience"]["segment_ids"])}
     requests = [
-        (seg, lang, _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, best_before, lang))
+        (seg, lang, _bq_prompt_text(product["name"], play["mechanic"], discount_pct, bundle_price, best_before, lang, SEGMENT_ANGLES[order.get(seg, 0) % len(SEGMENT_ANGLES)], partner_name))
         for seg in play["audience"]["segment_ids"]
         for lang in languages
     ]
