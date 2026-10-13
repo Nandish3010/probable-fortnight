@@ -1,0 +1,69 @@
+/* The "Waking the demo" notice (components/WakingNotice.tsx): one quiet line on the page's own
+   surface, hairline border, no shadow, palette tokens only. */
+
+.region {
+  min-width: 0;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-block: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+.text {
+  flex: 1 1 14rem;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+/* A small dot, still by default; it breathes only for a visitor who has not asked for less motion. */
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--text-muted);
+}
+
+.dot[data-phase="slow"] {
+  background: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dot[data-phase="waking"] {
+    animation: wake-breathe 2s ease-in-out infinite;
+  }
+}
+
+@keyframes wake-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.retry {
+  flex: none;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}

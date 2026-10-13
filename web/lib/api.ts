@@ -92,6 +92,12 @@ export function timeoutFor(path: string): number {
   return TIMEOUTS.find(([re]) => re.test(pathname))?.[1] ?? DEFAULT_TIMEOUT_MS;
 }
 
+/** A first read after the service has been idle can be a cold start (Cloud Run scales to zero), which
+ * takes longer than the 10 s a warm read is allowed. The reads a page makes when it first opens use
+ * this budget so a slow wake shows the "Waking the demo" notice (lib/useWaking.ts) instead of an
+ * error card; a dead host that refuses the connection still fails at once. */
+export const COLD_START_OPTS: RequestOptions = { timeoutMs: 50_000 };
+
 export interface RequestOptions {
   /** Overrides the per-endpoint timeout. */
   timeoutMs?: number;
@@ -179,7 +185,7 @@ export async function getHealth(): Promise<HealthResponse> {
 
 // ---------- gaps ----------
 
-export async function getGaps(params?: { node_id?: string; limit?: number }): Promise<Gap[]> {
+export async function getGaps(params?: { node_id?: string; limit?: number }, opts?: RequestOptions): Promise<Gap[]> {
   if (isMockMode()) {
     await mockGate("/gaps");
     await delay(150);
@@ -194,7 +200,7 @@ export async function getGaps(params?: { node_id?: string; limit?: number }): Pr
   const q = new URLSearchParams();
   if (params?.node_id) q.set("node_id", params.node_id);
   q.set("limit", String(params?.limit ?? 1000));
-  return apiFetch<Gap[]>(`/gaps?${q.toString()}`);
+  return apiFetch<Gap[]>(`/gaps?${q.toString()}`, undefined, opts);
 }
 
 // ---------- plays ----------
@@ -222,7 +228,7 @@ function rememberMockApproval(playId: string) {
   }
 }
 
-export async function getPlays(params?: { gap_id?: string }): Promise<Play[]> {
+export async function getPlays(params?: { gap_id?: string }, opts?: RequestOptions): Promise<Play[]> {
   if (isMockMode()) {
     await mockGate("/plays");
     await delay(150);
@@ -234,7 +240,7 @@ export async function getPlays(params?: { gap_id?: string }): Promise<Play[]> {
     return all;
   }
   const qs = params?.gap_id ? `?gap_id=${encodeURIComponent(params.gap_id)}` : "";
-  return apiFetch<Play[]>(`/plays${qs}`);
+  return apiFetch<Play[]>(`/plays${qs}`, undefined, opts);
 }
 
 // ---------- approve ----------
@@ -449,13 +455,13 @@ export async function execution(req: ExecutionRequest): Promise<ExecutionRespons
 
 // ---------- outcomes ----------
 
-export async function getDemoCustomers(playId = "play_chips_ds07_v1"): Promise<DemoCustomer[]> {
+export async function getDemoCustomers(playId = "play_chips_ds07_v1", opts?: RequestOptions): Promise<DemoCustomer[]> {
   if (isMockMode()) {
     await mockGate("/customers/demo");
     await delay(150);
     return (await mockJson("customers_demo")) as unknown as DemoCustomer[];
   }
-  return apiFetch<DemoCustomer[]>(`/customers/demo?play_id=${encodeURIComponent(playId)}`);
+  return apiFetch<DemoCustomer[]>(`/customers/demo?play_id=${encodeURIComponent(playId)}`, undefined, opts);
 }
 
 export async function getOutcomes(): Promise<Outcome[]> {

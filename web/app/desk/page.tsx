@@ -14,7 +14,7 @@ import { PlayCard } from "../../components/PlayCard";
 import { PolicyEditor } from "../../components/PolicyEditor";
 import { SourceBadge } from "../../components/SourceBadge";
 import { TracePanel } from "../../components/TracePanel";
-import { getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
+import { COLD_START_OPTS, getGaps, getPlays, getPolicy, rerun } from "../../lib/api";
 import { toApiError, type ApiError } from "../../lib/apiError";
 import { pct } from "../../lib/format";
 import { collapseRuns, inboxHeading } from "../../lib/inbox";
@@ -23,6 +23,8 @@ import { recordPlan } from "../../lib/progressStore";
 import { recordedGaps, recordedPlays } from "../../lib/recorded";
 import { isPhoneNow } from "../../lib/useMediaQuery";
 import { useServerNow } from "../../lib/useServerNow";
+import { useWaking } from "../../lib/useWaking";
+import { WakingNotice } from "../../components/WakingNotice";
 import { TraceView } from "../../components/traceRows";
 import type { ApproveResponse, Gap, Play, RerunAccepted, RerunResult, TraceEvent } from "../../lib/types";
 
@@ -59,6 +61,7 @@ export default function PlayDeskPage() {
   const [liveTrace, setLiveTrace] = useState<TraceEvent[] | null>(null);
 
   const [planStarting, setPlanStarting] = useState(false);
+  const [loadEpoch, setLoadEpoch] = useState(0);
   const [planError, setPlanError] = useState<ApiError | null>(null);
   const [loadError, setLoadError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,11 +151,12 @@ export default function PlayDeskPage() {
 
   async function loadPlays() {
     const seq = ++loadSeq.current;
+    setLoadEpoch((n) => n + 1);
     setLoading(true);
     setLoadError(null);
     setUsingRecorded(false);
     try {
-      const [playList, gapList] = await Promise.all([getPlays(), getGaps()]);
+      const [playList, gapList] = await Promise.all([getPlays(undefined, COLD_START_OPTS), getGaps(undefined, COLD_START_OPTS)]);
       if (seq !== loadSeq.current) return;
       applyLoaded(playList, gapList);
     } catch (e) {
@@ -270,6 +274,9 @@ export default function PlayDeskPage() {
     }
   }, [selected]);
 
+  // "Waking the demo": the first plays still loading after a moment (the service sleeps when idle).
+  const wakePhase = useWaking(loading && plays.length === 0, false, loadEpoch);
+
   const gap = selected ? gapsById[selected.gap_id] : undefined;
   const approved = selected ? selected.status === "approved" || approvedIds.has(selected.play_id) : false;
 
@@ -303,6 +310,7 @@ export default function PlayDeskPage() {
               />
             ))}
             {groups.length === 0 && loading ? <p className="muted">Loading plays…</p> : null}
+            {groups.length === 0 && loading ? <WakingNotice phase={wakePhase} onRetry={loadPlays} /> : null}
             {groups.length === 0 && !loading && !loadError ? <p className="muted">No plays yet.</p> : null}
           </div>
         </div>

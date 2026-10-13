@@ -13,7 +13,8 @@ import { PlayCard } from "../components/PlayCard";
 import { ResetDialog } from "../components/ResetDialog";
 import { StateLegend } from "../components/StateLegend";
 import { Tour } from "../components/Tour";
-import { getGaps, getPlays, resetDemoData } from "../lib/api";
+import { WakingNotice } from "../components/WakingNotice";
+import { COLD_START_OPTS, getGaps, getPlays, resetDemoData } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { formatDemoDate } from "../lib/format";
 import { HERO_GAP_ID } from "../lib/hero";
@@ -23,6 +24,7 @@ import { clearTourSeen } from "../lib/tour";
 import { getVisitorId } from "../lib/visitor";
 import { isPhoneNow, useIsPhone } from "../lib/useMediaQuery";
 import { useServerNow } from "../lib/useServerNow";
+import { useWaking } from "../lib/useWaking";
 import type { Gap, Play } from "../lib/types";
 import styles from "./page.module.css";
 
@@ -37,12 +39,12 @@ interface Beat {
 
 /** The hero gap and its play; the biggest gap there is when the tenant does not have the hero. */
 async function loadBeat(): Promise<Beat> {
-  const [gaps, heroPlays] = await Promise.all([getGaps(), getPlays({ gap_id: HERO_GAP_ID })]);
+  const [gaps, heroPlays] = await Promise.all([getGaps(undefined, COLD_START_OPTS), getPlays({ gap_id: HERO_GAP_ID }, COLD_START_OPTS)]);
   let chosen = gaps.find((g) => g.gap_id === HERO_GAP_ID) ?? null;
   let plays = heroPlays;
   if (!chosen) {
     chosen = gaps[0] ?? null;
-    plays = chosen ? await getPlays({ gap_id: chosen.gap_id }) : [];
+    plays = chosen ? await getPlays({ gap_id: chosen.gap_id }, COLD_START_OPTS) : [];
   }
   return { gap: chosen, play: plays[0] ?? null };
 }
@@ -89,15 +91,38 @@ export default function LandingPage() {
   // once. A failed prefetch is not shown (nobody asked yet); the click then loads afresh, and that
   // outcome, success or error card, is the one the visitor sees.
   const prefetch = useRef<Prefetch | null>(null);
+  // Where that first read stands, for the "Waking the demo" notice. `wakeEpoch` restarts its clock on Retry.
+  const [prefetchStatus, setPrefetchStatus] = useState<"pending" | "done" | "failed">("pending");
+  const [wakeEpoch, setWakeEpoch] = useState(0);
+  function watchPrefetch(entry: Prefetch) {
+    entry.promise.then(
+      (beat) => {
+        if (prefetch.current !== entry) return;
+        setPreview(beat);
+        setPrefetchStatus("done");
+      },
+      () => {
+        // not shown as an error (nobody asked yet): the click loads afresh and shows its own outcome
+        if (prefetch.current === entry) setPrefetchStatus("failed");
+      },
+    );
+  }
+  function beginPrefetch() {
+    const entry = startPrefetch();
+    prefetch.current = entry;
+    setPrefetchStatus("pending");
+    setWakeEpoch((n) => n + 1);
+    watchPrefetch(entry);
+  }
   useEffect(() => {
     if (isPhoneNow()) return; // the phone feed reads its own data
     if (!prefetch.current) prefetch.current = startPrefetch();
-    prefetch.current.promise.then(setPreview, () => {
-      // not shown: the click loads afresh and shows its own outcome
-    });
+    watchPrefetch(prefetch.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function runTheBeat() {
+    setWakeEpoch((n) => n + 1);
     setBeatStarted(true);
     setBeatError(null);
     setBeatLoaded(false);
@@ -142,9 +167,9 @@ export default function LandingPage() {
       setUsingRecorded(false);
       setGap(null);
       setPlay(null);
-      prefetch.current = isPhoneNow() ? null : startPrefetch();
       setPreview(null);
-      prefetch.current?.promise.then(setPreview, () => {});
+      if (isPhoneNow()) prefetch.current = null;
+      else beginPrefetch();
       setConfirmReset(false);
     } catch (e) {
       setResetError(toApiError(e, "/reset"));
@@ -155,6 +180,15 @@ export default function LandingPage() {
   }
 
   const beatReady = beatStarted && !beatError && gap && play;
+  // "Waking the demo": the first read of the hero gap still pending (before the click: the prefetch;
+  // after it: the beat's own load). A prefetch that failed also offers Retry here, since the card
+  // shows no error for it. The error card of a clicked beat is the page's own failure display.
+  const loadingBeat = beatStarted && !beatError && !beatLoaded && !usingRecorded;
+  const wakePhase = useWaking(beatStarted ? loadingBeat : prefetchStatus === "pending", !beatStarted && prefetchStatus === "failed", wakeEpoch);
+  function retryFirstLoad() {
+    if (beatStarted) void runTheBeat();
+    else beginPrefetch();
+  }
   // The tour starts once a decision card is on screen: the beat card from 768 px up, the loaded feed below.
   const tourReady = phone ? feedPlay !== null : Boolean(beatReady);
 
@@ -206,7 +240,7 @@ export default function LandingPage() {
       {phone ? (
         <section className={styles.phoneLanding} data-testid="phone-landing">
           <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} />
-          <ChatPanel play={feedPlay} />
+          <ChatPanel play={feedPlay} wakingNotice={feedPlay !== null} />
         </section>
       ) : (
         <>
@@ -255,10 +289,12 @@ export default function LandingPage() {
                     <p className="muted">Loading gap and play…</p>
                   </>
                 )}
+                {/* Below everything the card shows, so its arrival moves nothing the visitor is aiming at. */}
+                <WakingNotice phase={wakePhase} onRetry={retryFirstLoad} />
               </div>
             )}
 
-            <ChatPanel play={play} />
+            <ChatPanel play={play} wakingNotice={preview !== null || beatLoaded} />
           </section>
         </>
       )}

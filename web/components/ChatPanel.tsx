@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
+import { COLD_START_OPTS, getDemoCustomers, getPlays, isMockMode, sendChat } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { CHAT_REQUEST_EVENT, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, type ChatRequestDetail } from "../lib/chatBridge";
 import { langAttr, languageName, replyLanguage, uniqueByLabel, containsKannada } from "../lib/lang";
@@ -10,8 +10,10 @@ import { prefersReducedMotion } from "../lib/motion";
 import { personaCaption } from "../lib/playText";
 import { recordOffer, useProgress } from "../lib/progressStore";
 import { treatedCustomerFor } from "../lib/treatedPersona";
+import { useWaking } from "../lib/useWaking";
 import { Badge } from "./Badge";
 import { Details } from "./Details";
+import { WakingNotice } from "./WakingNotice";
 import { ErrorCard } from "./ErrorCard";
 import styles from "./ChatPanel.module.css";
 import type { ChatEnvelope, DemoCustomer, Play } from "../lib/types";
@@ -35,6 +37,7 @@ export function ChatPanel({
   customerId = DEMO_CUSTOMER_ID,
   showCustomerPicker = true,
   play = null,
+  wakingNotice = true,
 }: {
   title?: string;
   customerId?: string;
@@ -44,6 +47,9 @@ export function ChatPanel({
   showCustomerPicker?: boolean;
   /** The hero play, when the page has one: the caption under the picker is derived from it. */
   play?: Play | null;
+  /** Say "Waking the demo" when the first customer list is slow. A page whose decision card already
+   * says it passes false until that card has its data, so one notice is on screen, not two. */
+  wakingNotice?: boolean;
 }) {
   const [customers, setCustomers] = useState<DemoCustomer[]>([]);
   // False until the customer list has answered (a cold API can take 3 to 4 s), so the picker's
@@ -92,13 +98,20 @@ export function ChatPanel({
     followedPlay !== null && (followedPlay.status === "approved" || crumbs.approved.some((a) => a.play_id === followedPlay.play_id));
 
   const playId = followedPlay?.play_id;
+  const [customersEpoch, setCustomersEpoch] = useState(0);
   useEffect(() => {
     if (!showCustomerPicker) return;
-    getDemoCustomers(playId)
-      .then(setCustomers)
-      .catch(() => setCustomers([]))
-      .finally(() => setCustomersLoaded(true));
-  }, [showCustomerPicker, playId]);
+    let current = true;
+    getDemoCustomers(playId, COLD_START_OPTS)
+      .then((list) => current && setCustomers(list))
+      .catch(() => current && setCustomers([]))
+      .finally(() => current && setCustomersLoaded(true));
+    return () => {
+      current = false;
+    };
+  }, [showCustomerPicker, playId, customersEpoch]);
+  // The first customer list on a cold service: "Waking the demo" after a moment, Retry after a long one.
+  const wakePhase = useWaking(showCustomerPicker && !customersLoaded, false, customersEpoch);
 
   // One session per demo customer; the per-visitor sandbox (X-Taal-Visitor) keeps judges apart.
   // Switching customer starts a fresh conversation, since it is a different person.
@@ -296,6 +309,9 @@ export function ChatPanel({
         <p className="muted chat-panel__customer-note" data-testid="chat-customers-loading" role="status">
           Loading customers…
         </p>
+      ) : null}
+      {showCustomerPicker && !customersLoaded && wakingNotice ? (
+        <WakingNotice phase={wakePhase} onRetry={() => setCustomersEpoch((n) => n + 1)} />
       ) : null}
       {showCustomerPicker && customers.length > 0 ? (
         <div className="chat-panel__customer-picker">
