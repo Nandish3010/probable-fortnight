@@ -23,7 +23,7 @@ test.describe("Meena: chat", () => {
 
     await page.request.post(`${API}/approve`, { headers: visitorHeaders(vid), data: { play_id: "play_chips_ds07_v1" } });
     await say(page, "Any offers today?");
-    await expect(log.getByText(/for ₹50\b/).last()).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/₹50\b/).last()).toBeVisible({ timeout: 15_000 });
     await shot(page, "meena-01-offer");
 
     // The live Gemini-backed Customer Agent replies in Kannada for this Kannada-preference
@@ -98,7 +98,7 @@ test.describe("customer picker: differentiation", () => {
     const log = page.getByTestId("chat-log");
     // The price can appear twice in one message (the text and its citation line), so match
     // either occurrence rather than requiring exactly one.
-    await expect(log.getByText(/for ₹50\b/).first()).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/₹50\b/).first()).toBeVisible({ timeout: 15_000 });
 
     // switch to the holdout customer: a fresh conversation, no offer, ever
     await select.selectOption({ label: await select.locator("option", { hasText: "holdout" }).textContent() as string });

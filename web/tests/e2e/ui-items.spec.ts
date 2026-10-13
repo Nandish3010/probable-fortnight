@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { test, expect } from "@playwright/test";
-import { modelInfoFromHealth, planLiveEvalText, showsModelChip } from "../../lib/health";
+import { chipModel, modelInfoFromHealth, planLiveEvalText, showsModelChip } from "../../lib/health";
 import { injectMockFaults } from "./helpers";
 
 // U.1 items: pass-rate chip, loop diagram, model chip only on model-authored runs, the consistency
@@ -26,6 +26,19 @@ test.describe("lib/health: pass-rate text and chip provenance", () => {
     expect(modelInfoFromHealth(h({}))?.model).toBe("gemini-3.5-flash");
     expect(modelInfoFromHealth({ checks: {}, model: "gemini-9-pro", backend: "vertex" } as never)).toEqual({ model: "gemini-9-pro", fallback: null, live: true });
     expect(modelInfoFromHealth(h({ model: "not a model id!" }))?.model).toBe("gemini-3.5-flash");
+  });
+  test("the chip names the model that authored the run; /health only when the run names none", () => {
+    const today = { model: "gemini-9-pro", fallback: null, live: true };
+    // a recording keeps its own model when today's configuration differs
+    expect(chipModel("gemini-3.5-flash", today)).toEqual({ model: "gemini-3.5-flash", fallback: null, live: true });
+    expect(chipModel(" gemini-3.5-flash ", null)?.model).toBe("gemini-3.5-flash");
+    // no model on the run (an in-flight run, an older summary): today's configuration
+    expect(chipModel(null, today)).toEqual(today);
+    expect(chipModel(undefined, today)).toEqual(today);
+    expect(chipModel("", today)).toEqual(today);
+    expect(chipModel(null, null)).toBeNull();
+    // a run that names a non-Gemini model (the scripted planner) never borrows today's model
+    expect(chipModel("stub-planner", today)).toBeNull();
   });
   test("only recorded and live Gemini runs carry the model chip", () => {
     expect(showsModelChip("recorded_gemini")).toBe(true);
@@ -68,6 +81,20 @@ test.describe("Desk: pass-rate chip and model chip honesty", () => {
     await first.locator("summary", { hasText: "technical details" }).click();
     await expect(first.getByTestId("trace-event-id")).toContainText(/^Event /);
   });
+  test("trace panel and Plan live panel show no raw ids outside the technical details", async ({ page }) => {
+    const raw = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\brun_[a-z0-9_]*[0-9a-f]{8}\b|\b(?:refc|inv|evt)_[a-z0-9_]+/i;
+    await page.goto("/desk");
+    await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
+    const card = page.getByTestId("play-detail");
+    const recorded = await card.locator(".trace-panel").first().innerText();
+    expect(recorded).not.toMatch(raw);
+    await card.getByTestId("plan-live").click();
+    await expect(card.getByTestId("live-replan")).toBeVisible();
+    expect(await card.getByTestId("live-replan").innerText()).not.toMatch(raw);
+    await expect(card.getByRole("heading", { name: "Re-plan result" })).toBeVisible({ timeout: 10_000 });
+    expect(await card.getByTestId("live-trace").innerText()).not.toMatch(raw);
+    expect(await card.getByRole("heading", { name: "Re-plan result" }).locator("xpath=..").innerText()).not.toMatch(raw);
+  });
   test("the re-plan result counts the attempts the trace shows and drops no chip it had", async ({ page }) => {
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
@@ -78,6 +105,11 @@ test.describe("Desk: pass-rate chip and model chip honesty", () => {
     const effort = card.getByTestId("rerun-effort");
     if (attemptsShown > 0) await expect(effort).toHaveText(new RegExp(`^\\s*${attemptsShown} attempts?$`));
     else await expect(effort).toContainText(/iteration/);
+    // and it equals the trace's own summary line: "Guardrail attempts · N proposed[, M rejected]"
+    const head = await card.getByTestId("live-trace").getByTestId("trace-attempts").locator("h5, h4, h3, p, summary").first().innerText();
+    const proposed = Number(head.match(/(\d+) proposed/)?.[1]);
+    expect(proposed).toBe(attemptsShown);
+    await expect(effort).toHaveText(new RegExp(`^\\s*${proposed} attempts?$`));
   });
 });
 
@@ -100,8 +132,14 @@ test.describe("Outcomes: consistency", () => {
     await expect(h.locator(".badge")).toContainText("SYNTHETIC");
     await expect(h.locator(".badge")).not.toContainText(/LIVE|REPLAY/);
   });
-  test("the portfolio gap count explains the Desk's smaller number", async ({ page }) => {
+  test("the portfolio scan counts the same 550 gaps as the Desk, with nothing left to explain", async ({ page }) => {
     await page.goto("/outcomes");
-    await expect(page.getByTestId("portfolio-gap-count")).toContainText(/555 gaps: the 550 on the Desk and 5 assortment-gap rows/);
+    await expect(page.getByTestId("portfolio-gap-count")).toHaveText("across 550 gaps");
+    const card = page.getByTestId("portfolio-card");
+    await expect(card).not.toContainText(/assortment/i);
+    // the by-type rows add up to the headline count
+    const counts = await card.locator(".portfolio-card__table tbody tr td:nth-child(2)").allInnerTexts();
+    expect(counts.reduce((n, c) => n + Number(c.replace(/,/g, "")), 0)).toBe(550);
+    await expect(card.locator(".portfolio-card__governor-line")).toContainText("126 of 550 gaps");
   });
 });

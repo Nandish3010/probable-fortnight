@@ -296,9 +296,15 @@ export function ApprovePanel({
 
   // ---- follow-ups ----
 
+  // One click sends the opening message; the chat panel ignores a repeat for the same customer, and
+  // this latch stops a double click from navigating to /chat twice when no panel is on the page.
+  const askedAt = useRef(0);
   function chatAsCustomer() {
     const id = customer?.customer_id;
-    if (!requestChat("prefill", DEMO_MESSAGE, id)) router.push(chatUrlFor("prefill", id));
+    const now = Date.now();
+    if (now - askedAt.current < 1500) return;
+    askedAt.current = now;
+    if (!requestChat("ask", DEMO_MESSAGE, id)) router.push(chatUrlFor("ask", id));
   }
   function seeHoldout() {
     if (!requestChat("holdout", DEMO_MESSAGE)) router.push(chatUrlFor("holdout"));

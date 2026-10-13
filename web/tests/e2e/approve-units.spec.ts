@@ -192,4 +192,5 @@ test.describe("personaCaption", () => {
 test("chatUrlFor carries the action to a page with no chat panel", () => {
   expect(chatUrlFor("holdout")).toBe("/chat?as=holdout");
   expect(chatUrlFor("prefill")).toBe("/chat?as=prefill");
+  expect(chatUrlFor("ask", "CUST-RAVI")).toBe("/chat?as=ask&customer=CUST-RAVI");
 });

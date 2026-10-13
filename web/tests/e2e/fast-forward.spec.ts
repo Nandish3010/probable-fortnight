@@ -132,6 +132,10 @@ test.describe("fast-forward: the panel", () => {
     await expect(summary.getByTestId("summary-difference")).toContainText("95% CI");
     await expect(summary.getByTestId("ff-sample-size")).toContainText("1 treated customer ordered");
     await expect(summary.getByTestId("ff-explainer")).toHaveText(FF_EXPLAINER);
+    // a measured result is not offered for measuring again: no primary button, no "nothing is measured" line
+    await expect(summary.getByTestId("run-measure")).toHaveCount(0);
+    await expect(summary.getByRole("button", { name: "Run Measure" })).toHaveCount(0);
+    await expect(summary).not.toContainText("Nothing in your session is measured");
     await expect(summary.getByTestId("ff-explainer")).toHaveText(
       "One order is far too few to prove an effect. This shows the loop working; a pilot would supply the real numbers.",
     );

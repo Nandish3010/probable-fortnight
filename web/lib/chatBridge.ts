@@ -6,14 +6,17 @@
  * customer list cannot be read. After an approval the customer is chosen per play
  * (lib/treatedPersona.ts), because Meena is only in the chips audience. */
 export const DEMO_CUSTOMER_ID = "CUST-MEENA";
-/** The opening message of the demo, sent by the preview and pre-filled by the "Chat as ..." follow-up. */
+/** The opening message of the demo, sent by the preview and by the "Chat as ..." follow-up. */
 export const DEMO_MESSAGE = "Any offers today?";
 
 export const CHAT_REQUEST_EVENT = "taal:chat-request";
 
 export type ChatRequestAction =
-  /** Scroll to the chat panel, focus the composer and pre-fill the message. */
+  /** Scroll to the chat panel, focus the composer and pre-fill the message (nothing is sent). */
   | "prefill"
+  /** Scroll to the chat panel, switch to the customer and send the message: the offer arrives in one
+   * click. A second request for the same customer and message is ignored, so a double click sends once. */
+  | "ask"
   /** Switch to the holdout persona and send the message. */
   | "holdout";
 
@@ -37,5 +40,6 @@ export function requestChat(action: ChatRequestAction, message: string = DEMO_ME
 /** The /chat URL that carries the same request, for pages with no chat panel. */
 export function chatUrlFor(action: ChatRequestAction, customerId?: string): string {
   if (action === "holdout") return "/chat?as=holdout";
+  if (action === "ask") return customerId ? `/chat?as=ask&customer=${encodeURIComponent(customerId)}` : "/chat?as=ask";
   return customerId ? `/chat?as=prefill&customer=${encodeURIComponent(customerId)}` : "/chat?as=prefill";
 }

@@ -38,6 +38,16 @@ export function modelInfoFromHealth(health: Pick<HealthResponse, "checks" | "mod
   return { ...parsed, fallback: fallback && fallback !== parsed.model ? fallback : null };
 }
 
+/** Which model the chip names. The run's own model (its run_summary.model) wins: a recording keeps naming
+ * the model that wrote it after the configuration changes. A run that names a model which is not a Gemini
+ * id (the scripted planner's "stub-planner") gets no chip. /health (the model configured today) is used
+ * only for a run that names none, e.g. the in-flight chip of a Plan live run that has no summary yet. */
+export function chipModel(runModel: string | null | undefined, health: ModelInfo | null): ModelInfo | null {
+  const own = typeof runModel === "string" ? runModel.trim() : "";
+  if (own) return /^gemini-[A-Za-z0-9._-]+$/.test(own) ? { model: own, fallback: null, live: true } : null;
+  return health;
+}
+
 /** "1.2 s" from milliseconds; null when the duration is unknown or not a positive number. */
 export function formatLatency(ms: number | null | undefined): string | null {
   if (ms === null || ms === undefined || !Number.isFinite(ms) || ms <= 0) return null;

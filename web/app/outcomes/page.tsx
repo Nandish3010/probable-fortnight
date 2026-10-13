@@ -34,9 +34,6 @@ const FEATURED_PLAY_ID = "play_chips_ds07_v1";
 function PortfolioCard() {
   const { totals, governor, planned } = PORTFOLIO;
   const byType = Object.entries(totals.by_type).sort((a, b) => b[1].exposure_inr - a[1].exposure_inr);
-  // The scan counted rows of a gap type the generator no longer makes, so the Desk (the current gap
-  // list) shows fewer than the scan did. Say so instead of leaving two different numbers unexplained.
-  const retired = totals.by_type.assortment_gap?.count ?? 0;
   return (
     <div className="card portfolio-card" data-testid="portfolio-card">
       <div className="card__header">
@@ -54,9 +51,6 @@ function PortfolioCard() {
           <span className="portfolio-card__label">Total at stake</span>
           <span className="muted" data-testid="portfolio-gap-count">
             across {count(totals.gaps)} gaps
-            {retired > 0 && totals.gaps > retired
-              ? `: the ${count(totals.gaps - retired)} on the Desk and ${count(retired)} assortment-gap ${retired === 1 ? "row" : "rows"} from the original scan`
-              : ""}
           </span>
         </div>
         <div className="portfolio-card__stat">
@@ -71,7 +65,8 @@ function PortfolioCard() {
           <span className="portfolio-card__number">{count(planned.count)}</span>
           <span className="portfolio-card__label">Plans drafted</span>
           <span className="muted">
-            for {count(totals.gaps)} gaps; {count(planned.eligible_no_play)} more were eligible but no draft passed every check
+            for {count(totals.gaps)} gaps
+            {planned.eligible_no_play > 0 ? `; ${count(planned.eligible_no_play)} more were eligible but no draft passed every check` : ""}
           </span>
         </div>
       </div>
@@ -255,6 +250,7 @@ function SummaryCard({
   onRun: () => void;
   measureResult: MeasureResponse | null;
 }) {
+  const measured = outcome !== undefined && (outcome.lift_pp ?? outcome.lift) != null;
   const crossesZero = outcome ? (outcome.ci_low ?? 0) < 0 && (outcome.ci_high ?? 0) > 0 : false;
   // A fast-forwarded row whose range crosses zero is inconclusive by definition, even from an API that
   // does not send the flag.
@@ -330,12 +326,16 @@ function SummaryCard({
         </div>
       )}
 
-      <div className={styles.runRow}>
-        <button type="button" className="button-primary" onClick={onRun} disabled={measuring} data-testid="run-measure">
-          {measuring ? "Measuring…" : "Run Measure"}
-        </button>
-        <p className={styles.runNote}>Nothing in your session is measured until you click Run Measure.</p>
-      </div>
+      {/* Once a measured row exists for the visitor's play the card shows its result; the button and
+          the "nothing is measured" sentence belong to the empty state only. */}
+      {measured ? null : (
+        <div className={styles.runRow}>
+          <button type="button" className="button-primary" onClick={onRun} disabled={measuring} data-testid="run-measure">
+            {measuring ? "Measuring…" : "Run Measure"}
+          </button>
+          <p className={styles.runNote}>Nothing in your session is measured until you click Run Measure.</p>
+        </div>
+      )}
       {measureResult ? (
         <p className={styles.runNote} role="status" data-testid="measure-result">
           {measureResult.plays} play{measureResult.plays === 1 ? "" : "s"} joined against orders:{" "}
@@ -463,7 +463,7 @@ export default function OutcomesPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <div className="card__header">
         <h1>Outcomes</h1>
-        <Badge kind="synthetic" detail="/outcomes" />
+        <Badge kind="synthetic" detail="simulated orders, no pilot yet" />
       </div>
       <p className="muted">
         Your measured result comes first. Below it: what the whole portfolio projects, one worked example, and every

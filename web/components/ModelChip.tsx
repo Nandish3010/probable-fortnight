@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getHealth } from "../lib/api";
-import { formatLatency, modelChipText, modelInfoFromHealth, type ModelInfo } from "../lib/health";
+import { chipModel, formatLatency, modelChipText, modelInfoFromHealth, type ModelInfo } from "../lib/health";
 import type { HealthResponse } from "../lib/types";
 import styles from "./ModelChip.module.css";
 
@@ -29,9 +29,13 @@ async function readModelInfo(): Promise<ModelInfo | null> {
   return info ?? lastKnown;
 }
 
-/** `gemini-3.5-flash · 1.2 s`: the model /health names and how long the run took. The fallback model
- * is in the tooltip only. Renders nothing when health names no model (or, with `plainTimeWithoutModel`,
- * just the run time); the time is left out when the run has no duration yet. It never replaces the provenance badge (Live · Gemini) next to it. */
+/** `gemini-3.5-flash · 1.2 s`: the model that authored the run and how long the run took.
+ *
+ * Which model: see chipModel (lib/health.ts). The run's own model (`runModel`, its run_summary.model)
+ * wins; /health is read only when the caller has no run model to give. The fallback model is in the
+ * tooltip only. Renders nothing when no model is known (or, with `plainTimeWithoutModel`, just the run
+ * time). It never replaces the provenance badge (Live · Gemini) next to it; callers show it only on
+ * model-authored runs (lib/health.ts showsModelChip). */
 export function ModelChip({
   latencyMs,
   plainTimeWithoutModel = false,
@@ -39,27 +43,22 @@ export function ModelChip({
 }: {
   latencyMs?: number | null;
   plainTimeWithoutModel?: boolean;
-  /** The model id the run itself reports (its run_summary.model), used when /health names none. */
+  /** The model id the run itself reports (its run_summary.model). Wins over /health. */
   runModel?: string | null;
 }) {
-  const [info, setInfo] = useState<ModelInfo | null>(null);
+  const [health, setHealth] = useState<ModelInfo | null>(null);
+  const needsHealth = !runModel?.trim();
   useEffect(() => {
+    if (!needsHealth) return;
     let cancelled = false;
     readModelInfo().then((m) => {
-      if (!cancelled) setInfo(m);
+      if (!cancelled) setHealth(m);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
-  if (!info && runModel && /^gemini-[A-Za-z0-9._-]+$/.test(runModel)) {
-    const { text, title } = modelChipText({ model: runModel, fallback: null, live: true }, latencyMs);
-    return (
-      <span className={`chip ${styles.model}`} title={title} data-testid="model-chip" data-live="true">
-        {text}
-      </span>
-    );
-  }
+  }, [needsHealth]);
+  const info = chipModel(runModel, health);
   if (!info) {
     // Where the run time was shown as plain text before, keep showing it when no model is known.
     const lat = plainTimeWithoutModel ? formatLatency(latencyMs) : null;
@@ -67,7 +66,7 @@ export function ModelChip({
   }
   const { text, title } = modelChipText(info, latencyMs);
   return (
-    <span className={`chip ${styles.model}`} title={title} data-testid="model-chip" data-live={info.live ? "true" : "false"}>
+    <span className={`chip ${styles.model}`} title={title} data-testid="model-chip" data-live={info.live ? "true" : "false"} data-model={info.model}>
       {text}
     </span>
   );

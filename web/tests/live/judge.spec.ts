@@ -43,11 +43,13 @@ test.describe("judge: landing", () => {
     const again = await page.request.post(`${API}/approve`, { headers: visitorHeaders("live-judge-a"), data: { play_id: "play_tea_ds04_v1" } });
     expect((await again.json()).note).toContain("already approved");
 
-    // chat as Ravi after approval: the Tea offer arrives. The live Gemini-backed Customer Agent
-    // paraphrases freely, so this checks the one stable fact -- the product named -- not a phrase.
+    // "Chat as Ravi" sends the opening message itself: the Tea offer arrives in one click. The live
+    // Gemini-backed Customer Agent paraphrases freely, so this checks the one stable fact -- the
+    // product named -- not a phrase.
     const chat = page.getByTestId("chat-log");
-    await page.getByRole("button", { name: "Send" }).click();
-    await expect(chat.getByText(/Darjeeling Tea/).first()).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("chat-as-customer").click();
+    await expect(chat.locator(".chat-msg--customer")).toHaveText("Any offers today?");
+    await expect(chat.getByText(/Darjeeling Tea/).first()).toBeVisible({ timeout: 30_000 });
     await expect(chat.getByRole("button", { name: /Add to cart|ಕಾರ್ಟ್/ })).toBeVisible();
     await shot(page, "judge-04-chat-offer");
 

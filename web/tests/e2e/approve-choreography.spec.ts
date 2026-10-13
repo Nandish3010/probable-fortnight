@@ -158,7 +158,7 @@ test.describe("T0: the result", () => {
     await approveButton(page).click();
     const toast = page.getByTestId("approve-toast");
     await expect(toast).toBeVisible({ timeout: 8000 });
-    await expect(toast).toHaveText("Approved. Taal will hold back 32 customers to measure the result.");
+    await expect(toast).toHaveText("Approved. Taal will hold back 39 customers to measure the result.");
     await expect(toast).not.toHaveAttribute("role", /./); // announced once, by #approve-live, not twice
     const shownAt = Date.now();
     await expect(toast).toBeHidden({ timeout: 8000 });
@@ -344,15 +344,15 @@ test.describe("Meena preview", () => {
 });
 
 test.describe("follow-ups", () => {
-  test("'Chat as Ravi' (the Tea beat's treated customer) scrolls to the chat panel, focuses the composer and pre-fills the message", async ({ page }) => {
+  test("'Chat as Ravi' (the Tea beat's treated customer) scrolls to the chat panel and sends the opening message in one click", async ({ page }) => {
     await openBeat(page);
     await page.getByTestId("chat-log").first().evaluate((el) => el.closest("#chat-panel")!.scrollIntoView());
     await approveButton(page).click();
     await approveSettled(page);
     await page.getByTestId("chat-as-customer").click();
-    const input = page.getByLabel("Message");
-    await expect(input).toBeFocused();
-    await expect(input).toHaveValue("Any offers today?");
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--customer")).toHaveText("Any offers today?");
+    await expect(page.getByTestId("chat-log").locator(".chat-msg--agent").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByLabel("Message")).toHaveValue("");
     await expect(page.locator("#chat-panel")).toBeInViewport();
   });
 

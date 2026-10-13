@@ -51,6 +51,8 @@ export function ChatPanel({
   const [customersLoaded, setCustomersLoaded] = useState(false);
   const [activeId, setActiveId] = useState(customerId);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
   const [input, setInput] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
@@ -134,6 +136,7 @@ export function ChatPanel({
   // listener, registered once, never calls a stale one.
   const sendRef = useRef(send);
   sendRef.current = send;
+  const sendingRef = useRef(false);
   const holdoutId = customers.find((c) => c.role === "holdout")?.customer_id;
   const holdoutRef = useRef(holdoutId);
   holdoutRef.current = holdoutId;
@@ -154,6 +157,17 @@ export function ChatPanel({
         }
         setInput(detail.message);
         inputRef.current?.focus({ preventScroll: true });
+      } else if (detail.action === "ask") {
+        detail.handled = true;
+        reveal();
+        const target = detail.customerId ?? activeIdRef.current;
+        const sameCustomer = target === activeIdRef.current;
+        // A repeat (double click, or the offer already asked for) must not send a second time.
+        if (sendingRef.current) return;
+        if (sameCustomer && messagesRef.current.some((m) => m.role === "customer" && m.text === detail.message && m.status !== "failed")) return;
+        chosen.current = true;
+        if (!sameCustomer) switchRef.current(target);
+        sendRef.current(detail.message);
       } else if (detail.action === "holdout" && holdoutRef.current) {
         detail.handled = true;
         reveal();
@@ -186,6 +200,13 @@ export function ChatPanel({
       chosen.current = true;
       switchRef.current(holdoutId);
       sendRef.current(DEMO_MESSAGE);
+    } else if (as === "ask") {
+      const wanted = pendingCustomer.current;
+      chosen.current = true;
+      if (wanted && wanted !== activeIdRef.current && customers.some((c) => c.customer_id === wanted && c.role !== "holdout")) {
+        switchRef.current(wanted);
+      }
+      sendRef.current(DEMO_MESSAGE);
     } else if (as === "prefill") {
       const wanted = pendingCustomer.current;
       if (wanted && wanted !== activeIdRef.current && customers.some((c) => c.customer_id === wanted && c.role !== "holdout")) {
@@ -205,7 +226,8 @@ export function ChatPanel({
   // once as "pending"; the first reply confirms it, a failure marks it "not delivered" and offers Retry.
   async function send(text: string, shown: string = text, retryKey?: string) {
     if (!text.trim()) return;
-    if (sending) return;
+    if (sending || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setChatError(null);
     const key = retryKey ?? `u-${Date.now()}-${Math.random()}`;
@@ -245,6 +267,7 @@ export function ChatPanel({
       setMessages((prev) => prev.map((m) => (m.key === key ? { ...m, status: "failed" as const } : m)));
       setChatError(toApiError(e, "/chat"));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }

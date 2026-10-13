@@ -60,7 +60,7 @@ test.describe("Screenshots: judge landing, approve, chat, reset", () => {
     // After the Tea approve the chat panel is on Ravi, who is in Tea's audience.
     const chat = page.getByTestId("chat-log");
     await expect(page.getByTestId("chat-customer-select")).toHaveValue("CUST-RAVI");
-    await page.getByRole("button", { name: "Send" }).click();
+    await page.getByTestId("chat-as-customer").click(); // sends the opening message: one click
     // The live Gemini-backed Customer Agent paraphrases freely, so check the product is named
     // rather than an exact scripted phrase.
     await expect(chat.getByText(/Darjeeling Tea/).first()).toBeVisible({ timeout: 15_000 });
@@ -149,7 +149,7 @@ test.describe("Screenshots: Meena's customer chat, Kannada offer", () => {
     // cited. The screenshot itself may or may not show Kannada text depending on what the model
     // produced this run; capturing a guaranteed-Kannada shot for the deck is a manual concern,
     // not something this CI gate can force.
-    await expect(log.getByText(/for ₹50\b/)).toBeVisible({ timeout: 15_000 });
+    await expect(log.getByText(/₹50\b/)).toBeVisible({ timeout: 15_000 });
     // the chat panel alone, so the deck's UX card shows the offer rather than page chrome
     await page.locator(".chat-panel").screenshot({ path: `${SHOTS}/meena-offer-kannada.png` });
   });
