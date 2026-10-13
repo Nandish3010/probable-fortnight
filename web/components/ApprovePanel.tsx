@@ -9,6 +9,7 @@ import {
   TIMELINE,
   approveReducer,
   clockTime,
+  copySourceLabel,
   initialApproveState,
 } from "../lib/approveMachine";
 import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, requestChat } from "../lib/chatBridge";
@@ -106,6 +107,7 @@ export function ApprovePanel({
   const impact = playImpact(play);
   const result = state.result;
   const chain = result ? audienceChain(result.assignment) : null;
+  const copyLabel = copySourceLabel(result?.copy);
   const showButton = phase === "idle" || phase === "submitting" || phase === "error";
   const motionOn = state.animate;
   const approvedTime = clockTime(state.approvedAt);
@@ -419,6 +421,14 @@ export function ApprovePanel({
               The forecast chart from the first approval is not kept in this view.
             </p>
           )}
+
+          {copyLabel ? (
+            <p className={styles.copySource}>
+              <span className="chip" title="Where the offer copy came from" data-testid="copy-source">
+                {copyLabel}
+              </span>
+            </p>
+          ) : null}
 
           <div className={styles.previewRow}>
             <MeenaPreview

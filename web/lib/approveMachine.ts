@@ -165,3 +165,12 @@ export function clockTime(iso: string | null | undefined): string | null {
   if (Number.isNaN(d.getTime())) return null;
   return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }).format(d);
 }
+
+/** The badge next to the offer copy, from `copy.source` of POST /approve and nothing else: "bigquery" reads
+ * "Copy: Gemini via BigQuery", any other string reads "Copy: template", and an absent (or non-string) field
+ * gives null, so no badge is drawn. Never inferred from timing or from any other field. */
+export function copySourceLabel(copy: { source?: unknown } | null | undefined): string | null {
+  const source = copy?.source;
+  if (typeof source !== "string") return null;
+  return source === "bigquery" ? "Copy: Gemini via BigQuery" : "Copy: template";
+}

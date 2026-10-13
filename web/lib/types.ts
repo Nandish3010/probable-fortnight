@@ -388,6 +388,9 @@ export interface ApproveResponse {
   forecast: Forecast;
   source: Source;
   note?: string;
+  /** Optional: where the offer copy came from. Read only from `copy.source` ("bigquery" | "templated" |
+   * "existing"); an API that does not send it shows no badge. */
+  copy?: { source?: string };
   /** When the play was approved (ISO), if the API says. Read-only: the UI never sends it. */
   approved_at?: string;
 }
