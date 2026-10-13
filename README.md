@@ -8,7 +8,7 @@ Forecast, propose, approve, offer, measure: one loop that sells at-risk stock be
 | Hero play, recovered vs doing nothing | **₹9,191**, the estimator's figure, projected on a seeded tenant (one tea lot, 103 units) |
 | Beat over a blanket 20% markdown | **+₹6,186**, derived: the blanket markdown's loss minus the play's loss |
 | Customers treated / held out | 355 / 39 (synthetic orders; the effect is not measured yet) |
-| Approve | about 3 to 7 s (measured 12 Oct after #90; first call after idle takes longer) |
+| Approve | about 1 to 4 s (measured 13 Oct after batch 1; seeded plays reuse stored BigQuery copy after batch 2; first call after idle takes longer) |
 | Plan live | 22 of 24 model-planned on `gemini-3.5-flash`; planner p50 26.5 s, p95 31.8 s (11 Oct) |
 | Planner evalsets | 46 recorded-run regression guard; response match **43/46 (93%)** on `gemini-3.5-flash`, 12 Oct, planner prompt v6 (38/46 on `gemini-2.5-flash`, 9 Oct). Post-hoc measure: the first proposed play passed the gate in 41 of 46 evalsets on `gemini-3.5-flash` (12 Oct, prompt v6) vs 5 of 46 on `gemini-2.5-flash` (9 Oct); this is the 40 of the 45 trajectory failures that proposed first time plus the one exact-trajectory match. Exact tool trajectory stays 1/46 (6/46 on 9 Oct). Why in [Evaluation](#evaluation) |
 | Tests and CI gate | 470+ pytest and 490+ Playwright tests in `make verify` (`.github/workflows/verify.yml`) |
@@ -26,7 +26,7 @@ Retail & Commerce entry for the Google Cloud AI Builder Cup 2026 (JAPAC). Taal f
 
 Open https://taal-web-2obkp776ca-el.a.run.app (first load takes 8 to 12 s). The demo clock is pinned to 12 Sep 2026, so the 6 Oct sell-by is in the future of the demo.
 1. Click **Run the 60-second beat**. The Darjeeling Tea card (`gap_tea_ds04`) shows 103 units, ₹35,020 at stake, 24 days to the online sell-by.
-2. Click **Approve** (about 3 to 7 s, measured 12 Oct; first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing (projected, seeded).
+2. Click **Approve** (about 1 to 4 s, measured 13 Oct after batch 1; seeded plays reuse stored BigQuery copy after batch 2; first call after idle takes longer). The headline reads "Recovered vs doing nothing ₹9,191", with 355 customers treated and 39 held out (394 consented; seeded). The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the improvement over doing nothing (projected, seeded).
 3. Click **Chat as Ravi**: the follow-up button that appears after Approve on the Tea beat (the chat default is Meena, the chips play's customer). The offer arrives; then click **Send** and **Add to cart**: the order total is ₹450. Chat answers come from the inventory tool and carry the best-before date.
 
 - Reset demo data restores the seeded tenant for your visitor only.
