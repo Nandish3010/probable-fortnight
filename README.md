@@ -125,7 +125,7 @@ Projected, synthetic tenant; assumes every run repeats the same gaps.
 
 SIMULATION of the measurement design, not a result: the demo holdout is under-powered by design (n = 355/39 synthetic orders). To resolve a 5 pp lift at 80 percent power the same design needs about 1,160 orders (`eval/raw/holdout_power_2026-10-14.json`, [`docs/impact_math.md`](docs/impact_math.md)).
 
-More: [`docs/problem_and_impact.md`](docs/problem_and_impact.md), [`docs/real_vs_simulated.md`](docs/real_vs_simulated.md), [`docs/scale.md`](docs/scale.md), [`docs/pilot.md`](docs/pilot.md) (design only, no pilot ran), [`docs/screenshots.md`](docs/screenshots.md) (pre-redesign screenshots).
+Runbook: [`docs/judging_runbook.md`](docs/judging_runbook.md). More: [`docs/problem_and_impact.md`](docs/problem_and_impact.md), [`docs/real_vs_simulated.md`](docs/real_vs_simulated.md), [`docs/scale.md`](docs/scale.md), [`docs/pilot.md`](docs/pilot.md) (design only, no pilot ran), [`docs/screenshots.md`](docs/screenshots.md) (pre-redesign screenshots).
 
 ## Team and licence
 
