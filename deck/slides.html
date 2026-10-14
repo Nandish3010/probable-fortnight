@@ -556,7 +556,7 @@ sup { font-size: .6em; }
   <h2 class="title">Measured and dated; each card names its source file.</h2>
   <div class="grid">
     <div class="card b"><div class="l"><span>Planner, live</span><span class="dt">10 Oct</span></div><div class="v">5/5</div><div class="mdl">gemini-3.5-flash · chips</div><div class="d">proposed, 0 fallbacks; 21.8–27.6 s each. Tea, 12 Oct: 8/8, 19.0–31.4 s</div><div class="fine">planner_real_traces_2026-10-10/ and _tea_2026-10-12c/ summary.json</div></div>
-    <div class="card b"><div class="l"><span>Customer agent</span><span class="dt">28 Sep</span></div><div class="v">4.56 s<small> p50</small></div><div class="mdl old">gemini-2.5-flash</div><div class="d">p95 6.48 s, 0.48 s over the 6 s budget; 50/50 returned 200</div><div class="fine">eval/<wbr>raw/<wbr>customer_latency_2026-09-28/<wbr>analysis.json</div></div>
+    <div class="card b"><div class="l"><span>Customer agent</span><span class="dt">14 Oct</span></div><div class="v">3.66 s<small> p50</small></div><div class="mdl">gemini-3.5-flash · Armor on</div><div class="d">p95 4.36 s, 24 calls, local API; 4.24 / 8.44 s before the fixes</div><div class="fine">eval/<wbr>raw/<wbr>customer_latency_2026-10-14_before_after/<wbr>comparison.json</div></div>
     <div class="card b"><div class="l"><span>Approve · curl, 8 calls</span><span class="dt">13 Oct</span></div><div class="v">about 2–3 s<small> warm</small></div><div class="mdl">stored BigQuery copy; slower after idle</div><div class="d">Tea 2.1 s ×3, chips 2.1–2.5 s; was 7–15 s</div><div class="fine">eval/<wbr>raw/<wbr>approve_timing_2026-10-13b.json</div></div>
     <div class="card b"><div class="l"><span>Agent simulation</span><span class="dt">21 Sep</span></div><div class="v">190/190</div><div class="mdl old">gemini-2.5-flash</div><div class="d">live Vertex; stock, holdout arm, stacking, STOP, hallucination</div><div class="fine">eval/<wbr>raw/<wbr>agent_simulation_2026-09-21.json</div></div>
     <div class="card b"><div class="l"><span>Vision intake</span><span class="dt">21 Sep</span></div><div class="v">30/30</div><div class="mdl old">gemini-2.5-flash</div><div class="d">correct dates; synthetic photos only</div><div class="fine">eval/<wbr>raw/<wbr>vision_synthetic_2026-09-21.json</div></div>
@@ -568,13 +568,13 @@ sup { font-size: .6em; }
         <div><div class="v" style="font-size:36px;color:#7d867f">47.7 / 47.7 / 30.8 s</div><div class="d">before the fix, 9 Oct: 2 of 3 hit a 45 s deadline and fell back to rules</div></div>
       </div>
       <div class="fine">eval/<wbr>raw/<wbr>plan_live_2026-10-12.json · eval/<wbr>raw/<wbr>live_replan_timing_2026-10-09.json</div></div>
-    <div class="card b w2"><div class="l"><span>ADK eval, Vertex</span><span class="dt">12 Oct</span></div>
+    <div class="card b w2"><div class="l"><span>ADK eval, Vertex · gemini-3.5-flash</span><span class="dt">14 Oct</span></div>
       <div class="trio">
-        <div style="flex:1.2"><div class="v" style="font-size:38px">43/46</div><div class="d" style="font-size:17px;line-height:1.2"><b>response match (93%)</b><br>gemini-3.5-flash · 12 Oct · prompt v6. 38/46 on gemini-2.5-flash, 9 Oct</div></div>
-        <div style="flex:1.7"><div class="v" style="font-size:38px;color:#7d867f">1/46</div><div class="d" style="font-size:17px;line-height:1.2"><b>exact tool trajectory</b> (6/46 on 9 Oct): recordings contain retries, so exact order differs. Post-hoc: <b>first proposed play passed the gate 41/46</b> (5/46 on 2.5-flash, 9 Oct)</div></div>
-        <div style="flex:1"><div class="v" style="font-size:38px">15/15</div><div class="d" style="font-size:17px;line-height:1.2"><b>rationale judge</b>, same-family judge. Prompt v7 (shipped Tea play) not measured</div></div>
+        <div style="flex:1.2"><div class="v" style="font-size:38px">39/46</div><div class="d" style="font-size:17px;line-height:1.2"><b>first proposal accepted</b><br>prompt v7, re-recorded set; response match 46/46. 12 Oct, old recordings: 43/46</div></div>
+        <div style="flex:1.7"><div class="v" style="font-size:38px;color:#7d867f">18/46</div><div class="d" style="font-size:17px;line-height:1.2"><b>strict trajectory</b> against same-model expectations: a regression guard, not accuracy. 12 Oct history, older 2.5-flash recordings: 1/46</div></div>
+        <div style="flex:1"><div class="v" style="font-size:38px">15/15</div><div class="d" style="font-size:17px;line-height:1.2"><b>rationale judge</b>, same-family judge, 12 Oct, prompt v6; not re-run on v7</div></div>
       </div>
-      <div class="fine">eval/<wbr>raw/<wbr>live_eval_2026-10-12/</div></div>
+      <div class="fine">eval/<wbr>raw/<wbr>live_eval_2026-10-14/ · eval/<wbr>raw/<wbr>live_eval_2026-10-12/</div></div>
   </div>
   <div class="ext"><b>Tests:</b> 470+ pytest tests and 490+ Playwright tests run in <b>make verify</b>, the CI gate (.github/workflows/verify.yml) on every pull request and every push to main; a second CI job runs 24 live-stack tests. <b>Models:</b> cards tagged gemini-2.5-flash predate the 10 Oct switch to gemini-3.5-flash (2.5 retires 20 Oct) and have not been re-run.</div>
   <div class="foot"><span></span><span>12 / 18</span></div>
@@ -670,7 +670,7 @@ sup { font-size: .6em; }
       </ul></div>
     <div class="card c"><h3>Scalability</h3>
       <ul>
-        <li><b>Measured:</b> Sense 3.8 s (local, 300 SKUs); chat p50 4.6 s, p95 6.5 s (50 calls, 28 Sep, gemini-2.5-flash); live plan p50 26.5 s, p95 31.8 s (22/24, 11 Oct); Approve about 2 to 3 s warm (13 Oct, after batch 2; first call after idle takes longer).</li>
+        <li><b>Measured:</b> Sense 3.8 s (local, 300 SKUs); chat p50 3.66 s, p95 4.36 s (24 calls, 14 Oct, gemini-3.5-flash, Model Armor on, local API); live plan p50 26.5 s, p95 31.8 s (22/24, 11 Oct); Approve about 2 to 3 s warm (13 Oct, after batch 2; first call after idle takes longer).</li>
         <li><b>Estimate:</b> 20,000 SKUs, 500 nodes.<span class="tag">estimate</span></li>
         <li>Breaks first: max-instances 1 with re-plan state in memory, then the planner queue.</li>
       </ul></div>
