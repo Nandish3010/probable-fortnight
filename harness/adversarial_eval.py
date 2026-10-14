@@ -124,6 +124,14 @@ def _usage(resp: Any) -> tuple[dict[str, int], str | None]:
     return u, getattr(resp, "model_version", None)
 
 
+def _thinking_level(kwargs: dict[str, Any]) -> str | None:
+    tc = getattr(kwargs.get("config"), "thinking_config", None)
+    if tc is None:
+        return None
+    lvl = getattr(tc, "thinking_level", None)
+    return str(getattr(lvl, "value", lvl)) if lvl is not None else f"budget={getattr(tc, 'thinking_budget', None)}"
+
+
 def _err(e: BaseException) -> dict[str, Any]:
     from agents.vertex_models import status_of
     return {"type": type(e).__name__, "status": status_of(e), "msg": str(e)[:200]}
@@ -136,7 +144,7 @@ def install_tap(ledger: Ledger) -> None:
 
     def sync_wrapped(self, *args, **kwargs):
         ledger.enter()
-        rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "t": round(time.time(), 2)}
+        rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "thinking_level": _thinking_level(kwargs), "t": round(time.time(), 2)}
         t0 = time.time()
         try:
             resp = orig_sync(self, *args, **kwargs)
@@ -151,7 +159,7 @@ def install_tap(ledger: Ledger) -> None:
 
     async def async_wrapped(self, *args, **kwargs):
         ledger.enter()
-        rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "t": round(time.time(), 2)}
+        rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "thinking_level": _thinking_level(kwargs), "t": round(time.time(), 2)}
         t0 = time.time()
         try:
             resp = await orig_async(self, *args, **kwargs)
