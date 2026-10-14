@@ -21,6 +21,7 @@ from agents.gate.config import ROOT
 from agents.gate.estimator import EstimatorContext, GapFacts, Product, estimate
 from agents.gate.invariants import check_play_money
 from agents.gate.models import Play
+from agents.gate.untrusted import clean_text, clean_tree, strings_in
 
 from . import governor
 from .context import PlannerContext, current
@@ -198,7 +199,13 @@ def _guardrail_context(ctx: PlannerContext, draft: dict[str, Any]) -> gr.Guardra
             return ref in outcome_plays
         return False
 
+    gap_evidence = (_gap(ctx, draft["gap_id"]).get("evidence") or {}) if draft.get("gap_id") else {}
+    catalogue_names = {p["name"] for p in ctx.products.values()}
+    # P3: free-text strings of the gap evidence (store notes, cached results) are untrusted; a string that is
+    # exactly a catalogue product name (the evidence carries substitute names) is the product's canonical name.
+    untrusted = tuple(t for t in strings_in(gap_evidence) if t not in catalogue_names)
     return gr.GuardrailContext(
+        untrusted_texts=untrusted,
         product=product, tenant=ctx.tenant, audience_customer_ids=filtered, recent_plays_count=recent, consented_customer_ids=consented,
         subscribers_for_sku=subscribers, stockout_gap_skus_at_node=stockout, resolve_citation=resolve,
         bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
@@ -212,8 +219,12 @@ def get_gap(gap_id: str) -> dict:
     ctx = current()
     g = dict(_gap(ctx, gap_id))
     p = ctx.products.get(g["sku"], {})
-    g["product"] = {"name": p.get("name"), "category": p.get("category"), "unit_cost": p.get("unit_cost"), "list_price": p.get("list_price"), "margin_floor_pct": ctx.tenant.margin_floor(p.get("category", "default")), "shelf_life_days": p.get("shelf_life_days")}
+    # P3: free text that reaches the model through this tool is cleaned in code first (length, control
+    # characters, instruction-like text replaced by the SKU id); real catalogue names and ids pass unchanged.
+    g["evidence"] = clean_tree(g.get("evidence") or {}, g["sku"])
+    g["product"] = {"name": clean_text(p["name"], g["sku"]) if p.get("name") else None, "category": p.get("category"), "unit_cost": p.get("unit_cost"), "list_price": p.get("list_price"), "margin_floor_pct": ctx.tenant.margin_floor(p.get("category", "default")), "shelf_life_days": p.get("shelf_life_days")}
     g["node"] = {k: ctx.nodes.get(g["node_id"], {}).get(k) for k in ("name", "type", "cluster_id", "lead_time_days")}
+    g["node"]["name"] = clean_text(g["node"]["name"], g["node_id"]) if g["node"]["name"] else None
     g["policy_version"] = ctx.policy_version
     g["bundle_partner_candidates"] = _bundle_partners(ctx, g["sku"], g["node_id"])
     g["transfer_candidates"] = _transfer_candidates(ctx, g["node_id"])
@@ -234,7 +245,7 @@ def _bundle_partners(ctx: PlannerContext, sku: str, node_id: str) -> list[dict]:
     out = []
     for psku, p in ctx.products.items():
         if psku != sku and p["category"] in partner_cats and stock.get(psku, 0) >= 50:
-            out.append({"sku": psku, "name": p["name"], "list_price": float(p["list_price"]), "unit_cost": float(p["unit_cost"]), "qty_on_hand": stock[psku]})
+            out.append({"sku": psku, "name": clean_text(p["name"], psku), "list_price": float(p["list_price"]), "unit_cost": float(p["unit_cost"]), "qty_on_hand": stock[psku]})
     base = float(ctx.products[sku]["list_price"])
     out.sort(key=lambda r: (abs(r["list_price"] - base), -r["qty_on_hand"], r["sku"]))
     return out[:3]
@@ -243,7 +254,7 @@ def _bundle_partners(ctx: PlannerContext, sku: str, node_id: str) -> list[dict]:
 def _transfer_candidates(ctx: PlannerContext, node_id: str) -> list[dict]:
     """Outlets in the same cluster (physical sale is allowed until expiry)."""
     cluster = ctx.nodes.get(node_id, {}).get("cluster_id")
-    return [{"node_id": n["node_id"], "name": n["name"]} for n in ctx.nodes.values() if n["type"] == "outlet" and n["cluster_id"] == cluster]
+    return [{"node_id": n["node_id"], "name": clean_text(n["name"], n["node_id"])} for n in ctx.nodes.values() if n["type"] == "outlet" and n["cluster_id"] == cluster]
 
 
 def get_candidate_audiences(sku: str, node_ids: list[str], objective: str, gap_id: str | None = None) -> list[dict]:
@@ -274,7 +285,7 @@ def get_candidate_audiences(sku: str, node_ids: list[str], objective: str, gap_i
         by_seg[seg]["aff"].append(aff.get(cid, 0.0))
     out = []
     for seg, v in by_seg.items():
-        out.append({"segment_id": seg, "name": names.get(seg, seg), "size_before_consent": v["before"], "size_after_consent": v["after"], "mean_affinity": round(sum(v["aff"]) / len(v["aff"]), 3) if v["aff"] else 0.0})
+        out.append({"segment_id": seg, "name": clean_text(names.get(seg, seg), seg), "size_before_consent": v["before"], "size_after_consent": v["after"], "mean_affinity": round(sum(v["aff"]) / len(v["aff"]), 3) if v["aff"] else 0.0})
     out.sort(key=lambda r: (-r["size_after_consent"], r["segment_id"]))
     return out
 
