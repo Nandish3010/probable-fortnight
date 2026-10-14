@@ -15,7 +15,7 @@ export function PlanEvalChip() {
     let cancelled = false;
     readHealthOnce().then((h) => {
       if (cancelled) return;
-      const t = planLiveEvalText(h?.plan_live_eval, h?.model);
+      const t = planLiveEvalText(h?.plan_live_eval, h?.backend === "vertex" ? h?.model : undefined);
       setText(t);
       if (t && h?.plan_live_eval) {
         const { total, date } = h.plan_live_eval;

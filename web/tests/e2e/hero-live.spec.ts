@@ -276,3 +276,11 @@ test.describe("axe", () => {
     }
   }
 });
+
+test("on the scripted backend the pass-rate chip does not name the model", async ({ page }) => {
+  await withBackend(page, "stub");
+  await page.goto("/");
+  const chip = page.getByTestId("plan-eval-chip");
+  await expect(chip).toHaveText("22/24 live plans passed (11 Oct), p50 26.5 s · committed eval");
+  await expect(chip).not.toContainText("gemini");
+});
