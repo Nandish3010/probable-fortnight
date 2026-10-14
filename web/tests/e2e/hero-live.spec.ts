@@ -10,7 +10,7 @@ import { FAKE_API, assertNoHorizontalOverflow, beatHandlers, fakeApi, forceLiveA
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const GEMINI_LABEL = "Watch Gemini plan a play live";
 const SCRIPTED_LABEL = "Watch the scripted planner run live";
-const EVAL_TEXT = "Committed eval: 22/24 passed (11 Oct), p50 26.5 s";
+const EVAL_TEXT = "22/24 live plans passed on gemini-3.5-flash (11 Oct), p50 26.5 s · committed eval";
 
 /** Runs the landing against a fake API whose /health names the given backend. */
 async function withBackend(page: import("@playwright/test").Page, backend: "vertex" | "stub") {
@@ -54,7 +54,8 @@ test.describe("the secondary action on the landing (1280 x 800)", () => {
     await page.goto("/");
     const chip = page.getByTestId("plan-eval-chip");
     await expect(chip).toHaveText(EVAL_TEXT);
-    await expect(chip).not.toContainText(/live/i);
+    await expect(chip).toContainText("committed eval"); // a dated record, never presented as a live reading
+    await expect(chip).not.toContainText(/live reading|live now|LIVE ·/i);
     await expect(chip).toHaveAttribute("title", /24 live planner runs on 2026-10-11/);
     const [l, c] = await settledRects(page.getByTestId("watch-plan-live"), chip);
     expect(c.y).toBeGreaterThanOrEqual(l.y + l.height - 1); // under the link, in its column

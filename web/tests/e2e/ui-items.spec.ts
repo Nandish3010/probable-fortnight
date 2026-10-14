@@ -9,8 +9,11 @@ import { injectMockFaults } from "./helpers";
 
 test.describe("lib/health: pass-rate text and chip provenance", () => {
   test("planLiveEvalText reads /health plan_live_eval", () => {
-    expect(planLiveEvalText({ date: "2026-10-11", passed: 22, total: 24, p50_s: 26.5 })).toBe("Committed eval: 22/24 passed (11 Oct), p50 26.5 s");
-    expect(planLiveEvalText({ date: "2026-10-11", passed: 24, total: 24 })).toBe("Committed eval: 24/24 passed (11 Oct)");
+    expect(planLiveEvalText({ date: "2026-10-11", passed: 22, total: 24, p50_s: 26.5 })).toBe("22/24 live plans passed (11 Oct), p50 26.5 s · committed eval");
+    expect(planLiveEvalText({ date: "2026-10-11", passed: 24, total: 24 })).toBe("24/24 live plans passed (11 Oct) · committed eval");
+    expect(planLiveEvalText({ date: "2026-10-11", passed: 22, total: 24, p50_s: 26.5 }, "gemini-3.5-flash")).toBe("22/24 live plans passed on gemini-3.5-flash (11 Oct), p50 26.5 s · committed eval");
+    expect(planLiveEvalText({ date: "2026-10-11", passed: 22, total: 24, p50_s: 26.5 }, "not a model!")).toBe("22/24 live plans passed (11 Oct), p50 26.5 s · committed eval");
+    expect(planLiveEvalText({ date: "2026-10-11", passed: 22, total: 24, p50_s: 26.5 }, null)).toBe("22/24 live plans passed (11 Oct), p50 26.5 s · committed eval");
   });
   test("it is null when the field is absent or malformed", () => {
     expect(planLiveEvalText(undefined)).toBeNull();
@@ -54,7 +57,7 @@ test.describe("Desk: pass-rate chip and model chip honesty", () => {
   test("the Plan live panel shows the pass-rate chip", async ({ page }) => {
     await page.goto("/desk");
     await page.getByLabel("Play inbox").getByRole("button", { name: /Masala Chips 200G/ }).first().click();
-    await expect(page.getByTestId("plan-eval-chip")).toHaveText("Committed eval: 22/24 passed (11 Oct), p50 26.5 s");
+    await expect(page.getByTestId("plan-eval-chip")).toHaveText("22/24 live plans passed on gemini-3.5-flash (11 Oct), p50 26.5 s · committed eval");
   });
   test("it is absent, and nothing else changes, when /health fails or lacks the field", async ({ page }) => {
     await injectMockFaults(page, { "/health": { kind: "http" } });
