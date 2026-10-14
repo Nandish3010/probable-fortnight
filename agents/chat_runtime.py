@@ -99,7 +99,7 @@ def detect_lang(text: str, fallback: str) -> str:
 
 def chat_generate_config(models: dict[str, Any], thinking_key: str, temperature: float) -> types.GenerateContentConfig:
     """A reply here is a conversational turn, not a plan: it does not need a thinking budget.
-    `config/models.toml` defines `thinking.customer` ("low") for exactly
+    `config/models.toml` defines `thinking.customer` ("minimal") for exactly
     this; without wiring it, chat inherits the model's default dynamic thinking on every turn."""
     config = types.GenerateContentConfig(temperature=temperature)
     level = models.get("thinking", {}).get(thinking_key, "low")

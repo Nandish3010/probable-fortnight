@@ -73,7 +73,7 @@ def test_chat_does_not_hide_a_wrong_request(vertex, data_dir, tmp_path, monkeypa
 def test_agents_get_a_fallback_model_and_the_mapped_thinking_config(vertex):
     agent = build_customer_agent({"chips": "SKU-1"}, backend="vertex")
     assert [m.model for m in agent.model.models] == [PRIMARY, FALLBACK]
-    assert agent.generate_content_config.thinking_config.thinking_level == types.ThinkingLevel.LOW
+    assert agent.generate_content_config.thinking_config.thinking_level == types.ThinkingLevel.MINIMAL
     planner = planner_agent.build_planner(load_tenant(), "policy", "v1", "run-x", "2026-09-12", backend="vertex")
     assert [m.model for m in planner.sub_agents[0].model.models] == [PRIMARY, FALLBACK]
 
