@@ -54,7 +54,7 @@ Detail and the offer-copy path: [`docs/gen_ai_detail.md`](docs/gen_ai_detail.md)
 | Measure | Result |
 |---|---|
 | ADK response match | **43/46 (93%)** on `gemini-3.5-flash`, 12 Oct, planner prompt v6 |
-| Exact tool trajectory | **1/46** (same run). The 46 evalsets are 28 Sep recordings from `gemini-2.5-flash` (pre-switch), 41 with 2 to 5 `propose_play` attempts; `gemini-3.5-flash` proposes first time in 40 of 45 cases, so exact order no longer matches |
+| Exact tool trajectory | **1/46** (same run). On 12 Oct the evalsets were 28 Sep recordings from `gemini-2.5-flash` (pre-switch), 41 with 2 to 5 `propose_play` attempts; the 46 evalsets in the repo were since re-recorded on 14 Oct from `gemini-3.5-flash`, prompt v7 (`agents/planner/evalsets/PROVENANCE.json`; the 28 Sep set is at `git show 6482e7c:agents/planner/evalsets/<file>`); `gemini-3.5-flash` proposes first time in 40 of 45 cases, so exact order no longer matches |
 | Post-hoc, from stored results, not a configured metric | first proposed play passed the gate in 41/46; every expected tool called 46/46; run ends with `propose_play` 46/46; IN_ORDER and ANY_ORDER match 5/46 (same retry reason, same run) |
 | Rationale judge | 15/15, mean 5.0 (`gemini-3.5-flash`, prompt v6, 12 Oct), by a same-family judge (weak evidence) |
 | Live Plan, deployed | 22 of 24 model-planned, 0 fallbacks, p50 26.5 s, p95 31.8 s (`gemini-3.5-flash`, prompt v6, 11 Oct); 2 runs lost to a cold-instance 404 count as not passed |
