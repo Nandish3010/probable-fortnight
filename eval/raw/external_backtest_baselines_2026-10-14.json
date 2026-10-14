@@ -1,0 +1,101 @@
+{
+  "task": "external backtest baselines: Taal vs seasonal-naive vs trailing 28-day mean, same slots, same scoring",
+  "inputs": {
+    "dataset": "UCI Online Retail II (CC BY 4.0), top 300 SKUs by units, node = country, one cluster",
+    "sample_dir": "data/external/online_retail_ii/sample",
+    "sample_sha256": {
+      "meta.json": "b38b776e02d08b59c36eb0154edb1c2113f48c3d452c1953920ed569c49034af",
+      "products.jsonl": "974066ee648775fa0bd08be3e69ac99ef5a6c1cd3eaf4053bc84bde507d0658a",
+      "sales_daily.jsonl.gz": "af371a4bdcdc2139d358c7cae186e333ef5ac57ef78d3d13c7cb4c1c33d8b8bb"
+    },
+    "series": 300,
+    "history": {
+      "first": "2009-12-01",
+      "last": "2011-12-09"
+    }
+  },
+  "protocol": {
+    "origins": [
+      "2011-12-02",
+      "2011-11-25",
+      "2011-11-18",
+      "2011-11-11",
+      "2011-11-04",
+      "2011-10-28",
+      "2011-10-21",
+      "2011-10-14"
+    ],
+    "horizon_days": 7,
+    "origin_step_days": 7,
+    "train_test_boundary": "for each origin O: fit/lookup uses only days strictly before O; the test days are O .. O+6",
+    "scored_slot": "(series, origin, horizon day) with actual units > 0; no-sale days are not scored, as in run_backtest",
+    "metrics": {
+      "wape": "sum|forecast - actual| / sum(actual) over all scored series-days, pooled",
+      "mean_mape": "run_backtest convention: mean of per-origin mean absolute percentage error (one tier)"
+    },
+    "exclusion_rule": "a (series, origin) is dropped for all methods when the series' first sale is less than 28 days before the origin",
+    "random_seed": "none; the run is deterministic"
+  },
+  "methods": {
+    "taal": "jobs.sense.forecast.SeriesModel.p50, refit on days < origin (as run_backtest), no promo/festival flag",
+    "seasonal_naive": "units on the same weekday one week before the forecast day (d - 7, always < origin for a 7-day horizon); no row = 0",
+    "trailing_28d_mean": "mean units per calendar day over the 28 days before the origin, no-sale days counted as 0; one flat value for all 7 horizon days",
+    "trailing_28d_mean_sale_days_only": "sensitivity only, not a headline baseline: same window, mean over days that had a sale (SeriesModel's own level convention)"
+  },
+  "results": {
+    "taal": {
+      "scored_series_days": 10809,
+      "wape": 0.826,
+      "mean_ape_pooled": 3.7716,
+      "mean_mape": 3.7861,
+      "pooled_bias": -0.034
+    },
+    "seasonal_naive": {
+      "scored_series_days": 10809,
+      "wape": 0.9793,
+      "mean_ape_pooled": 2.9426,
+      "mean_mape": 2.9394,
+      "pooled_bias": -0.1335
+    },
+    "trailing_28d_mean": {
+      "scored_series_days": 10809,
+      "wape": 0.7391,
+      "mean_ape_pooled": 2.4131,
+      "mean_mape": 2.4277,
+      "pooled_bias": -0.301
+    },
+    "trailing_28d_mean_sale_days_only": {
+      "scored_series_days": 10809,
+      "wape": 0.8158,
+      "mean_ape_pooled": 3.6683,
+      "mean_mape": 3.6876,
+      "pooled_bias": -0.0456
+    }
+  },
+  "exclusions": {
+    "excluded_series_origins": 0,
+    "excluded_series": 0,
+    "series_origin_pairs_total": 2400,
+    "excluded_detail": []
+  },
+  "taal_vs_baselines": {
+    "seasonal_naive": {
+      "wape_relative_reduction": 0.1565,
+      "mape_relative_reduction": -0.2881,
+      "taal_beats_on_wape": true,
+      "taal_beats_on_mape": false
+    },
+    "trailing_28d_mean": {
+      "wape_relative_reduction": -0.1176,
+      "mape_relative_reduction": -0.5595,
+      "taal_beats_on_wape": false,
+      "taal_beats_on_mape": false
+    },
+    "trailing_28d_mean_sale_days_only": {
+      "wape_relative_reduction": -0.0125,
+      "mape_relative_reduction": -0.0267,
+      "taal_beats_on_wape": false,
+      "taal_beats_on_mape": false
+    }
+  }
+}
