@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { assertNoHorizontalOverflow } from "./helpers";
 
-test.describe("landing on a phone: loop diagram", () => {
+test.describe("landing on a phone: detailed loop diagram", () => {
   // The diagram is hidden at 640 px and below (page.module.css): too small to read, and it pushed the decision down.
+  // The one-line loop strip above the decision carries the loop there (hero-live.spec.ts).
   test("it is not shown at 640 px and below, and the page does not scroll sideways", async ({ page }) => {
     await page.setViewportSize({ width: 640, height: 900 });
     await page.goto("/");
     await expect(page.getByTestId("decision-feed")).toBeVisible();
     await expect(page.getByTestId("loop-diagram")).toBeHidden();
+    await expect(page.getByTestId("loop-strip")).toBeVisible();
     await assertNoHorizontalOverflow(page);
   });
 

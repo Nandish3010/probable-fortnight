@@ -7,6 +7,7 @@ import { GapCard } from "./GapCard";
 import { PlayCard } from "./PlayCard";
 import { Skeleton } from "./Skeleton";
 import { Badge } from "./Badge";
+import { Basis } from "./BasisTag";
 import { getGaps, getPlays } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { pickFeed, FEED_SIZE, type FeedItem } from "../lib/feed";
@@ -206,9 +207,9 @@ export function DecisionFeed({
                       <button type="button" className={styles.nextButton} onClick={() => goNext(i)} aria-describedby={`feed-next-${i}`}>
                         Next decision
                       </button>
-                      <p id={`feed-next-${i}`} className={styles.nextText}>
-                        {productOf(next)}, {inr(next.gap.rupees_at_stake)} at stake
-                      </p>
+                      <Basis kind="synthetic" tag="after" as="p" id={`feed-next-${i}`} className={styles.nextText}>
+                        {productOf(next)}, {inr(next.gap.rupees_at_stake)} at stake{" "}
+                      </Basis>
                     </>
                   ) : (
                     <p className={styles.nextText}>

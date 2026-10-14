@@ -21,10 +21,10 @@ const LABELS: Record<BadgeKind, string> = {
 // What each badge claims, in one sentence (design_spec.md 8.2). Used as the tooltip on every badge
 // and as the text of the landing legend (StateLegend.tsx), so the two cannot drift apart.
 export const BADGE_HELP: Record<BadgeKind, string> = {
-  live: "Computed just now by Taal's running services.",
-  replay: "A real run, recorded earlier and played back. Nothing was recomputed.",
+  live: "This call ran on the service just now.",
+  replay: "A recorded run replayed. Nothing was recomputed.",
   "real-pilot": "Measured on a real pilot with real customers.",
-  synthetic: "Seeded demo data for the fictional tenant Kutumb Mart. No real customers.",
+  synthetic: "The data is the seeded demo tenant (no real customers, no pilot).",
   recorded: "A real Gemini planner run, recorded earlier and played back.",
   scripted: "A scripted stand-in for the planner model, used when no recording exists.",
   rules: "Taal's rule-based draft, used because the model did not return a plan in time.",
@@ -45,5 +45,21 @@ export function Badge({
       <span className="badge__label">{LABELS[kind]}</span>
       {detail ? <span className="badge__detail"> · {detail}</span> : null}
     </span>
+  );
+}
+
+/** The wording used wherever a call badge sits over the seeded demo tenant's figures (the Approve
+ * result, the chat panel, the customer preview): "LIVE · SYNTHETIC data", or "REPLAY · SYNTHETIC
+ * data" for a recorded run. A bare LIVE would read as live customer data. The pure-infrastructure
+ * health strip does not use it. */
+export const SEEDED_DETAIL = "SYNTHETIC data";
+
+export function SeededCallBadge({ live }: { live: boolean }) {
+  return (
+    <Badge
+      kind={live ? "live" : "replay"}
+      detail={SEEDED_DETAIL}
+      title={`${BADGE_HELP[live ? "live" : "replay"]} ${BADGE_HELP.synthetic}`}
+    />
   );
 }

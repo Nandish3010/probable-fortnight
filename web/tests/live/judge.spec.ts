@@ -26,6 +26,10 @@ test.describe("judge: landing", () => {
     const [writeoffBefore, writeoffAfter] = [...writeoffText.matchAll(/[\d,]+(?:\.\d+)?/g)].map((m) => Number(m[0].replace(/,/g, "")));
     expect(writeoffAfter).toBeLessThan(writeoffBefore); // the write-off must genuinely count down, not just show two numbers
     await expect(page.getByText(/holdout/i).first()).toBeVisible();
+    // the call badge over the seeded tenant names the data; the count line promises no lift before Measure
+    await expect(page.getByTestId("approve-result").locator(".badge--live").first()).toContainText("SYNTHETIC data");
+    await expect(page.getByTestId("audience-chain")).toHaveText(/^Reached \d+ customers, \d+ held back; the lift is measured once orders arrive$/);
+    await expect(page.locator("#chat-panel .badge--live").first()).toContainText("SYNTHETIC data");
     // the forecast run id moved into the result's Details (the heading no longer leaks ids)
     await page.getByTestId("approve-details").locator("summary").click();
     await expect(page.getByText(/refc_play_tea_ds04_v1/)).toBeVisible();
