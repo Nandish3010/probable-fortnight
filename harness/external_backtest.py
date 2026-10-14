@@ -152,6 +152,337 @@ def baseline_comparison(store: LocalStore) -> dict:
             "series_origin_pairs_total": len(origins) * len(tier_of)}
 
 
+# ---------------------------------------------------------------------------------------------
+# Fair metrics and candidates (protocol: eval/backtest_protocol_2026-10-14.md, committed before this
+# code was run). Backtest-only variants, labelled "candidate, not shipped"; jobs/sense/forecast.py is
+# imported and never modified. Every method function takes the history and the origin and itself drops
+# every day at or after the origin before using anything.
+# ---------------------------------------------------------------------------------------------
+PROTOCOL = ROOT / "eval/backtest_protocol_2026-10-14.md"
+TUNE_ORIGINS = 4  # first four of the eight origins (ascending) tune; the last four report
+FAST_MIN_SALE_DAYS = 15
+ALPHA_GRID = (0.05, 0.1, 0.2, 0.3)
+WEEKDAY_WINDOW = 91
+EW_WINDOW, EW_HALF_LIFE = 56, 14
+CANDIDATES = ("v1", "v2", "v3", "v4", "v5")
+BASELINES = ("seasonal_naive", "mean28", "median28", "croston", "sba")
+METHODS = ("taal", *BASELINES, *CANDIDATES)
+CANDIDATE_LABEL = "candidate, not shipped"
+
+History = dict[date, tuple[float, bool]]
+
+
+def _units(hist: History, origin: date) -> dict[date, float]:
+    """Units per day for days strictly before `origin`; the only way any method below reads history."""
+    return {d: v[0] for d, v in hist.items() if d < origin}
+
+
+def _zero_filled(units: dict[date, float], origin: date, n: int) -> list[float]:
+    """Units for the n days before the origin, oldest first, no-sale days as 0."""
+    return [units.get(origin - timedelta(days=j), 0.0) for j in range(n, 0, -1)]
+
+
+def horizon_days(origin: date) -> list[date]:
+    return [origin + timedelta(days=i) for i in range(HORIZON)]
+
+
+def f_taal(hist: History, origin: date) -> list[float]:
+    m = SeriesModel({d: v for d, v in hist.items() if d < origin}, origin)
+    return [m.p50(d, on_promo=False, is_festival=False) for d in horizon_days(origin)]
+
+
+def f_seasonal_naive(hist: History, origin: date) -> list[float]:
+    u = _units(hist, origin)
+    return [seasonal_naive(u, d, origin) for d in horizon_days(origin)]
+
+
+def f_mean28(hist: History, origin: date) -> list[float]:
+    return [sum(_zero_filled(_units(hist, origin), origin, BASELINE_WINDOW)) / BASELINE_WINDOW] * HORIZON
+
+
+def f_median28(hist: History, origin: date) -> list[float]:
+    return [statistics.median(_zero_filled(_units(hist, origin), origin, BASELINE_WINDOW))] * HORIZON
+
+
+def croston_state(units: dict[date, float], origin: date, alpha: float) -> tuple[float, float]:
+    """Croston's (z, p): smoothed demand size and smoothed interval between demands, over every demand
+    day (units > 0) before the origin, from the series' first demand. z0 = first demand, p0 = 1.
+    No demand before the origin -> (0, 1)."""
+    days = sorted(d for d, u in units.items() if d < origin and u > 0)
+    if not days:
+        return 0.0, 1.0
+    z, p, prev = units[days[0]], 1.0, days[0]
+    for d in days[1:]:
+        z += alpha * (units[d] - z)
+        p += alpha * ((d - prev).days - p)
+        prev = d
+    return z, p
+
+
+def f_croston(hist: History, origin: date, alpha: float = 0.1) -> list[float]:
+    z, p = croston_state(_units(hist, origin), origin, alpha)
+    return [z / p] * HORIZON
+
+
+def f_sba(hist: History, origin: date, alpha: float = 0.1) -> list[float]:
+    """Syntetos-Boylan approximation: Croston's z / p scaled by (1 - alpha / 2) to remove its upward bias."""
+    z, p = croston_state(_units(hist, origin), origin, alpha)
+    return [(1 - alpha / 2) * z / p] * HORIZON
+
+
+def _taal_dow(hist: History, origin: date) -> list[float]:
+    return SeriesModel({d: v for d, v in hist.items() if d < origin}, origin).dow
+
+
+def _shaped(level: float, dow: list[float], origin: date) -> list[float]:
+    return [level * dow[d.weekday()] for d in horizon_days(origin)]
+
+
+def f_v1(hist: History, origin: date) -> list[float]:
+    """Taal's weekday shape on a zero-filled level (units per calendar day, not per sale day)."""
+    level = sum(_zero_filled(_units(hist, origin), origin, BASELINE_WINDOW)) / BASELINE_WINDOW
+    return _shaped(level, _taal_dow(hist, origin), origin)
+
+
+def f_v2(hist: History, origin: date) -> list[float]:
+    """V1 blended 50/50 with the trailing 28-day zero-filled mean."""
+    return [0.5 * a + 0.5 * b for a, b in zip(f_v1(hist, origin), f_mean28(hist, origin), strict=True)]
+
+
+def f_v3(hist: History, origin: date) -> list[float]:
+    """V1 with Taal's weekday multipliers shrunk a further 50% toward 1."""
+    level = sum(_zero_filled(_units(hist, origin), origin, BASELINE_WINDOW)) / BASELINE_WINDOW
+    return _shaped(level, [0.5 * k + 0.5 for k in _taal_dow(hist, origin)], origin)
+
+
+def zero_filled_dow(units: dict[date, float], origin: date, window: int = WEEKDAY_WINDOW) -> list[float]:
+    """Weekday multipliers from the `window` days before the origin, no-sale days counted: mean units on
+    weekday k over the mean of all window days (1.0 for every weekday if the window has no sales)."""
+    vals = {origin - timedelta(days=j): units.get(origin - timedelta(days=j), 0.0) for j in range(1, window + 1)}
+    mean_all = sum(vals.values()) / window
+    out = []
+    for k in range(7):
+        ks = [v for d, v in vals.items() if d.weekday() == k]
+        out.append((sum(ks) / len(ks)) / mean_all if ks and mean_all > 0 else 1.0)
+    return out
+
+
+def f_v4(hist: History, origin: date) -> list[float]:
+    """Zero-filled weekday multipliers (last 91 days), shrunk 50% toward 1, on the zero-filled level."""
+    u = _units(hist, origin)
+    level = sum(_zero_filled(u, origin, BASELINE_WINDOW)) / BASELINE_WINDOW
+    return _shaped(level, [0.5 * k + 0.5 for k in zero_filled_dow(u, origin)], origin)
+
+
+def ew_level(units: dict[date, float], origin: date, window: int = EW_WINDOW, half_life: float = EW_HALF_LIFE) -> float:
+    """Exponentially weighted zero-filled mean; the day before the origin has age 0, weight 0.5^(age/half_life)."""
+    w = [0.5 ** ((j - 1) / half_life) for j in range(1, window + 1)]
+    return sum(wj * units.get(origin - timedelta(days=j), 0.0) for j, wj in zip(range(1, window + 1), w, strict=True)) / sum(w)
+
+
+def f_v5(hist: History, origin: date) -> list[float]:
+    """V1 with the level replaced by the exponentially weighted zero-filled mean (follows a ramp)."""
+    return _shaped(ew_level(_units(hist, origin), origin), _taal_dow(hist, origin), origin)
+
+
+def method_functions() -> dict:
+    """name -> f(history, origin) -> 7 forecasts. Croston and SBA appear once per alpha in the grid."""
+    fns = {"taal": f_taal, "seasonal_naive": f_seasonal_naive, "mean28": f_mean28, "median28": f_median28,
+           "v1": f_v1, "v2": f_v2, "v3": f_v3, "v4": f_v4, "v5": f_v5}
+    for a in ALPHA_GRID:
+        fns[f"croston@{a}"] = lambda h, o, a=a: f_croston(h, o, a)
+        fns[f"sba@{a}"] = lambda h, o, a=a: f_sba(h, o, a)
+    return fns
+
+
+def mase_scale(units: dict[date, float], origin: date, window: int = BASELINE_WINDOW) -> float:
+    """In-sample seasonal-naive-7 mean absolute error over the `window` days before the origin:
+    mean over d in [O - window, O - 1] of |y(d) - y(d - 7)|. Reads only days < origin."""
+    ds = [origin - timedelta(days=j) for j in range(1, window + 1)]
+    return sum(abs(units.get(d, 0.0) - units.get(d - timedelta(days=7), 0.0)) for d in ds) / window
+
+
+def mase_pair(forecast: list[float], actual: list[float], scale: float) -> float:
+    return (sum(abs(f - a) for f, a in zip(forecast, actual, strict=True)) / len(actual)) / scale
+
+
+def build_pairs(hist: dict, tier_of: dict, origins: list[date], fns: dict) -> tuple[list[dict], list[tuple[str, date]]]:
+    """One record per (series, origin): the 7 actuals, the fast-mover flag, the MASE scale and every
+    method's 7 forecasts. A pair is dropped (for all methods) when the series' first sale is less than 28
+    days before the origin, as in the Baselines section. Methods are called with the full series but each
+    drops days >= origin itself."""
+    pairs: list[dict] = []
+    excluded: list[tuple[str, date]] = []
+    for origin in origins:
+        for (sku, _cluster), series in sorted(hist.items()):
+            if sku not in tier_of:
+                continue
+            if min(series) > origin - timedelta(days=BASELINE_WINDOW):
+                excluded.append((sku, origin))
+                continue
+            u = _units(series, origin)
+            pairs.append({
+                "sku": sku, "origin": origin,
+                "actual": [series.get(d, (0.0, False))[0] for d in horizon_days(origin)],
+                "fast": sum(1 for v in _zero_filled(u, origin, BASELINE_WINDOW) if v > 0) >= FAST_MIN_SALE_DAYS,
+                "scale": mase_scale(u, origin),
+                "taal_intermittent": SeriesModel({d: v for d, v in series.items() if d < origin}, origin).is_intermittent,
+                "preds": {name: fn(series, origin) for name, fn in fns.items()},
+            })
+    return pairs, excluded
+
+
+def group_metrics(pairs: list[dict], method: str, origins: set[date] | None = None, fast_only: bool = False) -> dict:
+    """The protocol's metrics for one method over the pairs in `origins` (all if None), optionally the
+    fast-mover slice. Pooled WAPE/bias; MASE is the mean (and median) of per-pair MASE."""
+    ps = [p for p in pairs if (origins is None or p["origin"] in origins) and (p["fast"] or not fast_only)]
+    inc = [p for p in ps if sum(p["actual"]) > 0]            # window with any sale: all-days WAPE, weekly, bias
+    sa = sum(sum(p["actual"]) for p in inc)
+    err = sum(abs(f - a) for p in inc for f, a in zip(p["preds"][method], p["actual"], strict=True))
+    fsum = sum(sum(p["preds"][method]) for p in inc)
+    slots = [(a, f, p["origin"]) for p in ps for a, f in zip(p["actual"], p["preds"][method], strict=True) if a > 0]
+    sd_act = sum(a for a, _, _ in slots)
+    ape: dict[date, list[float]] = defaultdict(list)
+    for a, f, o in slots:
+        ape[o].append(abs(f - a) / a)
+    msc = [mase_pair(p["preds"][method], p["actual"], p["scale"]) for p in ps if p["scale"] > 0]
+    sa_all = sum(sum(p["actual"]) for p in ps)
+    err_all = sum(abs(f - a) for p in ps for f, a in zip(p["preds"][method], p["actual"], strict=True))
+    weekly_err = sum(abs(sum(p["preds"][method]) - sum(p["actual"])) for p in inc)
+    r = lambda x: round(x, 4) if x is not None else None  # noqa: E731
+    return {
+        "n_pairs": len(ps), "n_pairs_scored_all_days": len(inc), "n_sale_day_slots": len(slots),
+        "all_days_wape": r(err / sa) if sa else None,
+        "all_days_wape_no_exclusion": r(err_all / sa_all) if sa_all else None,
+        "sale_day_wape": r(sum(abs(f - a) for a, f, _ in slots) / sd_act) if sd_act else None,
+        "mase_mean": r(statistics.mean(msc)) if msc else None, "mase_median": r(statistics.median(msc)) if msc else None,
+        "weekly_wape": r(weekly_err / sa) if sa else None,
+        "bias_all_days": r((fsum - sa) / sa) if sa else None,
+        "bias_sale_days": r(sum(f - a for a, f, _ in slots) / sd_act) if sd_act else None,
+        "mape_continuity_only": r(statistics.mean(statistics.mean(v) for v in ape.values())) if ape else None,
+    }
+
+
+def group_exclusions(pairs: list[dict], origins: set[date] | None, fast_only: bool) -> dict:
+    ps = [p for p in pairs if (origins is None or p["origin"] in origins) and (p["fast"] or not fast_only)]
+    return {"pairs": len(ps), "excluded_zero_actual_window": sum(1 for p in ps if sum(p["actual"]) == 0),
+            "excluded_mase_scale_zero": sum(1 for p in ps if p["scale"] == 0)}
+
+
+LOWER_BETTER = ("all_days_wape", "sale_day_wape", "mase_mean", "mase_median", "weekly_wape", "bias_all_days_abs", "mape_continuity_only")
+
+
+def _cmp_value(m: dict, key: str):
+    return abs(m["bias_all_days"]) if key == "bias_all_days_abs" else m[key]
+
+
+def weekday_diagnostics(pairs: list[dict], methods: dict[str, str], origins: set[date]) -> dict:
+    """POST-HOC reading aid, written after the first run and not an input to any rule: per weekday (Mon=0),
+    total actual and total forecast units over the REPORT pairs with any sale, and the all-days WAPE with
+    the weekday that had no sale at all in the group removed (the retailer takes no Saturday orders)."""
+    inc = [p for p in pairs if p["origin"] in origins and sum(p["actual"]) > 0]
+    days = {p["origin"]: horizon_days(p["origin"]) for p in inc}
+    actual = {k: round(sum(p["actual"][i] for p in inc for i, d in enumerate(days[p["origin"]]) if d.weekday() == k), 1) for k in range(7)}
+    closed = [k for k, v in actual.items() if v == 0]
+    out: dict = {"group": "REPORT", "actual_units_by_weekday": actual, "weekdays_with_zero_actual": closed, "methods": {}}
+    for label, name in methods.items():
+        fc = {k: round(sum(p["preds"][name][i] for p in inc for i, d in enumerate(days[p["origin"]]) if d.weekday() == k), 1) for k in range(7)}
+        keep = [(a, f) for p in inc for d, a, f in zip(days[p["origin"]], p["actual"], p["preds"][name], strict=True) if d.weekday() not in closed]
+        out["methods"][label] = {"forecast_units_by_weekday": fc,
+                                 "forecast_units_on_zero_actual_weekdays": round(sum(fc[k] for k in closed), 1),
+                                 "all_days_wape_excluding_zero_actual_weekdays": round(sum(abs(f - a) for a, f in keep) / sum(a for a, _ in keep), 4)}
+    return out
+
+
+def fallback_slice(pairs: list[dict], methods: dict[str, str], origins: set[date]) -> dict:
+    """POST-HOC reading aid (not a rule input): REPORT windows split by whether the shipped SeriesModel
+    puts the series in its `average_demand_intermittent` fallback (fewer than 14 sale days in the last 28)."""
+    out: dict = {"group": "REPORT"}
+    for label, flag in (("taal_intermittent_fallback", True), ("taal_seasonal_model", False)):
+        ps = [p for p in pairs if p["origin"] in origins and p["taal_intermittent"] is flag]
+        out[label] = {"n_pairs": len(ps), "methods": {
+            m: {k: group_metrics(ps, methods[m])[k] for k in ("all_days_wape", "bias_all_days", "sale_day_wape", "bias_sale_days")}
+            for m in ("taal", "mean28", "v1", "v4")}}
+    return out
+
+
+def fair_metrics(hist: dict, tier_of: dict, origins: list[date]) -> dict:
+    fns = method_functions()
+    pairs, excluded = build_pairs(hist, tier_of, origins, fns)
+    asc = sorted(origins)
+    groups = {"TUNE": set(asc[:TUNE_ORIGINS]), "REPORT": set(asc[TUNE_ORIGINS:]), "ALL": set(asc)}
+    # alpha for Croston and SBA: lowest TUNE all-days WAPE over the grid (ties: smaller alpha)
+    grid = {fam: {a: {g: group_metrics(pairs, f"{fam}@{a}", groups[g])["all_days_wape"] for g in groups} for a in ALPHA_GRID} for fam in ("croston", "sba")}
+    alpha = {fam: min(ALPHA_GRID, key=lambda a, fam=fam: (grid[fam][a]["TUNE"], a)) for fam in grid}
+    resolve = {m: (f"{m}@{alpha[m]}" if m in alpha else m) for m in METHODS}
+    results: dict = {}
+    for g, os_ in groups.items():
+        results[g] = {}
+        for sl, fast in (("all", False), ("fast_movers", True)):
+            results[g][sl] = {"exclusions": group_exclusions(pairs, os_, fast),
+                              "methods": {m: group_metrics(pairs, resolve[m], os_, fast) for m in METHODS}}
+    # primary candidate: lowest TUNE all-days WAPE among V1..V5 (ties: lower number)
+    tune = results["TUNE"]["all"]["methods"]
+    primary = min(CANDIDATES, key=lambda m: (tune[m]["all_days_wape"], m))
+    rep = results["REPORT"]["all"]["methods"]
+    rule = {"primary_candidate": primary, "label": CANDIDATE_LABEL,
+            "selected_on": "lowest all-days WAPE on TUNE origins",
+            "tune_all_days_wape": {m: tune[m]["all_days_wape"] for m in CANDIDATES},
+            "report_all_days_wape": {m: rep[m]["all_days_wape"] for m in ("taal", *BASELINES, *CANDIDATES)},
+            "beats_unchanged_taal": rep[primary]["all_days_wape"] < rep["taal"]["all_days_wape"],
+            "beats_every_baseline": all(rep[primary]["all_days_wape"] < rep[b]["all_days_wape"] for b in BASELINES)}
+    best_base = min(BASELINES, key=lambda b: rep[b]["all_days_wape"])
+    rule["best_baseline_on_report"] = best_base
+    rule["margin_vs_taal"] = round(rep["taal"]["all_days_wape"] - rep[primary]["all_days_wape"], 4)
+    rule["margin_vs_best_baseline"] = round(rep[best_base]["all_days_wape"] - rep[primary]["all_days_wape"], 4)
+    rule["meets_pre_registered_rule"] = rule["beats_unchanged_taal"] and rule["beats_every_baseline"]
+    rule["others_descriptive"] = {m: {"beats_taal": rep[m]["all_days_wape"] < rep["taal"]["all_days_wape"],
+                                      "beats_every_baseline": all(rep[m]["all_days_wape"] < rep[b]["all_days_wape"] for b in BASELINES)} for m in CANDIDATES}
+    taal_vs = {g: {sl: {b: {k: _cmp_value(results[g][sl]["methods"]["taal"], k) < _cmp_value(results[g][sl]["methods"][b], k) for k in LOWER_BETTER}
+                         for b in BASELINES} for sl in ("all", "fast_movers")} for g in groups}
+    per_origin = {m: {o.isoformat(): group_metrics(pairs, resolve[m], {o})["all_days_wape"] for o in asc} for m in METHODS}
+    rep_pairs = [p for p in pairs if p["origin"] in groups["REPORT"]]
+    return {
+        "origins": {g: sorted(o.isoformat() for o in os_) for g, os_ in groups.items()},
+        "chosen_alpha": alpha, "alpha_grid_all_days_wape": {fam: {str(a): v for a, v in d.items()} for fam, d in grid.items()},
+        "results": results, "decision_rule": rule,
+        "taal_beats_baseline_lower_is_better": taal_vs,
+        "per_origin_all_days_wape": per_origin,
+        "post_hoc_diagnostics": {**weekday_diagnostics(pairs, resolve, groups["REPORT"]), "by_taal_fallback": fallback_slice(pairs, resolve, groups["REPORT"])},
+        "diagnostics": {"share_report_pairs_taal_intermittent_fallback": round(sum(1 for p in rep_pairs if p["taal_intermittent"]) / len(rep_pairs), 4),
+                        "excluded_first_sale_within_28d": {"series_origin_pairs": len(excluded)},
+                        "n_pairs_total": len(pairs)},
+    }
+
+
+def run_fair(sample: Path) -> dict:
+    tables = sample_to_tables(sample)
+    with tempfile.TemporaryDirectory() as tmp:
+        store = LocalStore(tmp)
+        for t, rows in tables.items():
+            store.write(t, rows)
+        cluster_of = {n["node_id"]: n["cluster_id"] for n in store.read("nodes")}
+        tier_of = {p["sku"]: p["category"] for p in store.read("products")}
+        hist, _ = _load_history(store, cluster_of)
+        origins = _origins({d for series in hist.values() for d in series}, HORIZON)
+        fm = fair_metrics(hist, tier_of, origins)
+    return {
+        "task": "external backtest v2: fair metrics (zeros counted, MASE, weekly), more baselines, backtest-only candidates",
+        "protocol": {"file": str(PROTOCOL.relative_to(ROOT)), "sha256": _sha256(PROTOCOL),
+                     "pre_registered": "committed before the first run of this code; see git history"},
+        "inputs": {"dataset": "UCI Online Retail II (CC BY 4.0), top 300 SKUs by units, node = country, one cluster",
+                   "sample_sha256": {f.name: _sha256(f) for f in sorted(sample.iterdir()) if f.is_file()},
+                   "series": len({p["sku"] for p in tables["products"]})},
+        "shipped_forecaster_changed": False, "candidates": {m: CANDIDATE_LABEL for m in CANDIDATES},
+        "method_definitions": {"taal": "SeriesModel, unchanged", "seasonal_naive": "same weekday last week", "mean28": "28-day zero-filled mean, flat",
+                               "median28": "28-day zero-filled median, flat", "croston": "Croston, alpha chosen on TUNE", "sba": "Syntetos-Boylan, alpha chosen on TUNE",
+                               "v1": "mean28 x Taal weekday multipliers", "v2": "50/50 V1 and mean28", "v3": "V1 with multipliers shrunk 50% toward 1",
+                               "v4": "mean28 x (zero-filled 91-day weekday multipliers shrunk 50%)", "v5": "V1 with exponentially weighted (half-life 14d, 56d) level"},
+        "random_seed": "none; deterministic",
+        **fm,
+    }
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -262,7 +593,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sample", type=Path, default=ROOT / "data/external/online_retail_ii/sample")
     ap.add_argument("--date", default=date.today().isoformat())
     ap.add_argument("--baselines", action="store_true", help="write eval/raw/external_backtest_baselines_<date>.json only")
+    ap.add_argument("--fair", action="store_true", help="write eval/raw/external_backtest_v2_<date>.json (fair metrics and candidates)")
     a = ap.parse_args(argv)
+    if a.fair:
+        res = run_fair(a.sample)
+        path = ROOT / "eval/raw" / f"external_backtest_v2_{a.date}.json"
+        path.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"chosen_alpha": res["chosen_alpha"], "decision_rule": res["decision_rule"]}, indent=2))
+        return 0
     if a.baselines:
         res = run_baselines(a.sample)
         path = ROOT / "eval/raw" / f"external_backtest_baselines_{a.date}.json"

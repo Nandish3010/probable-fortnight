@@ -1,0 +1,1782 @@
+{
+  "task": "external backtest v2: fair metrics (zeros counted, MASE, weekly), more baselines, backtest-only candidates",
+  "protocol": {
+    "file": "eval/backtest_protocol_2026-10-14.md",
+    "sha256": "d8b75746c85136ccb1c2d34284a5c03b60b6c621f1dcf9784e7c0df16c2e3a0f",
+    "pre_registered": "committed before the first run of this code; see git history"
+  },
+  "inputs": {
+    "dataset": "UCI Online Retail II (CC BY 4.0), top 300 SKUs by units, node = country, one cluster",
+    "sample_sha256": {
+      "meta.json": "b38b776e02d08b59c36eb0154edb1c2113f48c3d452c1953920ed569c49034af",
+      "products.jsonl": "974066ee648775fa0bd08be3e69ac99ef5a6c1cd3eaf4053bc84bde507d0658a",
+      "sales_daily.jsonl.gz": "af371a4bdcdc2139d358c7cae186e333ef5ac57ef78d3d13c7cb4c1c33d8b8bb"
+    },
+    "series": 300
+  },
+  "shipped_forecaster_changed": false,
+  "candidates": {
+    "v1": "candidate, not shipped",
+    "v2": "candidate, not shipped",
+    "v3": "candidate, not shipped",
+    "v4": "candidate, not shipped",
+    "v5": "candidate, not shipped"
+  },
+  "method_definitions": {
+    "taal": "SeriesModel, unchanged",
+    "seasonal_naive": "same weekday last week",
+    "mean28": "28-day zero-filled mean, flat",
+    "median28": "28-day zero-filled median, flat",
+    "croston": "Croston, alpha chosen on TUNE",
+    "sba": "Syntetos-Boylan, alpha chosen on TUNE",
+    "v1": "mean28 x Taal weekday multipliers",
+    "v2": "50/50 V1 and mean28",
+    "v3": "V1 with multipliers shrunk 50% toward 1",
+    "v4": "mean28 x (zero-filled 91-day weekday multipliers shrunk 50%)",
+    "v5": "V1 with exponentially weighted (half-life 14d, 56d) level"
+  },
+  "random_seed": "none; deterministic",
+  "origins": {
+    "TUNE": [
+      "2011-10-14",
+      "2011-10-21",
+      "2011-10-28",
+      "2011-11-04"
+    ],
+    "REPORT": [
+      "2011-11-11",
+      "2011-11-18",
+      "2011-11-25",
+      "2011-12-02"
+    ],
+    "ALL": [
+      "2011-10-14",
+      "2011-10-21",
+      "2011-10-28",
+      "2011-11-04",
+      "2011-11-11",
+      "2011-11-18",
+      "2011-11-25",
+      "2011-12-02"
+    ]
+  },
+  "chosen_alpha": {
+    "croston": 0.05,
+    "sba": 0.05
+  },
+  "alpha_grid_all_days_wape": {
+    "croston": {
+      "0.05": {
+        "TUNE": 1.0,
+        "REPORT": 0.8898,
+        "ALL": 0.9409
+      },
+      "0.1": {
+        "TUNE": 1.0214,
+        "REPORT": 0.9182,
+        "ALL": 0.9661
+      },
+      "0.2": {
+        "TUNE": 1.0677,
+        "REPORT": 0.9654,
+        "ALL": 1.0129
+      },
+      "0.3": {
+        "TUNE": 1.1228,
+        "REPORT": 1.009,
+        "ALL": 1.0618
+      }
+    },
+    "sba": {
+      "0.05": {
+        "TUNE": 0.9925,
+        "REPORT": 0.8834,
+        "ALL": 0.934
+      },
+      "0.1": {
+        "TUNE": 1.004,
+        "REPORT": 0.9005,
+        "ALL": 0.9485
+      },
+      "0.2": {
+        "TUNE": 1.0275,
+        "REPORT": 0.9213,
+        "ALL": 0.9706
+      },
+      "0.3": {
+        "TUNE": 1.0528,
+        "REPORT": 0.9347,
+        "ALL": 0.9895
+      }
+    }
+  },
+  "results": {
+    "TUNE": {
+      "all": {
+        "exclusions": {
+          "pairs": 1200,
+          "excluded_zero_actual_window": 108,
+          "excluded_mase_scale_zero": 72
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 1.3253,
+            "all_days_wape_no_exclusion": 2.1579,
+            "sale_day_wape": 0.8694,
+            "mase_mean": 6.8226,
+            "mase_median": 1.0492,
+            "weekly_wape": 0.8742,
+            "bias_all_days": 0.3671,
+            "bias_sale_days": -0.0888,
+            "mape_continuity_only": 3.9657
+          },
+          "seasonal_naive": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 1.1322,
+            "all_days_wape_no_exclusion": 1.1406,
+            "sale_day_wape": 1.0339,
+            "mase_mean": 1.3193,
+            "mase_median": 0.8649,
+            "weekly_wape": 0.6874,
+            "bias_all_days": -0.1285,
+            "bias_sale_days": -0.2267,
+            "mape_continuity_only": 2.8934
+          },
+          "mean28": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 1.0072,
+            "all_days_wape_no_exclusion": 1.0225,
+            "sale_day_wape": 0.7706,
+            "mase_mean": 1.2243,
+            "mase_median": 0.7676,
+            "weekly_wape": 0.6011,
+            "bias_all_days": -0.1282,
+            "bias_sale_days": -0.3648,
+            "mape_continuity_only": 2.4938
+          },
+          "median28": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.8831,
+            "all_days_wape_no_exclusion": 0.8846,
+            "sale_day_wape": 0.7916,
+            "mase_mean": 1.1097,
+            "mase_median": 0.6474,
+            "weekly_wape": 0.6564,
+            "bias_all_days": -0.5981,
+            "bias_sale_days": -0.6896,
+            "mape_continuity_only": 1.1875
+          },
+          "croston": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 1.0,
+            "all_days_wape_no_exclusion": 1.166,
+            "sale_day_wape": 0.7713,
+            "mase_mean": 1.662,
+            "mase_median": 0.8214,
+            "weekly_wape": 0.6023,
+            "bias_all_days": -0.1719,
+            "bias_sale_days": -0.4005,
+            "mape_continuity_only": 2.4263
+          },
+          "sba": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9925,
+            "all_days_wape_no_exclusion": 1.1543,
+            "sale_day_wape": 0.7696,
+            "mase_mean": 1.6433,
+            "mase_median": 0.8128,
+            "weekly_wape": 0.5994,
+            "bias_all_days": -0.1926,
+            "bias_sale_days": -0.4155,
+            "mape_continuity_only": 2.3641
+          },
+          "v1": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9896,
+            "all_days_wape_no_exclusion": 1.0047,
+            "sale_day_wape": 0.7697,
+            "mase_mean": 1.2128,
+            "mase_median": 0.7564,
+            "weekly_wape": 0.5965,
+            "bias_all_days": -0.1462,
+            "bias_sale_days": -0.3661,
+            "mape_continuity_only": 2.4123
+          },
+          "v2": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9961,
+            "all_days_wape_no_exclusion": 1.0113,
+            "sale_day_wape": 0.7679,
+            "mase_mean": 1.2162,
+            "mase_median": 0.7583,
+            "weekly_wape": 0.5986,
+            "bias_all_days": -0.1372,
+            "bias_sale_days": -0.3654,
+            "mape_continuity_only": 2.4495
+          },
+          "v3": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9961,
+            "all_days_wape_no_exclusion": 1.0113,
+            "sale_day_wape": 0.7679,
+            "mase_mean": 1.2162,
+            "mase_median": 0.7583,
+            "weekly_wape": 0.5986,
+            "bias_all_days": -0.1372,
+            "bias_sale_days": -0.3654,
+            "mape_continuity_only": 2.4495
+          },
+          "v4": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9657,
+            "all_days_wape_no_exclusion": 0.981,
+            "sale_day_wape": 0.787,
+            "mase_mean": 1.1808,
+            "mase_median": 0.7414,
+            "weekly_wape": 0.6011,
+            "bias_all_days": -0.1282,
+            "bias_sale_days": -0.3069,
+            "mape_continuity_only": 2.7036
+          },
+          "v5": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5164,
+            "all_days_wape": 0.9899,
+            "all_days_wape_no_exclusion": 1.0051,
+            "sale_day_wape": 0.7645,
+            "mase_mean": 1.2557,
+            "mase_median": 0.7973,
+            "weekly_wape": 0.5849,
+            "bias_all_days": -0.1219,
+            "bias_sale_days": -0.3474,
+            "mape_continuity_only": 2.4633
+          }
+        }
+      },
+      "fast_movers": {
+        "exclusions": {
+          "pairs": 892,
+          "excluded_zero_actual_window": 4,
+          "excluded_mase_scale_zero": 0
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 1.1034,
+            "all_days_wape_no_exclusion": 1.111,
+            "sale_day_wape": 0.8256,
+            "mase_mean": 1.1828,
+            "mase_median": 0.9606,
+            "weekly_wape": 0.6623,
+            "bias_all_days": 0.1726,
+            "bias_sale_days": -0.1052,
+            "mape_continuity_only": 3.4411
+          },
+          "seasonal_naive": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 1.1069,
+            "all_days_wape_no_exclusion": 1.1099,
+            "sale_day_wape": 1.0261,
+            "mase_mean": 1.1614,
+            "mase_median": 0.9285,
+            "weekly_wape": 0.6648,
+            "bias_all_days": -0.1078,
+            "bias_sale_days": -0.1886,
+            "mape_continuity_only": 2.9272
+          },
+          "mean28": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9818,
+            "all_days_wape_no_exclusion": 0.9869,
+            "sale_day_wape": 0.7642,
+            "mase_mean": 1.0545,
+            "mase_median": 0.7901,
+            "weekly_wape": 0.5692,
+            "bias_all_days": -0.1012,
+            "bias_sale_days": -0.3189,
+            "mape_continuity_only": 2.5482
+          },
+          "median28": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.8647,
+            "all_days_wape_no_exclusion": 0.8663,
+            "sale_day_wape": 0.7605,
+            "mase_mean": 0.9646,
+            "mase_median": 0.6953,
+            "weekly_wape": 0.6055,
+            "bias_all_days": -0.5383,
+            "bias_sale_days": -0.6424,
+            "mape_continuity_only": 1.2139
+          },
+          "croston": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.964,
+            "all_days_wape_no_exclusion": 0.968,
+            "sale_day_wape": 0.7603,
+            "mase_mean": 1.0553,
+            "mase_median": 0.8005,
+            "weekly_wape": 0.5646,
+            "bias_all_days": -0.1556,
+            "bias_sale_days": -0.3593,
+            "mape_continuity_only": 2.4518
+          },
+          "sba": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9566,
+            "all_days_wape_no_exclusion": 0.9605,
+            "sale_day_wape": 0.758,
+            "mase_mean": 1.0481,
+            "mase_median": 0.7891,
+            "weekly_wape": 0.5619,
+            "bias_all_days": -0.1767,
+            "bias_sale_days": -0.3753,
+            "mape_continuity_only": 2.3883
+          },
+          "v1": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9617,
+            "all_days_wape_no_exclusion": 0.9667,
+            "sale_day_wape": 0.7631,
+            "mase_mean": 1.04,
+            "mase_median": 0.7836,
+            "weekly_wape": 0.5642,
+            "bias_all_days": -0.1217,
+            "bias_sale_days": -0.3203,
+            "mape_continuity_only": 2.4605
+          },
+          "v2": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9692,
+            "all_days_wape_no_exclusion": 0.9742,
+            "sale_day_wape": 0.7611,
+            "mase_mean": 1.0444,
+            "mase_median": 0.7826,
+            "weekly_wape": 0.5666,
+            "bias_all_days": -0.1115,
+            "bias_sale_days": -0.3196,
+            "mape_continuity_only": 2.5005
+          },
+          "v3": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9692,
+            "all_days_wape_no_exclusion": 0.9742,
+            "sale_day_wape": 0.7611,
+            "mase_mean": 1.0444,
+            "mase_median": 0.7826,
+            "weekly_wape": 0.5666,
+            "bias_all_days": -0.1115,
+            "bias_sale_days": -0.3196,
+            "mape_continuity_only": 2.5005
+          },
+          "v4": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.9383,
+            "all_days_wape_no_exclusion": 0.9434,
+            "sale_day_wape": 0.7826,
+            "mase_mean": 1.0062,
+            "mase_median": 0.7567,
+            "weekly_wape": 0.5692,
+            "bias_all_days": -0.1012,
+            "bias_sale_days": -0.257,
+            "mape_continuity_only": 2.763
+          },
+          "v5": {
+            "n_pairs": 892,
+            "n_pairs_scored_all_days": 888,
+            "n_sale_day_slots": 4532,
+            "all_days_wape": 0.962,
+            "all_days_wape_no_exclusion": 0.9663,
+            "sale_day_wape": 0.7592,
+            "mase_mean": 1.0482,
+            "mase_median": 0.8047,
+            "weekly_wape": 0.5532,
+            "bias_all_days": -0.1003,
+            "bias_sale_days": -0.3031,
+            "mape_continuity_only": 2.4944
+          }
+        }
+      }
+    },
+    "REPORT": {
+      "all": {
+        "exclusions": {
+          "pairs": 1200,
+          "excluded_zero_actual_window": 108,
+          "excluded_mase_scale_zero": 76
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 1.119,
+            "all_days_wape_no_exclusion": 1.8389,
+            "sale_day_wape": 0.7884,
+            "mase_mean": 9.3081,
+            "mase_median": 0.975,
+            "weekly_wape": 0.6737,
+            "bias_all_days": 0.3441,
+            "bias_sale_days": 0.0135,
+            "mape_continuity_only": 3.6066
+          },
+          "seasonal_naive": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.9928,
+            "all_days_wape_no_exclusion": 0.9985,
+            "sale_day_wape": 0.932,
+            "mase_mean": 1.5016,
+            "mase_median": 0.9574,
+            "weekly_wape": 0.5463,
+            "bias_all_days": 0.0081,
+            "bias_sale_days": -0.0527,
+            "mape_continuity_only": 2.9854
+          },
+          "mean28": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.9068,
+            "all_days_wape_no_exclusion": 0.9188,
+            "sale_day_wape": 0.7118,
+            "mase_mean": 1.3583,
+            "mase_median": 0.7696,
+            "weekly_wape": 0.4725,
+            "bias_all_days": -0.0506,
+            "bias_sale_days": -0.2457,
+            "mape_continuity_only": 2.3617
+          },
+          "median28": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8184,
+            "all_days_wape_no_exclusion": 0.8194,
+            "sale_day_wape": 0.7255,
+            "mase_mean": 1.2672,
+            "mase_median": 0.6843,
+            "weekly_wape": 0.5585,
+            "bias_all_days": -0.4789,
+            "bias_sale_days": -0.5718,
+            "mape_continuity_only": 1.1653
+          },
+          "croston": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8898,
+            "all_days_wape_no_exclusion": 1.0328,
+            "sale_day_wape": 0.7037,
+            "mase_mean": 1.8393,
+            "mase_median": 0.7841,
+            "weekly_wape": 0.4584,
+            "bias_all_days": -0.1189,
+            "bias_sale_days": -0.305,
+            "mape_continuity_only": 2.2955
+          },
+          "sba": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8834,
+            "all_days_wape_no_exclusion": 1.0228,
+            "sale_day_wape": 0.702,
+            "mase_mean": 1.8192,
+            "mase_median": 0.7759,
+            "weekly_wape": 0.458,
+            "bias_all_days": -0.1409,
+            "bias_sale_days": -0.3224,
+            "mape_continuity_only": 2.2358
+          },
+          "v1": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8823,
+            "all_days_wape_no_exclusion": 0.8941,
+            "sale_day_wape": 0.7034,
+            "mase_mean": 1.3409,
+            "mase_median": 0.7482,
+            "weekly_wape": 0.4711,
+            "bias_all_days": -0.0701,
+            "bias_sale_days": -0.2489,
+            "mape_continuity_only": 2.2734
+          },
+          "v2": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.892,
+            "all_days_wape_no_exclusion": 0.9038,
+            "sale_day_wape": 0.705,
+            "mase_mean": 1.3473,
+            "mase_median": 0.7568,
+            "weekly_wape": 0.4716,
+            "bias_all_days": -0.0604,
+            "bias_sale_days": -0.2473,
+            "mape_continuity_only": 2.3142
+          },
+          "v3": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.892,
+            "all_days_wape_no_exclusion": 0.9038,
+            "sale_day_wape": 0.705,
+            "mase_mean": 1.3473,
+            "mase_median": 0.7568,
+            "weekly_wape": 0.4716,
+            "bias_all_days": -0.0604,
+            "bias_sale_days": -0.2473,
+            "mape_continuity_only": 2.3142
+          },
+          "v4": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8569,
+            "all_days_wape_no_exclusion": 0.8688,
+            "sale_day_wape": 0.7272,
+            "mase_mean": 1.3081,
+            "mase_median": 0.7241,
+            "weekly_wape": 0.4725,
+            "bias_all_days": -0.0506,
+            "bias_sale_days": -0.1804,
+            "mape_continuity_only": 2.481
+          },
+          "v5": {
+            "n_pairs": 1200,
+            "n_pairs_scored_all_days": 1092,
+            "n_sale_day_slots": 5645,
+            "all_days_wape": 0.8767,
+            "all_days_wape_no_exclusion": 0.8898,
+            "sale_day_wape": 0.6959,
+            "mase_mean": 1.3849,
+            "mase_median": 0.7744,
+            "weekly_wape": 0.4548,
+            "bias_all_days": -0.0671,
+            "bias_sale_days": -0.2479,
+            "mape_continuity_only": 2.2946
+          }
+        }
+      },
+      "fast_movers": {
+        "exclusions": {
+          "pairs": 941,
+          "excluded_zero_actual_window": 5,
+          "excluded_mase_scale_zero": 0
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.9696,
+            "all_days_wape_no_exclusion": 0.9779,
+            "sale_day_wape": 0.753,
+            "mase_mean": 1.1041,
+            "mase_median": 0.9158,
+            "weekly_wape": 0.5303,
+            "bias_all_days": 0.2024,
+            "bias_sale_days": -0.0143,
+            "mape_continuity_only": 3.1948
+          },
+          "seasonal_naive": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.9629,
+            "all_days_wape_no_exclusion": 0.9643,
+            "sale_day_wape": 0.9171,
+            "mase_mean": 1.1358,
+            "mase_median": 0.96,
+            "weekly_wape": 0.5218,
+            "bias_all_days": 0.0251,
+            "bias_sale_days": -0.0208,
+            "mape_continuity_only": 2.9874
+          },
+          "mean28": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8845,
+            "all_days_wape_no_exclusion": 0.8905,
+            "sale_day_wape": 0.7033,
+            "mase_mean": 1.0043,
+            "mase_median": 0.7776,
+            "weekly_wape": 0.4519,
+            "bias_all_days": -0.0359,
+            "bias_sale_days": -0.2171,
+            "mape_continuity_only": 2.4176
+          },
+          "median28": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8046,
+            "all_days_wape_no_exclusion": 0.8057,
+            "sale_day_wape": 0.7057,
+            "mase_mean": 0.9281,
+            "mase_median": 0.6999,
+            "weekly_wape": 0.5264,
+            "bias_all_days": -0.4416,
+            "bias_sale_days": -0.5405,
+            "mape_continuity_only": 1.1815
+          },
+          "croston": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.865,
+            "all_days_wape_no_exclusion": 0.87,
+            "sale_day_wape": 0.6963,
+            "mase_mean": 0.9982,
+            "mase_median": 0.7767,
+            "weekly_wape": 0.4418,
+            "bias_all_days": -0.1149,
+            "bias_sale_days": -0.2836,
+            "mape_continuity_only": 2.3244
+          },
+          "sba": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8588,
+            "all_days_wape_no_exclusion": 0.8637,
+            "sale_day_wape": 0.6943,
+            "mase_mean": 0.9912,
+            "mase_median": 0.7716,
+            "weekly_wape": 0.4416,
+            "bias_all_days": -0.137,
+            "bias_sale_days": -0.3015,
+            "mape_continuity_only": 2.2633
+          },
+          "v1": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8577,
+            "all_days_wape_no_exclusion": 0.8636,
+            "sale_day_wape": 0.694,
+            "mase_mean": 0.9827,
+            "mase_median": 0.7511,
+            "weekly_wape": 0.4506,
+            "bias_all_days": -0.0567,
+            "bias_sale_days": -0.2205,
+            "mape_continuity_only": 2.3225
+          },
+          "v2": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8683,
+            "all_days_wape_no_exclusion": 0.8743,
+            "sale_day_wape": 0.6958,
+            "mase_mean": 0.9908,
+            "mase_median": 0.7666,
+            "weekly_wape": 0.4509,
+            "bias_all_days": -0.0463,
+            "bias_sale_days": -0.2188,
+            "mape_continuity_only": 2.3664
+          },
+          "v3": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8683,
+            "all_days_wape_no_exclusion": 0.8743,
+            "sale_day_wape": 0.6958,
+            "mase_mean": 0.9908,
+            "mase_median": 0.7666,
+            "weekly_wape": 0.4509,
+            "bias_all_days": -0.0463,
+            "bias_sale_days": -0.2188,
+            "mape_continuity_only": 2.3664
+          },
+          "v4": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8312,
+            "all_days_wape_no_exclusion": 0.8372,
+            "sale_day_wape": 0.7174,
+            "mase_mean": 0.9477,
+            "mase_median": 0.7254,
+            "weekly_wape": 0.4519,
+            "bias_all_days": -0.0359,
+            "bias_sale_days": -0.1496,
+            "mape_continuity_only": 2.5369
+          },
+          "v5": {
+            "n_pairs": 941,
+            "n_pairs_scored_all_days": 936,
+            "n_sale_day_slots": 5104,
+            "all_days_wape": 0.8522,
+            "all_days_wape_no_exclusion": 0.8567,
+            "sale_day_wape": 0.6872,
+            "mase_mean": 0.9847,
+            "mase_median": 0.7716,
+            "weekly_wape": 0.4352,
+            "bias_all_days": -0.0563,
+            "bias_sale_days": -0.2212,
+            "mape_continuity_only": 2.3412
+          }
+        }
+      }
+    },
+    "ALL": {
+      "all": {
+        "exclusions": {
+          "pairs": 2400,
+          "excluded_zero_actual_window": 216,
+          "excluded_mase_scale_zero": 148
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 1.2148,
+            "all_days_wape_no_exclusion": 1.9869,
+            "sale_day_wape": 0.826,
+            "mase_mean": 8.0631,
+            "mase_median": 1.0152,
+            "weekly_wape": 0.7668,
+            "bias_all_days": 0.3548,
+            "bias_sale_days": -0.034,
+            "mape_continuity_only": 3.7861
+          },
+          "seasonal_naive": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 1.0575,
+            "all_days_wape_no_exclusion": 1.0645,
+            "sale_day_wape": 0.9793,
+            "mase_mean": 1.4103,
+            "mase_median": 0.924,
+            "weekly_wape": 0.6118,
+            "bias_all_days": -0.0553,
+            "bias_sale_days": -0.1335,
+            "mape_continuity_only": 2.9394
+          },
+          "mean28": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9534,
+            "all_days_wape_no_exclusion": 0.9669,
+            "sale_day_wape": 0.7391,
+            "mase_mean": 1.2912,
+            "mase_median": 0.7694,
+            "weekly_wape": 0.5322,
+            "bias_all_days": -0.0866,
+            "bias_sale_days": -0.301,
+            "mape_continuity_only": 2.4277
+          },
+          "median28": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.8484,
+            "all_days_wape_no_exclusion": 0.8497,
+            "sale_day_wape": 0.7562,
+            "mase_mean": 1.1883,
+            "mase_median": 0.6666,
+            "weekly_wape": 0.6039,
+            "bias_all_days": -0.5342,
+            "bias_sale_days": -0.6265,
+            "mape_continuity_only": 1.1764
+          },
+          "croston": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9409,
+            "all_days_wape_no_exclusion": 1.0946,
+            "sale_day_wape": 0.7351,
+            "mase_mean": 1.7505,
+            "mase_median": 0.8018,
+            "weekly_wape": 0.5252,
+            "bias_all_days": -0.1435,
+            "bias_sale_days": -0.3493,
+            "mape_continuity_only": 2.3609
+          },
+          "sba": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.934,
+            "all_days_wape_no_exclusion": 1.0839,
+            "sale_day_wape": 0.7333,
+            "mase_mean": 1.7311,
+            "mase_median": 0.7912,
+            "weekly_wape": 0.5236,
+            "bias_all_days": -0.1649,
+            "bias_sale_days": -0.3656,
+            "mape_continuity_only": 2.2999
+          },
+          "v1": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9321,
+            "all_days_wape_no_exclusion": 0.9454,
+            "sale_day_wape": 0.7342,
+            "mase_mean": 1.2767,
+            "mase_median": 0.75,
+            "weekly_wape": 0.5293,
+            "bias_all_days": -0.1054,
+            "bias_sale_days": -0.3033,
+            "mape_continuity_only": 2.3428
+          },
+          "v2": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9403,
+            "all_days_wape_no_exclusion": 0.9537,
+            "sale_day_wape": 0.7342,
+            "mase_mean": 1.2816,
+            "mase_median": 0.7578,
+            "weekly_wape": 0.5306,
+            "bias_all_days": -0.096,
+            "bias_sale_days": -0.3021,
+            "mape_continuity_only": 2.3818
+          },
+          "v3": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9403,
+            "all_days_wape_no_exclusion": 0.9537,
+            "sale_day_wape": 0.7342,
+            "mase_mean": 1.2816,
+            "mase_median": 0.7578,
+            "weekly_wape": 0.5306,
+            "bias_all_days": -0.096,
+            "bias_sale_days": -0.3021,
+            "mape_continuity_only": 2.3818
+          },
+          "v4": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9074,
+            "all_days_wape_no_exclusion": 0.9209,
+            "sale_day_wape": 0.7549,
+            "mase_mean": 1.2443,
+            "mase_median": 0.7308,
+            "weekly_wape": 0.5322,
+            "bias_all_days": -0.0866,
+            "bias_sale_days": -0.2391,
+            "mape_continuity_only": 2.5923
+          },
+          "v5": {
+            "n_pairs": 2400,
+            "n_pairs_scored_all_days": 2184,
+            "n_sale_day_slots": 10809,
+            "all_days_wape": 0.9293,
+            "all_days_wape_no_exclusion": 0.9434,
+            "sale_day_wape": 0.7277,
+            "mase_mean": 1.3202,
+            "mase_median": 0.7831,
+            "weekly_wape": 0.5152,
+            "bias_all_days": -0.0925,
+            "bias_sale_days": -0.2941,
+            "mape_continuity_only": 2.3789
+          }
+        }
+      },
+      "fast_movers": {
+        "exclusions": {
+          "pairs": 1833,
+          "excluded_zero_actual_window": 9,
+          "excluded_mase_scale_zero": 0
+        },
+        "methods": {
+          "taal": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 1.0292,
+            "all_days_wape_no_exclusion": 1.0372,
+            "sale_day_wape": 0.7854,
+            "mase_mean": 1.1424,
+            "mase_median": 0.935,
+            "weekly_wape": 0.5891,
+            "bias_all_days": 0.1891,
+            "bias_sale_days": -0.0548,
+            "mape_continuity_only": 3.318
+          },
+          "seasonal_naive": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 1.0271,
+            "all_days_wape_no_exclusion": 1.0292,
+            "sale_day_wape": 0.9657,
+            "mase_mean": 1.1483,
+            "mase_median": 0.9468,
+            "weekly_wape": 0.5855,
+            "bias_all_days": -0.0341,
+            "bias_sale_days": -0.0956,
+            "mape_continuity_only": 2.9573
+          },
+          "mean28": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9278,
+            "all_days_wape_no_exclusion": 0.9334,
+            "sale_day_wape": 0.7304,
+            "mase_mean": 1.0287,
+            "mase_median": 0.7846,
+            "weekly_wape": 0.5042,
+            "bias_all_days": -0.065,
+            "bias_sale_days": -0.2624,
+            "mape_continuity_only": 2.4829
+          },
+          "median28": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.8314,
+            "all_days_wape_no_exclusion": 0.8327,
+            "sale_day_wape": 0.7302,
+            "mase_mean": 0.9459,
+            "mase_median": 0.697,
+            "weekly_wape": 0.5617,
+            "bias_all_days": -0.4847,
+            "bias_sale_days": -0.5859,
+            "mape_continuity_only": 1.1977
+          },
+          "croston": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9091,
+            "all_days_wape_no_exclusion": 0.9136,
+            "sale_day_wape": 0.7248,
+            "mase_mean": 1.0259,
+            "mase_median": 0.7899,
+            "weekly_wape": 0.4965,
+            "bias_all_days": -0.133,
+            "bias_sale_days": -0.3173,
+            "mape_continuity_only": 2.3881
+          },
+          "sba": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9024,
+            "all_days_wape_no_exclusion": 0.9068,
+            "sale_day_wape": 0.7227,
+            "mase_mean": 1.0189,
+            "mase_median": 0.7793,
+            "weekly_wape": 0.4952,
+            "bias_all_days": -0.1547,
+            "bias_sale_days": -0.3344,
+            "mape_continuity_only": 2.3258
+          },
+          "v1": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9041,
+            "all_days_wape_no_exclusion": 0.9095,
+            "sale_day_wape": 0.7248,
+            "mase_mean": 1.0106,
+            "mase_median": 0.7655,
+            "weekly_wape": 0.5012,
+            "bias_all_days": -0.0857,
+            "bias_sale_days": -0.2649,
+            "mape_continuity_only": 2.3915
+          },
+          "v2": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9133,
+            "all_days_wape_no_exclusion": 0.9188,
+            "sale_day_wape": 0.7249,
+            "mase_mean": 1.0169,
+            "mase_median": 0.7738,
+            "weekly_wape": 0.5024,
+            "bias_all_days": -0.0753,
+            "bias_sale_days": -0.2637,
+            "mape_continuity_only": 2.4334
+          },
+          "v3": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9133,
+            "all_days_wape_no_exclusion": 0.9188,
+            "sale_day_wape": 0.7249,
+            "mase_mean": 1.0169,
+            "mase_median": 0.7738,
+            "weekly_wape": 0.5024,
+            "bias_all_days": -0.0753,
+            "bias_sale_days": -0.2637,
+            "mape_continuity_only": 2.4334
+          },
+          "v4": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.8789,
+            "all_days_wape_no_exclusion": 0.8845,
+            "sale_day_wape": 0.7465,
+            "mase_mean": 0.9762,
+            "mase_median": 0.7416,
+            "weekly_wape": 0.5042,
+            "bias_all_days": -0.065,
+            "bias_sale_days": -0.1974,
+            "mape_continuity_only": 2.6499
+          },
+          "v5": {
+            "n_pairs": 1833,
+            "n_pairs_scored_all_days": 1824,
+            "n_sale_day_slots": 9636,
+            "all_days_wape": 0.9011,
+            "all_days_wape_no_exclusion": 0.9055,
+            "sale_day_wape": 0.7193,
+            "mase_mean": 1.0156,
+            "mase_median": 0.7882,
+            "weekly_wape": 0.4878,
+            "bias_all_days": -0.0759,
+            "bias_sale_days": -0.2577,
+            "mape_continuity_only": 2.4178
+          }
+        }
+      }
+    }
+  },
+  "decision_rule": {
+    "primary_candidate": "v4",
+    "label": "candidate, not shipped",
+    "selected_on": "lowest all-days WAPE on TUNE origins",
+    "tune_all_days_wape": {
+      "v1": 0.9896,
+      "v2": 0.9961,
+      "v3": 0.9961,
+      "v4": 0.9657,
+      "v5": 0.9899
+    },
+    "report_all_days_wape": {
+      "taal": 1.119,
+      "seasonal_naive": 0.9928,
+      "mean28": 0.9068,
+      "median28": 0.8184,
+      "croston": 0.8898,
+      "sba": 0.8834,
+      "v1": 0.8823,
+      "v2": 0.892,
+      "v3": 0.892,
+      "v4": 0.8569,
+      "v5": 0.8767
+    },
+    "beats_unchanged_taal": true,
+    "beats_every_baseline": false,
+    "best_baseline_on_report": "median28",
+    "margin_vs_taal": 0.2621,
+    "margin_vs_best_baseline": -0.0385,
+    "meets_pre_registered_rule": false,
+    "others_descriptive": {
+      "v1": {
+        "beats_taal": true,
+        "beats_every_baseline": false
+      },
+      "v2": {
+        "beats_taal": true,
+        "beats_every_baseline": false
+      },
+      "v3": {
+        "beats_taal": true,
+        "beats_every_baseline": false
+      },
+      "v4": {
+        "beats_taal": true,
+        "beats_every_baseline": false
+      },
+      "v5": {
+        "beats_taal": true,
+        "beats_every_baseline": false
+      }
+    }
+  },
+  "taal_beats_baseline_lower_is_better": {
+    "TUNE": {
+      "all": {
+        "seasonal_naive": {
+          "all_days_wape": false,
+          "sale_day_wape": true,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        }
+      },
+      "fast_movers": {
+        "seasonal_naive": {
+          "all_days_wape": true,
+          "sale_day_wape": true,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": true,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        }
+      }
+    },
+    "REPORT": {
+      "all": {
+        "seasonal_naive": {
+          "all_days_wape": false,
+          "sale_day_wape": true,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        }
+      },
+      "fast_movers": {
+        "seasonal_naive": {
+          "all_days_wape": false,
+          "sale_day_wape": true,
+          "mase_mean": true,
+          "mase_median": true,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        }
+      }
+    },
+    "ALL": {
+      "all": {
+        "seasonal_naive": {
+          "all_days_wape": false,
+          "sale_day_wape": true,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        }
+      },
+      "fast_movers": {
+        "seasonal_naive": {
+          "all_days_wape": false,
+          "sale_day_wape": true,
+          "mase_mean": true,
+          "mase_median": true,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "mean28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "median28": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": true,
+          "mape_continuity_only": false
+        },
+        "croston": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        },
+        "sba": {
+          "all_days_wape": false,
+          "sale_day_wape": false,
+          "mase_mean": false,
+          "mase_median": false,
+          "weekly_wape": false,
+          "bias_all_days_abs": false,
+          "mape_continuity_only": false
+        }
+      }
+    }
+  },
+  "per_origin_all_days_wape": {
+    "taal": {
+      "2011-10-14": 1.4491,
+      "2011-10-21": 1.5046,
+      "2011-10-28": 1.3463,
+      "2011-11-04": 1.0959,
+      "2011-11-11": 1.0356,
+      "2011-11-18": 1.144,
+      "2011-11-25": 1.199,
+      "2011-12-02": 1.1145
+    },
+    "seasonal_naive": {
+      "2011-10-14": 1.0383,
+      "2011-10-21": 1.2277,
+      "2011-10-28": 1.1949,
+      "2011-11-04": 1.0802,
+      "2011-11-11": 0.9053,
+      "2011-11-18": 1.1165,
+      "2011-11-25": 1.0172,
+      "2011-12-02": 0.9498
+    },
+    "mean28": {
+      "2011-10-14": 1.0683,
+      "2011-10-21": 1.1647,
+      "2011-10-28": 0.995,
+      "2011-11-04": 0.8655,
+      "2011-11-11": 0.845,
+      "2011-11-18": 0.8977,
+      "2011-11-25": 0.9603,
+      "2011-12-02": 0.935
+    },
+    "median28": {
+      "2011-10-14": 0.8849,
+      "2011-10-21": 0.9312,
+      "2011-10-28": 0.8778,
+      "2011-11-04": 0.8533,
+      "2011-11-11": 0.8268,
+      "2011-11-18": 0.8032,
+      "2011-11-25": 0.8157,
+      "2011-12-02": 0.8258
+    },
+    "croston": {
+      "2011-10-14": 1.036,
+      "2011-10-21": 1.1462,
+      "2011-10-28": 0.9881,
+      "2011-11-04": 0.8837,
+      "2011-11-11": 0.8592,
+      "2011-11-18": 0.8834,
+      "2011-11-25": 0.9272,
+      "2011-12-02": 0.8957
+    },
+    "sba": {
+      "2011-10-14": 1.0268,
+      "2011-10-21": 1.1338,
+      "2011-10-28": 0.9811,
+      "2011-11-04": 0.8804,
+      "2011-11-11": 0.8559,
+      "2011-11-18": 0.8768,
+      "2011-11-25": 0.9181,
+      "2011-12-02": 0.8885
+    },
+    "v1": {
+      "2011-10-14": 1.0372,
+      "2011-10-21": 1.1382,
+      "2011-10-28": 0.9856,
+      "2011-11-04": 0.8567,
+      "2011-11-11": 0.8318,
+      "2011-11-18": 0.8784,
+      "2011-11-25": 0.9317,
+      "2011-12-02": 0.8965
+    },
+    "v2": {
+      "2011-10-14": 1.0509,
+      "2011-10-21": 1.1492,
+      "2011-10-28": 0.9875,
+      "2011-11-04": 0.859,
+      "2011-11-11": 0.836,
+      "2011-11-18": 0.8844,
+      "2011-11-25": 0.9435,
+      "2011-12-02": 0.9138
+    },
+    "v3": {
+      "2011-10-14": 1.0509,
+      "2011-10-21": 1.1492,
+      "2011-10-28": 0.9875,
+      "2011-11-04": 0.859,
+      "2011-11-11": 0.836,
+      "2011-11-18": 0.8844,
+      "2011-11-25": 0.9435,
+      "2011-12-02": 0.9138
+    },
+    "v4": {
+      "2011-10-14": 1.0135,
+      "2011-10-21": 1.122,
+      "2011-10-28": 0.9647,
+      "2011-11-04": 0.8249,
+      "2011-11-11": 0.7959,
+      "2011-11-18": 0.8588,
+      "2011-11-25": 0.9094,
+      "2011-12-02": 0.8746
+    },
+    "v5": {
+      "2011-10-14": 1.0201,
+      "2011-10-21": 1.148,
+      "2011-10-28": 0.9817,
+      "2011-11-04": 0.8666,
+      "2011-11-11": 0.8359,
+      "2011-11-18": 0.8803,
+      "2011-11-25": 0.9212,
+      "2011-12-02": 0.8777
+    }
+  },
+  "post_hoc_diagnostics": {
+    "group": "REPORT",
+    "actual_units_by_weekday": {
+      "0": 65570.0,
+      "1": 55567.0,
+      "2": 64100.0,
+      "3": 51793.0,
+      "4": 46111.0,
+      "5": 0.0,
+      "6": 25109.0
+    },
+    "weekdays_with_zero_actual": [
+      5
+    ],
+    "methods": {
+      "taal": {
+        "forecast_units_by_weekday": {
+          "0": 60367.2,
+          "1": 63050.1,
+          "2": 62819.2,
+          "3": 67882.0,
+          "4": 58560.2,
+          "5": 54754.4,
+          "6": 46877.0
+        },
+        "forecast_units_on_zero_actual_weekdays": 54754.4,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.9414
+      },
+      "seasonal_naive": {
+        "forecast_units_by_weekday": {
+          "0": 65131.0,
+          "1": 54855.0,
+          "2": 64623.0,
+          "3": 52439.0,
+          "4": 44693.0,
+          "5": 0.0,
+          "6": 29020.0
+        },
+        "forecast_units_on_zero_actual_weekdays": 0.0,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.9928
+      },
+      "mean28": {
+        "forecast_units_by_weekday": {
+          "0": 41805.8,
+          "1": 41805.8,
+          "2": 41805.8,
+          "3": 41805.8,
+          "4": 41805.8,
+          "5": 41805.8,
+          "6": 41805.8
+        },
+        "forecast_units_on_zero_actual_weekdays": 41805.8,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7712
+      },
+      "median28": {
+        "forecast_units_by_weekday": {
+          "0": 22946.5,
+          "1": 22946.5,
+          "2": 22946.5,
+          "3": 22946.5,
+          "4": 22946.5,
+          "5": 22946.5,
+          "6": 22946.5
+        },
+        "forecast_units_on_zero_actual_weekdays": 22946.5,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7439
+      },
+      "croston": {
+        "forecast_units_by_weekday": {
+          "0": 38800.3,
+          "1": 38800.3,
+          "2": 38800.3,
+          "3": 38800.3,
+          "4": 38800.3,
+          "5": 38800.3,
+          "6": 38800.3
+        },
+        "forecast_units_on_zero_actual_weekdays": 38800.3,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7639
+      },
+      "sba": {
+        "forecast_units_by_weekday": {
+          "0": 37830.3,
+          "1": 37830.3,
+          "2": 37830.3,
+          "3": 37830.3,
+          "4": 37830.3,
+          "5": 37830.3,
+          "6": 37830.3
+        },
+        "forecast_units_on_zero_actual_weekdays": 37830.3,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7607
+      },
+      "v1": {
+        "forecast_units_by_weekday": {
+          "0": 42080.4,
+          "1": 44125.7,
+          "2": 43716.5,
+          "3": 47697.1,
+          "4": 40515.3,
+          "5": 37394.6,
+          "6": 31124.0
+        },
+        "forecast_units_on_zero_actual_weekdays": 37394.6,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7609
+      },
+      "v2": {
+        "forecast_units_by_weekday": {
+          "0": 41943.1,
+          "1": 42965.7,
+          "2": 42761.1,
+          "3": 44751.5,
+          "4": 41160.5,
+          "5": 39600.2,
+          "6": 36464.9
+        },
+        "forecast_units_on_zero_actual_weekdays": 39600.2,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7635
+      },
+      "v3": {
+        "forecast_units_by_weekday": {
+          "0": 41943.1,
+          "1": 42965.7,
+          "2": 42761.1,
+          "3": 44751.5,
+          "4": 41160.5,
+          "5": 39600.2,
+          "6": 36464.9
+        },
+        "forecast_units_on_zero_actual_weekdays": 39600.2,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7635
+      },
+      "v4": {
+        "forecast_units_by_weekday": {
+          "0": 47342.7,
+          "1": 46621.9,
+          "2": 48331.3,
+          "3": 52051.2,
+          "4": 44115.9,
+          "5": 20902.9,
+          "6": 33274.6
+        },
+        "forecast_units_on_zero_actual_weekdays": 20902.9,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7891
+      },
+      "v5": {
+        "forecast_units_by_weekday": {
+          "0": 42185.3,
+          "1": 44219.3,
+          "2": 43874.6,
+          "3": 47873.9,
+          "4": 40649.8,
+          "5": 37479.3,
+          "6": 31276.0
+        },
+        "forecast_units_on_zero_actual_weekdays": 37479.3,
+        "all_days_wape_excluding_zero_actual_weekdays": 0.7551
+      }
+    },
+    "by_taal_fallback": {
+      "group": "REPORT",
+      "taal_intermittent_fallback": {
+        "n_pairs": 231,
+        "methods": {
+          "taal": {
+            "all_days_wape": 3.3668,
+            "bias_all_days": 2.5362,
+            "sale_day_wape": 1.3138,
+            "bias_sale_days": 0.4831
+          },
+          "mean28": {
+            "all_days_wape": 1.201,
+            "bias_all_days": -0.2596,
+            "sale_day_wape": 0.8218,
+            "bias_sale_days": -0.6387
+          },
+          "v1": {
+            "all_days_wape": 1.201,
+            "bias_all_days": -0.2596,
+            "sale_day_wape": 0.8218,
+            "bias_sale_days": -0.6387
+          },
+          "v4": {
+            "all_days_wape": 1.1909,
+            "bias_all_days": -0.2596,
+            "sale_day_wape": 0.8491,
+            "bias_sale_days": -0.6014
+          }
+        }
+      },
+      "taal_seasonal_model": {
+        "n_pairs": 969,
+        "methods": {
+          "taal": {
+            "all_days_wape": 0.9788,
+            "bias_all_days": 0.2073,
+            "sale_day_wape": 0.7557,
+            "bias_sale_days": -0.0158
+          },
+          "mean28": {
+            "all_days_wape": 0.8885,
+            "bias_all_days": -0.0376,
+            "sale_day_wape": 0.705,
+            "bias_sale_days": -0.2211
+          },
+          "v1": {
+            "all_days_wape": 0.8624,
+            "bias_all_days": -0.0582,
+            "sale_day_wape": 0.696,
+            "bias_sale_days": -0.2246
+          },
+          "v4": {
+            "all_days_wape": 0.8361,
+            "bias_all_days": -0.0376,
+            "sale_day_wape": 0.7195,
+            "bias_sale_days": -0.1541
+          }
+        }
+      }
+    }
+  },
+  "diagnostics": {
+    "share_report_pairs_taal_intermittent_fallback": 0.1925,
+    "excluded_first_sale_within_28d": {
+      "series_origin_pairs": 0
+    },
+    "n_pairs_total": 2400
+  }
+}
