@@ -217,12 +217,21 @@ sup { font-size: .6em; }
 .s12 .fn { position: absolute; left: 120px; right: 120px; top: 882px; }
 
 /* slide 13 */
-.s13 .grid { position: absolute; left: 120px; top: 290px; width: 1680px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
-.s13 .c { padding: 38px 40px; height: 600px; display: flex; flex-direction: column; }
-.s13 .c .n { font: 500 96px/1 var(--serif); color: var(--terra); }
-.s13 h3 { font: 700 38px/1.15 var(--sans); margin: 20px 0 16px; }
-.s13 p { font: 400 32px/1.4 var(--sans); color: #4a554e; margin: 0 0 14px; }
-.s13 .tag { display: inline-block; font: 600 20px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--sage); border: 1.5px solid var(--sage); border-radius: 8px; padding: 8px 12px; margin-top: auto; align-self: flex-start; }
+.s13 .grid { position: absolute; left: 120px; top: 262px; width: 1680px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.s13 .c { padding: 22px 32px; height: 262px; display: flex; flex-direction: column; }
+.s13 .c .hd { display: flex; align-items: baseline; gap: 16px; }
+.s13 .c .n { font: 500 52px/1 var(--serif); color: var(--terra); }
+.s13 h3 { font: 700 32px/1.15 var(--sans); margin: 0; }
+.s13 p { font: 400 25px/1.32 var(--sans); color: #4a554e; margin: 10px 0 0; }
+.s13 .tag { display: inline-block; font: 600 18px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--sage); border: 1.5px solid var(--sage); border-radius: 8px; padding: 6px 10px; margin-top: auto; align-self: flex-start; }
+.s13 .lc { position: absolute; left: 120px; top: 552px; width: 1680px; padding: 18px 32px 14px; }
+.s13 .lc table { width: 100%; border-collapse: collapse; margin-top: 8px; font: 400 23px/1.25 var(--sans); }
+.s13 .lc th { text-align: left; font: 600 18px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--sage); padding: 0 12px 8px 0; }
+.s13 .lc td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); color: #4a554e; vertical-align: top; }
+.s13 .lc td:first-child { font-weight: 700; color: var(--ink); width: 270px; }
+.s13 .lc td:nth-child(2) { width: 430px; }
+.s13 .lc td:nth-child(3) { width: 430px; }
+.s13 .lc td:last-child { color: var(--ink); font-weight: 500; }
 
 /* slide 14 */
 .s14 .eyebrow { position: absolute; left: 120px; top: 150px; }
@@ -694,10 +703,22 @@ sup { font-size: .6em; }
   <div class="kicker">Additional details · future development</div>
   <h2 class="title">Next: a real pilot, real photos, more tenants.</h2>
   <div class="grid">
-    <div class="card c"><div class="n">1</div><h3>A pre-registered pilot</h3><p>One week, 50–60 consented testers, 40–50% holdout. Metric pre-registered in docs/pilot.md.</p><span class="tag">Designed</span></div>
-    <div class="card c"><div class="n">2</div><h3>Vision on real photos</h3><p>Harness built. Real camera photos are the missing input; 30/30 is on synthetic ones.</p><span class="tag">Harness built</span></div>
-    <div class="card c"><div class="n">3</div><h3>Multi-tenant BigQuery</h3><p>Tenant id on every table; the BigQuery path is built, flag off until a second tenant.</p><span class="tag">Built, flag off</span></div>
+    <div class="card c"><div class="hd"><div class="n">1</div><h3>A pre-registered pilot</h3></div><p>One week, 50–60 consented testers, 40–50% holdout. Metric pre-registered in docs/pilot.md.</p><span class="tag">Designed</span></div>
+    <div class="card c"><div class="hd"><div class="n">2</div><h3>Vision on real photos</h3></div><p>Harness built. Real camera photos are the missing input; 30/30 (14 Oct) is on synthetic ones.</p><span class="tag">Harness built</span></div>
+    <div class="card c"><div class="hd"><div class="n">3</div><h3>Multi-tenant BigQuery</h3></div><p>Tenant id on every table; the BigQuery path is built, flag off until a second tenant.</p><span class="tag">Built, flag off</span></div>
   </div>
+  <div class="card lc">
+    <div class="label">Learning curve · measured, changed, re-measured</div>
+    <table>
+      <tr><th>Measured</th><th>Before</th><th>What we changed</th><th>After</th></tr>
+      <tr><td>Chat p95, same 24 prompts</td><td>8.44 s</td><td>stock prefetch, Model Armor client reuse, minimal thinking</td><td>4.36 s, Model Armor on (14 Oct)</td></tr>
+      <tr><td>Approve, warm</td><td>3.3 s (12 Oct)</td><td>offer copy generated ahead of Approve</td><td>1.4–1.7 s (13 Oct, five samples)</td></tr>
+      <tr><td>Live planner</td><td>no_play, 110.9 s (20 Sep, pre-switch)</td><td>gap lookup moved into code</td><td>22 of 24 model-authored (11 Oct)</td></tr>
+      <tr><td>Planner evalsets</td><td>43/46 match, 1/46 trajectory (old recordings)</td><td>re-recorded on gemini-3.5-flash</td><td>46/46, 18/46: regression guard, not accuracy</td></tr>
+      <tr><td>Adversarial eval</td><td>10 of 60 attack runs got through</td><td>code-only fixes</td><td>3 fixed, re-ran clean; V6 not fixed</td></tr>
+    </table>
+  </div>
+  <div class="note" style="position:absolute; left:120px; right:120px; top:986px; font-size:20px">Rows are copied from docs/learning_curve.md, which also lists the changes that made a number worse. Pre-switch means gemini-2.5-flash.</div>
   <div class="foot"><span></span><span>17 / 18</span></div>
 </section>
 
