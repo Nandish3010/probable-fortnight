@@ -75,6 +75,49 @@ tenant). The aggregate level is about right (mean forecast 51.4 against 53.2 act
 the weakness is the daily shape of lumpy demand, not the level. Both metrics score only days with a
 sale, so neither penalises forecasting a sale on a day with none.
 
+## Baselines (added 2026-10-14)
+
+The 0.83 and 3.79 above had nothing next to them. Two naive baselines were scored on exactly the same
+series-days with the same scoring function. Raw numbers, method definitions and input hashes:
+[`eval/raw/external_backtest_baselines_2026-10-14.json`](raw/external_backtest_baselines_2026-10-14.json);
+code: `uv run python -m harness.external_backtest --baselines --date 2026-10-14` (deterministic, no
+random component, no network, no model calls); `tests/unit/test_external_backtest_baselines.py`
+checks both baselines against hand-computed values and checks that the committed numbers reproduce.
+
+| Method | WAPE (pooled) | Mean MAPE over origins | Scored series-days |
+|---|---|---|---|
+| Taal forecaster (`SeriesModel`, unchanged) | **0.826** | **3.786** | 10,809 |
+| Seasonal-naive (same weekday last week) | 0.979 | 2.939 | 10,809 |
+| Trailing 28-day mean (flat, 28 calendar days before the origin) | **0.739** | **2.428** | 10,809 |
+
+- **Same protocol for all three.** 300 SKU series, 8 rolling origins 7 days apart (2011-10-14 to
+  2011-12-02), 7-day horizon (forecast days origin .. origin+6). Train/test boundary: for each origin
+  O everything a method uses is dated strictly before O; the scored days are O to O+6. Scored only
+  where actual units > 0 (a day with no sale is not scored, for every method). Taal's row reproduces
+  the headline figures above (WAPE 0.8260 and 10,809 series-days; MAPE 3.7861 against 3.79).
+- **No look-ahead.** Seasonal-naive reads day d-7, which is always before the origin for a 7-day horizon;
+  the 28-day mean reads days O-28 to O-1 only. A day with no row counts as 0 units for both, because
+  that is what a day with no row means in this data.
+- **Exclusions: 0.** A (series, origin) would have been dropped for all three methods if the series'
+  first sale fell less than 28 days before the origin (no full last-week or 28-day window yet). None
+  did: all 2,400 series-origin pairs were scored by all three methods.
+- **MAPE is the existing convention** (mean over origins of the per-origin mean absolute percentage
+  error); the WAPE and MAPE columns are pooled over the same 10,809 series-days.
+- **What the table says.** On WAPE Taal is 15.7% lower than seasonal-naive (0.826 against 0.979) and
+  11.8% higher than the trailing 28-day mean (0.826 against 0.739). On MAPE Taal is higher than both
+  baselines (3.79 against 2.94 and 2.43). **Taal does not beat both baselines on this dataset, so this
+  result is not promoted to the README table.** It beats last-week-same-day on volume-weighted error
+  only, and loses to a flat 28-day average on both metrics.
+- **Why a flat mean wins here (consistent with the data, not separately proven).** Weekday structure
+  carries little signal in lumpy wholesale demand, so seasonal-naive is noisy. `SeriesModel` sets its
+  level from days that had a sale only, while the trailing mean divides by all 28 days; a sensitivity
+  variant that also averages only over days with a sale (raw JSON, `trailing_28d_mean_sale_days_only`)
+  scores WAPE 0.816 and MAPE 3.688, about 1% and 3% below Taal. Because only days with a sale are scored,
+  methods that forecast lower do better on this metric: pooled bias (sum of forecast minus actual,
+  over total actual) is -0.30 for the 28-day mean, -0.13 for seasonal-naive and -0.03 for Taal.
+- This is one retailer, one 8-week window and one scoring rule; it says nothing about grocery
+  dark-store demand, which remains untested here.
+
 ## Caveats
 
 - A MAPE of 3.79 and a WAPE of 0.83 say the forecaster is poor at daily, per-SKU prediction on lumpy wholesale demand.
