@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import os
 from datetime import date
 from typing import Any
@@ -27,6 +28,13 @@ CONFIDENCE_THRESHOLD = 0.7
 SCHEMA = json.loads((ROOT / "docs" / "schemas" / "vision_intake.schema.json").read_text(encoding="utf-8"))
 _VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, format_checker=jsonschema.FormatChecker())
 FIXTURES = ROOT / "fixtures" / "photos"
+LOG = logging.getLogger(__name__)
+# V3 (adversarial eval, 14 Oct 2026). Largest facings count in any recorded read: 6 over the 30 synthetic
+# photos (true max 5), 4 on the staged pallets and 24 on the low-confidence test fixture
+# (fixtures/photos/pallet_lowconf_test.json); 60 is 2.5x the largest of those and far below the 240-500
+# a photographed stock table produced. Above it a human confirms, nothing is auto-accepted.
+MAX_PLAUSIBLE_FACINGS = 60
+SKU_CONFIDENCE_FLOOR = 0.3
 
 PROMPT = (
     "You are reading a retail pallet or shelf photo for a grocery dark store in Bengaluru. For every distinct "
@@ -54,6 +62,47 @@ def annotate(result: dict[str, Any], names: dict[str, str], threshold: float = C
     result["pass"] = "two_pass" if any(r["date_confidence"] < threshold for r in result["rows"]) else "single"
     _VALIDATOR.validate(result)
     return result
+
+
+def drop_unknown_skus(result: dict[str, Any], names: dict[str, str]) -> list[str]:
+    """V6: a row whose SKU is not in the catalogue given to intake is a model invention. It cannot be
+    confirmed into stock (commit_rows skips unknown SKUs anyway), so it is dropped from the result and
+    logged rather than shown as a real product; the output schema is closed, so no extra field can
+    carry the reason. Limit, stated plainly: the recorded V6 invention (SKU-MILK-BREAD-400G) is a REAL
+    catalogue SKU (every SKU is stocked at every node in the seeded tenant, so a per-node list adds
+    nothing). Code cannot know what is in the photo, so that row is not dropped: it stays flagged
+    (sku_confidence 0.4 < 0.7, date null) and cannot reach inventory unconfirmed.
+    Returns the dropped SKUs."""
+    kept, dropped = [], []
+    for r in result["rows"]:
+        (kept if r["sku_guess"] in names else dropped).append(r)
+    if dropped:
+        LOG.warning("vision: dropped rows with SKUs outside the catalogue: %s", [r["sku_guess"] for r in dropped])
+    result["rows"] = kept
+    return [r["sku_guess"] for r in dropped]
+
+
+def flag_implausible(result: dict[str, Any], names: dict[str, str]) -> None:
+    """V3 and V6: deterministic plausibility gate on a LIVE read, applied after `annotate`. Forces
+    needs_confirmation (with the reason in the confirmation question) for: a facings count above
+    MAX_PLAUSIBLE_FACINGS; sku_confidence below SKU_CONFIDENCE_FLOOR; and a read in which every
+    confidence of every row is exactly 1.0 (a photographed screen or a printed claim of certainty;
+    real reads of real photos give 0.9-0.99, see eval/raw/adversarial_2026-10-14 VC1/VC2). Never
+    un-flags a row; the model prompt and schema are untouched."""
+    rows = result["rows"]
+    all_certain = bool(rows) and all(r[k] == 1.0 for r in rows for k in ("sku_confidence", "date_confidence", "count_confidence"))
+    for r in rows:
+        why = []
+        if int(r["facings_count"]) > MAX_PLAUSIBLE_FACINGS:
+            why.append(f"{r['facings_count']} facings is implausible (more than {MAX_PLAUSIBLE_FACINGS})")
+        if r["sku_confidence"] < SKU_CONFIDENCE_FLOOR:
+            why.append("SKU is a weak guess")
+        if all_certain:
+            why.append("every confidence is exactly 1.0, which a real read does not give")
+        if why:
+            r["needs_confirmation"] = True
+            r["confirmation_question"] = _question(r, names) + " Check: " + "; ".join(why) + "."
+    _VALIDATOR.validate(result)
 
 
 def _stub_rows(photo_ref: str | None, image_data_url: str | None, node_id: str) -> dict[str, Any]:
@@ -136,6 +185,10 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     recorded = photo_ref and not image_data_url and (FIXTURES / f"{photo_ref.rsplit('/', 1)[-1].rsplit('.', 1)[0]}.json").exists()
     if backend == "vertex" and not recorded:
         result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models)
+        drop_unknown_skus(result, names)
+        annotate(result, names)
+        flag_implausible(result, names)
+        return result
     elif backend == "vertex":
         # The three staged pallets have no image file in the repo, only their recorded Gemini reads
         # (fixtures/photos/README.md); the phone view labels them REPLAY. Only a real upload is live.

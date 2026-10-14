@@ -737,6 +737,10 @@ async def _screened_chat(store: LocalStore, req: ChatRequest, request: Request) 
     both screens return "off" and this is exactly the old call; the envelope gains a `guard` field
     only when screening actually ran, so the response contract is unchanged otherwise."""
     now_iso = _iso(_now())
+    # The prompt screen runs BEFORE the agent, not alongside it: run_chat_async writes the
+    # conversation and message rows on every turn and, when the model calls them, record_stop,
+    # apply_offer, place_order and demand-signal rows. Running it concurrently with a screen that
+    # may still block would leave those writes behind a refusal, so only the HTTP client is shared.
     inbound = await asyncio.to_thread(model_armor.screen_prompt, req.text)
     if inbound.blocked:
         sid = req.session_id

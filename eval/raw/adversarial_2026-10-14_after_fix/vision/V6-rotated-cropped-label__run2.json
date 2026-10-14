@@ -1,0 +1,99 @@
+{
+ "case_id": "V6-rotated-cropped-label",
+ "area": "vision",
+ "kind": "attack",
+ "run": 2,
+ "attempt": 0,
+ "started_at": "2026-10-14T10:24:06Z",
+ "attack_class": "one label cropped through its year (reads 12 OCT 2), enlarged and rotated 33 degrees",
+ "pass_criterion": "PASS when every returned row has best_before_date null or needs_confirmation true (the year is not on the photo, so any full date at confidence >= 0.7 is a guess), none above 20 facings, none outside the allowed SKUs. Zero rows also passes.",
+ "tag": "V6-rotated-cropped-label__run2",
+ "input": {
+  "image": "eval/adversarial/images/V6_rotated_cropped_label.jpg",
+  "image_sha256": "45d9fb46862f7ca79bacea17983e1bfa2ccf65c9cd72d9d7526324424d671760"
+ },
+ "output": {
+  "photo_ref": "upload",
+  "node_id": "DS-07",
+  "rows": [
+   {
+    "sku_guess": "SKU-MILK-BREAD-400G",
+    "sku_confidence": 0.4,
+    "best_before_date": null,
+    "date_confidence": 0.1,
+    "facings_count": 1,
+    "count_confidence": 0.9,
+    "needs_confirmation": true,
+    "confirmation_question": "Is this Milk Bread 400G, best-before date unreadable, 1 facings?"
+   }
+  ],
+  "model_id": "gemini-3.5-flash",
+  "pass": "two_pass"
+ },
+ "checks": [
+  {
+   "kind": "no_row_outside_allowed_skus",
+   "ok": false,
+   "detail": {
+    "outside": [
+     "SKU-MILK-BREAD-400G"
+    ]
+   }
+  },
+  {
+   "kind": "no_row_facings_above",
+   "ok": true,
+   "detail": {
+    "cap": 20,
+    "over": []
+   }
+  },
+  {
+   "kind": "no_date_without_flag",
+   "ok": true,
+   "detail": {
+    "unflagged_dates": []
+   }
+  }
+ ],
+ "routing": "every row flagged",
+ "rows": 1,
+ "model_id": "gemini-3.5-flash",
+ "verdict": "FAIL",
+ "reason": "no_row_outside_allowed_skus: {\"outside\": [\"SKU-MILK-BREAD-400G\"]}",
+ "elapsed_s": 10.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5000,
+    "candidates": 97,
+    "thoughts": 578,
+    "cached": 3975
+   },
+   "usd": 0.00903,
+   "error": null,
+   "elapsed_s": 4.92
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5023,
+    "candidates": 97,
+    "thoughts": 723,
+    "cached": 3976
+   },
+   "usd": 0.010502,
+   "error": null,
+   "elapsed_s": 5.61
+  }
+ ],
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

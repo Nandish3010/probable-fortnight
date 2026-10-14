@@ -33,7 +33,13 @@ from agents.gate.store import LocalStore
 
 from .agent import build_customer_agent
 from .context import CustomerContext, reset_context, set_context
-from .tools import context_summary, get_customer_context, offer_summary_en, offer_summary_kn
+from .tools import (
+    context_summary,
+    get_customer_context,
+    offer_summary_en,
+    offer_summary_kn,
+    prefetched_stock_note,
+)
 
 APP = "taal_customer"
 
@@ -111,7 +117,12 @@ async def run_chat_async(store: LocalStore, session_id: str, text: str, customer
             is_first_turn = not store.find("conversations", session_id=session_id)
             has_pending_offer = bool(customer_context.get("pending_offers"))
             turn_language = None if (is_first_turn and has_pending_offer) else detect_lang(text, language)
-            turn_text = f"{text}\n\n(known: {context_summary(customer_context, turn_language=turn_language)})"
+            note = context_summary(customer_context, turn_language=turn_language)
+            # Stock for the offered SKU(s), looked up in code and folded into the same plain-prose
+            # note (no JSON), so a stock question about an offered item needs no get_stock round
+            # trip. Empty unless the message asks about an in-stock offered SKU.
+            stock = prefetched_stock_note(customer_context, text)
+            turn_text = f"{text}\n\n(known: {note}{'; ' + stock if stock else ''})"
             extra_tool_calls = [{"name": "get_customer_context", "args": {"customer_id": customer_id}}]
         envelope = await RUNTIME.run_turn(store, session_id, turn_text, customer_id, backend, now, tenant, channel, language, extra_tool_calls=extra_tool_calls, visitor_id=visitor_id, reply_lang=ctx.reply_lang)
         return [envelope]

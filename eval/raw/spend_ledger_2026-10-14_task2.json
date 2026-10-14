@@ -1,0 +1,129 @@
+{
+ "task": "Task 2 (re-record and re-run the 46-case planner evalset on gemini-3.5-flash, prompt v7, plus cheap cards)",
+ "date": "2026-10-14",
+ "model": "gemini-3.5-flash (Vertex AI, asia-south1)",
+ "prices": "config/models.toml [pricing]: $1.65 per 1M input tokens, $9.90 per 1M output tokens (thinking tokens billed as output), cached input at 10% of the input price; list prices, a modelled figure, not a billing-export number",
+ "cap_usd": 10.0,
+ "owner_total_for_tasks_2_and_3_usd": 15.0,
+ "runs": [
+  {
+   "run": "00_smoke_tea",
+   "what": "single-gap smoke test of credentials, tap and fallback detection (gap_tea_ds04, prompt v7); output discarded",
+   "command": "harness.record_planner_traces --concurrency 1 --gaps gap_tea_ds04",
+   "model_calls": 5,
+   "failed_calls": 0,
+   "models_requested": [
+    "gemini-3.5-flash"
+   ],
+   "models_that_answered": [
+    "gemini-3.5-flash"
+   ],
+   "fallback_model_used": false,
+   "tokens": {
+    "input": 39328,
+    "of_which_cached": 25525,
+    "output_candidates": 2993,
+    "output_thinking": 3132
+   },
+   "tokens_source": "usage_metadata of each model response, logged by the usage tap (model_calls_00_smoke_tea.jsonl); exact, not estimated",
+   "usd": 0.0876,
+   "cumulative_usd": 0.0876
+  },
+  {
+   "run": "01_record",
+   "what": "RUN 1, recording: one real planner run for each of the 46 evalset gaps; the expected trajectories of the re-recorded evalsets (eval/raw/planner_traces_2026-10-14/)",
+   "command": "harness.record_planner_traces --concurrency 2 --gaps <46 evalset gaps>",
+   "model_calls": 227,
+   "failed_calls": 0,
+   "models_requested": [
+    "gemini-3.5-flash"
+   ],
+   "models_that_answered": [
+    "gemini-3.5-flash"
+   ],
+   "fallback_model_used": false,
+   "tokens": {
+    "input": 1663663,
+    "of_which_cached": 1034521,
+    "output_candidates": 128267,
+    "output_thinking": 110836
+   },
+   "tokens_source": "usage_metadata of each model response, logged by the usage tap (model_calls_01_record.jsonl); exact, not estimated",
+   "usd": 3.5759,
+   "cumulative_usd": 3.6635
+  },
+  {
+   "run": "02_verify",
+   "what": "RUN 2, verification: adk eval of the 46 re-recorded evalsets against the live model (eval/raw/live_eval_2026-10-14/adk_vertex/)",
+   "command": "harness.run_evals (adk eval, inference parallelism lowered to 2 by the tap; observed max 1 model call in flight)",
+   "model_calls": 249,
+   "failed_calls": 0,
+   "models_requested": [
+    "gemini-3.5-flash"
+   ],
+   "models_that_answered": [
+    "gemini-3.5-flash"
+   ],
+   "fallback_model_used": false,
+   "tokens": {
+    "input": 1880771,
+    "of_which_cached": 1376241,
+    "output_candidates": 136425,
+    "output_thinking": 119286
+   },
+   "tokens_source": "usage_metadata of each model response, logged by the usage tap (model_calls_02_verify.jsonl); exact, not estimated",
+   "usd": 3.5911,
+   "cumulative_usd": 7.2546
+  },
+  {
+   "run": "03_vision",
+   "what": "vision card: 30 staged synthetic photos through agents.capture.vision.intake (eval/raw/live_eval_2026-10-14/vision_synthetic.json)",
+   "command": "harness.vision_synthetic_eval",
+   "model_calls": 30,
+   "failed_calls": 0,
+   "models_requested": [
+    "gemini-3.5-flash"
+   ],
+   "models_that_answered": [
+    "gemini-3.5-flash"
+   ],
+   "fallback_model_used": false,
+   "tokens": {
+    "input": 150030,
+    "of_which_cached": 0,
+    "output_candidates": 3216,
+    "output_thinking": 15825
+   },
+   "tokens_source": "usage_metadata of each response, recorded in vision_synthetic.json calls[]; exact",
+   "usd": 0.4361,
+   "cumulative_usd": 7.6907
+  },
+  {
+   "run": "04_chat",
+   "what": "chat latency card: 50 POST /chat calls to a local API process (eval/raw/customer_latency_2026-10-14/)",
+   "command": "uvicorn services.api.main:app + measure.py",
+   "model_calls": 96,
+   "failed_calls": 0,
+   "models_requested": [
+    "gemini-3.5-flash"
+   ],
+   "models_that_answered": [
+    "gemini-3.5-flash"
+   ],
+   "fallback_model_used": false,
+   "tokens": {
+    "input": 878615,
+    "of_which_cached": 686033,
+    "output_candidates": 13689,
+    "output_thinking": 14939
+   },
+   "tokens_source": "usage_metadata of each model response, logged by the usage tap (model_calls_04_chat.jsonl); exact, not estimated",
+   "usd": 0.7144,
+   "cumulative_usd": 8.4051
+  }
+ ],
+ "total_usd": 8.4051,
+ "remaining_of_task2_cap_usd": 1.5949,
+ "stopped_because": "a third planner run costs about $3.6 and would take Task 2 spend to about $12, over the $10 cap, so it was not started; the 190-persona agent simulation was not started (cost unknown, no margin)",
+ "tooling": "usage_tap_sitecustomize.py in this folder (copy to a scratch dir as sitecustomize.py and put that dir on PYTHONPATH; env TAAL_TAP_LOG, TAAL_TAP_CAP_USD, TAAL_TAP_PRIOR_USD) wraps every planner/chat model call, logs model requested, model_version reported by the server and usage_metadata, stops the process before a call that would pass the cap, and lowers adk eval parallelism to 2."
+}

@@ -9,6 +9,8 @@ over an in-memory MCP session.
 """
 from __future__ import annotations
 
+import functools
+import inspect
 import json
 import re
 import statistics
@@ -36,6 +38,40 @@ def _resolve_node(ctx, node_id: str | None) -> str:
         return node_id
     cust = _customer_profile(ctx, ctx.customer_id)
     return cust["home_node_id"] if cust else "DS-01"
+
+
+def _session_bound(fn):
+    """C8 (adversarial eval, 14 Oct 2026): every tool that reads or writes customer-specific data
+    (consent, offers, orders, context) takes a `customer_id` argument that the MODEL fills in, so a
+    chat user could make it write another customer's consent (record_stop(CUST-RAVI) withdrew a
+    stranger's marketing consent, 3/3). The session customer is the only customer a chat turn may
+    act for: a different id is refused here, in code, with a safe error naming the session customer
+    so the agent can retry with the right id. Nothing is read or written for the other id. The model
+    prompt is untouched. A missing/blank id is also refused (it is never defaulted: a wrong default
+    would act on the wrong customer)."""
+    def _mismatch(ctx, args, kwargs) -> dict | None:
+        given = kwargs.get("customer_id", args[_CID_POS[fn.__name__]] if len(args) > _CID_POS[fn.__name__] else None)
+        if given == ctx.customer_id:
+            return None
+        return {"ok": False, "code": "wrong_customer", "reason": f"customer_id must be the customer of this chat ({ctx.customer_id}); you can only act for that customer, never for another one. Retry with customer_id={ctx.customer_id} if the request is about the customer you are chatting with, otherwise decline."}
+    if inspect.iscoroutinefunction(fn):
+        @functools.wraps(fn)
+        async def awrapper(*args, **kwargs):
+            if (bad := _mismatch(current(), args, kwargs)) is not None:
+                return bad
+            return await fn(*args, **kwargs)
+        return awrapper
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if (bad := _mismatch(current(), args, kwargs)) is not None:
+            return bad
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+# Position of `customer_id` in each guarded tool's signature (for positional calls).
+_CID_POS = {"get_customer_context": 0, "apply_offer": 1, "negotiate_offer": 0, "place_order": 0, "record_stop": 0}
 
 
 def _customer_profile(ctx, customer_id: str) -> dict[str, Any] | None:
@@ -110,6 +146,7 @@ def _node_name(ctx, node_id: str) -> str | None:
     return re.sub(r"\s*\(.*\)\s*$", "", name) or None
 
 
+@_session_bound
 def get_customer_context(customer_id: str) -> dict:
     """Home node, language, pending offers (treated arm only), arms per play and marketing consent."""
     ctx = current()
@@ -167,6 +204,59 @@ def context_summary(context: dict, turn_language: str | None = None) -> str:
         status = "back in stock now" if m.get("now_in_stock") else "still not in stock"
         bits.append(f"previously asked about {what}, {status}")
     return "; ".join(bits)
+
+
+_STOCK_ASK_RE = re.compile(r"\b(in stock|available|availability|still (have|got)|is it there)\b", re.I)
+_SIZE_WORD_RE = re.compile(r"^\d+(g|kg|ml|l)$")
+
+
+def _asks_about(text: str, name: str) -> bool:
+    """True when the message names the product (any distinctive word of its catalogue name)."""
+    low = text.lower()
+    words = [w for w in re.findall(r"[a-z]+", name.lower()) if len(w) >= 4 and not _SIZE_WORD_RE.match(w)]
+    return any(re.search(rf"\b{re.escape(w)}s?\b", low) for w in words)
+
+
+def prefetched_stock_note(context: dict, text: str) -> str:
+    """Plain-prose stock for the SKUs in this customer's pending offers, when the message asks
+    about one of them (it names the product, or asks about availability or an add: button). Looked
+    up here, in code, with the same pure lookup get_stock uses (_stock_info), so the model can answer
+    a stock question about an offered SKU from the turn's own note instead of paying a tool round
+    trip. Only SKUs that are in stock or few_left are listed, and only as the same availability
+    band get_stock returns, never a count: an out-of-stock SKU is left out on purpose so the model
+    still calls get_stock, which records the unmet-demand signal, and find_substitutes. Other SKUs
+    are unaffected and still go through the get_stock tool. Returns "" when nothing applies."""
+    ctx = current()
+    offers = context.get("pending_offers") or []  # already consent- and arm-gated by get_customer_context
+    node_id = context["home_node_id"]
+    seen: list[str] = []
+    for o in offers:
+        for sku in (o.get("sku"), (o.get("mechanic_params") or {}).get("bundle_sku")):
+            if sku and sku not in seen:
+                seen.append(sku)
+    if not seen:
+        return ""
+    # A bare "is it in stock?" / "add:<sku>" refers to the offer (its first SKU) -- unless the message
+    # names some other catalogue product, whose stock is get_stock's job.
+    other = any(_asks_about(text, p.get("name", "")) for k, p in ctx.products.items() if k not in seen)
+    wants_any = not other and bool(_STOCK_ASK_RE.search(text) or text.lower().strip().startswith("add:"))
+    rows = []
+    for sku in seen:
+        info = _stock_info(ctx, sku, node_id)
+        name = info["name"]
+        if info["qty"] <= 0 or not (_asks_about(text, name) or (wants_any and sku == seen[0])):
+            continue
+        band = "only a few left" if _availability(info["qty"]) == "few_left" else "in stock"
+        bits = [f"{name} (sku {sku}) {band}"]
+        if info.get("list_price") is not None:
+            bits.append(f"list price \u20b9{float(info['list_price']):g}")
+        if info.get("expiry_date"):
+            bits.append(f"best before {info['expiry_date']}")
+        bits.append(f"cite as stock ref {info.get('batch_id') or f'{sku}@{node_id}'}")
+        rows.append(", ".join(bits))
+    if not rows:
+        return ""
+    return "stock for the offered item already checked this turn, so get_stock is not needed for it: " + "; ".join(rows)
 
 
 def offer_summary_en(offer: dict[str, Any], names: dict[str, str]) -> str:
@@ -309,6 +399,7 @@ def _refused(ctx, customer_id: str, code: str, reason: str) -> dict:
     return {"ok": False, "code": code, "reason": reason, "reply": REFUSAL.get(_reply_lang(ctx, customer_id), REFUSAL["en"])[code], "reply_en": REFUSAL["en"][code]}
 
 
+@_session_bound
 def apply_offer(play_id: str, customer_id: str) -> dict:
     """Whether this customer may redeem the play now: arm, consent, frequency cap, no stacking.
     A refusal carries a `code` and, for the customer-facing ones, the `reply` text to show."""
@@ -366,6 +457,7 @@ def _typical_qty(ctx, customer_id: str, sku: str, category: str) -> float | None
     return statistics.median(cat) if cat else None
 
 
+@_session_bound
 def negotiate_offer(customer_id: str, sku: str) -> dict:
     """A live, ad-hoc concession for a sku with no approved play targeting this customer -- the
     customer asked directly ("what offer can I get"), so unlike apply_offer (which only redeems
@@ -479,6 +571,7 @@ def _offer_play(ctx, customer_id: str, play_id: str, skus: set[str]) -> str | No
     return None
 
 
+@_session_bound
 async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id: str) -> dict:
     """Place the order through the MCP order mock. lines: [{sku, qty}], priced here from the
     catalogue, the play (if any) and any pending negotiate_offer for a line's sku (checked
@@ -543,6 +636,7 @@ async def place_order(customer_id: str, node_id: str, lines: list[dict], play_id
     return {"order_id": data["order_id"], "total_inr": float(data["total_inr"]), "lines": data["lines"], "reply": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"]), "reply_en": _confirmation(ctx, customer_id, data["order_id"], float(data["total_inr"]), data["lines"], lang="en")}
 
 
+@_session_bound
 def record_stop(customer_id: str, channel: str) -> dict:
     """STOP: withdraw marketing consent on the channel and drop pending offers."""
     ctx = current()

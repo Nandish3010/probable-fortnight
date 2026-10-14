@@ -12,6 +12,7 @@ from typing import Any
 from .config import TenantConfig, load_tenant
 from .estimator import DISCOUNT_MECHANICS, EstimatorContext, GapFacts, Product, unit_economics
 from .models import GUARDRAIL_RULES
+from .untrusted import copied_run
 
 NEAR_DEADLINE_OBJECTIVES = frozenset({"clear_online_sellby", "clear_expiry"})
 NEAR_DEADLINE_TYPES = frozenset({"online_sellby", "expiry"})
@@ -30,6 +31,9 @@ class GuardrailContext:
     resolve_citation: CitationResolver | None = None
     bundle_partner_unit_cost: float = 0.0
     bundle_partner_list_price: float = 0.0
+    # P3: free text a person (not the operator) can write and that reaches the model through a tool (gap
+    # evidence strings); empty when the caller supplies none, which leaves cite_or_drop as before.
+    untrusted_texts: tuple[str, ...] = ()
 
     def estimator_context(self, units_at_risk: int = 0) -> EstimatorContext:
         return EstimatorContext(
@@ -353,6 +357,10 @@ def rule_cite_or_drop(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str,
         problems.append("uncited numbers in rationale: " + ", ".join(_fmt(v) for v in uncited))
     if unresolved:
         problems.append("citations that do not resolve: " + ", ".join(unresolved))
+    # P3 (folded into this rule so the count stays eight): a rationale must not copy a run of 4 or more
+    # words from an untrusted free-text field. The gap's own product name is not in ctx.untrusted_texts.
+    if (copied := copied_run(str(draft.get("rationale") or ""), list(ctx.untrusted_texts))) is not None:
+        problems.append(f"rationale copies untrusted free text: \"{copied}\"")
     if problems:
         return _result("cite_or_drop", False, "; ".join(problems))
     return _result("cite_or_drop", True, f"{len(claimed)} number(s) in rationale all cited; {len(citations)} citation(s) resolve")

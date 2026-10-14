@@ -35,7 +35,7 @@ def test_absent_fields_stay_none():
 
 
 def test_committed_numbers_reproduce():
-    committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_*.json")).read_text())
+    committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_2026-*.json")).read_text())
     now = run(SAMPLE, "check")
     for k in ("mean_mape", "wape", "mean_bias", "n_origins", "forecast_method_counts", "spread_behind_the_mean"):
         assert now[k] == committed[k]
@@ -43,7 +43,7 @@ def test_committed_numbers_reproduce():
 
 
 def test_synthetic_reference_reproduces_both_metrics():
-    committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_*.json")).read_text())["synthetic_reference"]
+    committed = json.loads(max((ROOT / "eval" / "raw").glob("external_backtest_2026-*.json")).read_text())["synthetic_reference"]
     now = synthetic_reference()
     assert (now["mean_mape"], now["wape"]) == (committed["mean_mape"], committed["wape"])
     assert now["mean_mape"] == committed["committed_2026-09-20"]["mean_mape"]  # tree still reproduces the 20 Sep MAPE

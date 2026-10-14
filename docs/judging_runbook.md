@@ -14,14 +14,14 @@ Run it once a day from a checkout of `main` (needs only `python3`; no credential
 make smoke-judging
 ```
 
-`harness/smoke_judging.py` prints PASS or FAIL per check and exits non-zero if any fails. It uses one fresh `X-Taal-Visitor` sandbox per run, so the shared base tenant is never written. It makes two model calls (Plan live and one chat turn), so run it once, not in a loop.
+`harness/smoke_judging.py` prints PASS or FAIL per check and exits non-zero if any fails. It uses one fresh `X-Taal-Visitor` sandbox per run, so the shared base tenant is never written. The chat turn must finish within 10 s and Approve within 5 s (`CHAT_MAX_S` and `APPROVE_MAX_S` in the script); a slower answer is a FAIL even when the content is right, because a judge waiting that long sees a broken demo. It makes two model calls (Plan live and one chat turn), so run it once, not in a loop.
 
 | Check | Expected |
 |---|---|
 | Five web routes: `/`, `/desk`, `/phone`, `/chat`, `/outcomes` | HTTP 200 each |
 | API `/health` | `status` ok; `model` set (currently `gemini-3.5-flash`, never the retiring `gemini-2.5-flash`); `plan_live_eval` present (22/24, p50 26.5 s, 11 Oct) |
-| One Approve on Tea (`play_tea_ds04_v1`) | 355 treated, 39 held out; `copy.source` `existing`; `copy.provenance` `bigquery_pregenerated`; about 1.4 to 2.5 s warm |
-| One chat turn as Ravi (`CUST-RAVI:web`) | a non-empty reply (one model call) |
+| One Approve on Tea (`play_tea_ds04_v1`) | 355 treated, 39 held out; `copy.source` `existing`; `copy.provenance` `bigquery_pregenerated`; about 1.4 to 2.5 s warm; over 5 s FAILS |
+| One chat turn as Ravi (`CUST-RAVI:web`) | a non-empty reply (one model call) in 10 s or less; slower FAILS |
 | One Plan live (`POST /rerun` on `gap_tea_ds04`, then poll `/rerun/<run_id>`) | `status` done, `planner_source` model, about 20 to 35 s (one model call) |
 
 Point it at other URLs with `make smoke-judging WEB=https://... API=https://...`. If a check fails, repeat that one step by hand once (an idle service can answer the first call slowly; a 503 `model_unavailable` clears after `retry_after_s`), then roll back below if it is still red.
@@ -45,7 +45,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://taal-web-2obkp776ca-el.a.run.ap
 make smoke-judging
 ```
 
-`/health` must report `"status": "ok"` and the web root must answer 200. Roll back `taal-agents` and `taal-web` independently. After `update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to the newest with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214` once a fix is deployed. Revisions serving on 14 Oct 2026: `taal-agents-00145-xvm` and `taal-web-00081-h95` (from `main` at 7b6ce15); the revisions before them were `taal-agents-00143-8v9` and `taal-web-00080-72v`.
+`/health` must report `"status": "ok"` and the web root must answer 200. Roll back `taal-agents` and `taal-web` independently. After `update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to the newest with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214` once a fix is deployed. Revisions serving: `taal-agents-00149-sw6` (`main` at 75e65a0) and `taal-web-00082-g8m`. Previous (14 Oct 2026): `taal-agents-00145-xvm` and `taal-web-00081-h95` (from `main` at 7b6ce15); the revisions before them were `taal-agents-00143-8v9` and `taal-web-00080-72v`.
 
 ## Spend caps and 429s
 
