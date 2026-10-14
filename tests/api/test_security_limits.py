@@ -29,7 +29,11 @@ UPLOAD = {"node_id": "DS-07", "image_data_url": "data:image/jpeg;base64,AAAA"}
 def test_uploaded_photo_is_rate_limited_per_visitor(client):
     for _ in range(10):
         assert client.post("/capture", json=UPLOAD, headers=_h("v-cap1")).status_code == 200
-    assert client.post("/capture", json=UPLOAD, headers=_h("v-cap1")).status_code == 429
+    r = client.post("/capture", json=UPLOAD, headers=_h("v-cap1"))
+    assert r.status_code == 429
+    assert "per visitor" in r.json()["detail"]
+    assert "demo capacity" not in r.json()["detail"]
+    assert 1 <= int(r.headers["Retry-After"]) <= 900
     # another visitor still has its own budget
     assert client.post("/capture", json=UPLOAD, headers=_h("v-cap2")).status_code == 200
 
@@ -46,7 +50,12 @@ def test_rotating_visitor_ids_hits_the_global_capture_cap(client, monkeypatch):
     monkeypatch.setattr(main, "GLOBAL_CAPTURE_CAP", 3)
     for i in range(3):
         assert client.post("/capture", json=UPLOAD, headers=_h(f"v-rot{i}")).status_code == 200
-    assert client.post("/capture", json=UPLOAD, headers=_h("v-rot-new")).status_code == 429
+    r = client.post("/capture", json=UPLOAD, headers=_h("v-rot-new"))
+    assert r.status_code == 429
+    detail = r.json()["detail"]
+    assert "demo capacity" in detail and "shared limit of 3 capture calls per 15 minutes" in detail
+    assert "per visitor" not in detail
+    assert 1 <= int(r.headers["Retry-After"]) <= 900
 
 
 def test_oversized_upload_is_refused_before_the_model(client, monkeypatch):
@@ -65,6 +74,22 @@ def test_rotating_visitor_ids_hits_the_global_chat_cap(client, monkeypatch):
         assert r.status_code == 200
     r = client.post("/chat", json={"session_id": "C00001:web", "text": "hi"}, headers={**_h("v-chat-new"), "Accept": "application/json"})
     assert r.status_code == 429
+    assert "demo capacity" in r.json()["detail"] and "per visitor" not in r.json()["detail"]
+    assert int(r.headers["Retry-After"]) >= 1
+
+
+def test_retry_after_counts_down_to_the_oldest_call_leaving_the_window(client, monkeypatch):
+    from services.api import main
+
+    t = [1000.0]
+    monkeypatch.setattr(main.time, "time", lambda: t[0])
+    for _ in range(10):
+        assert client.post("/capture", json=UPLOAD, headers=_h("v-retry")).status_code == 200
+        t[0] += 1
+    # oldest call was at 1000.0; now is 1010.0; the window is 900 s -> frees up in 890 s
+    r = client.post("/capture", json=UPLOAD, headers=_h("v-retry"))
+    assert r.status_code == 429
+    assert r.headers["Retry-After"] == "890"
 
 
 # ----------------------------------------------------------------------------- Model Armor

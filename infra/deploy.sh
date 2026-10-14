@@ -215,6 +215,19 @@ if [ "${ENABLE_SERVING_CACHE}" = "1" ]; then
   echo "   chat reads: Firestore serving cache (mirrored below from this image's snapshot)"
   AGENTS_ENV="${AGENTS_ENV},TAAL_SERVING_CACHE=firestore"
 fi
+# Model Armor screening of /chat (services/api/model_armor.py). --set-env-vars below replaces every
+# env var, so the template must be named here or a deploy would silently turn screening off. It
+# defaults to the taal-chat template in this project and region. TAAL_MODEL_ARMOR_TEMPLATE= (set but
+# empty) deploys with screening off; unset keeps the default. Without a redeploy, switch it off on
+# the running service with:
+#   gcloud run services update taal-agents --region "${REGION}" --remove-env-vars TAAL_MODEL_ARMOR_TEMPLATE
+MODEL_ARMOR_TEMPLATE="${TAAL_MODEL_ARMOR_TEMPLATE-projects/${PROJECT}/locations/${REGION}/templates/taal-chat}"
+if [ -n "${MODEL_ARMOR_TEMPLATE}" ]; then
+  echo "   chat screening: Model Armor template ${MODEL_ARMOR_TEMPLATE}"
+  AGENTS_ENV="${AGENTS_ENV},TAAL_MODEL_ARMOR_TEMPLATE=${MODEL_ARMOR_TEMPLATE}"
+else
+  echo "   chat screening: Model Armor off (TAAL_MODEL_ARMOR_TEMPLATE is empty)"
+fi
 # --memory 2Gi: Cloud Run's default (512 MiB) starves the uvicorn worker under a live Vertex
 # call (locally it peaks at 481 MiB on the stub backend alone -- see
 # eval/raw/cloud_run_memory_2026-09-28/) and CI's smoke.yml has caught POST /approve 503ing on

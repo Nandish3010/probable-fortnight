@@ -116,6 +116,8 @@ Projected margin per node (16 nodes = 10 dark stores + 6 outlets), per 28-day ru
 
 Projected, synthetic tenant.
 
+**Fair-use limits.** The public demo limits model calls to protect the Gemini budget. Per 15 minutes, all visitors share 120 plan runs, 600 chat turns and 60 photo reads; each visitor gets 20 plan runs, 60 chat turns and 10 uploaded photos (about 20 MB each). Sample photos are unlimited. A limit returns HTTP 429 with `Retry-After` and clears itself.
+
 **What breaks first**
 - Cold start: `min-instances` is 0, so an idle service answers slowly; keep-warm pings help.
 - Session and re-plan state lives in process memory and is wiped on redeploy, hence `max-instances` 1.

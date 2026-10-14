@@ -230,6 +230,19 @@ call). They need no auth and send no visitor header. The commands are in `infra/
 (6 Nov 2026): `./infra/keepwarm.sh pause`. The two keep-warm jobs plus the two nightly jobs make four
 in this project, one over the free tier of three per billing account (about $0.10 a month).
 
+## Model Armor screening of `/chat` (`TAAL_MODEL_ARMOR_TEMPLATE`)
+
+`taal-agents` screens each chat prompt and reply with Model Armor only when the env var
+`TAAL_MODEL_ARMOR_TEMPLATE` is set (`services/api/model_armor.py`; fail-open, so a Model Armor error
+never blocks a reply). `deploy.sh` replaces every env var on the service, so it carries this one
+explicitly: it defaults to `projects/$GOOGLE_CLOUD_PROJECT/locations/$REGION/templates/taal-chat`.
+
+- Different template: `TAAL_MODEL_ARMOR_TEMPLATE=projects/<p>/locations/<r>/templates/<t> ./infra/deploy.sh`.
+- Off, via a redeploy: `TAAL_MODEL_ARMOR_TEMPLATE= ./infra/deploy.sh` (set but empty).
+- Off, with no code deploy:
+  `gcloud run services update taal-agents --region asia-south1 --remove-env-vars TAAL_MODEL_ARMOR_TEMPLATE`.
+  A later `deploy.sh` run turns it back on unless the variable is set empty.
+
 ## Not in this directory
 
 - Secret values (API keys, service-account keys) -- created out of band in Secret Manager and
