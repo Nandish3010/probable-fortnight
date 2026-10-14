@@ -175,6 +175,8 @@ TUNE all-days WAPE) is **V4**. Lower is better in every table below except bias,
 | V4 (candidate, not shipped) | 0.966 | 0.857 | 0.938 | 0.831 |
 | V5 (candidate, not shipped) | 0.990 | 0.877 | 0.962 | 0.852 |
 
+**Sensitivity to the pre-registered exclusion.** The headline above drops the 108 windows (of 1,200 per group) where the actual is zero for all 7 days. With those windows NOT excluded (`all_days_wape_no_exclusion`, REPORT, all series, `eval/raw/external_backtest_v2_2026-10-14.json`), unchanged Taal all-days WAPE is 1.839 against 1.119 shown (raw 1.8389), and the trailing 28-day mean is 0.919 against 0.907 (raw 0.9188 and 0.9068). Taal's headline gap to the 28-day mean is therefore larger, not smaller, without the exclusion (Taal is much worse on all-zero windows, the baseline barely moves); the exclusion does not favour the baselines.
+
 **Sale-day WAPE (the earlier convention)**
 
 | Method | TUNE, all | REPORT, all | TUNE, fast movers | REPORT, fast movers |
