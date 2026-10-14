@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "../../components/Badge";
 import { ErrorCard } from "../../components/ErrorCard";
 import { Icon } from "../../components/icons";
+import { Basis, BasisTag, runBasis } from "../../components/BasisTag";
 import { InboxRow } from "../../components/InboxRow";
 import { LiveReplan } from "../../components/LiveReplan";
 import { ModelChip } from "../../components/ModelChip";
@@ -325,10 +326,13 @@ export default function PlayDeskPage() {
       ) : null}
       <div className="desk-layout" data-screen={screen} data-testid="desk-layout">
         <div className="inbox-pane" data-testid="inbox-pane">
-          <h2 className="inbox__title" data-testid="inbox-heading">
-            {inboxHeading(groups.length, totalGaps)}
-          </h2>
-          <div className="inbox" aria-label="Play inbox">
+          <div className="inbox__head">
+            <h2 className="inbox__title" data-testid="inbox-heading">
+              {inboxHeading(groups.length, totalGaps)}
+            </h2>
+            <BasisTag basis="synthetic" />
+          </div>
+          <Basis kind="synthetic" tag="none" className="inbox" aria-label="Play inbox">
             {groups.map((group) => (
               <InboxRow
                 key={group.gapId}
@@ -343,7 +347,7 @@ export default function PlayDeskPage() {
             {groups.length === 0 && loading ? <p className="muted">Loading plays…</p> : null}
             {groups.length === 0 && loading ? <WakingNotice phase={wakePhase} onRetry={loadPlays} /> : null}
             {groups.length === 0 && !loading && !loadError ? <p className="muted">No plays yet.</p> : null}
-          </div>
+          </Basis>
         </div>
 
         <div className="desk-detail">
@@ -471,7 +475,7 @@ export default function PlayDeskPage() {
                 </section>
 
                 {rerunResult ? (
-                  <section className="play-card__section" role="status" aria-live="polite">
+                  <section className="play-card__section" role="status" aria-live="polite" data-basis={runBasis(rerunResult.source)}>
                     <h4>Re-plan result</h4>
                     <div className="drawer">
                       {rerunResult.status === "error" ? (
@@ -509,7 +513,7 @@ export default function PlayDeskPage() {
                 ) : null}
 
                 {liveTrace && liveTrace.length > 0 ? (
-                  <section className="play-card__section" data-testid="live-trace">
+                  <section className="play-card__section" data-testid="live-trace" data-basis="synthetic">
                     <details open>
                       <summary>
                         <strong>Live run trace</strong> <span className="muted">· {liveTrace.length} events</span>

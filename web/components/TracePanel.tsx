@@ -5,6 +5,7 @@ import { getEvents } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { recordedEvents } from "../lib/recorded";
 import { Badge } from "./Badge";
+import { Basis, runBasis } from "./BasisTag";
 import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
 import { showsModelChip, traceDurationMs } from "../lib/health";
@@ -95,7 +96,7 @@ export function TracePanel({ runId }: { runId: string }) {
   const runSummary = events.find((e) => e.kind === "run_summary");
 
   return (
-    <div className="trace-panel">
+    <Basis kind={runBasis(response.source)} tag="none" className="trace-panel">
       <div className="trace-panel__header">
         <SourceBadge source={response.source} recordedAt={runSummary?.recorded_at ?? response.recorded_at} fallbackReason={runSummary?.fallback_reason} />
         {fromRecorded ? <Badge kind="replay" detail="recorded copy, live service not answering" /> : null}
@@ -110,6 +111,6 @@ export function TracePanel({ runId }: { runId: string }) {
           Run {runId}
         </p>
       </Details>
-    </div>
+    </Basis>
   );
 }

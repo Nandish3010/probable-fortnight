@@ -55,16 +55,16 @@ test.describe("landing: hero, strip, clock, legend", () => {
     const legend = page.getByTestId("state-legend");
     const summaryBadges = legend.locator("summary .badge");
     await expect(summaryBadges).toHaveCount(3);
-    await expect(summaryBadges.nth(0)).toHaveAttribute("title", "Computed just now by Taal's running services.");
-    await expect(summaryBadges.nth(1)).toHaveAttribute("title", "A real run, recorded earlier and played back. Nothing was recomputed.");
-    await expect(summaryBadges.nth(2)).toHaveAttribute("title", "Seeded demo data for the fictional tenant Kutumb Mart. No real customers.");
+    await expect(summaryBadges.nth(0)).toHaveAttribute("title", "This call ran on the service just now.");
+    await expect(summaryBadges.nth(1)).toHaveAttribute("title", "A recorded run replayed. Nothing was recomputed.");
+    await expect(summaryBadges.nth(2)).toHaveAttribute("title", "The data is the seeded demo tenant (no real customers, no pilot).");
     // a tooltip is not enough on a phone: opening the element prints the sentences
-    await expect(legend.getByText("A real run, recorded earlier and played back.")).toBeHidden();
+    await expect(legend.getByText("A recorded run replayed.")).toBeHidden();
     await legend.locator("summary").click();
-    await expect(legend.getByText("A real run, recorded earlier and played back. Nothing was recomputed.")).toBeVisible();
+    await expect(legend.getByText("A recorded run replayed. Nothing was recomputed.")).toBeVisible();
     // the chat badge no longer says "Chat as Meena"; it says what REPLAY means
     const chatBadge = page.locator(".chat-panel .badge").first();
-    await expect(chatBadge).toHaveAttribute("title", /recorded earlier|Computed just now/);
+    await expect(chatBadge).toHaveAttribute("title", /recorded run replayed|ran on the service just now/);
   });
 });
 

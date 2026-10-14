@@ -271,7 +271,7 @@ export default function LandingPage() {
                       Run the 60-second beat
                     </button>
                     <WatchPlanLive />
-                    <p className={styles.assure}>No sign-in. Synthetic data, labelled.</p>
+                    <p className={styles.assure}>No sign-in. Reset is per visitor. Synthetic data, labelled.</p>
                   </DecisionPreview>
                 ) : beatError ? (
                   <>

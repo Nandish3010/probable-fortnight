@@ -108,7 +108,7 @@ export function LiveReplan({ accepted, onDone }: { accepted: RerunAccepted; onDo
       : "Scripted planner is running (stub backend)";
 
   return (
-    <div className="live-replan" data-testid="live-replan" ref={root}>
+    <div className="live-replan" data-testid="live-replan" ref={root} data-basis="synthetic">
       <p className="live-replan__status">
         {headerLine} {accepted.backend === "vertex" ? <ModelChip /> : null}
       </p>

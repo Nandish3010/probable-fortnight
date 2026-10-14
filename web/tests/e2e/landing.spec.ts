@@ -69,7 +69,7 @@ test.describe("judge-mode landing", () => {
     await expect(result).toBeVisible({ timeout: 30_000 });
 
     // The mock approve for the Tea play (lib/mockData.ts): 394 consented, 355 treated, 39 holdout
-    await expect(result.getByTestId("audience-chain")).toHaveText("394 consented: 355 treated and 39 holdout");
+    await expect(result.getByTestId("audience-chain")).toHaveText("Reached 355 customers, 39 held back; the lift is measured once orders arrive");
     await expect(result.locator(".chip")).toHaveCount(0); // the chain replaces the old holdout/treated chip
 
     // Tea: a transfer play, so recovered = margin (9,191) = waste avoided 9,397 minus transfer cost 206

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ApprovePanel } from "./ApprovePanel";
 import { Badge } from "./Badge";
+import { Basis, BasisTag, runBasis as basisOfRun } from "./BasisTag";
 import { CounterfactualBars } from "./CounterfactualBars";
 import { Details } from "./Details";
 import { GapCard } from "./GapCard";
@@ -144,6 +145,10 @@ export function PlayCard({
     button.focus();
   }
 
+  // Figures that come out of the planner run itself (the offer price in the plan, the run's cost) are
+  // RECORDED when the run is a recorded Gemini one; otherwise they are the seeded tenant's own numbers.
+  const runBasis = basisOfRun(play.source);
+  const mechanic = mechanicSentence(play, now);
   const cls = [styles.card, styles[mode]].join(" ");
   const expected = play.expected_outcome;
 
@@ -160,9 +165,9 @@ export function PlayCard({
         <div className={styles.barAnchor}>
           {pastDecision ? (
             <div className={styles.bar} role="region" aria-label="Decision bar" data-testid="decision-bar">
-              <span className={styles.barFigure}>
+              <Basis kind="projected" tag="none" as="span" className={styles.barFigure}>
                 Recovered vs doing nothing <strong className="num">{inrSigned(impact.recovered_inr)}</strong>
-              </span>
+              </Basis>
               <button type="button" className={styles.barButton} onClick={jumpToDecision}>
                 Go to decision
               </button>
@@ -185,17 +190,22 @@ export function PlayCard({
         </div>
       </header>
 
-      <p
+      {/* The SYNTHETIC tag for the rupees at stake in this sentence is printed with the figure below
+         (RecoveredFigure atStakeAbove): a tag at the end of the line would wrap onto a line of its own. */}
+      <Basis
+        kind="synthetic"
+        tag="none"
+        as="p"
         className={styles.whyNow}
         data-testid="why-now"
         data-tour="why-now"
         title={why.deadlineAbsolute ? `Deadline: ${why.deadlineAbsolute}` : undefined}
       >
         {why.text}
-      </p>
+      </Basis>
 
       <section className={styles.figure} aria-label="What the play recovers" data-tour="proof">
-        <RecoveredFigure impact={impact} testId="recovered-figure" />
+        <RecoveredFigure impact={impact} testId="recovered-figure" atStakeAbove />
         <p className={styles.honesty} data-testid="honesty-line">
           A projection, not a measurement. About {audience.holdout.toLocaleString("en-IN")} customers are held back so the
           result can be measured.
@@ -215,9 +225,17 @@ export function PlayCard({
 
       <section className={styles.section}>
         <h4 className={styles.h4}>What Taal will do</h4>
-        <p className={styles.plan} data-testid="plan-sentence">
-          <strong>{label("mechanic", play.mechanic)}.</strong> {mechanicSentence(play, now)}. {audience.text}
-        </p>
+        {/* The offer price in the sentence comes from the play's own parameters: a recorded planner run's,
+           or the scripted stand-in's, over the seeded catalogue. Tagged only when a price is printed. */}
+        <Basis
+          kind={runBasis}
+          tag={mechanic.includes("\u20B9") ? "after" : "none"}
+          as="p"
+          className={styles.plan}
+          data-testid="plan-sentence"
+        >
+          <strong>{label("mechanic", play.mechanic)}.</strong> {mechanic}. {audience.text}{" "}
+        </Basis>
       </section>
 
       <div className={styles.checks} data-testid="card-checks">
@@ -233,10 +251,10 @@ export function PlayCard({
         data-sticky={approved ? "off" : "on"}
       >
         {!approved ? (
-          <span className={styles.stickyFigure} aria-hidden="true">
+          <Basis kind="projected" tag="none" as="span" className={styles.stickyFigure} aria-hidden="true">
             <span className={styles.stickyAmount + " num"}>{inrSigned(impact.recovered_inr)}</span>
             <span className={styles.stickyLabel}>recovered</span>
-          </span>
+          </Basis>
         ) : null}
         <div className={styles.approveSlot}>
           <ApprovePanel
@@ -271,11 +289,13 @@ export function PlayCard({
           )}
         </section>
 
-        <section className={styles.detailSection}>
-          <h4 className={styles.h4}>Why this play</h4>
+        <Basis kind={runBasis} tag="none" as="section" className={styles.detailSection}>
+          <h4 className={styles.h4}>
+            Why this play <BasisTag basis={runBasis} />
+          </h4>
           {whyThisPlay ?? <p data-testid="rationale-text">{play.rationale}</p>}
           {play.alternatives.length > 0 ? (
-            <>
+            <Basis kind="projected">
               <p className={styles.minor}>Alternatives the planner considered</p>
               <ul className={styles.alts} data-testid="alternatives">
                 {play.alternatives.map((alt, i) => (
@@ -285,9 +305,9 @@ export function PlayCard({
                   </li>
                 ))}
               </ul>
-            </>
+            </Basis>
           ) : null}
-        </section>
+        </Basis>
 
         <section className={styles.detailSection}>
           <h4 className={styles.h4}>Who gets it</h4>
@@ -297,8 +317,10 @@ export function PlayCard({
           </p>
         </section>
 
-        <section className={styles.detailSection}>
-          <h4 className={styles.h4}>Expected result</h4>
+        <Basis kind="projected" tag="none" as="section" className={styles.detailSection}>
+          <h4 className={styles.h4}>
+            Expected result <BasisTag basis="projected" />
+          </h4>
           <p>
             {expected.units} units · margin {inr(expected.margin_inr)} · waste avoided {inr(expected.waste_avoided_inr)} ·
             discount cost {inr(expected.discount_cost_inr)}
@@ -308,12 +330,12 @@ export function PlayCard({
             {expected.measured_n} · {expected.estimator_version}
           </p>
           {play.cost ? (
-            <p className={styles.minor}>
+            <Basis kind={runBasis} tag="after" as="p" className={styles.minor}>
               Cost Governor: planned for {inr(play.cost.plan_cost_inr)}; conversations budgeted{" "}
-              {inr(play.cost.conversation_budget_inr)}; {play.cost.pct_of_rupees_at_stake}% of rupees at stake.
-            </p>
+              {inr(play.cost.conversation_budget_inr)}; {play.cost.pct_of_rupees_at_stake}% of rupees at stake.{" "}
+            </Basis>
           ) : null}
-        </section>
+        </Basis>
 
         <section className={styles.detailSection}>
           <h4 className={styles.h4}>Technical</h4>

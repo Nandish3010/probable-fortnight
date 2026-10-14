@@ -3,6 +3,7 @@ import { playImpact } from "../lib/impact";
 import { GAP_TYPE_LABEL, label } from "../lib/labels";
 import { whyNow, whyNowInput } from "../lib/playText";
 import type { Gap, Play } from "../lib/types";
+import { Basis } from "./BasisTag";
 import { RecoveredFigure } from "./RecoveredFigure";
 import styles from "./DecisionPreview.module.css";
 
@@ -34,8 +35,10 @@ export function DecisionPreview({
       <h2 className={styles.title}>{skuName ?? "One stock gap, one proposed play"}</h2>
       {why && impact ? (
         <>
-          <p className={styles.why}>{why.text}</p>
-          <RecoveredFigure impact={impact} testId="preview-figure" fade />
+          <Basis kind="synthetic" tag="none" as="p" className={styles.why}>
+            {why.text}
+          </Basis>
+          <RecoveredFigure impact={impact} testId="preview-figure" fade atStakeAbove />
           <p className={styles.honesty}>A projection, not a measurement.</p>
         </>
       ) : (

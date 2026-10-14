@@ -1,6 +1,7 @@
 import { inrSigned } from "../lib/format";
 import { playImpact } from "../lib/impact";
 import type { Counterfactuals, ExpectedOutcome, Mechanic } from "../lib/types";
+import { Basis } from "./BasisTag";
 import { InfoNote } from "./InfoNote";
 import { RecoveredFigure } from "./RecoveredFigure";
 
@@ -42,6 +43,7 @@ export function CounterfactualBars({
   atStakeInr,
   blanketMarkdownGiveawayInr,
   showFigure = true,
+  basisTag = false,
 }: {
   counterfactuals: Counterfactuals;
   expectedOutcome: ExpectedOutcome;
@@ -57,6 +59,8 @@ export function CounterfactualBars({
   /** The decision card (PlayCard) shows the canonical figure itself, above the bars; it passes
    * false so the figure is not on the page twice. Outcomes and any bare use keep it. */
   showFigure?: boolean;
+  /** Print the PROJECTED tag at the top of the bars. Off where the figure above them already carries it. */
+  basisTag?: boolean;
 }) {
   // Every figure below comes from playImpact(), the one function the whole UI shares, so this
   // chart, the Approve result and the Outcomes example cannot disagree.
@@ -124,7 +128,7 @@ export function CounterfactualBars({
   const playIsBest = impact.play_net_inr >= Math.max(impact.do_nothing_inr, impact.blanket_inr);
 
   return (
-    <div className="counterfactuals">
+    <Basis kind="projected" tag={basisTag ? "before" : "none"} className="counterfactuals">
       {showFigure ? <RecoveredFigure impact={impact} testId="recovered-figure" /> : null}
       {rows.map((row) => (
         <div
@@ -179,6 +183,6 @@ export function CounterfactualBars({
           earned; left is margin destroyed or written off.
         </span>
       </InfoNote>
-    </div>
+    </Basis>
   );
 }
