@@ -76,7 +76,7 @@ app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping pla
 # defaulting to the local dev server only.
 _default_origins = "http://localhost:3000,http://127.0.0.1:3000"
 _allowed_origins = [o.strip() for o in os.environ.get("TAAL_ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
-app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"], expose_headers=["Retry-After"])
 
 
 def _now() -> datetime:

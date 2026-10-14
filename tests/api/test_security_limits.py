@@ -166,3 +166,12 @@ def test_model_armor_outage_fails_open_and_says_so(client, monkeypatch):
 def test_malformed_template_is_treated_as_off(client, monkeypatch):
     monkeypatch.setenv("TAAL_MODEL_ARMOR_TEMPLATE", "taal-chat")
     assert "guard" not in _chat(client)
+
+
+def test_retry_after_is_readable_by_the_browser(client):
+    """The web app is a different origin from the API, and a browser only lets script read a
+    non-safelisted response header such as Retry-After if the API lists it in
+    Access-Control-Expose-Headers. Without it the UI cannot tell a judge how long to wait."""
+    r = client.get("/health", headers={"Origin": "http://localhost:3000"})
+    exposed = r.headers.get("access-control-expose-headers", "")
+    assert "retry-after" in exposed.lower()
