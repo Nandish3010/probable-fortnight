@@ -169,6 +169,59 @@ def context_summary(context: dict, turn_language: str | None = None) -> str:
     return "; ".join(bits)
 
 
+_STOCK_ASK_RE = re.compile(r"\b(in stock|available|availability|still (have|got)|is it there)\b", re.I)
+_SIZE_WORD_RE = re.compile(r"^\d+(g|kg|ml|l)$")
+
+
+def _asks_about(text: str, name: str) -> bool:
+    """True when the message names the product (any distinctive word of its catalogue name)."""
+    low = text.lower()
+    words = [w for w in re.findall(r"[a-z]+", name.lower()) if len(w) >= 4 and not _SIZE_WORD_RE.match(w)]
+    return any(re.search(rf"\b{re.escape(w)}s?\b", low) for w in words)
+
+
+def prefetched_stock_note(context: dict, text: str) -> str:
+    """Plain-prose stock for the SKUs in this customer's pending offers, when the message asks
+    about one of them (it names the product, or asks about availability or an add: button). Looked
+    up here, in code, with the same pure lookup get_stock uses (_stock_info), so the model can answer
+    a stock question about an offered SKU from the turn's own note instead of paying a tool round
+    trip. Only SKUs that are in stock or few_left are listed, and only as the same availability
+    band get_stock returns, never a count: an out-of-stock SKU is left out on purpose so the model
+    still calls get_stock, which records the unmet-demand signal, and find_substitutes. Other SKUs
+    are unaffected and still go through the get_stock tool. Returns "" when nothing applies."""
+    ctx = current()
+    offers = context.get("pending_offers") or []  # already consent- and arm-gated by get_customer_context
+    node_id = context["home_node_id"]
+    seen: list[str] = []
+    for o in offers:
+        for sku in (o.get("sku"), (o.get("mechanic_params") or {}).get("bundle_sku")):
+            if sku and sku not in seen:
+                seen.append(sku)
+    if not seen:
+        return ""
+    # A bare "is it in stock?" / "add:<sku>" refers to the offer (its first SKU) -- unless the message
+    # names some other catalogue product, whose stock is get_stock's job.
+    other = any(_asks_about(text, p.get("name", "")) for k, p in ctx.products.items() if k not in seen)
+    wants_any = not other and bool(_STOCK_ASK_RE.search(text) or text.lower().strip().startswith("add:"))
+    rows = []
+    for sku in seen:
+        info = _stock_info(ctx, sku, node_id)
+        name = info["name"]
+        if info["qty"] <= 0 or not (_asks_about(text, name) or (wants_any and sku == seen[0])):
+            continue
+        band = "only a few left" if _availability(info["qty"]) == "few_left" else "in stock"
+        bits = [f"{name} (sku {sku}) {band}"]
+        if info.get("list_price") is not None:
+            bits.append(f"list price \u20b9{float(info['list_price']):g}")
+        if info.get("expiry_date"):
+            bits.append(f"best before {info['expiry_date']}")
+        bits.append(f"cite as stock ref {info.get('batch_id') or f'{sku}@{node_id}'}")
+        rows.append(", ".join(bits))
+    if not rows:
+        return ""
+    return "stock for the offered item already checked this turn, so get_stock is not needed for it: " + "; ".join(rows)
+
+
 def offer_summary_en(offer: dict[str, Any], names: dict[str, str]) -> str:
     """One English sentence for an offer row (sku, mechanic, mechanic_params, best_before_date),
     from its structured fields alone -- the gloss template for a reply that delivers the offer."""
