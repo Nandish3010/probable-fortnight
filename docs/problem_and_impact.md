@@ -16,7 +16,7 @@ Measured 24 Sep 2026 on the seeded tenant; every number comes from a committed e
 | Plays planned | 424 | seeded | same file |
 | Expected margin per 28-day run at the default 5% response prior (sales margin ₹206,205 plus write-off avoided ₹141,151) | ₹347,356 | projected | same file; `docs/impact_math.md` |
 | The same estimate at a 2% / 10% response prior instead of 5% (550 grocery gaps; 421 / 423 plays) | ₹140,728 / ₹619,165 | projected | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` |
-| Monthly run cost, usage to 23 Sep 2026 on gemini-2.5-flash, no plays in the window, list-priced | ₹486 | measured usage; not a bill | `eval/raw/cost_measurement_2026-09-23.json` |
+| Monthly run cost, pre-switch: 30-day usage to 23 Sep 2026 on gemini-2.5-flash (not re-measured on gemini-3.5-flash), no plays in the window, list-priced | ₹486 | measured usage; not a bill | `eval/raw/cost_measurement_2026-09-23.json` |
 | Forecast backtest: synthetic tenant / public non-grocery data | WAPE 0.113 / 0.83 | seeded / public | `eval/raw/external_backtest_2026-10-09.json`; [`eval/external_backtest.md`](../eval/external_backtest.md) |
 
 India scale (Inc42 on Blinkit's inventory losses), buyer and pricing basis, and the projected margin less run cost per node: [`docs/impact_numbers.md`](impact_numbers.md). No price point is set until a pilot measures the lift; nothing here is a quote.

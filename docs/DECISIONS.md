@@ -577,7 +577,7 @@ One slide (§11 slide 10 already exists; add the profile table and the 2% rule),
 
 ### 18.7 Buyer and pricing basis
 Buyer: the category / supply-chain head. Pricing basis, to be chosen with the first pilot customer and not priced here: (a) per dark store per month, or (b) `pct x rupees rescued`, where rescued is the waste avoided that Measure attributes against the holdout (`jobs/measure/run.py`).
-Payback illustration (seeded portfolio, projected at the default prior): `break_even_fee_per_node_month = expected_margin / nodes - run_cost / nodes` = ₹347,356 / 16 - ₹486 / 16 (`eval/raw/portfolio_2026-09-24.json`, `eval/raw/cost_measurement_2026-09-23.json`); a fee below that leaves the buyer ahead on paper, and the number is replaced by the measured lift after a pilot.
+Payback illustration (seeded portfolio, projected at the default prior): `break_even_fee_per_node_month = expected_margin / nodes - run_cost / nodes` = ₹347,356 / 16 - ₹486 / 16 (₹486 is pre-switch: 30-day usage to 23 Sep 2026 on `gemini-2.5-flash`; `eval/raw/portfolio_2026-09-24.json`, `eval/raw/cost_measurement_2026-09-23.json`); a fee below that leaves the buyer ahead on paper, and the number is replaced by the measured lift after a pilot.
 
 ---
 

@@ -7,7 +7,7 @@ Moved from the README.
 The 60-second beat opens on `gap_tea_ds04`: 103 units of Darjeeling Tea 100G at dark store DS-04,
 ₹35,020 at stake, online sell-by 6 October 2026. Its Desk trace is a real, committed Gemini
 recording, badged `Recorded from Gemini · 12 Oct 2026`: 16 independent live Vertex runs in two sets
-(`gemini-3.5-flash`). Set b, 8 runs on the then-current prompt v6, all reached `proposed` with 0 fallbacks in
+(`gemini-3.5-flash`, 12 Oct 2026). Set b, 8 runs on the then-current prompt v6, all reached `proposed` with 0 fallbacks in
 19.1 to 28.9 s, and 7 of 8 passed on the first attempt. Set c, 8 runs on prompt v7, all reached `proposed` with
 0 fallbacks in 19.0 to 31.4 s, 7 of 8 with no rejection, and every run states both figures (the improvement over
 doing nothing and the beat over a blanket markdown). `harness/seed_plays.py` seeds the pinned run, `c/run_02`
@@ -61,5 +61,6 @@ guardrail check as it happens, and if no valid play arrives within the 90 s dead
 deployed service, the deterministic-rules fallback runs instead, badged "Rules (fallback)" with the
 reason shown. Three live re-plans on the deployed service on 10 Oct (Tea, then Chips twice) all returned
 a model-planned play with no fallback, in 27.5 to 30.3 s server-side
-(`eval/raw/live_replan_timing_2026-10-10.json`); the same test on 9 Oct, before the fix, fell back to
+(`gemini-3.5-flash`, 10 Oct; `eval/raw/live_replan_timing_2026-10-10.json`); the same test on 9 Oct, before the fix and
+before the 10 Oct model switch (so `gemini-2.5-flash`, pre-switch; the raw file records no model id), fell back to
 rules in 2 of 3 runs (`eval/raw/live_replan_timing_2026-10-09.json`).
