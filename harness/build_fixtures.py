@@ -151,6 +151,12 @@ def build_evalsets_from_traces(trace_dir: Path) -> int:
         _write(es / f"{gid}.evalset.json", evalset_from_trace(gid, records, summary, f"{rel}/{gid}.jsonl"))
         n += 1
     _write(es / "test_config.json", EVAL_CRITERIA)
+    _write(es / "PROVENANCE.json", {
+        "recorded_at": summary["recorded_at"], "backend": summary["backend"], "model": summary["model"],
+        "prompt_version": summary["prompt_version"], "prompt_sha256": summary.get("prompt_sha256"),
+        "region": summary.get("region"), "traces": rel, "evalsets": n,
+        "meaning": "Expected trajectories are recorded from ONE run of this model and prompt. A trajectory score of a later run against them is a regression guard (consistency of the same model), not an accuracy score.",
+    })
     return n
 
 

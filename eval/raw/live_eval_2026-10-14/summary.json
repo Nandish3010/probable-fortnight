@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-14",
+  "model": "gemini-3.5-flash",
+  "location": "asia-south1",
+  "prompt_version": "v7",
+  "code_base": "origin/main 6482e7c plus this branch (eval/rerun-v7)",
+  "planner_deadline_s": 120,
+  "frozen": "frozen 2026-10-14; not re-run before judging by owner decision; no repeat runs and no re-roll for better numbers; Task 2 spend $8.41 at list prices (spend_ledger_2026-10-14_task2.json), Task 3 spend is separate and not included",
+  "what_the_scores_mean": "Regression guard / consistency measure: the expected trajectories were re-recorded from one run of this same model and prompt, so the scores are not accuracy and not comparable with the 12 Oct row.",
+  "counts": {
+    "evalsets": 46,
+    "recording_run": {
+      "model_plays": 46,
+      "deterministic_fallback": 0,
+      "errors": 0,
+      "first_propose_play_accepted": 37,
+      "model_calls": 227,
+      "usd": 3.5759
+    },
+    "verification_run": {
+      "response_match_pass": 46,
+      "trajectory_pass": 18,
+      "both_pass": 18,
+      "first_attempt_accepted": 39,
+      "posthoc": {
+        "exact": 18,
+        "in_order": 33,
+        "any_order": 33,
+        "every_expected_tool_name_called": 46,
+        "ends_with_propose_play": 46,
+        "check_guardrails_before_propose_play": 46
+      },
+      "divergence_classes": {
+        "estimate_or_guardrail_call_count_differs": 20,
+        "propose_play_retries_and_estimate_or_guardrail_counts_both_differ": 7,
+        "propose_play_retry_count_differs": 1
+      },
+      "model_calls": 249,
+      "usd": 3.5911
+    },
+    "third_run": "not run: would exceed the $10 cap",
+    "rationale_judge": "not re-run; the 12 Oct 15/15 (prompt v6) stands"
+  },
+  "fallback_check": {
+    "calls_checked": 476,
+    "calls_not_answered_by_gemini-3.5-flash": 0,
+    "failed_calls": 0,
+    "method": "usage tap logged requested model and server-reported model_version for every planner model call (model_calls_01_record.jsonl, model_calls_02_verify.jsonl); adk_eval.log (not committed) names no model other than gemini-3.5-flash and no 429/RESOURCE_EXHAUSTED; eval parallelism lowered to 2 (observed one call in flight)",
+    "run_valid": true
+  },
+  "cards": {
+    "vision": {
+      "date_correct": 30,
+      "pass_at_threshold": 30,
+      "photos": 30,
+      "file": "vision_synthetic.json",
+      "label": "SYNTHETIC, self-tested"
+    },
+    "chat_latency": {
+      "n": 50,
+      "p50_s": 4.446,
+      "p95_s": 8.704,
+      "max_s": 9.435,
+      "file": "../customer_latency_2026-10-14/analysis.json"
+    },
+    "planner_cost_per_play": {
+      "usd": 0.0777,
+      "inr_at_83": 6.45,
+      "basis": "recording run, 46 plays, usage_metadata x config/models.toml list prices"
+    },
+    "agent_simulation_190": "not re-run"
+  },
+  "previous_run": {
+    "date": "2026-10-12",
+    "model": "gemini-3.5-flash",
+    "prompt_version": "v6",
+    "response_match_pass": 43,
+    "trajectory_pass": 1,
+    "scored_against": "28 Sep gemini-2.5-flash recordings"
+  },
+  "result": "Run 2026-10-14 against live Vertex AI on gemini-3.5-flash (asia-south1), planner prompt v7 (the prompt on main at 6482e7c), config/models.toml unchanged. Step 1, RE-RECORD: the 46 expected trajectories were re-recorded from ONE real run of this planner (46 of 46 gaps ended in an accepted model play, 0 fallbacks to the deterministic draft, 0 errors; 227 model calls; 37 of 46 proposed an accepted play on the first propose_play and 9 had one rejected propose_play first; `eval/raw/planner_traces_2026-10-14/`). The old 28 Sep gemini-2.5-flash recordings are recoverable with `git show 6482e7c:agents/planner/evalsets/<file>`. Step 2, VERIFY (run 2, `adk eval` of the 46 re-recorded evalsets, `adk_vertex/`): **response match 46/46**, **exact tool trajectory 18/46 (39%)**, 18/46 pass both. These two numbers are a REGRESSION GUARD / consistency measure, not an accuracy score: the expectations were recorded from the same model and prompt, so the strict trajectory score measures how often a second run of the same planner repeats the first run's exact tool sequence, and response match compares two 'DONE <play_id>' strings that carry the gap's own play id (it measures that the run ends in a play, not that the play is good). Post-hoc, from stored results (not configured ADK metrics): first proposed play passed the gate in 39/46 in run 2 (37/46 in the recording run); every expected tool name was called 46/46; the run ends with propose_play 46/46; check_guardrails ran before propose_play 46/46; IN_ORDER and ANY_ORDER matching are both 33/46. The 28 trajectory failures (`adk_vertex/divergence.json`): 20 differ only in the number of estimate_outcomes/check_guardrails calls, 7 in both those counts and propose_play retries, 1 in propose_play retries only; in 18 of 28 the second run made more calls than the recording and in 10 fewer. Not comparable with earlier rows: 12 Oct (prompt v6, scored against 28 Sep gemini-2.5-flash recordings) was 43/46 response match and 1/46 trajectory; that run measured departure from the old model's retry pattern, this one measures run-to-run repeatability of the current model. FALLBACK CHECK: every one of the 249 model calls in run 2 (and all 227 in the recording run) was requested from and answered by gemini-3.5-flash (usage tap `model_calls_02_verify.jsonl`: requested model and server-reported model_version per call; zero failed calls, zero 429s), so neither run is invalid. A third run was NOT made: it costs about $3.6 and would have taken the task past its $10 cap. The rationale judge was not re-run (the 12 Oct 15/15 stays labelled prompt v6). Cheap cards on gemini-3.5-flash, same day: vision 30/30 correct dates at confidence >= 0.7 on the 30 synthetic photos (`vision_synthetic.json`, all 30 answered by gemini-3.5-flash); chat latency p50 4.45 s, p95 8.70 s over 50 calls (`eval/raw/customer_latency_2026-10-14/`, local API, same method as 28 Sep, all HTTP 200, 96 model calls all gemini-3.5-flash; 28 Sep pre-switch was p50 4.56 s, p95 6.48 s); planner cost per play from usage_metadata of the 46-run recording: $3.576 / 46 = $0.0777, about Rs 6.45 at Rs 83 per dollar (modelled at list prices; one run per gap, not a monthly bill, so it does not replace the Rs 486 30-day project figure, which stays labelled pre-switch). Not re-measured: the 190-persona agent simulation (skipped, no cost margin).",
+  "source": "`TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 TAAL_PLANNER_DEADLINE_S=120 TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.record_planner_traces --concurrency 2 --gaps <46 evalset gaps> --out eval/raw/planner_traces_2026-10-14` then `uv run python -m harness.build_fixtures --evalsets-from-traces eval/raw/planner_traces_2026-10-14` (re-recorded evalsets, `agents/planner/evalsets/PROVENANCE.json`); `... uv run --with \"google-adk[eval]==2.9.0\" python -m harness.run_evals --out eval/raw/live_eval_2026-10-14/adk_vertex` -> `adk_vertex/scores.json`; `uv run python -m harness.classify_eval_divergence --out eval/raw/live_eval_2026-10-14/adk_vertex/divergence.json`; `uv run python -m harness.first_attempt_acceptance --replay --run-date 2026-10-14 --out eval/raw/live_eval_2026-10-14/first_attempt.json`; `uv run python -m harness.vision_synthetic_eval --out eval/raw/live_eval_2026-10-14/vision_synthetic.json`; `eval/raw/customer_latency_2026-10-14/measure.py`; spend: `eval/raw/spend_ledger_2026-10-14_task2.json` (the 3.6 MB `adk_eval.log` is not committed)"
+}

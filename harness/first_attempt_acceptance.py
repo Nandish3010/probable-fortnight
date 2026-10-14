@@ -31,6 +31,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 EVALSETS = ROOT / "agents" / "planner" / "evalsets"
 RUNS = {"2026-10-09": "gemini-2.5-flash", "2026-10-12": "gemini-3.5-flash"}
+# The 28 Sep recordings the 9 and 12 Oct runs were scored against. The evalsets were re-recorded on
+# 14 Oct 2026 (gemini-3.5-flash, prompt v7), so the old tool names live in this snapshot instead.
+OLD_RECORDINGS = ROOT / "eval" / "raw" / "live_eval_2026-10-12" / "recordings_2026-09-28_tools.json"
 REPLAY_TRACES = ROOT / "eval" / "raw" / "planner_real_traces_2026-09-28"
 
 
@@ -59,14 +62,64 @@ def _counts(cases: list[tuple[list[str], str]]) -> dict:
     }
 
 
+def _in_order(expected: list[str], actual: list[str]) -> bool:
+    it = iter(actual)
+    return all(t in it for t in expected)
+
+
+def _any_order(expected: list[str], actual: list[str]) -> bool:
+    from collections import Counter
+    need, have = Counter(expected), Counter(actual)
+    return all(have[t] >= n for t, n in need.items())
+
+
+def posthoc(expected: list[tuple[list[str], str]], actual: list[tuple[list[str], str]]) -> dict:
+    """Measures computed from stored results, not configured ADK metrics. IN_ORDER: every expected
+    call appears in the run, in order, extras allowed. ANY_ORDER: every expected call appears, any
+    order, extras allowed (counts respected)."""
+    pairs = list(zip(expected, actual, strict=True))
+    return {
+        "cases": len(pairs),
+        "exact": sum(e[0] == a[0] for e, a in pairs),
+        "in_order": sum(_in_order(e[0], a[0]) for e, a in pairs),
+        "any_order": sum(_any_order(e[0], a[0]) for e, a in pairs),
+        "every_expected_tool_name_called": sum(set(e[0]) <= set(a[0]) for e, a in pairs),
+        "ends_with_propose_play": sum(bool(a[0]) and a[0][-1] == "propose_play" for e, a in pairs),
+    }
+
+
+def _live_cases(raw: Path, day: str, ids: list[str], recorded) -> list[tuple[list[str], str]]:
+    rows = {r["eval_set_id"]: r for r in json.loads((raw / f"live_eval_{day}" / "adk_vertex" / "divergence.json").read_text(encoding="utf-8"))["rows"]}
+    return [(rows[i]["actual_tools"], rows[i]["actual_final_text"]) if i in rows else recorded(i) for i in ids]
+
+
 def acceptance(raw: Path = ROOT / "eval" / "raw") -> dict:
-    ids = sorted(f"planner_{p.name.split('.')[0]}" for p in EVALSETS.glob("gap_*.evalset.json"))
-    out = {"evalsets": len(ids), "recordings_2026-09-28": {"model": "gemini-2.5-flash", **_counts([recorded_tools(i) for i in ids])}}
+    """The 9 and 12 Oct figures, against the 28 Sep recordings (from the committed snapshot)."""
+    old = json.loads(OLD_RECORDINGS.read_text(encoding="utf-8"))["cases"]
+    ids = sorted(old)
+
+    def recorded(i: str) -> tuple[list[str], str]:
+        return old[i]["tools"], old[i]["final"]
+
+    out = {"evalsets": len(ids), "recordings_2026-09-28": {"model": "gemini-2.5-flash", **_counts([recorded(i) for i in ids])}}
     for day, model in RUNS.items():
-        rows = {r["eval_set_id"]: r for r in json.loads((raw / f"live_eval_{day}" / "adk_vertex" / "divergence.json").read_text(encoding="utf-8"))["rows"]}
-        cases = [(rows[i]["actual_tools"], rows[i]["actual_final_text"]) if i in rows else recorded_tools(i) for i in ids]
-        out[f"live_{day}"] = {"model": model, **_counts(cases)}
+        out[f"live_{day}"] = {"model": model, **_counts(_live_cases(raw, day, ids, recorded))}
     return out
+
+
+def acceptance_rerecorded(day: str, model: str = "gemini-3.5-flash", raw: Path = ROOT / "eval" / "raw") -> dict:
+    """The run of `day` scored against the evalsets as they are now (re-recorded 14 Oct 2026,
+    gemini-3.5-flash, prompt v7). Both sides are the same model, so first-attempt acceptance of the
+    recordings and of the verification run measures consistency, not accuracy."""
+    ids = sorted(f"planner_{p.name.split('.')[0]}" for p in EVALSETS.glob("gap_*.evalset.json"))
+    expected = [recorded_tools(i) for i in ids]
+    actual = _live_cases(raw, day, ids, recorded_tools)
+    return {
+        "evalsets": len(ids),
+        f"recordings_{day}": {"model": model, **_counts(expected)},
+        f"live_{day}": {"model": model, **_counts(actual)},
+        f"posthoc_{day}": posthoc(expected, actual),
+    }
 
 
 def replay(data_dir: str | Path, traces: Path = REPLAY_TRACES) -> list[dict]:
@@ -101,8 +154,9 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     ap.add_argument("--replay", action="store_true")
     ap.add_argument("--data-dir", default=".local/data")
+    ap.add_argument("--run-date", default=None, help="score eval/raw/live_eval_<date>/ against the current (re-recorded) evalsets instead of the 12 Oct set")
     a = ap.parse_args()
-    out = acceptance()
+    out = acceptance_rerecorded(a.run_date) if a.run_date else acceptance()
     if a.replay:
         runs = replay(a.data_dir)
         out["replay_2026-09-28_through_todays_gate"] = {
