@@ -2,6 +2,7 @@
 // LiveReplan (a run streaming in live) -- moved out of TracePanel.tsx so both render every event,
 // including the terminal `kind: "run_summary"` record (it carries `text`, so it renders as an
 // ordinary text row here), identically.
+import { failedRules } from "../lib/planSteps";
 import type { TraceEvent } from "../lib/types";
 import { buildAttempts, type Attempt } from "./traceAttempts";
 
@@ -48,20 +49,6 @@ function summarizeCall(name: string, args: Record<string, unknown> | undefined):
       return keys.length ? keys.map((k) => `${k}=${shortValue(a[k])}`).join(", ") : "";
     }
   }
-}
-
-// Extract the guardrail rule id(s) a failure names, from either check_guardrails's structured
-// `results` (list of {rule, passed, detail}) or propose_play's plain-English `errors` strings
-// ("guardrail margin_floor: net margin 1.96% ...").
-function failedRules(resp: Record<string, unknown> | undefined): string[] {
-  if (!resp) return [];
-  const results = Array.isArray(resp.results) ? (resp.results as Record<string, unknown>[]) : [];
-  const fromResults = results.filter((r) => r.passed === false).map((r) => String(r.rule));
-  const errors = Array.isArray(resp.errors) ? (resp.errors as unknown[]) : [];
-  const fromErrors = errors
-    .map((e) => (typeof e === "string" ? e.match(/guardrail\s+(\w+)/i)?.[1] : undefined))
-    .filter((r): r is string => Boolean(r));
-  return Array.from(new Set([...fromResults, ...fromErrors]));
 }
 
 function summarizeResponse(name: string, resp: Record<string, unknown> | undefined): string {

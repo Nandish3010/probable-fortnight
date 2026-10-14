@@ -10,7 +10,7 @@ import { FAKE_API, assertNoHorizontalOverflow, beatHandlers, fakeApi, forceLiveA
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const GEMINI_LABEL = "Watch Gemini plan a play live";
 const SCRIPTED_LABEL = "Watch the scripted planner run live";
-const EVAL_TEXT = "Committed eval: 22/24 passed (11 Oct), p50 26.5 s";
+const EVAL_TEXT = "22/24 live plans passed on gemini-3.5-flash (11 Oct), p50 26.5 s · committed eval";
 
 /** Runs the landing against a fake API whose /health names the given backend. */
 async function withBackend(page: import("@playwright/test").Page, backend: "vertex" | "stub") {
@@ -54,7 +54,8 @@ test.describe("the secondary action on the landing (1280 x 800)", () => {
     await page.goto("/");
     const chip = page.getByTestId("plan-eval-chip");
     await expect(chip).toHaveText(EVAL_TEXT);
-    await expect(chip).not.toContainText(/live/i);
+    await expect(chip).toContainText("committed eval"); // a dated record, never presented as a live reading
+    await expect(chip).not.toContainText(/live reading|live now|LIVE ·/i);
     await expect(chip).toHaveAttribute("title", /24 live planner runs on 2026-10-11/);
     const [l, c] = await settledRects(page.getByTestId("watch-plan-live"), chip);
     expect(c.y).toBeGreaterThanOrEqual(l.y + l.height - 1); // under the link, in its column
@@ -115,8 +116,9 @@ test.describe("the link starts Plan live on the Desk, once", () => {
     const progress = detail.getByTestId("plan-progress");
     await expect(progress).toBeVisible();
     await expect(progress.getByTestId("plan-step")).toHaveCount(4);
+    await expect(progress.getByTestId("plan-step").first()).toContainText("Reading the forecast");
     // provenance labels stream with it; the mock service is the scripted backend, so no Gemini anywhere
-    await expect(progress.getByTestId("plan-step").nth(2).getByTestId("plan-step-provenance")).toHaveText("scripted fixture, no model call");
+    await expect(progress.getByTestId("plan-step").nth(1).getByTestId("plan-step-provenance")).toHaveText("scripted fixture, no model call");
     await expect(progress.getByText(/Gemini/)).toHaveCount(0);
     await expect(progress.locator('[data-testid="plan-step"][data-state="done"]').first()).toBeVisible();
     await expect(page.getByTestId("rerun-effort")).toBeVisible({ timeout: 30_000 }); // the run finishes
@@ -173,71 +175,98 @@ test.describe("the Desk on a phone", () => {
   });
 });
 
-test.describe("the compact loop on a phone", () => {
-  test("375 wide: the stepper's five stage names under the first decision card; the SVG is hidden", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+test.describe("the one-line loop strip above the decision", () => {
+  const WORDS = ["Spot", "Plan", "Approve", "Offer", "Measure"];
+
+  for (const [w, h] of [[1280, 800], [768, 900], [700, 900], [640, 900], [375, 812], [360, 780]] as const) {
+    test(`${w} wide: the strip sits under the subline and above the first decision`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/");
+      const strip = page.getByTestId("loop-strip");
+      await expect(strip).toBeVisible();
+      await expect(strip).toHaveAttribute("role", "img");
+      await expect(strip).toHaveAttribute("aria-label", /Spot, Plan, Approve, Offer, Measure/);
+      await expect(strip).toContainText("priors update");
+      for (const word of WORDS) await expect(strip).toContainText(word);
+      await expect(strip).not.toContainText(/Forecast|Propose/); // the SVG's words are not used here
+      const target = w >= 768 ? page.locator(".hero").first() : page.getByTestId("feed-card-1");
+      const [sub, box, below] = await settledRects(page.getByTestId("hero-subline"), strip, target);
+      expect(box.y).toBeGreaterThanOrEqual(sub.y + sub.height - 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(below.y + 1);
+      await assertNoHorizontalOverflow(page);
+    });
+  }
+
+  test("a desktop strip is one line, at most 28 px tall", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    const loop = page.getByTestId("loop-compact");
-    await expect(loop).toBeVisible();
-    await expect(loop.getByRole("listitem")).toHaveText(["Spot", "Plan", "Approve", "Offer", "Measure"]);
-    await expect(page.getByTestId("loop-diagram")).toBeHidden();
-    // under the first decision card, before the second
-    const [card, second, box] = await settledRects(page.getByTestId("feed-card-1"), page.getByTestId("feed-item-2"), loop);
-    expect(box.y).toBeGreaterThanOrEqual(card.y + card.height - 1);
-    expect(box.y + box.height).toBeLessThanOrEqual(second.y + 1);
-    // the same words as the stepper in the nav
-    const stepper = await page.getByTestId("stepper").locator('[data-part="label"]').allTextContents();
-    expect(stepper).toEqual(["Spot", "Plan", "Approve", "Offer", "Measure"]);
-    await expect(loop).not.toContainText(/Forecast|Propose/); // the SVG's words are not used here
+    const [box] = await settledRects(page.getByTestId("loop-strip"));
+    expect(box.height).toBeLessThanOrEqual(28);
   });
 
-  test("1280 wide: the SVG is the loop and the compact one is not shown", async ({ page }) => {
+  test("360 wide: still one line", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.goto("/");
+    const [box] = await settledRects(page.getByTestId("loop-strip"));
+    expect(box.height).toBeLessThanOrEqual(28);
+  });
+
+  test("it is not interactive: no buttons, links or tab stops", async ({ page }) => {
+    await page.goto("/");
+    const strip = page.getByTestId("loop-strip");
+    await expect(strip.getByRole("button")).toHaveCount(0);
+    await expect(strip.getByRole("link")).toHaveCount(0);
+    expect(await strip.evaluate((el) => el.querySelectorAll("a, button, [tabindex]").length)).toBe(0);
+  });
+
+  test("no second compact loop: the old phone block is gone", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/");
+    await expect(page.getByTestId("loop-strip")).toBeVisible();
+    await expect(page.getByTestId("loop-compact")).toHaveCount(0);
+    await expect(page.getByTestId("loop-diagram")).toBeHidden();
+  });
+
+  test("1280 wide: the detailed diagram is still under the decision", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
     await expect(page.getByTestId("loop-diagram")).toBeVisible();
-    await expect(page.getByTestId("loop-compact")).toBeHidden();
+    const [card, diagram] = await settledRects(page.locator(".hero").first(), page.getByTestId("loop-diagram"));
+    expect(diagram.y).toBeGreaterThanOrEqual(card.y + card.height - 1);
   });
 
-  test("700 wide (phone layout, SVG still shown): only one of the two loops is visible", async ({ page }) => {
+  test("700 wide: strip above, detailed diagram below", async ({ page }) => {
     await page.setViewportSize({ width: 700, height: 900 });
     await page.goto("/");
+    await expect(page.getByTestId("loop-strip")).toBeVisible();
     await expect(page.getByTestId("loop-diagram")).toBeVisible();
-    await expect(page.getByTestId("loop-compact")).toBeHidden();
   });
 
-  test("640 wide is the switch: compact on, SVG off", async ({ page }) => {
-    await page.setViewportSize({ width: 640, height: 900 });
+  test("the primary action stays above the fold at 1280x800", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    await expect(page.getByTestId("loop-compact")).toBeVisible();
-    await expect(page.getByTestId("loop-diagram")).toBeHidden();
+    const [btn] = await settledRects(page.getByRole("button", { name: "Run the 60-second beat" }));
+    expect(btn.y + btn.height).toBeLessThanOrEqual(800);
   });
 
-  test("360 wide: nothing overflows sideways", async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 780 });
+  test("the strip goes away with the decision open on a desktop, so Approve keeps its place", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    await expect(page.getByTestId("loop-compact")).toBeVisible();
-    await assertNoHorizontalOverflow(page);
-  });
-
-  test("the loop adds no second Approve and leaves the feed's own controls alone", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/");
-    await expect(page.getByTestId("loop-compact")).toBeVisible();
-    await expect(page.getByTestId("feed-item-1").getByTestId("approve-button")).toHaveCount(1);
-    await expect(page.getByTestId("loop-compact").getByRole("button")).toHaveCount(0);
-    await expect(page.getByTestId("loop-compact").getByRole("link")).toHaveCount(0);
+    await page.getByRole("button", { name: "Run the 60-second beat" }).click();
+    await expect(page.getByTestId("beat-panel")).toBeVisible();
+    await expect(page.getByTestId("loop-strip")).toBeHidden();
   });
 });
 
 test.describe("axe", () => {
   for (const scheme of ["light", "dark"] as const) {
     for (const [name, viewport] of [["desktop", { width: 1280, height: 800 }], ["phone", { width: 375, height: 812 }]] as const) {
-      test(`${scheme} ${name}: the landing with the secondary action / the compact loop`, async ({ page }) => {
+      test(`${scheme} ${name}: the landing with the secondary action / the loop strip`, async ({ page }) => {
         await page.setViewportSize(viewport);
         await page.emulateMedia({ reducedMotion: "reduce", colorScheme: scheme });
         await withBackend(page, "vertex");
         await page.goto("/");
-        await expect(page.getByTestId(name === "desktop" ? "watch-plan-live" : "loop-compact")).toBeVisible();
+        await expect(page.getByTestId(name === "desktop" ? "watch-plan-live" : "loop-strip")).toBeVisible();
         if (name === "desktop") await expect(page.getByTestId("plan-eval-chip")).toBeVisible();
         await page.waitForTimeout(400);
         const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
