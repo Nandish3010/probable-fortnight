@@ -171,7 +171,7 @@ export function clockTime(iso: string | null | undefined): string | null {
  * is the chip on the result ("Copy: ..."), `step` is the provenance line on the "Writing the offer" step.
  * Both come from this one function, from `copy.source` and `copy.provenance` of POST /approve and nothing
  * else, so the two can never disagree. "bigquery" is Gemini via BigQuery (written for this Approve). "existing" is copy stored with
- * the play: with provenance "bigquery_pregenerated" it was written ahead of time with BigQuery + Gemini, otherwise
+ * the play: with provenance "bigquery_pregenerated" it was pre-generated and stored ahead of time (the UI does not say which service wrote it), otherwise
  * "stored with the play". "templated" is the template (the step line adds that BigQuery was attempted under
  * a budget; this is the only case where it says so). An absent or empty source, a source that is not a
  * string, and a source this code has not seen all give null: no badge, no step line, and never a BigQuery
@@ -186,7 +186,7 @@ export function copySourceParts(
       return { badge: "Copy: Gemini via BigQuery", step: "Gemini via BigQuery" };
     case "existing":
       return copy?.provenance === "bigquery_pregenerated"
-        ? { badge: "Copy: written ahead with BigQuery + Gemini", step: "written ahead with BigQuery + Gemini" }
+        ? { badge: "Copy: pre-generated and stored", step: "pre-generated and stored" }
         : { badge: "Copy: stored with the play", step: "stored with the play" };
     case "templated":
       return { badge: "Copy: template", step: PROVENANCE.offerCopy };
