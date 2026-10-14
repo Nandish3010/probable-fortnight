@@ -25,3 +25,22 @@ def test_todays_gate_still_rejects_every_recorded_first_attempt(data_dir):
     runs = replay(data_dir)
     assert len(runs) == 5
     assert all(not r["recorded_valid"][0] and not r["today"][0]["valid"] for r in runs)
+
+
+COMMITTED_V7 = ROOT / "eval" / "raw" / "live_eval_2026-10-14" / "first_attempt.json"
+
+
+def test_rerecorded_counts_reproduce_the_committed_file():
+    from harness.first_attempt_acceptance import acceptance_rerecorded
+
+    committed = json.loads(COMMITTED_V7.read_text(encoding="utf-8"))
+    assert acceptance_rerecorded("2026-10-14") == {k: v for k, v in committed.items() if not k.startswith("replay_")}
+
+
+def test_posthoc_measures():
+    from harness.first_attempt_acceptance import posthoc
+
+    exp = [(["estimate_outcomes", "check_guardrails", "propose_play"], "DONE a")]
+    act = [(["estimate_outcomes", "check_guardrails", "check_guardrails", "propose_play"], "DONE a")]
+    p = posthoc(exp, act)
+    assert (p["exact"], p["in_order"], p["any_order"], p["ends_with_propose_play"]) == (0, 1, 1, 1)
