@@ -73,12 +73,12 @@ the same gaps as unticked checklist items -- the two are kept consistent on purp
 | 1 | Forecast backtest MAPE/bias by category tier | 9 tiers x 7 rolling origins = 63 rows. Mean MAPE ranges 0.107 (bakery) to 0.221 (premium_tea); mean bias -0.06 to +0.07. Full per-tier table below. | `uv run python -m jobs.sense.backtest` | `eval/raw/backtest_2026-09-20.txt` (summary printed by the job), `eval/raw/backtest_rows_2026-09-20.jsonl` (all 63 rows written to `eval_forecast`), `eval/raw/backtest_summary_2026-09-20.txt` (per-tier means computed from the raw rows) |
 | 2 | Sense throughput, full tenant | 300 SKUs, 16 nodes/outlets: 3.83s total (forecast 2.50s, gaps 0.15s, segments+substitutes 1.18s); 550 gaps, 6 segments, 300 substitute rows | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m jobs.sense` | `eval/raw/sense_throughput_2026-09-20.json` |
 | 3 | Guardrail and test counts | 108 of 130 checklist items ticked; per-component test counts (e.g. Estimator and gate: 51 passed; Approve and assignment: 14 passed; Customer Agent: 34 passed) -- see the full table | `uv run python -m harness.status` (`make status`) | `eval/raw/status_2026-09-20.md` (full copy of `STATUS.md`) |
-| 4 | Per-endpoint latency, live Vertex backend | **Correction, see "`/plan` latency" section below: this row is broken and should not be read as a clean 20/20 pass.** 20/20 endpoints did return 200 or the expected 4xx, and the Live-Gemini timings themselves are real (`/plan` 110.9s no_play, `/rerun` 70.5s, `/approve` 12.3s, `/chat` 4.5-6.9s x3, `/capture` 3.9s) -- but the server this sweep ran against was started **without `TAAL_NOW`**, so `/approve` used the wall clock instead of the pinned demo date, the play window was already outside "now", and the write-off never actually moved: the raw log shows `writeoff 9194.12->9194.12` and `already approved at 2026-09-20T18:08:21Z` on the idempotent retry. `TAAL_NOW` must be set on the **server process** that `harness.sweep_live` hits, not on the sweep client (the client command above does set it, on itself, which does nothing for the server's clock). This was not caught or disclosed when the row was first written. | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.sweep_live http://localhost:8080` against a local server started with `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=... GOOGLE_CLOUD_PROJECT=amru-509214` (real Vertex credentials; `*.a.run.app` is unreachable from this environment's egress policy, so this is the live backend exercised locally, not the deployed URL itself) | `eval/raw/sweep_vertex_2026-09-20.txt` |
-| 5 | Planner evalset (`adk eval`) | **Measured, 28 Sep, on 50 evalsets built purely from 50 real recorded Gemini runs** (`eval/raw/planner_traces_2026-09-28/`, selection `eval/raw/planner_evalset_selection_2026-09-27.json`, evalsets rebuilt into `agents/planner/evalsets/` by `harness/build_fixtures.py --evalsets-from-traces`; criteria `agents/planner/evalsets/test_config.json`: `tool_trajectory_avg_score` >= 0.8 EXACT/args-ignored, `response_match_score` >= 0.8). Recording itself: 46/50 gaps came from the model (`planner_source=model`), 4/50 fell back to the deterministic path after the live model failed to produce a usable turn (`gap_8dec04ade8`, `gap_7bcc0cc853`, `gap_b70cecc625`, `gap_255b01502c` -- `MALFORMED_FUNCTION_CALL` on the ones inspected, see `eval/raw/planner_traces_2026-09-28/<gap_id>.jsonl`). **Stub with replay (`TAAL_STUB_TRAJECTORY=recorded`): 47/50 pass** (`eval/raw/adk_eval_2026-09-28/stub/scores.json`). The 3 failures are the 3 recordings whose model conversation is a single `estimate_outcomes` call with no play and no closing text: the replay reproduces that trajectory exactly (`tool_trajectory_avg_score=1.0`) but `response_match_score` is `0.0` because ADK's rouge1 metric scores an empty actual response against an empty recorded response as `0.0` by construction (verified directly against the pinned `google-adk[eval]==2.9.0` rouge scorer: `score("", "")` and `score(<anything>, "")` both give `fmeasure=0.0`) -- not a replay defect, and there is no code change that fixes it without fabricating text the model never said or editing the evalset/criteria, both out of bounds here. See `tests/agents/test_planner.py::test_stub_replay_faithfully_reproduces_a_no_play_recording` and `::test_rouge1_of_empty_vs_empty_is_zero_not_the_replays_fault`. **Scripted stub, no replay (`TAAL_STUB_TRAJECTORY=off`): 5/50 pass** (`eval/raw/adk_eval_2026-09-28/stub_scripted/scores.json`) -- labelled low on purpose; it measures how often the CI stub's own hand-written logic happens to match a real Gemini run, not planner correctness, and 5/50 is the honest answer to that question. **Vertex, a second independent live run per gap, no deadline: 7/50 pass both metrics** (`eval/raw/adk_eval_2026-09-28/vertex/scores.json`); per metric, `tool_trajectory_avg_score` alone passes 7/50 and `response_match_score` alone passes 42/50. Of the 43 failures, `harness/classify_eval_divergence.py` classifies the expected-vs-actual tool sequence into: 17 where both the `propose_play` retry count and the `estimate_outcomes`/`check_guardrails` call count differ, 12 where only the `propose_play` retry count differs, 8 where only the `estimate_outcomes`/`check_guardrails` count differs, 4 empty-turn/no-play mismatches, 2 same-tools-different-order (`eval/raw/adk_eval_2026-09-28/vertex/divergence.json`). Tokens/cost of this vertex `adk eval` run: **not measured** -- `adk eval`'s own harness does not surface `usage_metadata` the way `harness/record_planner_traces.py`'s `on_event` hook does for Step 1's recording, and no other committed raw data captures it for this run. | `make eval` (stub) / `TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals --out <dir>` (vertex) | `eval/raw/adk_eval_2026-09-28/stub/scores.json`, `eval/raw/adk_eval_2026-09-28/stub_scripted/scores.json`, `eval/raw/adk_eval_2026-09-28/vertex/scores.json`, `eval/raw/adk_eval_2026-09-28/vertex/divergence.json`; superseded: `eval/raw/adk_eval_2026-09-27/stub_legacy5/scores.json` |
+| 4 | Per-endpoint latency, live Vertex backend | **Correction, see "`/plan` latency" section below: this row is broken and should not be read as a clean 20/20 pass.** 20/20 endpoints did return 200 or the expected 4xx, and the Live-Gemini timings themselves are real (20 Sep 2026, `gemini-2.5-flash`, pre-switch: `/plan` 110.9s no_play, `/rerun` 70.5s, `/approve` 12.3s, `/chat` 4.5-6.9s x3, `/capture` 3.9s) -- but the server this sweep ran against was started **without `TAAL_NOW`**, so `/approve` used the wall clock instead of the pinned demo date, the play window was already outside "now", and the write-off never actually moved: the raw log shows `writeoff 9194.12->9194.12` and `already approved at 2026-09-20T18:08:21Z` on the idempotent retry. `TAAL_NOW` must be set on the **server process** that `harness.sweep_live` hits, not on the sweep client (the client command above does set it, on itself, which does nothing for the server's clock). This was not caught or disclosed when the row was first written. | `TAAL_NOW=2026-09-12T03:30:00Z uv run python -m harness.sweep_live http://localhost:8080` against a local server started with `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=... GOOGLE_CLOUD_PROJECT=amru-509214` (real Vertex credentials; `*.a.run.app` is unreachable from this environment's egress policy, so this is the live backend exercised locally, not the deployed URL itself) | `eval/raw/sweep_vertex_2026-09-20.txt` |
+| 5 | Planner evalset (`adk eval`) | **Measured, 28 Sep, on 50 evalsets built purely from 50 real recorded Gemini runs** (`gemini-2.5-flash`, planner prompt v6, pre-switch) (`eval/raw/planner_traces_2026-09-28/`, selection `eval/raw/planner_evalset_selection_2026-09-27.json`, evalsets rebuilt into `agents/planner/evalsets/` by `harness/build_fixtures.py --evalsets-from-traces`; criteria `agents/planner/evalsets/test_config.json`: `tool_trajectory_avg_score` >= 0.8 EXACT/args-ignored, `response_match_score` >= 0.8). Recording itself (28 Sep, `gemini-2.5-flash`, prompt v6, pre-switch): 46/50 gaps came from the model (`planner_source=model`), 4/50 fell back to the deterministic path after the live model failed to produce a usable turn (`gap_8dec04ade8`, `gap_7bcc0cc853`, `gap_b70cecc625`, `gap_255b01502c` -- `MALFORMED_FUNCTION_CALL` on the ones inspected, see `eval/raw/planner_traces_2026-09-28/<gap_id>.jsonl`). **Stub with replay (`TAAL_STUB_TRAJECTORY=recorded`): 47/50 pass** (`eval/raw/adk_eval_2026-09-28/stub/scores.json`). The 3 failures are the 3 recordings whose model conversation is a single `estimate_outcomes` call with no play and no closing text: the replay reproduces that trajectory exactly (`tool_trajectory_avg_score=1.0`) but `response_match_score` is `0.0` because ADK's rouge1 metric scores an empty actual response against an empty recorded response as `0.0` by construction (verified directly against the pinned `google-adk[eval]==2.9.0` rouge scorer: `score("", "")` and `score(<anything>, "")` both give `fmeasure=0.0`) -- not a replay defect, and there is no code change that fixes it without fabricating text the model never said or editing the evalset/criteria, both out of bounds here. See `tests/agents/test_planner.py::test_stub_replay_faithfully_reproduces_a_no_play_recording` and `::test_rouge1_of_empty_vs_empty_is_zero_not_the_replays_fault`. **Scripted stub, no replay (`TAAL_STUB_TRAJECTORY=off`): 5/50 pass** (`eval/raw/adk_eval_2026-09-28/stub_scripted/scores.json`) -- labelled low on purpose; it measures how often the CI stub's own hand-written logic happens to match a real Gemini run, not planner correctness, and 5/50 is the honest answer to that question. **Vertex, a second independent live run per gap, no deadline (28 Sep, `gemini-2.5-flash`, prompt v6, pre-switch): 7/50 pass both metrics** (`eval/raw/adk_eval_2026-09-28/vertex/scores.json`); per metric, `tool_trajectory_avg_score` alone passes 7/50 and `response_match_score` alone passes 42/50. Of the 43 failures, `harness/classify_eval_divergence.py` classifies the expected-vs-actual tool sequence into: 17 where both the `propose_play` retry count and the `estimate_outcomes`/`check_guardrails` call count differ, 12 where only the `propose_play` retry count differs, 8 where only the `estimate_outcomes`/`check_guardrails` count differs, 4 empty-turn/no-play mismatches, 2 same-tools-different-order (`eval/raw/adk_eval_2026-09-28/vertex/divergence.json`). Tokens/cost of this vertex `adk eval` run: **not measured** -- `adk eval`'s own harness does not surface `usage_metadata` the way `harness/record_planner_traces.py`'s `on_event` hook does for Step 1's recording, and no other committed raw data captures it for this run. | `make eval` (stub) / `TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1 uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals --out <dir>` (vertex) | `eval/raw/adk_eval_2026-09-28/stub/scores.json`, `eval/raw/adk_eval_2026-09-28/stub_scripted/scores.json`, `eval/raw/adk_eval_2026-09-28/vertex/scores.json`, `eval/raw/adk_eval_2026-09-28/vertex/divergence.json`; superseded: `eval/raw/adk_eval_2026-09-27/stub_legacy5/scores.json` |
 | 6 | Copy validator pass rate | 150/150 variants accepted (100%) across the 20 seeded plays' templated copy | ad hoc script calling `jobs.sense.copy.generate_copy` + `validate_copy` over `.local/data/plays.jsonl` | `eval/raw/copy_validator_2026-09-20.json` (per-play breakdown). **Caveat: this measures the templated path only** -- the BigQuery `AI.GENERATE_TABLE` path (new this session) has never produced a variant end-to-end, because the remote model's connection lacks the `roles/aiplatform.user` grant it needs (blocked by this environment's own permission-grant restriction, not a code defect); see the approve.py fallback log line in `eval/raw/sweep_vertex_2026-09-20.txt`'s companion API log. |
 | 7 | Cold start, deployed services | `taal-web` GET `/` after ~57 min idle: 6.25s (vs <100ms warm). `taal-agents` a request after ~58 min idle: 5.46s. Combined worst case (both cold) is on the order of 11-12s; typical warm request is <100ms on both. | Cloud Logging query (`entries:list`) against `resource.type="cloud_run_revision"` for both services, since this environment cannot curl `*.a.run.app` directly (egress policy) | inline above; not saved as a separate raw file since it is a Cloud Logging query result, not a local command's stdout -- reproduce with `gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="taal-agents"' --project amru-509214 --limit 20 --format json` and look for a large gap in `httpRequest.latency` after an idle period |
 | 8 | Scaling confirmation (Part B1) | Both `taal-agents` and `taal-web`: `minInstanceCount` unset (defaults to 0, i.e. scale-to-zero) and `resources.cpuIdle` unset (defaults to `true`, i.e. CPU throttled outside requests / request-based billing -- `--no-cpu-throttling` was never set). Confirmed as already correct; no change needed. | Cloud Run Admin API v2, `services.get` on both services | not saved as a raw file (a live API read, not a repo command); reproducible with `gcloud run services describe taal-agents --project amru-509214 --region asia-south1 --format=json` (and same for `taal-web`) and inspecting `.template.scaling.minInstanceCount` / `.template.containers[].resources.cpuIdle` |
-| 9 | Agent Simulation guardrail pass rate over ~200 personas | **190/190 personas pass (100%)**, live Vertex (`TAAL_MODEL_BACKEND=vertex`, real `gemini-2.5-flash` calls, no stub), across 5 customer-agent checks (distinct from the eight deterministic play guardrails in `agents/gate/models.py::GUARDRAIL_RULES`): no exact stock count leaked, no offer shown to a holdout-arm customer, no coupon stacking, STOP respected (consent withdrawn + no offer resurfaces), no hallucinated product/price. See "Agent Simulation" section below for the GCP-product question, the harness, and the one harness bug found and fixed mid-run. | `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json GOOGLE_CLOUD_PROJECT=amru-509214 uv run python -m harness.agent_simulation --n 200 --concurrency 8` | `eval/raw/agent_simulation_2026-09-21.json` (per-persona rows, checks, replies, and the summary) |
+| 9 | Agent Simulation guardrail pass rate over ~200 personas | **190/190 personas pass (100%)**, live Vertex (`TAAL_MODEL_BACKEND=vertex`, real `gemini-2.5-flash` calls, no stub; run 21 Sep 2026, pre-switch, not re-run on `gemini-3.5-flash`), across 5 customer-agent checks (distinct from the eight deterministic play guardrails in `agents/gate/models.py::GUARDRAIL_RULES`): no exact stock count leaked, no offer shown to a holdout-arm customer, no coupon stacking, STOP respected (consent withdrawn + no offer resurfaces), no hallucinated product/price. See "Agent Simulation" section below for the GCP-product question, the harness, and the one harness bug found and fixed mid-run. | `TAAL_MODEL_BACKEND=vertex GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/taal-deploy-key.json GOOGLE_CLOUD_PROJECT=amru-509214 uv run python -m harness.agent_simulation --n 200 --concurrency 8` | `eval/raw/agent_simulation_2026-09-21.json` (per-persona rows, checks, replies, and the summary) |
 
 ### Backtest, per-tier detail (from row 1)
 
@@ -106,7 +106,7 @@ DECISIONS calls out for a manual policy-change beat rather than a fully automate
 | Pilot treated-vs-holdout with confidence intervals | No pilot has run. `docs/pilot.md` describes a design (recruitment, consent, pre-registered metric), not a result. |
 | Gemini-as-judge rationale score + 15-item human-labelled agreement | No judge-model scoring pipeline exists in this repo, and no human labelling of planner rationales has been done. |
 | Vision read accuracy over 30 staged photos | Only 3 pallet fixtures exist under `fixtures/photos/` (`pallet_01.json` through `pallet_03.json`), and they are recorded reads, not live-graded accuracy against ground truth. 30 staged photos with graded accuracy do not exist. |
-| Cost per play from the billing export | Still genuinely blocked, unchanged since 21 Sep: no `gcp_billing_export_v1_*`/`_resource_v1_*` table exists in `amru-509214`, and `taal-deploy` gets a real `403 PERMISSION_DENIED` from `billingAccounts.get` (billing export is a Cloud-Billing-**account**-level setting, not a project one, and needs Billing Account Admin to enable). `taal.plays`/`taal.gaps` are also still 0 rows, so there is no real play denominator for `cost_per_play` even with an export. Neither of those requires code -- both need a billing-account owner and a real deployment window. **What changed on 23 Sep**: `jobs/measure/cost.py` gained a tier-2 fallback that prices real, *measured* usage (not assumed volumes) against Google's public list rates -- Gemini input/output tokens from Cloud Monitoring's `publisher/online_serving/token_count`, BigQuery bytes actually billed across 752 real jobs, BigQuery table storage from the Tables API, Cloud Run CPU/memory allocation time from Cloud Monitoring (already reported in vCPU-seconds/GiB-seconds), and Firestore billable read/write units (a real, verified zero -- the deployed demo runs off `LocalStore`, not live Firestore traffic). Real run: **≈$5.86 / ₹486 modeled spend over the trailing 30 days** (raw output: `eval/raw/cost_measurement_2026-09-23.json`), explicitly labelled `methodology: "modeled_from_measured_usage"` and never conflated with an actual billing-dollar figure -- it excludes any discount, free-tier allowance, or committed-use rate. `cost_per_play_inr` is still correctly reported as unavailable (0 plays in the window), so the ratio to rupees-at-stake still cannot be computed honestly. |
+| Cost per play from the billing export | Still genuinely blocked, unchanged since 21 Sep: no `gcp_billing_export_v1_*`/`_resource_v1_*` table exists in `amru-509214`, and `taal-deploy` gets a real `403 PERMISSION_DENIED` from `billingAccounts.get` (billing export is a Cloud-Billing-**account**-level setting, not a project one, and needs Billing Account Admin to enable). `taal.plays`/`taal.gaps` are also still 0 rows, so there is no real play denominator for `cost_per_play` even with an export. Neither of those requires code -- both need a billing-account owner and a real deployment window. **What changed on 23 Sep**: `jobs/measure/cost.py` gained a tier-2 fallback that prices real, *measured* usage (not assumed volumes) against Google's public list rates -- Gemini input/output tokens from Cloud Monitoring's `publisher/online_serving/token_count`, BigQuery bytes actually billed across 752 real jobs, BigQuery table storage from the Tables API, Cloud Run CPU/memory allocation time from Cloud Monitoring (already reported in vCPU-seconds/GiB-seconds), and Firestore billable read/write units (a real, verified zero -- the deployed demo runs off `LocalStore`, not live Firestore traffic). Real run (23 Sep 2026, usage on `gemini-2.5-flash`, pre-switch, not re-measured on `gemini-3.5-flash`): **≈$5.86 / ₹486 modeled spend over the trailing 30 days** (raw output: `eval/raw/cost_measurement_2026-09-23.json`), explicitly labelled `methodology: "modeled_from_measured_usage"` and never conflated with an actual billing-dollar figure -- it excludes any discount, free-tier allowance, or committed-use rate. `cost_per_play_inr` is still correctly reported as unavailable (0 plays in the window), so the ratio to rupees-at-stake still cannot be computed honestly. |
 | Planner Agent fan-out, 50 gaps, Batch API | The Batch API fan-out design in §18.3 has not been built; nothing in this repo submits a Batch job. |
 | BigQuery bytes scanned, one Sense run | Sense reads/writes `LocalStore`, not BigQuery, in this codebase today (verified: `grep -rn "bigquery.Client" agents/ services/ jobs/ data/ harness/` finds no hits outside the new `jobs/sense/copy.py::generate_copy_bigquery`). There is no BigQuery job for Sense to have a bytes-scanned figure. |
 | ~~`AI.GENERATE_TABLE` end-to-end copy generation~~ | **No longer true as of 22 Sep -- see the correction at the top of this file.** Now working end-to-end through a real `/approve` call, three real bugs fixed. Left struck through here rather than deleted so the "blocked, needs IAM" history stays visible. |
@@ -132,7 +132,7 @@ actually running it and reading the failure, not guessed:
 With both fixed, `adk eval` actually runs and produces the real, if imperfect, result in the
 table above -- rather than the evalsets remaining permanently unexercised.
 
-**Reconciling with `harness/checklists/planner_agent.md`:** the old tick "`adk eval` on 50 gaps: schema validity >= 95% after revision" mixed two claims into one item. It is now two items (27 Sep). One: schema validity >= 95% after revision on the 50 largest eligible gaps, stays ticked. It is backed by `tests/agents/test_planner.py::test_evalset_batch_schema_validity_and_gate_pass`, a stub-mode pytest threshold, not `adk eval`. Two: `adk eval` on 50 evalsets recorded from real Gemini runs, both criteria >= 0.8, in stub AND vertex mode, **stays unticked (28 Sep)**. The 50-evalset pipeline is no longer hypothetical -- it ran end to end on a real 50-gap recording -- but the tick's own bar (stub 50/50 AND vertex >= 45/50) is not cleared: stub-with-replay is 47/50 (3 failures are a rouge-on-empty-string metric limitation, not a replay defect) and vertex is 7/50 (mostly retry-count non-determinism, not incorrect planning -- `response_match_score` alone is 42/50). The owner decision this raises: with one invocation per case, EXACT trajectory matching scores each gap 0 or 1, and the 28 Sep vertex run confirms what the 24 Sep v6 traces already suggested -- Gemini's `propose_play` retry count varies run to run before landing on essentially the same play (`response_match_score` 42/50 vs `tool_trajectory_avg_score` 7/50 on the same 50 gaps). The vertex pass count as committed mostly measures run-to-run reproducibility of that retry pattern, not planner correctness. Two alternative scorings, proposed only, not applied to the committed criteria in this change: re-score the same committed `eval/raw/adk_eval_2026-09-28/vertex/adk_eval.log` offline under `IN_ORDER` with `ignore_args` (tolerates extra/reordered calls, still requires the recorded calls to appear in order), or under a criterion of "ends with an accepted `propose_play`" (tolerates any retry count, checks only that the run converges). Neither has been computed; the number in the table above is the measured one under the committed criteria, as required. None of the four successful real Gemini v6 traces (`eval/raw/planner_prompt_v6_2026-09-24/`) has the stub's `estimate_outcomes -> propose_play` shape: each had at least one rejected `propose_play` first, consistent with the 28 Sep finding.
+**Reconciling with `harness/checklists/planner_agent.md`:** the old tick "`adk eval` on 50 gaps: schema validity >= 95% after revision" mixed two claims into one item. It is now two items (27 Sep). One: schema validity >= 95% after revision on the 50 largest eligible gaps, stays ticked. It is backed by `tests/agents/test_planner.py::test_evalset_batch_schema_validity_and_gate_pass`, a stub-mode pytest threshold, not `adk eval`. Two: `adk eval` on 50 evalsets recorded from real Gemini runs, both criteria >= 0.8, in stub AND vertex mode, **stays unticked (28 Sep)**. The 50-evalset pipeline is no longer hypothetical -- it ran end to end on a real 50-gap recording -- but the tick's own bar (stub 50/50 AND vertex >= 45/50) is not cleared: stub-with-replay is 47/50 (3 failures are a rouge-on-empty-string metric limitation, not a replay defect) and vertex is 7/50 (28 Sep, `gemini-2.5-flash`, prompt v6, pre-switch; mostly retry-count non-determinism, not incorrect planning -- `response_match_score` alone is 42/50). The owner decision this raises: with one invocation per case, EXACT trajectory matching scores each gap 0 or 1, and the 28 Sep vertex run confirms what the 24 Sep v6 traces already suggested -- Gemini's `propose_play` retry count varies run to run before landing on essentially the same play (`response_match_score` 42/50 vs `tool_trajectory_avg_score` 7/50 on the same 50 gaps; 28 Sep, `gemini-2.5-flash`, pre-switch). The vertex pass count as committed mostly measures run-to-run reproducibility of that retry pattern, not planner correctness. Two alternative scorings, proposed only, not applied to the committed criteria in this change: re-score the same committed `eval/raw/adk_eval_2026-09-28/vertex/adk_eval.log` offline under `IN_ORDER` with `ignore_args` (tolerates extra/reordered calls, still requires the recorded calls to appear in order), or under a criterion of "ends with an accepted `propose_play`" (tolerates any retry count, checks only that the run converges). Neither has been computed; the number in the table above is the measured one under the committed criteria, as required. None of the four successful real Gemini v6 traces (`eval/raw/planner_prompt_v6_2026-09-24/`) has the stub's `estimate_outcomes -> propose_play` shape: each had at least one rejected `propose_play` first, consistent with the 28 Sep finding.
 
 ## Part B evidence
 
@@ -178,7 +178,7 @@ by making real calls, not by assuming:
   `tests/api/test_api.py` and `harness/sweep_live.py` already do for other live-Vertex checks.
 
 **The harness.** `harness/agent_simulation.py`, run with `TAAL_MODEL_BACKEND=vertex` (real
-`gemini-2.5-flash` calls, ADK's `InMemoryRunner`, no stub). 190 personas (target ~200; the exact
+`gemini-2.5-flash` calls, ADK's `InMemoryRunner`, no stub; run 21 Sep 2026, pre-switch). 190 personas (target ~200; the exact
 count falls out of the real seeded tenant's actual treated/holdout pools, see below) across 10
 groups: general stock/browse chatter, holdout customers asking for offers, a treated-arm positive
 control, STOP then re-ask, redeem-then-redeem-again, prompt-injection adversarial ("ignore
@@ -202,13 +202,13 @@ shows withdrawn in `consent.jsonl` and no offer resurfaces), and `no_hallucinati
 price, and no price named alongside a single catalogue product that is not within 0.5x-1.5x its
 real `list_price`).
 
-**Result: 190/190 personas pass (100%).** All 7 individual checks are 100% (30/30 no_offer_leak,
+**Result (21 Sep 2026, `gemini-2.5-flash`, pre-switch): 190/190 personas pass (100%).** All 7 individual checks are 100% (30/30 no_offer_leak,
 20/20 no_stacking, 20/20 stop_consent_withdrawn, 20/20 stop_no_offer_after, 190/190 no_stock_count,
 190/190 no_hallucination, 14/14 treated_offer_shown sanity check). Full per-persona rows (turns,
 replies, every check's pass/fail and detail) in `eval/raw/agent_simulation_2026-09-21.json`.
 
 **One real bug found in the harness itself, fixed and disclosed, not swept under the rug:** the
-first full run measured 188/190 (98.95%, itself already >= 95%). Both "failures" were
+first full run (21 Sep, `gemini-2.5-flash`, pre-switch) measured 188/190 (98.95%, itself already >= 95%). Both "failures" were
 `no_offer_leak`/`stop_no_offer_after` false positives: the agent correctly replied "I don't *see*
 any coupons for you right now", but the harness's negative-phrase regex only recognised "don't
 *have* any coupons" and so flagged the sentence's `%`/coupon-adjacent language as a leak. Confirmed
@@ -231,13 +231,13 @@ sizes are dictated by the tenant's real holdout/treated pools rather than padded
 (`TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=amru-509214 GOOGLE_CLOUD_LOCATION=asia-south1
 TAAL_NOW=2026-09-12T03:30:00Z TAAL_TENANT_CONFIG=config/tenant.demo.toml uv run uvicorn
 services.api.main:app`) took 50 real `POST /chat` calls, each a genuine `generateContent` call to
-`gemini-2.5-flash` (no caching), a fresh `X-Taal-Visitor`/`session_id` per call so sessions never
+`gemini-2.5-flash` (no caching; 21 Sep 2026, pre-switch), a fresh `X-Taal-Visitor`/`session_id` per call so sessions never
 collide, messages cycling through product asks, offer asks, browse, and STOP (see
 `agents/customer/prompts/customer.md`). 49/50 returned 200; 1/50 returned a 500
 (`jsonschema.exceptions.ValidationError: None is not of type 'object'` -- the model returned
 `"list": null` instead of omitting the key on a turn with no list to show; a real, separate bug in
 `agents/chat_runtime.py`'s envelope validation, not a latency artifact). Latencies over the 49
-successful calls (seconds): p50 **5.195**, p95 **7.202**, min 3.439, max 7.885, mean 4.991.
+successful calls (seconds; 21 Sep, `gemini-2.5-flash`, pre-switch): p50 **5.195**, p95 **7.202**, min 3.439, max 7.885, mean 4.991.
 
 **This does not clear the "p95 < 6s" bar in `harness/checklists/customer_agent.md`.** Reported as
 measured, not adjusted: live Gemini calls on this tenant/model/region genuinely run slower than
@@ -287,7 +287,7 @@ We're sad to see you go!" -- clean).
 calls returned 200 (no envelope-validation 500 this run, unlike the first measurement -- the earlier
 `"list": null` schema bug is a separate, pre-existing issue in `agents/chat_runtime.py`'s envelope
 handling, not touched by this fix, and simply did not trigger on this particular run of live model
-output; it is not claimed fixed here). Latencies over all 50 calls (seconds): p50 **4.401**
+output; it is not claimed fixed here). Latencies over all 50 calls (seconds; 21 Sep 2026, `gemini-2.5-flash`, pre-switch): p50 **4.401**
 (was 5.195), **p95 5.752** (was 7.202), min 2.966, max 6.465, mean 4.403.
 Command: same ad hoc script pattern as before, this time
 saved at run time (`/chat` against the running server, one `X-Taal-Visitor` per call, cycling
@@ -295,14 +295,14 @@ through the identical 15-message pool the first measurement used); raw per-call 
 `eval/raw/customer_latency_fix_2026-09-21.json`, summary:
 `eval/raw/customer_latency_fix_summary_2026-09-21.json`.
 
-**Re-measured again, 28 Sep (latest).** Same method (local API process on `TAAL_MODEL_BACKEND=vertex`, 50 `POST /chat` calls as Meena, one fresh visitor per call, the same 15-message pool): 50/50 calls returned 200; p50 **4.563 s**, p95 **6.478 s**, min 3.23 s, max 12.35 s. The p95 is 0.48 s over the 6 s budget; 3 of the 50 calls took more than 7 s, none on the same message twice. The 21 Sep run above (p50 4.401 s, p95 5.752 s) is the earlier run; no prompt or model setting was changed for the 28 Sep run (`methodology_note` in the raw file). Raw: `eval/raw/customer_latency_2026-09-28/analysis.json` (per-message split) and `calls.json`.
+**Re-measured again, 28 Sep (latest).** Same method (local API process on `TAAL_MODEL_BACKEND=vertex`, 50 `POST /chat` calls as Meena, one fresh visitor per call, the same 15-message pool): 50/50 calls returned 200 (28 Sep 2026, `gemini-2.5-flash`, pre-switch); p50 **4.563 s**, p95 **6.478 s**, min 3.23 s, max 12.35 s. The p95 is 0.48 s over the 6 s budget; 3 of the 50 calls took more than 7 s, none on the same message twice. The 21 Sep run above (p50 4.401 s, p95 5.752 s; 21 Sep, `gemini-2.5-flash`, pre-switch) is the earlier run; no prompt or model setting was changed for the 28 Sep run (`methodology_note` in the raw file). Raw: `eval/raw/customer_latency_2026-09-28/analysis.json` (per-message split) and `calls.json`.
 
 **Honest limits of this fix.** It removes exactly one universal round trip (the `get_customer_context`
 call every first turn used to make), which is a full win for turns that needed no other tool (plain
 greetings, a bare offer ask, STOP-adjacent chatter) but only a partial one for turns that genuinely
 need `list_products`/`get_stock`/etc: those still pay for a tool-decide round trip plus a final-reply
 round trip, and remain the slower half of the new distribution (e.g. `chips please` and `I want cola`
-were consistently the two slowest messages in the after-fix run, 5.3-6.5s). No context caching was
+were consistently the two slowest messages in the after-fix run (21 Sep, `gemini-2.5-flash`, pre-switch), 5.3-6.5s). No context caching was
 implemented (each call still resends the full ~400-line catalogue and all 8 tool schemas as fresh
 system-instruction tokens on every call); that remains a real, unexplored further lever for the
 tool-requiring half of the distribution, not attempted this session for lack of time to validate
@@ -385,6 +385,8 @@ whichever frontend change does it.
 
 ### Correction, 24 Sep: UI labelling done; real live sweep run; 8 more real contract bugs found and fixed; the `no_play` root cause re-observed live
 
+Model for every live figure in this correction: `gemini-2.5-flash`, planner prompt v6, 24 Sep 2026, pre-switch (not re-run on `gemini-3.5-flash`).
+
 The "not wired up" gap above is now closed: `harness/sweep_live.py`'s `/plan` line prints
 `planner_source`, `fallback_reason` and `elapsed_ms`; the Play Desk's re-plan result now shows a
 `Badge` distinguishing a genuine Gemini-authored play from a labelled deterministic fallback
@@ -405,7 +407,7 @@ own required top-level `guardrails` field omitted; `mechanic` sent as the Englis
 instead of the enum's `"outlet_markdown"`; `mechanic_params` sent as `discount_percentage` instead
 of `discount_pct`; `window` sent as a duration instead of explicit `start`/`end`; `holdout.seed`
 sent as a 1-character string, failing the 4-character minimum. All fixed with a concrete
-worked-example JSON block added to the prompt (not a code/schema change). Result: 4 of 5 gaps
+worked-example JSON block added to the prompt (not a code/schema change). Result (24 Sep, `gemini-2.5-flash`, prompt v6, pre-switch): 4 of 5 gaps
 that previously needed the deterministic fallback (or took many iterations) now reliably produce
 `planner_source: "model"` in 1-2 iterations.
 
@@ -423,7 +425,7 @@ calls this session; the next concrete thing to try is lowering `planner_final` f
 reason `medium` was chosen for that step in the first place.
 
 **Still true after all of the above: no gap completed a real model-authored play under the 10s
-target.** Observed single real Gemini round-trip latency on this task alone is 20-43s per
+target.** Observed single real Gemini round-trip latency on this task alone (24 Sep, `gemini-2.5-flash`, pre-switch) is 20-43s per
 iteration; the schema-contract fixes reduced iteration *counts*, which helped, but cannot close a
 10s target when even one iteration exceeds it. Closing that gap needs either materially fewer
 round trips per plan or a different latency budget for this task, which is a separate, harder
@@ -460,7 +462,7 @@ unticked, and `fixtures/photos/` had zero real image files -- only hand-typed `p
 "recorded reads" that had never been checked against an actual photo, and no staged photo set for
 the accuracy bar at all.
 
-**What was done, all against the live Vertex backend (`gemini-2.5-flash-image` for generation,
+**What was done (21 Sep 2026, pre-switch, not re-run on `gemini-3.5-flash`), all against the live Vertex backend (`gemini-2.5-flash-image` for generation,
 `gemini-2.5-flash` for the read, project `amru-509214`, region `asia-south1`/`us-central1`):**
 1. Generated 30 synthetic warehouse-shelf photos (`fixtures/photos/synthetic_vision_test/*.jpg`),
    spanning all 9 catalogue categories, each showing 3-5 identical packets of one real catalogue
@@ -470,7 +472,7 @@ the accuracy bar at all.
 2. Ran the real `agents.capture.vision.intake()` pipeline against every photo (`image_data_url`,
    `backend="vertex"`, a genuine Gemini call each time, no stub).
 3. Scored date-read accuracy against the planted ground truth: **30/30 correct dates (100%),
-   30/30 at confidence >= 0.7 (100%)**. Raw per-SKU results: `eval/raw/vision_synthetic_2026-09-21.json`.
+   30/30 at confidence >= 0.7 (100%)**. (21 Sep 2026, `gemini-2.5-flash`, pre-switch.) Raw per-SKU results: `eval/raw/vision_synthetic_2026-09-21.json`.
 4. **Regenerated the three demo pallet fixtures** (`fixtures/photos/pallet_0{1,2,3}.json`) the same
    way. These had been hand-typed from the start (no photo ever existed to check them against,
    per `docs/DECISIONS.md`'s own item 4 in §14) and are what the phone view's "Pallet 1/2/3" sample
@@ -573,7 +575,7 @@ Run: `python -m harness.rationale_judge --plays eval/raw/rationale_judge_plays_2
 
 ### Five real harness bugs found and fixed before trusting any score, not swept under the rug
 
-The first full run scored a mean of 3.12/5 (only 4/15 >= 4.0) -- and every single "invented fact"
+The first full run (21 Sep, judge `gemini-2.5-flash`, pre-switch) scored a mean of 3.12/5 (only 4/15 >= 4.0) -- and every single "invented fact"
 or "uncited number" the judge flagged in the low-scoring plays, checked one at a time against the
 real store and the real deterministic `cite_or_drop` code, turned out to be **real, grounded
 data the judge simply hadn't been shown**, not a Planner fabrication:
@@ -613,7 +615,7 @@ number is trusted rather than treated as a broken rubric rubber-stamping everyth
 ### One real rubric bug found and fixed: vacuous compliance on an empty rationale
 
 Before trusting a 15/15 pass rate, the rubric was sanity-checked against a deliberately bad input:
-`fixtures/plays/invalid/rationale_empty.json` (rationale = `""`). It scored **4.0/5** -- at the
+`fixtures/plays/invalid/rationale_empty.json` (rationale = `""`). It scored **4.0/5** (21 Sep, judge `gemini-2.5-flash`, pre-switch) -- at the
 "clears the bar" threshold -- because three of the four criteria trivially "pass" on empty text
 ("it cites no numbers, so it can't cite one wrongly" scored 5). Fixed by adding an explicit rule
 to the prompt: an empty or vacuous rationale must score 1 on every criterion, not just
@@ -625,7 +627,7 @@ simply rubber-stamping every input. Both sanity checks: `eval/raw/rationale_judg
 
 ### Final result
 
-**Mean overall score 5.0/5 across all 15 plays; 15/15 (100%) clear the >= 4.0 bar.** Full
+**Mean overall score 5.0/5 across all 15 plays; 15/15 (100%) clear the >= 4.0 bar** (21 Sep 2026, judge `gemini-2.5-flash`, pre-switch; re-run 9 Oct on `gemini-2.5-flash` and 12 Oct on `gemini-3.5-flash`, planner prompt v6, see the dated runs below). Full
 per-play scores and per-criterion justifications: `eval/raw/rationale_judge_2026-09-21.json`
 (includes the `summary` block and both sanity-check scores). This is a real, live-Vertex-judged
 result over a real 15-item subset (12 committed golden fixtures + 3 freshly generated by the live
@@ -673,7 +675,7 @@ first, so a real Cohen's-kappa-style agreement number can be computed against
 
 **Checklist:** `harness/checklists/planner_agent.md`'s "Rationale quality on the 15-item
 human-labelled subset" item is left unticked. The Gemini-as-judge half of DECISIONS §12 is now
-real and measured (5.0/5, 15/15 clear the bar); the human-labelled agreement half genuinely needs
+real and measured (5.0/5, 15/15 clear the bar; 21 Sep 2026, judge `gemini-2.5-flash`, pre-switch); the human-labelled agreement half genuinely needs
 a person and cannot be checked off by this session.
 
 ## Real BigQuery `ARIMA_PLUS_XREG` forecast, one series (2026-09-23)
@@ -898,7 +900,7 @@ stub model, fake Firestore, in-memory session service, 45 turns over the 15-mess
 **Flags-on /chat latency: not yet measured live.** The acceptance run is written and exercised end
 to end in stub mode (`harness/live_sessions_cache.py latency --sessions --cache --n 50`, and
 `restart --sessions` for the kill-and-restart test); it needs the deploy credentials. Projected,
-not measured: the 2026-09-21 flags-off p95 is 5.7515 s
+not measured: the 2026-09-21 flags-off p95 is 5.7515 s (`gemini-2.5-flash`, pre-switch)
 (`eval/raw/customer_latency_fix_summary_2026-09-21.json`), leaving 0.2485 s for about 8 Agent
 Engine round trips per first turn. That is likely to miss the 6.0 s bar unless in-region round trips
 are near 30 ms; `session_io_ms` in the harness's summary will show whether session I/O or the model
@@ -1012,7 +1014,7 @@ because the deployed URL itself is not reachable from here.
 
 A GCP credential exists in this build environment now. `harness/record_flagship_traces.py --gap
 gap_chips_ds07 --runs 5 --out eval/raw/planner_real_traces_2026-09-28` was run for real against
-`TAAL_MODEL_BACKEND=vertex`, `TAAL_PLANNER_DEADLINE_S=120`, `TAAL_NOW=2026-09-12T03:30:00Z`: 5/5
+`TAAL_MODEL_BACKEND=vertex`, `TAAL_PLANNER_DEADLINE_S=120`, `TAAL_NOW=2026-09-12T03:30:00Z` (28 Sep 2026, `gemini-2.5-flash`, prompt v6, pre-switch): 5/5
 runs reached `proposed`, 5/5 `source: live_gemini`, 0 fallbacks (`eval/raw/planner_real_traces_2026-09-28/summary.json`).
 Wall time ranged 34.1-65.0 s (median 40.8 s), 4-7 planner iterations per run. None passed the
 guardrail gate on the first `propose_play` attempt; all five passed after revision, every rejection
@@ -1041,7 +1043,7 @@ and its credential-absent framing still applies to it.
 
 ## Live model evaluation, dated run (2026-10-09)
 
-One manual run of both live-model evals against Vertex AI, `gemini-2.5-flash` (`config/models.toml`
+One manual run of both live-model evals against Vertex AI, `gemini-2.5-flash` (pre-switch; planner prompt v6; `config/models.toml`
 `ids.flash`), project `amru-509214`, `asia-south1`. Nothing failed for quota or billing, so no retry
 was needed. Raw files: `eval/raw/live_eval_2026-10-09/` (84 KB; `summary.json` feeds the table row;
 the 4 MB `adk eval` log is not committed; no thought-signature fields were present in the kept files).
@@ -1077,7 +1079,7 @@ and no case was re-run to improve a number. Raw files: `eval/raw/live_eval_2026-
 (`summary.json` feeds table row 16; the 3 MB `adk eval` log is not committed). No quota or billing
 error occurred.
 
-| Metric | 9 Oct, gemini-2.5-flash | 12 Oct, gemini-3.5-flash |
+| Metric | 9 Oct, gemini-2.5-flash, prompt v6 (pre-switch) | 12 Oct, gemini-3.5-flash, prompt v6 |
 |---|---|---|
 | ADK response match (>= 0.8) | 38/46 | **43/46** |
 | Exact trajectory | 6/46 | **1/46** |
@@ -1111,7 +1113,7 @@ error occurred.
 ## Live plan, 24 runs on the deployed API (2026-10-11)
 
 - **22 of 24 live re-plans were model-planned, 0 fell back to rules** (12 on `gap_tea_ds04`, 12 on
-  `gap_chips_ds07`; `gemini-3.5-flash`, 90 s deadline, fresh visitor header per run, at most 2 in
+  `gap_chips_ds07`; `gemini-3.5-flash`, prompt v6, 90 s deadline, fresh visitor header per run, at most 2 in
   flight). Planner elapsed over the 22 observed runs: **p50 26.5 s, p95 31.8 s**. The other 2
   runs were not observable: their poll returned 404 because a different cold Cloud Run instance
   answered (run state is in process memory), so they count as not passed; 2 follow-up runs were
@@ -1146,10 +1148,10 @@ One set of numbers, used identically in the README, the deck (slides 12 and 16) 
 
 | Step | Number | Date | Evidence |
 |---|---|---|---|
-| Live plan (re-plan), deployed, planner elapsed | p50 **26.5 s**, p95 **31.8 s**; 22/24 = **92%** model-planned, 0 fallbacks; the 2 misses were unobservable (cold-instance 404) and count as not passed | 11 Oct 2026 | `eval/raw/plan_live_2026-10-12.json` |
-| Recorded planner runs | 21.8 to 27.6 s (chips, 5/5, 10 Oct); 21.9 to 26.7 s (Tea, 5/5, 12 Oct) | 10 and 12 Oct 2026 | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
+| Live plan (re-plan), deployed, planner elapsed | p50 **26.5 s**, p95 **31.8 s**; 22/24 = **92%** model-planned, 0 fallbacks; the 2 misses were unobservable (cold-instance 404) and count as not passed | 11 Oct 2026, `gemini-3.5-flash`, prompt v6 | `eval/raw/plan_live_2026-10-12.json` |
+| Recorded planner runs | 21.8 to 27.6 s (chips, 5/5, 10 Oct); 21.9 to 26.7 s (Tea, 5/5, 12 Oct) | 10 and 12 Oct 2026, `gemini-3.5-flash`, prompt v6 (chips) and v6 / v7 (Tea) | `eval/raw/planner_real_traces_2026-10-10/summary.json`; `eval/raw/planner_real_traces_tea_2026-10-12/summary.json` |
 | Approve (copy and re-forecast run concurrently; copy call first, PR #90) | **about 1 to 4 s** measured 13 Oct after batch 1 (Tea 2.3 and 1.3 s with `copy.source` `bigquery`, chips 3.3 s `templated`; agents revision 00139; seeded plays reuse stored BigQuery copy after batch 2). 12 Oct after #90, before copy-ahead (3 to 7 s): Tea 4.0, 6.8, 3.3, 3.3 s; chips 3.3, 3.3 s (warm instance, fresh visitor per call, agents revision 00129). First call after idle takes longer. Before #90 (history): recorded plays 7 to 15 s (Tea 11.4 to 15.3 s, chips 7 to 10 s), scripted plays 6 to 7 s | 12 Oct 2026 | `eval/raw/approve_timing_2026-10-13.json`; `eval/raw/approve_timing_2026-10-12b.json` (six curl samples, method inside); pre-#90 samples in `eval/raw/approve_timing_2026-10-12.json` |
-| Approve before that change (gemini-2.5-flash) | 8.3 s and 10.6 s | 21 and 28 Sep 2026 | `eval/raw/sweep_vertex_2026-09-21.txt`; `eval/raw/post_deploy_check_2026-09-28/summary.json` |
-| Customer agent turn (gemini-2.5-flash) | p50 4.56 s, p95 6.48 s | 28 Sep 2026 | `eval/raw/customer_latency_2026-09-28/analysis.json` |
+| Approve before that change (gemini-2.5-flash, pre-switch) | 8.3 s and 10.6 s | 21 and 28 Sep 2026 | `eval/raw/sweep_vertex_2026-09-21.txt`; `eval/raw/post_deploy_check_2026-09-28/summary.json` |
+| Customer agent turn (gemini-2.5-flash, pre-switch) | p50 4.56 s, p95 6.48 s | 28 Sep 2026 | `eval/raw/customer_latency_2026-09-28/analysis.json` |
 
 The numbers are server-side planner time; a visitor's click-to-result adds polling, so a live click was seen to take 26 to 47 s on 12 Oct (field re-audit). Test counts at the same date: 464 pytest test functions and 473 Playwright tests in `make verify` (the CI gate, `.github/workflows/verify.yml`), plus 24 live-stack tests in a second CI job.

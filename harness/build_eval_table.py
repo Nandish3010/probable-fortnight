@@ -158,7 +158,7 @@ def build_rows() -> list[Row]:
     # 7. Gemini-as-judge rationale score + 15-item human-labelled agreement
     rows.append(Row(
         "Gemini-as-judge rationale score + 15-item human-labelled agreement",
-        "Rationale judge run 2026-10-12 on gemini-3.5-flash: 15/15, mean 5.0 (9 Oct, gemini-2.5-flash: 15/15) (same-family judge, so weak evidence; see rows 15 and 16). The "
+        "Rationale judge run 2026-10-12 on gemini-3.5-flash, planner prompt v6: 15/15, mean 5.0 (9 Oct, gemini-2.5-flash, pre-switch: 15/15; 21 Sep, gemini-2.5-flash, pre-switch: 15/15, mean 5.0) (same-family judge, so weak evidence; see rows 15 and 16). The "
         "15-item human labelling is not done, so judge-human agreement is not measured.",
         "`harness/rationale_judge.py`, `eval/raw/live_eval_2026-10-12/summary.json`",
     ))
@@ -186,7 +186,10 @@ def build_rows() -> list[Row]:
         r"\*\*Re-measured again, 28 Sep \(latest\)\.\*\*(.*?)\n\n",
         "the 28 Sep /chat latency paragraph",
     )
-    chat_latency = "Latest, 28 Sep: " + latest.replace("**", "") + " Earlier run, 21 Sep: " + chat_latency
+    chat_latency = (
+        "Both runs are pre-switch (gemini-2.5-flash, before the 10 Oct switch to gemini-3.5-flash) and have not been re-run. "
+        "Latest, 28 Sep: " + latest.replace("**", "") + " Earlier run, 21 Sep: " + chat_latency
+    )
     sweep_raw = ROOT / "eval" / "raw" / "sweep_vertex_2026-09-21.txt"
     approve_line = ""
     if sweep_raw.exists():
@@ -195,7 +198,7 @@ def build_rows() -> list[Row]:
             approve_line = m.group(0).strip()
     latency_result = chat_latency
     if approve_line:
-        latency_result += f" Approve latency (includes the re-forecast call), 21 Sep live-Vertex sweep: `{approve_line}` (holdout_n=26 there is the earlier stub-seeded flagship play; with the 10 Oct recorded Gemini play seeded, approve assigns 323 treated / 29 holdout)."
+        latency_result += f" Approve latency (includes the re-forecast call), 21 Sep live-Vertex sweep (gemini-2.5-flash, pre-switch): `{approve_line}` (holdout_n=26 there is the earlier stub-seeded flagship play; with the 10 Oct recorded Gemini play seeded, approve assigns 323 treated / 29 holdout)."
     flags_on = _extract(
         text,
         r"\*\*Flags-on /chat latency: (.*?)\n\n",
@@ -215,7 +218,7 @@ def build_rows() -> list[Row]:
         r"\*\*Honesty label, stated once, applies everywhere above:\*\*(.*?)\n\n",
         "the vision honesty-label paragraph",
     )
-    rows.append(Row("Vision read accuracy on 30 staged photos", vision + " " + honesty, "`eval/raw/vision_synthetic_2026-09-21.json`"))
+    rows.append(Row("Vision read accuracy on 30 staged photos", vision + " (21 Sep 2026, gemini-2.5-flash, pre-switch, not re-run on gemini-3.5-flash.) " + honesty, "`eval/raw/vision_synthetic_2026-09-21.json`"))
 
     # 12. Sense and Planner throughput (300 SKUs x 10 nodes) and the extrapolation
     metric, result, command, raw = producible[2]
@@ -235,10 +238,10 @@ def build_rows() -> list[Row]:
     # of the 13 above. Measured on the deployed service on 10 Oct (3 runs), plus the 9 Oct run before the fix.
     rows.append(Row(
         "Planner live re-plan latency and fallback rate at the 90 s deadline",
-        "Measured 10 Oct on the deployed service, 3 runs (Tea, Chips, Chips): server-side elapsed 30.3 / 27.5 / "
+        "Measured 10 Oct on the deployed service (gemini-3.5-flash), 3 runs (Tea, Chips, Chips): server-side elapsed 30.3 / 27.5 / "
         "29.6 s, 3 of 3 model-planned, 0 fallbacks, 1 loop iteration each. n=3 is too few for a p95. Before the "
-        "fix, 9 Oct: 47.7 / 47.7 / 30.8 s, 2 of 3 fell back to rules at a 45 s deadline. The 5 recorded real-model "
-        "runs of 10 Oct took 21.8 to 27.6 s (all proposed, 0 fallbacks).",
+        "fix, 9 Oct (before the 10 Oct switch, so gemini-2.5-flash, pre-switch; the raw file records no model id): 47.7 / 47.7 / 30.8 s, 2 of 3 fell back to rules at a 45 s deadline. The 5 recorded real-model "
+        "runs of 10 Oct (gemini-3.5-flash, planner prompt v6) took 21.8 to 27.6 s (all proposed, 0 fallbacks).",
         "`eval/raw/live_replan_timing_2026-10-10.json`, `eval/raw/live_replan_timing_2026-10-09.json`, "
         "`eval/raw/planner_real_traces_2026-10-10/summary.json`",
     ))
@@ -247,7 +250,8 @@ def build_rows() -> list[Row]:
     # newest last), read from eval/raw/live_eval_<date>/summary.json.
     for f in sorted((ROOT / "eval" / "raw").glob("live_eval_*/summary.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
-        rows.append(Row(f"Live model evaluation, {d['date']} ({d['model']})", d["result"], d["source"]))
+        label = d["model"] + (", pre-switch" if d["model"] == "gemini-2.5-flash" else "")
+        rows.append(Row(f"Live model evaluation, {d['date']} ({label})", d["result"], d["source"]))
 
     return rows
 
@@ -260,6 +264,10 @@ def render(rows: list[Row]) -> str:
         "outputs it cites under `eval/raw/`. Every cell below is parsed, not typed: re-run the",
         "script after `eval/evaluation.md` changes rather than editing this file by hand. Rows the",
         f'project cannot yet back with a real measurement say so ("{NOT_MEASURED}") instead of a guess.',
+        "",
+        "Model labels: the live model since 10 Oct 2026 is gemini-3.5-flash (gemini-2.5-flash retires on Vertex",
+        "on 20 Oct 2026). A figure marked pre-switch ran on gemini-2.5-flash before that switch and has not",
+        "been re-run; it is not a measurement of the current model.",
         "",
         "| # | Metric (DECISIONS §12) | Result | Source |",
         "|---|---|---|---|",

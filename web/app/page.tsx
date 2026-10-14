@@ -9,7 +9,7 @@ import { DecisionPreview } from "../components/DecisionPreview";
 import { ErrorCard } from "../components/ErrorCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
 import { Icon } from "../components/icons";
-import { LoopCompact } from "../components/LoopCompact";
+import { LoopStrip } from "../components/LoopStrip";
 import { PlayCard } from "../components/PlayCard";
 import { ResetDialog } from "../components/ResetDialog";
 import { StateLegend } from "../components/StateLegend";
@@ -207,19 +207,17 @@ export default function LandingPage() {
 
   // public/loop.svg is a copy of docs/loop.svg (the one source; `npm run sync:loop` refreshes it,
   // tests/e2e/loop-svg.spec.ts fails when the two differ).
-  // Two copies, placed and shown by CSS alone (page.module.css): under the headline on a phone, under
-  // the decision on a desktop. The server render and the first client render do not know which layout
-  // the browser has, so placing one copy by script moved the diagram (a new node, a jump) right after
-  // hydration. Both copies stay mounted; only the one that is laid out carries the test id.
-  const loopImg = (className: string, active: boolean) => (
+  // One copy, shown by CSS alone (page.module.css .loopRow): from 641 px up, under the decision. The
+  // one-line LoopStrip above the decision carries the loop at every width.
+  const loopImg = () => (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className={`${styles.loop} ${className}`.trim()}
+      className={styles.loop}
       src="/loop.svg"
       width={1600}
       height={400}
       alt="The Taal loop in five steps: Forecast, Propose, Approve, Offer, Measure. An arrow returns from Measure to Forecast, labelled priors update."
-      data-testid={active ? "loop-diagram" : undefined}
+      data-testid="loop-diagram"
     />
   );
 
@@ -227,9 +225,9 @@ export default function LandingPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <section className={`${styles.top} ${beatReady ? styles.topCompact : ""}`}>
         <h1 className={styles.heroLine}>{HERO_LINE}</h1>
-        <p className={styles.subline}>{SUBLINE}</p>
-        {/* Phones (641 to 767 px): the loop, and the legend row. Hidden at 640 px and below and on a desktop. */}
-        {loopImg(styles.loopPhone, phone)}
+        <p className={styles.subline} data-testid="hero-subline">{SUBLINE}</p>
+        {/* The loop in one line, above the decision at every width; the full diagram sits below the decision. */}
+        <LoopStrip />
         <div className={styles.meta}>
           <p
             className={styles.clock}
@@ -245,7 +243,7 @@ export default function LandingPage() {
 
       {phone ? (
         <section className={styles.phoneLanding} data-testid="phone-landing">
-          <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} afterFirst={<LoopCompact />} />
+          <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} />
           <ChatPanel play={feedPlay} wakingNotice={feedPlay !== null} />
         </section>
       ) : (
@@ -273,7 +271,7 @@ export default function LandingPage() {
                       Run the 60-second beat
                     </button>
                     <WatchPlanLive />
-                    <p className={styles.assure}>No sign-in. Synthetic data, labelled.</p>
+                    <p className={styles.assure}>No sign-in. Reset is per visitor. Synthetic data, labelled.</p>
                   </DecisionPreview>
                 ) : beatError ? (
                   <>
@@ -306,8 +304,8 @@ export default function LandingPage() {
         </>
       )}
 
-      {/* Desktop: the loop sits under the decision, so the card is what the first screen shows. */}
-      <div className={styles.loopRow}>{loopImg("", !phone)}</div>
+      {/* The detailed loop sits under the decision (from 641 px up), so the card is what the first screen shows. */}
+      <div className={styles.loopRow}>{loopImg()}</div>
 
       <nav aria-label="Where to go next">
         <ul className={styles.ruled}>

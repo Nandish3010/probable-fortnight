@@ -22,7 +22,7 @@ Deployment caveat: `taal-agents` runs with `--max-instances 1` (`infra/deploy.sh
 ## Scale, cost and pilot
 
 - **Scale (estimate):** a Large profile (20,000 SKUs, 500 nodes, 1M customers) keeps the same shape; no tenant that size has run, so throughput is not measured. What breaks first is `--max-instances 1` (caveat above), then the Planner queue, then the in-process re-forecast ([`docs/scale.md`](scale.md)).
-- **Run cost:** ₹486 a month measured on `gemini-2.5-flash` (usage to 23 Sep 2026, no plays in the window, not a bill; not re-measured on `gemini-3.5-flash`). Estimates: Micro ₹200 to 500, Mid ₹2,500 to 5,000, Large ₹1 to 2 lakh.
+- **Run cost:** ₹486 a month (pre-switch: 30-day usage to 23 Sep 2026, `gemini-2.5-flash`, priced at its list rates; no plays in the window, not a bill; not re-measured on `gemini-3.5-flash`). Estimates: Micro ₹200 to 500, Mid ₹2,500 to 5,000, Large ₹1 to 2 lakh.
 - **Pilot design:** 50 to 60 consented testers for one week, a 40 to 50% holdout, the metric pre-registered, results labelled apart from seeded numbers ([`docs/pilot.md`](pilot.md)). Nothing has been measured on real customers yet.
 
 ## Not in this submission

@@ -2,7 +2,7 @@
 
 import { inr, inrSigned } from "../lib/format";
 import type { PlayImpact } from "../lib/impact";
-import { BasisTag } from "./BasisTag";
+import { Basis, BasisTag } from "./BasisTag";
 import { Icon } from "./icons";
 import styles from "./RecoveredFigure.module.css";
 
@@ -20,6 +20,7 @@ export function RecoveredFigure({
   testId = "recovered-figure",
   chip,
   fade = false,
+  atStakeAbove = false,
 }: {
   impact: PlayImpact;
   testId?: string;
@@ -27,12 +28,15 @@ export function RecoveredFigure({
   chip?: boolean;
   /** Fade the figure in once (<= 200 ms, opacity only) as it appears. The text is already final. */
   fade?: boolean;
+  /** The card prints the gap's "rupees at stake" sentence just above this figure. Its SYNTHETIC tag
+   * sits here, beside PROJECTED, so the card carries one pair of tags and no extra line. */
+  atStakeAbove?: boolean;
 }) {
   const target = impact.recovered_inr;
   const positive = Math.round(target) > 0;
 
   return (
-    <div className={styles.figure} data-testid={testId}>
+    <Basis kind="projected" tag="none" className={styles.figure} data-testid={testId}>
       <p className={styles.headline}>
         Recovered vs doing nothing{" "}
         <strong className={`${styles.amount} ${fade ? styles.fade : ""} num`} data-testid={`${testId}-amount`}>
@@ -52,7 +56,12 @@ export function RecoveredFigure({
       ) : null}
       <p className={styles.parts} data-testid={`${testId}-parts`}>
         {/* Every figure here is projected from the estimator; "measured" appears only on Outcomes, from the holdout. */}
-        <BasisTag basis="assumption" />{" "}
+        {atStakeAbove ? (
+          <>
+            <BasisTag basis="synthetic" />{" "}
+          </>
+        ) : null}
+        <BasisTag basis="projected" />{" "}
         {impact.components.map((c, i) => (
           <span key={c.label}>
             {i > 0 ? (c.inr < 0 ? " minus " : " plus ") : ""}
@@ -60,6 +69,6 @@ export function RecoveredFigure({
           </span>
         ))}
       </p>
-    </div>
+    </Basis>
   );
 }

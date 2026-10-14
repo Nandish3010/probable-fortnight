@@ -35,7 +35,7 @@ export function PersonaBar() {
   if (!current) return null;
   const others = PERSONAS.filter((p) => p.id !== current.id);
   return (
-    <div className={styles.bar} data-testid="persona-bar" data-persona={current.id}>
+    <aside className={styles.bar} aria-label="Who this screen is for" data-testid="persona-bar" data-persona={current.id}>
       <div className={styles.inner}>
         <p className={styles.who} data-testid="persona-who">
           <Avatar persona={current} size={24} />
@@ -59,6 +59,6 @@ export function PersonaBar() {
           ))}
         </nav>
       </div>
-    </div>
+    </aside>
   );
 }

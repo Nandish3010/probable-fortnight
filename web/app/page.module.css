@@ -36,20 +36,9 @@
   border-radius: var(--radius-sm);
 }
 
-/* Which copy is laid out is decided here, not by script (see page.tsx). The phone copy shows between
-   641 and 767 px: at 640 px and below the loop is too small to read and pushes the decision down (the
-   stepper in the nav already says the same five steps). The desktop copy, in .loopRow, shows from 768 px. */
-.loopPhone {
-  display: none;
-}
-
-@media (min-width: 641px) and (max-width: 767px) {
-  .loopPhone {
-    display: block;
-  }
-}
-
-@media (max-width: 767px) {
+/* The detailed diagram, in .loopRow under the decision, shows from 641 px up. At 640 px and below it is too
+   small to read and would push the decision down; the one-line LoopStrip above the decision says the same. */
+@media (max-width: 640px) {
   .loopRow {
     display: none;
   }
@@ -130,7 +119,7 @@
   }
 
   /* Once the beat is open the card and Approve need the room. */
-  .topCompact .loop {
+  .topCompact [data-testid="loop-strip"] {
     display: none;
   }
 

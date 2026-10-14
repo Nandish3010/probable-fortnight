@@ -1,4 +1,5 @@
 import { Badge } from "./Badge";
+import { Basis } from "./BasisTag";
 import { Details } from "./Details";
 import { RelativeDate } from "./RelativeDate";
 import { daysUntil, inr } from "../lib/format";
@@ -18,20 +19,22 @@ export function GapCard({ gap, now, variant = "card" }: { gap: Gap; now?: Date; 
   const { requests_count: requestsCount, distinct_customers: distinctCustomers } = gap.evidence;
   const facts = (
     <>
-      <div className="gap-card__stats">
-        <div className="stat">
-          <span className="stat__value">{gap.units_at_risk}</span>
-          <span className="stat__label">units</span>
+      <Basis kind="synthetic" tag="after" className="gap-card__basis">
+        <div className="gap-card__stats">
+          <div className="stat">
+            <span className="stat__value">{gap.units_at_risk}</span>
+            <span className="stat__label">units</span>
+          </div>
+          <div className="stat">
+            <span className="stat__value">{inr(gap.rupees_at_stake)}</span>
+            <span className="stat__label">at stake</span>
+          </div>
+          <div className="stat">
+            <span className="stat__value">{Math.max(days, 0)}d</span>
+            <span className="stat__label">{deadlineLabel.toLowerCase()}</span>
+          </div>
         </div>
-        <div className="stat">
-          <span className="stat__value">{inr(gap.rupees_at_stake)}</span>
-          <span className="stat__label">at stake</span>
-        </div>
-        <div className="stat">
-          <span className="stat__value">{Math.max(days, 0)}d</span>
-          <span className="stat__label">{deadlineLabel.toLowerCase()}</span>
-        </div>
-      </div>
+      </Basis>
       {/* The countdown is the third stat above; this line only explains the rule, and only for a
          gap that has one. It used to repeat the countdown and print the sell-by rule's
          "30% / 45 days" under every gap type, including ones that have no sell-by rule. */}

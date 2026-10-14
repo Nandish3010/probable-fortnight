@@ -1,0 +1,102 @@
+{
+  "label": "SIMULATION of the measurement design, not a result",
+  "inputs": {
+    "design": {
+      "treated": 355,
+      "held_out": 39,
+      "split": "90/10",
+      "source": "eval/raw/tea_recorded_beat_2026-10-12.json approve.assignment"
+    },
+    "test": "two-sided two-proportion z-test",
+    "confidence": 0.95,
+    "power": 0.8,
+    "lifts_pp": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "lift_definition": "absolute difference in conversion, percentage points (jobs/measure/run.py)"
+  },
+  "formula": {
+    "total_n": "N = ((z_{1-a/2}*sqrt(pbar*(1-pbar)*(1/qt+1/qc)) + z_power*sqrt(pt*(1-pt)/qt + pc*(1-pc)/qc)) / delta)^2, rounded up; pt = pc + delta; pbar = qt*pt + qc*pc",
+    "min_detectable_lift": "smallest delta with Phi((delta - z_{1-a/2}*se0)/se1) = 0.80 at n_t = 355, n_c = 39 (bisection)",
+    "z_{1-a/2}": 1.959964,
+    "z_power": 0.841621
+  },
+  "outputs": {
+    "tea_organic": {
+      "base_conversion": 0.004988,
+      "base_basis": "seeded tenant, organic 7-day rate for SKU-DARJEELING-TEA-100G at DS-04: 2 buyers / 401 customers homed there (harness.prior_update_demo.organic_rate, seed 20260912, window 2026-09-05T03:30Z to 2026-09-12T03:30Z)",
+      "primary": true,
+      "min_detectable_lift_pp_at_355_39": 12.38,
+      "total_n_for_lift_at_90_10_split": {
+        "2pp": {
+          "total_n": 3674,
+          "treated": 3307,
+          "held_out": 367
+        },
+        "5pp": {
+          "total_n": 1156,
+          "treated": 1040,
+          "held_out": 116
+        },
+        "10pp": {
+          "total_n": 505,
+          "treated": 454,
+          "held_out": 51
+        }
+      }
+    },
+    "chips_organic": {
+      "base_conversion": 0.01995,
+      "base_basis": "eval/raw/prior_update_2026-09-28.json rates_used.holdout: 8 buyers / 401 customers at DS-07, SKU-MASALA-CHIPS-200G",
+      "primary": false,
+      "min_detectable_lift_pp_at_355_39": 14.26,
+      "total_n_for_lift_at_90_10_split": {
+        "2pp": {
+          "total_n": 6882,
+          "treated": 6194,
+          "held_out": 688
+        },
+        "5pp": {
+          "total_n": 1674,
+          "treated": 1507,
+          "held_out": 167
+        },
+        "10pp": {
+          "total_n": 633,
+          "treated": 570,
+          "held_out": 63
+        }
+      }
+    },
+    "seeded_prior_mean": {
+      "base_conversion": 0.05,
+      "base_basis": "agents/gate/estimator.py DEFAULT_ALPHA / (DEFAULT_ALPHA + DEFAULT_BETA) = 1 / (1 + 19)",
+      "primary": false,
+      "min_detectable_lift_pp_at_355_39": 16.7,
+      "total_n_for_lift_at_90_10_split": {
+        "2pp": {
+          "total_n": 12853,
+          "treated": 11568,
+          "held_out": 1285
+        },
+        "5pp": {
+          "total_n": 2609,
+          "treated": 2348,
+          "held_out": 261
+        },
+        "10pp": {
+          "total_n": 858,
+          "treated": 772,
+          "held_out": 86
+        }
+      }
+    }
+  },
+  "caveats": [
+    "Normal approximation. With a base conversion near 0.5% the held-out arm (39 customers) expects about 0.2 responders, so the approximation is rough and an exact test would be less powerful still.",
+    "Assumes independent customers, one decision each, a fixed 90/10 split and a known base rate; the real base rate is unmeasured on real customers."
+  ],
+  "note": "SIMULATION of the measurement design, not a result. The demo holdout (355 / 39 synthetic orders) is under-powered by design. No lift was measured; the committed Tea result is 1 of 355 vs 0 of 39, inconclusive."
+}

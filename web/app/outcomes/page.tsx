@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge";
-import { BasisTag } from "../../components/BasisTag";
+import { Basis, BasisTag } from "../../components/BasisTag";
 import { CounterfactualBars } from "../../components/CounterfactualBars";
 import { Details } from "../../components/Details";
 import { ErrorCard } from "../../components/ErrorCard";
@@ -36,7 +36,7 @@ function PortfolioCard() {
   const { totals, governor, planned } = PORTFOLIO;
   const byType = Object.entries(totals.by_type).sort((a, b) => b[1].exposure_inr - a[1].exposure_inr);
   return (
-    <div className="card portfolio-card" data-testid="portfolio-card">
+    <Basis kind="projected" tag="none" className="card portfolio-card" data-testid="portfolio-card">
       <div className="card__header">
         <h2 className="card__title">Portfolio projection</h2>
         <Badge kind="synthetic" detail="batch job, not a live measurement" />
@@ -46,18 +46,18 @@ function PortfolioCard() {
         estimator. No model calls. A projection, not a measurement.
       </p>
       <div className="portfolio-card__stats">
-        <div className="portfolio-card__stat">
+        <Basis kind="synthetic" tag="none" className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(totals.exposure_inr)}</span>
           <span className="portfolio-card__label">Total at stake</span>
-          <BasisTag basis="assumption" />
+          <BasisTag basis="synthetic" />
           <span className="muted" data-testid="portfolio-gap-count">
             across {count(totals.gaps)} gaps
           </span>
-        </div>
+        </Basis>
         <div className="portfolio-card__stat">
           <span className="portfolio-card__number">{inr(planned.expected_margin_inr)}</span>
           <span className="portfolio-card__label">Expected recovered</span>
-          <BasisTag basis="assumption" />
+          <BasisTag basis="projected" />
           <span className="muted">
             margin across {count(planned.count)} planned plays, with {inr(planned.expected_waste_avoided_inr)} of write-off
             avoided on {count(planned.expected_units)} units
@@ -72,7 +72,7 @@ function PortfolioCard() {
           </span>
         </div>
       </div>
-      <table className="portfolio-card__table">
+      <table className="portfolio-card__table" data-basis="synthetic">
         <thead>
           <tr>
             <th>Gap type</th>
@@ -95,15 +95,15 @@ function PortfolioCard() {
         every gap brings that to {inr(totals.blanket_markdown_inr)}. The planned plays are projected to recover{" "}
         {inr(planned.expected_margin_inr)} of margin without discounting volume that was not at risk.
       </p>
-      <p className="muted portfolio-card__governor-line">
+      <Basis kind="synthetic" tag="none" as="p" className="muted portfolio-card__governor-line">
         Taal set aside {count(governor.triaged_out)} of {count(totals.gaps)} gaps before drafting anything:{" "}
         {inr(governor.triaged_out_exposure_inr)} of exposure, each below the {inr(governor.planner_threshold_inr)} planning
         threshold. No model or estimator cost was spent on them.
-      </p>
+      </Basis>
       <Details summary="Details" testId="portfolio-details">
         Stock scan {PORTFOLIO.sense_run_id}, as of {PORTFOLIO.as_of}. Regenerate with python -m jobs.portfolio.
       </Details>
-    </div>
+    </Basis>
   );
 }
 
@@ -135,7 +135,7 @@ function PriorUpdateLine({ update }: { update: PriorUpdate | null }) {
 function FeaturedCounterfactualCard({ play, priorUpdate }: { play: Play | null; priorUpdate: PriorUpdate | null }) {
   if (!play) return null;
   return (
-    <div className="card">
+    <Basis kind="projected" tag="none" className="card">
       <div className="card__header">
         <h2 className="card__title">Worked example: {label("sku", play.target.sku)}</h2>
         <Badge kind="synthetic" />
@@ -157,7 +157,7 @@ function FeaturedCounterfactualCard({ play, priorUpdate }: { play: Play | null; 
       <Details inline summary="Details" testId="worked-example-ids">
         {play.target.sku} · {play.play_id}. The derivation is in docs/impact_math.md.
       </Details>
-    </div>
+    </Basis>
   );
 }
 
@@ -191,13 +191,13 @@ function ExpectedVsMeasured({ play, outcome }: { play: Play | null; outcome: Out
 
 function ArmCell({ label, arm }: { label: string; arm: Outcome["treated"] }) {
   return (
-    <td data-label={label}>
+    <Basis kind="measured" tag="none" as="td" data-label={label}>
       <strong className="outcomes-table__arm-name">{label}</strong>
       <div className="muted">
         {count(arm.customers)} customers, {count(arm.responders)} responders, {count(arm.units)} units
       </div>
       <div className="muted">margin {inr(arm.margin_inr)}, discount {inr(arm.discount_cost_inr)}</div>
-    </td>
+    </Basis>
   );
 }
 
@@ -208,7 +208,7 @@ function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
   const co2e = measured.reduce((sum, o) => sum + (o.co2e_kg_est ?? 0), 0);
   const rupees = measured.reduce((sum, o) => sum + (o.waste_avoided_inr ?? 0), 0);
   return (
-    <div className="card impact-summary">
+    <Basis kind="measured" tag="none" className="card impact-summary">
       <div className="impact-summary__stat">
         <span className="impact-summary__number">{kg.toFixed(1)} kg</span>
         <span className="muted">of food kept out of the bin, across {measured.length} measured play{measured.length === 1 ? "" : "s"}</span>
@@ -219,14 +219,16 @@ function ImpactSummary({ outcomes }: { outcomes: Outcome[] }) {
       </div>
       <div className="impact-summary__stat">
         <span className="impact-summary__number">{inr(rupees)}</span>
-        <span className="muted">of margin kept that would otherwise have been written off</span>
+        <span className="muted">
+          of margin kept that would otherwise have been written off <BasisTag basis="measured" />
+        </span>
       </div>
       <div className="impact-summary__details">
         <Details inline summary="Details" testId="impact-details">
           The emissions factor and its caveats are in docs/DATA_MODEL.md.
         </Details>
       </div>
-    </div>
+    </Basis>
   );
 }
 
@@ -262,7 +264,12 @@ function SummaryCard({
   const hi = outcome ? outcome.ci_high_pp ?? (outcome.ci_high != null ? outcome.ci_high * 100 : null) : null;
 
   return (
-    <section className={`card ${styles.summary}`} aria-labelledby="summary-title" data-testid="outcome-summary">
+    <section
+      className={`card ${styles.summary}`}
+      aria-labelledby="summary-title"
+      data-testid="outcome-summary"
+      data-basis={outcome ? "measured" : undefined}
+    >
       <div className={styles.summaryHead}>
         <h2 id="summary-title">{outcome ? `Your result: ${label("sku", outcome.sku)}` : "Your result"}</h2>
         {outcome ? (
@@ -513,7 +520,9 @@ export default function OutcomesPage() {
       {priorError ? <ErrorCard error={priorError} compact onRetry={loadPrior} /> : null}
       <ExpectedVsMeasured play={featuredPlay} outcome={featuredOutcome} />
 
-      <h2 className={styles.sectionHead}>Measured plays</h2>
+      <h2 className={styles.sectionHead}>
+        Measured plays <BasisTag basis="measured" />
+      </h2>
       <p className="holdout-explainer">
         <strong>Holdout</strong> is a randomly chosen control group: customers who get no offer for this play, picked
         the same way as everyone in &quot;Treated&quot; apart from a coin flip. Every response-rate difference below is
@@ -598,7 +607,7 @@ export default function OutcomesPage() {
                       <span className="muted">unmeasured</span>
                     )}
                   </td>
-                  <td data-label="Waste avoided">
+                  <td data-label="Waste avoided" data-basis="measured">
                     {o.waste_avoided_inr != null ? inr(o.waste_avoided_inr) : "–"}
                     {o.waste_kg_est != null ? <div className="muted">{o.waste_kg_est.toFixed(1)} kg</div> : null}
                   </td>

@@ -333,6 +333,7 @@ export async function streamRerun(
 ): Promise<RerunResult> {
   if (isMockMode()) {
     await mockGate(`/events/${runId}/stream`);
+    await delay(mockDelayMs("/events", 0)); // a test holds the first frame back to watch the step counter
     const frames = (await mockJson("rerun_events")) as unknown as { event: string; data: unknown }[];
     let result: RerunResult | null = null;
     for (const frame of frames) {

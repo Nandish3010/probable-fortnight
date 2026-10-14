@@ -5,9 +5,8 @@ import { planLiveEvalText } from "../lib/health";
 import { readHealthOnce } from "./ModelChip";
 import styles from "./ModelChip.module.css";
 
-/** `Committed eval: 22/24 passed (11 Oct), p50 26.5 s`: the committed live-plan evaluation (a dated record,
- * not a live reading), read from
- * /health `plan_live_eval`. Renders nothing while loading, when /health fails, or on a deploy whose
+/** `22/24 live plans passed on gemini-3.5-flash (11 Oct), p50 26.5 s · committed eval`: the committed live-plan
+ * evaluation (a dated record, not a live reading), read from /health `plan_live_eval` and `model`. Renders nothing while loading, when /health fails, or on a deploy whose
  * /health does not carry the field yet. */
 export function PlanEvalChip() {
   const [text, setText] = useState<string | null>(null);
@@ -16,7 +15,7 @@ export function PlanEvalChip() {
     let cancelled = false;
     readHealthOnce().then((h) => {
       if (cancelled) return;
-      const t = planLiveEvalText(h?.plan_live_eval);
+      const t = planLiveEvalText(h?.plan_live_eval, h?.backend === "vertex" ? h?.model : undefined);
       setText(t);
       if (t && h?.plan_live_eval) {
         const { total, date } = h.plan_live_eval;
