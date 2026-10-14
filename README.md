@@ -20,7 +20,7 @@ Sources: `eval/raw/tea_recorded_beat_2026-10-12.json`, `plan_live_2026-10-12.jso
 
 ## Judge quick-start
 
-No sign-in. Each visitor has a private sandbox that Reset restores. The demo clock is pinned to 12 Sep 2026. After idle, the first load can take about 10 s.
+No sign-in. Each visitor has a private sandbox; Reset restores it. The demo clock is pinned to 12 Sep 2026. After idle, the first load can take about 10 s.
 
 1. Open <https://taal-web-2obkp776ca-el.a.run.app> and click **Run the 60-second beat**. You land on the Darjeeling Tea gap: 103 units, ₹35,020 at stake, 24 days to the online sell-by.
 2. Click **Approve**. The headline reads "Recovered vs doing nothing ₹9,191" (projected), with 355 customers treated and 39 held out. The play still nets -₹25,829 against ₹35,020 at stake; ₹9,191 is the gain over doing nothing.
@@ -55,13 +55,13 @@ Detail and the offer-copy path: [`docs/gen_ai_detail.md`](docs/gen_ai_detail.md)
 |---|---|
 | ADK response match | **43/46 (93%)** on `gemini-3.5-flash`, 12 Oct, planner prompt v6 |
 | Exact tool trajectory | **1/46**. The 46 evalsets were recorded on 28 Sep from `gemini-2.5-flash` and mostly contain 2 to 5 `propose_play` attempts (41 of 46); `gemini-3.5-flash` proposes first time in 40 of 45 cases, so exact order no longer matches |
-| Post-hoc, computed afterwards from stored results, not a configured metric | first proposed play passed the gate in 41/46; every expected tool called 46/46; run ends with `propose_play` 46/46; IN_ORDER and ANY_ORDER match 5/46, for the same retry reason |
+| Post-hoc, from stored results, not a configured metric | first proposed play passed the gate in 41/46; every expected tool called 46/46; run ends with `propose_play` 46/46; IN_ORDER and ANY_ORDER match 5/46 (same retry reason) |
 | Rationale judge | 15/15, mean 5.0, by a same-family judge (weak evidence) |
 | Live Plan, deployed | 22 of 24 model-planned, 0 fallbacks, p50 26.5 s, p95 31.8 s (11 Oct); 2 runs lost to a cold-instance 404 count as not passed |
 
-Prompt v6 was measured; v7, which the Tea recording uses, was not. The set is a regression guard, not an accuracy score. Files: `eval/raw/live_eval_2026-10-12/` (12 Oct) and `eval/raw/plan_live_2026-10-12.json`.
+Prompt v6 was measured; v7, which the Tea recording uses, was not. It is a regression guard, not an accuracy score. Files: `eval/raw/live_eval_2026-10-12/` (12 Oct) and `eval/raw/plan_live_2026-10-12.json`.
 
-**Tests, by suite:** 293 unit, 112 agents, 53 API, 31 SQL and 22 contract pytest functions (511), plus 575 e2e and 32 live Playwright cases (grep counts, 14 Oct). **CI:** `make verify` runs on every pull request; a push to `main` deploys to Cloud Run only after it is green, then a smoke job checks health, a real gap, a real approve and a chat reply.
+**Tests, by suite:** 293 unit, 112 agents, 53 API, 31 SQL and 22 contract pytest functions (511), plus 575 e2e and 32 live Playwright cases (grep counts, 14 Oct). **CI:** `make verify` runs on every pull request; a push to `main` deploys only after it is green, then a smoke job checks health, a gap, an approve and a chat reply.
 
 **Approve timing:** 2.1 to 2.5 s warm on `taal-agents-00141-lhz` (`approve_timing_2026-10-13b.json`), then 1.4 to 1.7 s on `taal-agents-00143-8v9` with web `taal-web-00080-72v` (`approve_timing_2026-10-13c.json`, five warm samples, not a percentile). A first call after idle is slower.
 
@@ -96,11 +96,11 @@ The app's badges are LIVE, REPLAY (RECORDED here) and SYNTHETIC. No pilot has ru
 | MCP order tool | places the order from chat |
 | Cloud Scheduler | nightly jobs, plus keep-warm pings (`taal-agents-warm` every 5 min, `taal-web-keepwarm` every 10 min) |
 
-History: the model moved off `gemini-2.5-flash` on 10 Oct 2026, ahead of its 20 Oct Vertex retirement. Request paths: [`docs/architecture.md`](docs/architecture.md).
+Model moved off `gemini-2.5-flash` on 10 Oct 2026 (retires 20 Oct). Request paths: [`docs/architecture.md`](docs/architecture.md).
 
 ## Impact and limits
 
-FSSAI's advisory of 3 Dec 2024 ([file RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf)) asks e-commerce food operators to deliver with a minimum of 30% shelf life or 45 days left. It is an advisory, not law, and the either-limit reading Taal applies is its own configurable default (`config/tenant.demo.toml`).
+FSSAI's advisory of 3 Dec 2024 ([file RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf)) asks e-commerce food operators to deliver with a minimum of 30% shelf life or 45 days left. It is an advisory, not law; the either-limit reading Taal applies is its own default (`config/tenant.demo.toml`).
 
 As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% of net order value (NOV). With the same article's NOV of ₹17,132 crore and 2,443 stores, ₹17,132 cr / 2,443 x 4 x 1.8% is about ₹0.5 crore per store per year. It covers all inventory loss and annualises one quarter: context, not a Taal result.
 
@@ -114,7 +114,7 @@ Projected margin per node (16 nodes = 10 dark stores + 6 outlets), per 28-day ru
 | 5% | ₹21,710 | 21,710 x 365/28 = ₹283,005 (₹2.83 lakh) |
 | 10% | ₹38,698 | 38,698 x 365/28 = ₹504,456 (₹5.04 lakh) |
 
-Projected, synthetic tenant; assumes every run repeats the same gaps.
+Projected, synthetic tenant.
 
 **What breaks first**
 - Cold start: `min-instances` is 0, so an idle service answers slowly; keep-warm pings help.
@@ -131,4 +131,4 @@ Runbook: [`docs/judging_runbook.md`](docs/judging_runbook.md). More: [`docs/prob
 
 Nandish (lead) and Rinu (co-builder). MIT for code (`LICENSE`); third-party data terms in `DATA_LICENSES.md`.
 
-Setup, make targets and deploy runbook: [`docs/development.md`](docs/development.md). Your CSVs: [`docs/bring_your_own_data.md`](docs/bring_your_own_data.md). Design notes, vendors, related work, hero plays: [`docs/`](docs/).
+Setup, make targets and deploy runbook: [`docs/development.md`](docs/development.md). Your CSVs: [`docs/bring_your_own_data.md`](docs/bring_your_own_data.md). More in [`docs/`](docs/).
