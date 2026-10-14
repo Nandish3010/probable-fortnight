@@ -109,7 +109,7 @@ test.describe("assumption and measured labels", () => {
     await beat.getByRole("button", { name: "Approve" }).click();
     const result = page.getByTestId("approve-result");
     await expect(result).toBeVisible({ timeout: 30_000 });
-    await expect(result.getByTestId("audience-chain")).toHaveText("394 consented: 355 treated and 39 holdout");
+    await expect(result.getByTestId("audience-chain")).toHaveText("Reached 355 customers, 39 held back; the lift is measured once orders arrive");
     await expect(result.getByTestId("basis-assumption")).toBeVisible();
     await expect(result.getByTestId("basis-measured")).toHaveCount(0);
     await expect(result).not.toContainText(/response-rate difference|95% CI/i); // no measured lift before Measure

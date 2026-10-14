@@ -133,3 +133,9 @@ export function audienceChain(a: AssignmentCounts): string | null {
   }
   return `${a.eligible_n} consented: ${split}`;
 }
+
+/** The line under the Approve result heading. It states who was reached and who was held back,
+ * from the response's own counts, and promises no lift: the lift appears only after Measure. */
+export function reachedLine(a: AssignmentCounts): string {
+  return `Reached ${a.treated_n} customers, ${a.holdout_n} held back; the lift is measured once orders arrive`;
+}

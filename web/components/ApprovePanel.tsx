@@ -14,7 +14,7 @@ import {
 } from "../lib/approveMachine";
 import { chatUrlFor, DEMO_CUSTOMER_ID, DEMO_MESSAGE, demoMessageFor, requestChat } from "../lib/chatBridge";
 import { inr } from "../lib/format";
-import { audienceChain, playImpact } from "../lib/impact";
+import { audienceChain, playImpact, reachedLine } from "../lib/impact";
 import { prefersReducedMotion } from "../lib/motion";
 import { describeReply } from "../lib/previewReply";
 import { firstName, treatedCustomerFor } from "../lib/treatedPersona";
@@ -389,13 +389,10 @@ export function ApprovePanel({
           {result ? (
             <div className={styles.badges}>
               <SeededCallBadge live={result.source === "live"} />
-              {chain === null ? (
-                <span className="chip">holdout {result.assignment.holdout_n} / treated {result.assignment.treated_n}</span>
-              ) : null}
             </div>
           ) : null}
-          {chain !== null ? (
-            <p className={styles.chain} data-testid="audience-chain">{chain}</p>
+          {result ? (
+            <p className={styles.chain} data-testid="audience-chain">{reachedLine(result.assignment)}</p>
           ) : null}
 
           <RecoveredFigure
@@ -461,6 +458,12 @@ export function ApprovePanel({
                 </dd>
                 <dt>Assignment seed</dt>
                 <dd>{result.assignment.seed}</dd>
+                {chain !== null ? (
+                  <>
+                    <dt>Audience</dt>
+                    <dd data-testid="audience-arithmetic">{chain}</dd>
+                  </>
+                ) : null}
               </dl>
             </Details>
           ) : (
