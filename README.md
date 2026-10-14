@@ -63,7 +63,7 @@ Detail: [`docs/gen_ai_detail.md`](docs/gen_ai_detail.md).
 | Live Plan, deployed | 22 of 24 model-planned, 0 fallbacks, p50 26.5 s, p95 31.8 s (`gemini-3.5-flash`, prompt v6, 11 Oct); 2 runs lost to a cold-instance 404 count as not passed. Not repeated on v7 |
 
 **Learning curve.** [`docs/learning_curve.md`](docs/learning_curve.md) lists what we measured, what we changed and what the next run said, including the changes that made a number worse.
-On 14 Oct: re-recorded evalsets, the adversarial eval and fixes, Model Armor live, and a fair backtest (unchanged forecaster all-days WAPE 1.119, 1.839 without the pre-registered exclusion, vs 0.907 for a 28-day mean; a zero-filled variant was measured, not shipped).
+On 14 Oct: re-recorded evalsets, the adversarial eval and fixes, Model Armor live, and a fair backtest of the forecaster on a public retail dataset, with baselines and fair metrics: [`eval/external_backtest.md`](eval/external_backtest.md); the history is in the [learning curve](docs/learning_curve.md).
 Chat latency on 14 Oct was p50 4.45 s, p95 8.70 s, worse in the tail than 6.48 s before the switch.
 
 **Tests:** 511 pytest functions (293 unit, 112 agents, 53 API, 31 SQL, 22 contract) plus 575 e2e and 32 live Playwright cases (grep, 14 Oct). **CI:** `make verify` gates every pull request; `main` deploys only when green, then a smoke job runs.
