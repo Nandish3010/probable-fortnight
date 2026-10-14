@@ -1,0 +1,43 @@
+{
+ "method": "eval/raw/customer_latency_2026-10-14/measure.py method (CUST-MEENA, fresh visitor per call, 15-message pool cycled, same order, parallelism 1) against a local server (serve.py), vertex backend, Model Armor ON (taal-chat) in both runs. FIRST 24 of the 50 calls only: the $1.60 cap allowed ~24 turns per run (about $0.032 per turn). Same 24 prompts in the same order.",
+ "model": "gemini-3.5-flash on every call in both runs (usage_metadata/model_version logged; both runs valid)",
+ "before": {
+  "n_calls": 24,
+  "p50_s": 4.242,
+  "p95_s": 8.435,
+  "max_s": 9.7333,
+  "mean_s": 4.714,
+  "mean_model_calls_per_turn": 1.792,
+  "mean_model_s_per_turn": 4.022,
+  "mean_armor_s_per_turn": 0.626,
+  "get_stock_calls": 0,
+  "thinking_levels": [
+   "ThinkingLevel.LOW"
+  ],
+  "spend_usd": 0.7752
+ },
+ "after": {
+  "n_calls": 24,
+  "p50_s": 3.656,
+  "p95_s": 4.36,
+  "max_s": 4.8539,
+  "mean_s": 3.405,
+  "mean_model_calls_per_turn": 1.917,
+  "mean_model_s_per_turn": 3.072,
+  "mean_armor_s_per_turn": 0.264,
+  "get_stock_calls": 9,
+  "thinking_levels": [
+   "ThinkingLevel.MINIMAL"
+  ],
+  "spend_usd": 0.7548
+ },
+ "seconds_per_model_call": {
+  "before": 2.245,
+  "after": 1.603
+ },
+ "notes": [
+  "Change 1 (stock prefetch) did not fire in the 24-call set: CUST-MEENA has no pending offer in the base tenant, so no offered SKU exists. It is exercised only in judge_path_after.json (Ravi after Approve on Tea), which has no BEFORE twin because the budget was spent.",
+  "Behaviour difference seen: with minimal thinking the model answered 'do you have quinoa?' and 'do you have kaju katli?' with three parallel get_stock calls (a text reply) instead of list_products (list picker) in 3 of 24 turns (quinoa twice, kaju katli once); in the BEFORE run those turns used list_products. Both are allowed by the prompt.",
+  "One run each, different minutes; model latency varies run to run, so treat a gain of under a second at p50 as noise. The p95/max gap (8.4 s vs 4.4 s) is mostly the long tail in the BEFORE run (turn 3 'what tea', 3 model calls, 8.8 s)."
+ ]
+}

@@ -26,6 +26,8 @@ TEA_PLAY = "play_tea_ds04_v1"
 TEA_GAP = "gap_tea_ds04"
 EXPECT = {"treated_n": 355, "holdout_n": 39, "copy.source": "existing", "copy.provenance": "bigquery_pregenerated"}
 PLAN_POLL_S = 120
+CHAT_MAX_S = 10.0  # a chat turn slower than this FAILS (14 Oct local p95 was 8.7 s)
+APPROVE_MAX_S = 5.0  # Approve on Tea is 1.4 to 2.5 s warm; slower than this FAILS
 RESULTS: list[tuple[str, bool, str]] = []
 
 
@@ -90,7 +92,9 @@ def check_approve(api: str, visitor: str) -> None:
         return
     wrong = {k: (got[k], v) for k, v in EXPECT.items() if got[k] != v}
     detail = f"{got['treated_n']} treated / {got['holdout_n']} held out, copy.source {got['copy.source']}, provenance {got['copy.provenance']}, {took:.2f} s"
-    record("approve Tea", status == 200 and not wrong, detail if not wrong else f"{detail} | expected {dict((k, v[1]) for k, v in wrong.items())}")
+    slow = took > APPROVE_MAX_S
+    ok = status == 200 and not wrong and not slow
+    record("approve Tea", ok, (detail if not wrong else f"{detail} | expected {dict((k, v[1]) for k, v in wrong.items())}") + (f" | over the {APPROVE_MAX_S:g} s limit" if slow else ""))
 
 
 def check_chat(api: str, visitor: str) -> None:
@@ -103,7 +107,8 @@ def check_chat(api: str, visitor: str) -> None:
     except (ValueError, KeyError, IndexError, TypeError):
         record("chat as Ravi", False, f"HTTP {status}, unexpected body: {text[:160]}")
         return
-    record("chat as Ravi", status == 200 and bool(str(reply).strip()), f"{took:.1f} s, reply: {str(reply)[:90]!r}")
+    slow = took > CHAT_MAX_S
+    record("chat as Ravi", status == 200 and bool(str(reply).strip()) and not slow, f"{took:.1f} s, reply: {str(reply)[:90]!r}" + (f" | over the {CHAT_MAX_S:g} s limit" if slow else ""))
 
 
 def check_plan_live(api: str, visitor: str) -> None:

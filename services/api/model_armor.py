@@ -44,6 +44,20 @@ OFF = Verdict(blocked=False, source="off")
 _creds_lock = threading.Lock()
 _creds: Any = None
 
+# One shared client for every screen call: a new httpx.Client per call paid a fresh TCP + TLS
+# handshake to modelarmor.<region>.rep.googleapis.com on every prompt and reply screen. httpx.Client
+# is safe to share across threads (screens run in asyncio.to_thread); the 1.5 s timeout is unchanged.
+_http_lock = threading.Lock()
+_http: httpx.Client | None = None
+
+
+def _shared_client() -> httpx.Client:
+    global _http
+    with _http_lock:
+        if _http is None:
+            _http = httpx.Client(timeout=TIMEOUT_S)
+        return _http
+
 
 def template() -> str | None:
     t = (os.environ.get(TEMPLATE_ENV) or "").strip()
@@ -78,12 +92,7 @@ def _call(method: str, payload: dict[str, Any], tmpl: str, client: httpx.Client 
     location = _TEMPLATE_RE.match(tmpl).group(1)  # type: ignore[union-attr]
     url = f"https://modelarmor.{location}.rep.googleapis.com/v1/{tmpl}:{method}"
     try:
-        http = client or httpx.Client(timeout=TIMEOUT_S)
-        try:
-            r = http.post(url, json=payload, headers={"Authorization": f"Bearer {_token()}"})
-        finally:
-            if client is None:
-                http.close()
+        r = (client or _shared_client()).post(url, json=payload, headers={"Authorization": f"Bearer {_token()}"})
         r.raise_for_status()
         result = r.json().get("sanitizationResult") or {}
     except Exception as e:  # fail open: see module docstring
