@@ -24,6 +24,7 @@ import styles from "./ApprovePanel.module.css";
 import { ApproveSteps } from "./ApproveSteps";
 import { ApproveToast } from "./ApproveToast";
 import { SeededCallBadge } from "./Badge";
+import { Basis } from "./BasisTag";
 import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
 import { ForecastChart } from "./ForecastChart";
@@ -381,7 +382,13 @@ export function ApprovePanel({
       ) : null}
 
       {state.bodyShown ? (
-        <div className={styles.body} data-testid="approve-result" data-phase={phase} data-motion={motionOn ? "on" : "off"}>
+        <div
+          className={styles.body}
+          data-testid="approve-result"
+          data-phase={phase}
+          data-motion={motionOn ? "on" : "off"}
+          data-basis="projected"
+        >
           <h4 ref={headingRef} tabIndex={-1} className={styles.heading}>
             {heading}
           </h4>
@@ -405,12 +412,14 @@ export function ApprovePanel({
           {result ? (
             <>
               <ForecastChart forecast={result.forecast} animate={motionOn && phase === "animating"} />
-              <p className="approve-panel__writeoff" data-testid="writeoff-line">
-                What-if write-off {inr(result.forecast.writeoff_before_inr)} {"→"} {inr(result.forecast.writeoff_after_inr)}
-              </p>
-              <p className="muted" data-testid="writeoff-caption">
-                What-if forecast using the past promo lift. Not the play&apos;s own estimate.
-              </p>
+              <Basis kind="projected" tag="none">
+                <p className="approve-panel__writeoff" data-testid="writeoff-line">
+                  What-if write-off {inr(result.forecast.writeoff_before_inr)} {"→"} {inr(result.forecast.writeoff_after_inr)}
+                </p>
+                <p className="muted" data-testid="writeoff-caption">
+                  What-if forecast using the past promo lift. Not the play&apos;s own estimate.
+                </p>
+              </Basis>
             </>
           ) : (
             <p className="muted" data-testid="recorded-forecast-note">

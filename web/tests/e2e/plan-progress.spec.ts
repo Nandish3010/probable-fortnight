@@ -105,19 +105,20 @@ test.describe("assumption and measured labels", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Run the 60-second beat" }).click();
     const beat = page.getByTestId("beat-panel");
-    await expect(beat.getByTestId("recovered-figure").getByTestId("basis-assumption")).toBeVisible();
+    await expect(beat.getByTestId("recovered-figure").getByTestId("basis-projected")).toBeVisible();
     await beat.getByRole("button", { name: "Approve" }).click();
     const result = page.getByTestId("approve-result");
     await expect(result).toBeVisible({ timeout: 30_000 });
     await expect(result.getByTestId("audience-chain")).toHaveText("Reached 355 customers, 39 held back; the lift is measured once orders arrive");
-    await expect(result.getByTestId("basis-assumption")).toBeVisible();
+    await expect(result.getByTestId("basis-projected")).toBeVisible();
     await expect(result.getByTestId("basis-measured")).toHaveCount(0);
     await expect(result).not.toContainText(/response-rate difference|95% CI/i); // no measured lift before Measure
   });
 
   test("Outcomes labels the portfolio numbers assumption and a measured result measured", async ({ page }) => {
     await page.goto("/outcomes");
-    await expect(page.getByTestId("portfolio-card").getByTestId("basis-assumption")).toHaveCount(2);
+    await expect(page.getByTestId("portfolio-card").getByTestId("basis-projected")).toHaveCount(1); // expected recovered
+    await expect(page.getByTestId("portfolio-card").getByTestId("basis-synthetic")).toHaveCount(1); // total at stake
     await expect(page.getByTestId("outcome-summary").getByTestId("basis-measured")).toHaveCount(0); // nothing measured yet
   });
 });

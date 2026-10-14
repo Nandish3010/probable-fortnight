@@ -297,7 +297,7 @@ export function ChatPanel({
   const customerLanguage = active?.language;
 
   return (
-    <div ref={rootRef} id="chat-panel" className={`chat-panel ${compact ? "chat-panel--compact" : ""}`}>
+    <div ref={rootRef} id="chat-panel" className={`chat-panel ${compact ? "chat-panel--compact" : ""}`} data-basis="synthetic">
       <div className="chat-panel__header">
         <h3>{title} {displayName}</h3>
         <div className="chat-panel__badges">

@@ -58,7 +58,7 @@ export function MeenaPreview({
   const gloss = ready?.envelope.english_gloss;
 
   return (
-    <div className={styles.frame} data-testid="meena-preview" data-status={state.status} data-motion={animate ? "on" : "off"}>
+    <div className={styles.frame} data-testid="meena-preview" data-status={state.status} data-motion={animate ? "on" : "off"} data-basis="synthetic">
       <div className={styles.notch} aria-hidden="true" />
       <div className={styles.head}>
         <p className={styles.title}>What {name} receives</p>
