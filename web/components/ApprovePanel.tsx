@@ -23,7 +23,7 @@ import type { ApproveResponse, ChatEnvelope, DemoCustomer, Play } from "../lib/t
 import styles from "./ApprovePanel.module.css";
 import { ApproveSteps } from "./ApproveSteps";
 import { ApproveToast } from "./ApproveToast";
-import { Badge } from "./Badge";
+import { SeededCallBadge } from "./Badge";
 import { Details } from "./Details";
 import { ErrorCard } from "./ErrorCard";
 import { ForecastChart } from "./ForecastChart";
@@ -388,7 +388,7 @@ export function ApprovePanel({
 
           {result ? (
             <div className={styles.badges}>
-              <Badge kind={result.source === "live" ? "live" : "replay"} />
+              <SeededCallBadge live={result.source === "live"} />
               {chain === null ? (
                 <span className="chip">holdout {result.assignment.holdout_n} / treated {result.assignment.treated_n}</span>
               ) : null}

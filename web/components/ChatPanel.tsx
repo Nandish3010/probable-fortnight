@@ -11,7 +11,7 @@ import { personaCaption } from "../lib/playText";
 import { recordOffer, useProgress } from "../lib/progressStore";
 import { treatedCustomerFor } from "../lib/treatedPersona";
 import { useWaking } from "../lib/useWaking";
-import { Badge } from "./Badge";
+import { SeededCallBadge } from "./Badge";
 import { Details } from "./Details";
 import { WakingNotice } from "./WakingNotice";
 import { ErrorCard } from "./ErrorCard";
@@ -301,7 +301,7 @@ export function ChatPanel({
       <div className="chat-panel__header">
         <h3>{title} {displayName}</h3>
         <div className="chat-panel__badges">
-          <Badge kind={isMockMode() ? "replay" : "live"} />
+          <SeededCallBadge live={!isMockMode()} />
           {latency !== null ? <span className="chip">{latency} ms</span> : null}
         </div>
       </div>

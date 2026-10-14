@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { isMockMode } from "../lib/api";
 import { containsKannada, langAttr, uniqueByLabel, type ReplyLanguage } from "../lib/lang";
 import type { ChatEnvelope } from "../lib/types";
-import { Badge } from "./Badge";
+import { SeededCallBadge } from "./Badge";
 import styles from "./MeenaPreview.module.css";
 
 export type PreviewState =
@@ -62,7 +62,7 @@ export function MeenaPreview({
       <div className={styles.notch} aria-hidden="true" />
       <div className={styles.head}>
         <p className={styles.title}>What {name} receives</p>
-        <Badge kind={isMockMode() ? "replay" : "live"} />
+        <SeededCallBadge live={!isMockMode()} />
       </div>
 
       {ready ? (
