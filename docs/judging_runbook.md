@@ -45,7 +45,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://taal-web-2obkp776ca-el.a.run.ap
 make smoke-judging
 ```
 
-`/health` must report `"status": "ok"` and the web root must answer 200. Roll back `taal-agents` and `taal-web` independently. After `update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to the newest with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214` once a fix is deployed. Revisions serving on 14 Oct 2026: `taal-agents-00145-xvm` and `taal-web-00081-h95` (from `main` at 7b6ce15); the revisions before them were `taal-agents-00143-8v9` and `taal-web-00080-72v`.
+`/health` must report `"status": "ok"` and the web root must answer 200. Roll back `taal-agents` and `taal-web` independently. After `update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to the newest with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214` once a fix is deployed. Revisions serving: `taal-agents-00149-sw6` (`main` at 75e65a0) and `taal-web-00082-g8m`. Previous (14 Oct 2026): `taal-agents-00145-xvm` and `taal-web-00081-h95` (from `main` at 7b6ce15); the revisions before them were `taal-agents-00143-8v9` and `taal-web-00080-72v`.
 
 ## Spend caps and 429s
 
