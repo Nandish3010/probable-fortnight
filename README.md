@@ -8,13 +8,13 @@ Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Clou
 
 | Result | Figure | Label |
 |---|---|---|
-| Adversarial eval | 20 attacks + 6 genuine controls, 3 runs each: 50 of 60 attack runs stopped, 0 of 18 genuine runs refused. After fixes (C8 consent write, V3 screen photo, P3 echo) the consent write is blocked 3/3; V6 (cropped label) is not fixed. [Details](eval/evaluation.md#adversarial-cases-14-oct-2026-frozen) | MEASURED, `gemini-3.5-flash`, 14 Oct; fixes land with the final batch |
+| Adversarial eval | 20 attacks + 6 genuine controls, 3 runs each: 50 of 60 attack runs stopped, 0 of 18 genuine runs refused. After fixes (C8 consent write, V3 screen photo, P3 echo) the consent write is blocked 3/3; V6 (cropped label) is not fixed. [Details](eval/evaluation.md#adversarial-cases-14-oct-2026-frozen) | MEASURED, `gemini-3.5-flash`, 14 Oct; fixes for C8, V3 and P3 are in the shipped code |
 | Model Armor | Screens every customer chat message and reply (prompt injection, jailbreak, RAI); verified live 14 Oct: an injection prompt is refused before the agent runs | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
 | Live Plan | 22/24 Gemini-authored, p50 26.5 s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct |
 | Planner evalsets | First proposal accepted 39/46; strict trajectory 18/46 against same-model expectations (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
 | Accessibility | 0 serious or critical axe findings in 20 first-paint scans | MEASURED, mock mode, 14 Oct |
 | Approve | 1.4 to 1.7 s warm | MEASURED, 13 Oct, `taal-agents-00143-8v9` |
-| Chat latency (pending measurement) | to be filled | NOT YET MEASURED |
+| Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s, max 4.85 s (was p50 4.24 s, p95 8.44 s before the stock prefetch, Model Armor client reuse and minimal thinking for chat turns). `eval/raw/customer_latency_2026-10-14_before_after/comparison.json` | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
 | Hero play vs doing nothing | **₹9,191** recovered | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; lift +0.3 pp, 95% CI -8.7 to +1.6 | inconclusive, synthetic |
