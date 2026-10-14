@@ -220,3 +220,31 @@ This is the number worth putting in front of a category head: not "one bundle sa
 ₹706,183.28 of waste avoided against a ₹1.8M exposure over the 28-day horizon" -- arithmetic on
 the default 5% response prior (`agents/gate/estimator.py:35-36`) over the 28-day horizon
 (`jobs/sense/forecast.py:31`) on the seeded tenant; the pilot replaces the prior.
+
+## Holdout power: what the 355 / 39 design can and cannot resolve (SIMULATION)
+
+SIMULATION of the measurement design, not a result. No lift was measured: the committed Tea outcome is 1 responder of 355 treated against 0 of 39 held out, +0.3 pp, 95% CI -8.7 to +1.6, inconclusive (`eval/raw/tea_recorded_beat_2026-10-12.json`).
+
+The demo holdout is under-powered by design (n = 355/39 synthetic orders). To resolve a 5 pp lift at 80 percent power on a two-sided two-proportion z-test at 95 percent confidence, the same 90/10 design needs about 1,160 orders (1,156), roughly three times the 394 it has. The minimum lift the 355 / 39 design can detect at 80 percent power is about 12.4 pp. This is a simulation of the measurement design, not a result.
+
+`eval/holdout_power.py` computes it (standard library only); output committed as `eval/raw/holdout_power_2026-10-14.json`; checked against hand-computed values in `tests/unit/test_holdout_power.py`.
+
+| SIMULATION, 80% power, 95% confidence, two-sided | Base conversion 0.50% (Tea organic, 2 / 401) | 2.0% (chips organic, 8 / 401) | 5.0% (seeded prior mean) |
+|---|---|---|---|
+| Minimum detectable lift at 355 / 39 | 12.4 pp | 14.3 pp | 16.7 pp |
+| Total orders for 2 pp at 90 / 10 | 3,674 | 6,882 | 12,853 |
+| Total orders for 5 pp at 90 / 10 | 1,156 | 1,674 | 2,609 |
+| Total orders for 10 pp at 90 / 10 | 505 | 633 | 858 |
+
+Inputs and sources. Design: 355 treated, 39 held out, from `approve.assignment` in the Tea recording. Primary base conversion 0.50% is the seeded tenant's organic 7-day rate for Darjeeling Tea 100G at DS-04 (2 buyers among 401 customers homed there; `harness.prior_update_demo.organic_rate`, seed 20260912), the rate the held-out arm would show. The 2.0% chips rate is `rates_used.holdout` in `eval/raw/prior_update_2026-09-28.json`; 5.0% is the estimator's seeded prior mean, Beta(1, 19) (`agents/gate/estimator.py`). Lift is an absolute difference in conversion, as in `jobs/measure/run.py`.
+
+Formula, with q_t = 0.9 and q_c = 0.1 the shares of orders treated and held out, p_t = p_c + delta and p_bar = q_t p_t + q_c p_c:
+
+```
+N = ((z_0.975 * sqrt(p_bar (1 - p_bar) (1/q_t + 1/q_c)) + z_0.80 * sqrt(p_t (1 - p_t)/q_t + p_c (1 - p_c)/q_c)) / delta)^2, rounded up
+z_0.975 = 1.959964, z_0.80 = 0.841621
+```
+
+Worked, 5 pp on the Tea base: p_c = 0.004988, p_t = 0.054988, p_bar = 0.049988; first term 1.959964 x sqrt(0.049988 x 0.950012 x 11.1111) = 1.4237; second term 0.841621 x sqrt(0.054988 x 0.945012/0.9 + 0.004988 x 0.995012/0.1) = 0.2758; N = ((1.4237 + 0.2758) / 0.05)^2 = 1,155.3, so 1,156 (1,040 treated, 116 held out).
+
+Caveats. This is the normal approximation. At a 0.5% base the 39 held-out customers expect about 0.2 responders, so the approximation is rough and an exact test would be less powerful still. It assumes independent customers, one decision each, and a known base rate; the real base rate is unmeasured on real customers. A pilot would size the holdout from its own base rate with this script.

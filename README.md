@@ -115,6 +115,8 @@ Projected margin per node (16 nodes), per 28-day run, at a 2% / 5% / 10% respons
 - Offer copy is pre-generated for the seven seeded plays only; any other play tries one BigQuery call, then templates.
 - Voice is not in this submission; vision accuracy on real photos is unmeasured; the ₹486 monthly run cost was measured on `gemini-2.5-flash`.
 
+SIMULATION of the measurement design, not a result: the demo holdout is under-powered by design (n = 355/39 synthetic orders). To resolve a 5 pp lift at 80 percent power the same design needs about 1,160 orders (`eval/raw/holdout_power_2026-10-14.json`, [`docs/impact_math.md`](docs/impact_math.md)).
+
 More: [`docs/problem_and_impact.md`](docs/problem_and_impact.md), [`docs/real_vs_simulated.md`](docs/real_vs_simulated.md), [`docs/scale.md`](docs/scale.md), [`docs/pilot.md`](docs/pilot.md) (design only, no pilot ran), [`docs/screenshots.md`](docs/screenshots.md) (pre-redesign screenshots).
 
 ## Team and licence
