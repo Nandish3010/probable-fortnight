@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces pregenerate-copy deck deploy clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces pregenerate-copy deck deploy smoke-judging clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -124,6 +124,9 @@ deck:             ## render deck/slides.html -> docs/deck.pdf (18 pages) and dec
 
 deploy:           ## gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT)
 	@bash infra/deploy.sh
+
+smoke-judging:    ## daily judging smoke against production: 5 web routes, /health, one Approve on Tea, one Plan live, one chat as Ravi (2 model calls; WEB=... API=... to override; run once, not in a loop)
+	@python3 harness/smoke_judging.py $(if $(WEB),--web $(WEB)) $(if $(API),--api $(API))
 
 clean:
 	rm -rf .local .pytest_cache .ruff_cache .hypothesis
