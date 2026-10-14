@@ -116,8 +116,9 @@ test.describe("the link starts Plan live on the Desk, once", () => {
     const progress = detail.getByTestId("plan-progress");
     await expect(progress).toBeVisible();
     await expect(progress.getByTestId("plan-step")).toHaveCount(4);
+    await expect(progress.getByTestId("plan-step").first()).toContainText("Reading the forecast");
     // provenance labels stream with it; the mock service is the scripted backend, so no Gemini anywhere
-    await expect(progress.getByTestId("plan-step").nth(2).getByTestId("plan-step-provenance")).toHaveText("scripted fixture, no model call");
+    await expect(progress.getByTestId("plan-step").nth(1).getByTestId("plan-step-provenance")).toHaveText("scripted fixture, no model call");
     await expect(progress.getByText(/Gemini/)).toHaveCount(0);
     await expect(progress.locator('[data-testid="plan-step"][data-state="done"]').first()).toBeVisible();
     await expect(page.getByTestId("rerun-effort")).toBeVisible({ timeout: 30_000 }); // the run finishes
