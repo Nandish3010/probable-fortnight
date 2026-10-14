@@ -24,3 +24,5 @@ India scale, as reported (the letter itself was not opened): Inc42 (22 Jul 2026)
 Buyer and pricing basis: the buyer is the category / supply-chain head, who owns write-off; the basis is either a fee per dark store per month or a percentage of rupees rescued measured against the holdout (`fee = pct x rupees rescued vs holdout`). No price point is set until a pilot measures that lift.
 
 Projected margin less run cost, illustration, synthetic and projected, not a quote: projected margin per node less run cost per node = ₹347,356 / 16 nodes - ₹486 / 16 nodes, about ₹21,710 - ₹30. This is not a break-even: no fee is set.
+
+Annualised per node, projected, synthetic tenant, not a quote: the per-node 28-day figure x 365/28, rounded to the rupee, from the per-node figures above (tenant totals in `eval/raw/portfolio_prior_sensitivity_2026-10-09.json` divided by 16 nodes). At the 2% prior ₹8,796 x 365/28 = ₹114,662 (₹1.15 lakh); at 5%, ₹21,710 x 365/28 = ₹283,005 (₹2.83 lakh); at 10%, ₹38,698 x 365/28 = ₹504,456 (₹5.04 lakh). It assumes every 28-day run repeats the same gaps and the response prior holds; no pilot has measured either.

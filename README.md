@@ -106,7 +106,15 @@ As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% o
 
 In our survey, 3 of 7 practitioners write off stock weekly or daily.
 
-Projected margin per node (16 nodes), per 28-day run, at a 2% / 5% / 10% response prior: ₹8,796 / ₹21,710 / ₹38,698, from tenant totals of ₹1.41 / 3.47 / 6.19 lakh (₹347,356 at 5%; `portfolio_prior_sensitivity_2026-10-09.json`). Projected, synthetic, not annualised.
+Projected margin per node (16 nodes = 10 dark stores + 6 outlets), per 28-day run, at a 2% / 5% / 10% response prior, from tenant totals of ₹1.41 / 3.47 / 6.19 lakh (₹347,356 at 5%; `portfolio_prior_sensitivity_2026-10-09.json`, `docs/impact_numbers.md`). Annualised, 28-day figure x 365/28:
+
+| Response prior | Per node, 28-day run | Per node, per year (projected) |
+|---|---|---|
+| 2% | ₹8,796 | 8,796 x 365/28 = ₹114,662 (₹1.15 lakh) |
+| 5% | ₹21,710 | 21,710 x 365/28 = ₹283,005 (₹2.83 lakh) |
+| 10% | ₹38,698 | 38,698 x 365/28 = ₹504,456 (₹5.04 lakh) |
+
+Projected, synthetic tenant; assumes every run repeats the same gaps.
 
 **What breaks first**
 - Cold start: `min-instances` is 0, so an idle service answers slowly; keep-warm pings help.
