@@ -10,6 +10,7 @@ import asyncio
 import hmac
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -39,6 +40,7 @@ from services.feedback.store import feedback_backend
 from services.feedback.summary import exclusion_config as feedback_exclusion_config
 from services.feedback.summary import summarize as summarize_feedback
 
+from . import model_armor
 from .approve import WindowExpired, schedule_copy_ahead, schedule_copy_ahead_for_store
 from .approve import approve as do_approve
 from .health_probes import firestore_check, sessions_check
@@ -74,7 +76,7 @@ app = FastAPI(title="Taal API", version=VERSION, description="Demand-shaping pla
 # defaulting to the local dev server only.
 _default_origins = "http://localhost:3000,http://127.0.0.1:3000"
 _allowed_origins = [o.strip() for o in os.environ.get("TAAL_ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
-app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=_allowed_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"], expose_headers=["Retry-After"])
 
 
 def _now() -> datetime:
@@ -205,10 +207,16 @@ class ChatRequest(BaseModel):
     language: str | None = None
 
 
+# A phone photo sent as-is (the web client does not resize) is a few MB; base64 adds a third.
+# 28M characters is roughly a 20 MB image: no real photo is refused, but a request body cannot be
+# used to push arbitrary payloads into the vision model.
+MAX_IMAGE_DATA_URL_CHARS = 28_000_000
+
+
 class CaptureRequest(BaseModel):
     node_id: str
     photo_ref: str | None = None
-    image_data_url: str | None = None
+    image_data_url: str | None = Field(default=None, max_length=MAX_IMAGE_DATA_URL_CHARS)
 
 
 class CaptureConfirmRequest(BaseModel):
@@ -243,6 +251,33 @@ async def _model_unavailable(request: Request, exc: ModelUnavailable) -> JSONRes
 
 _MODEL_503 = {503: {"description": "Every configured model is unavailable; retry after `retry_after_s`.", "content": {"application/json": {"example": {"error": "model_unavailable", "model": "<ids.flash>", "retry_after_s": RETRY_AFTER_S}}}}}
 
+_RATE_429 = {429: {
+    "description": ("Spend cap reached; the window is 15 minutes and clears itself. `Retry-After` is whole seconds until the oldest counted call "
+                    "expires. Two messages: a per-visitor cap says \"rate limit: at most N <bucket> calls per 900s per visitor; wait and retry\"; "
+                    "the shared, process-wide cap says \"demo capacity: the shared limit of N <bucket> calls per 15 minutes is reached; try again "
+                    "in about S seconds\"."),
+    "headers": {"Retry-After": {"description": "Seconds to wait before retrying (at least 1).", "schema": {"type": "integer", "minimum": 1}}},
+    "content": {"application/json": {"examples": {
+        "per_visitor": {"value": {"detail": "rate limit: at most 20 plan calls per 900s per visitor; wait and retry"}},
+        "shared": {"value": {"detail": "demo capacity: the shared limit of 120 plan calls per 15 minutes is reached; try again in about 240 seconds"}},
+    }}},
+}}
+
+_GUARD_VERDICT = {"type": "object", "required": ["blocked", "source", "filters"], "properties": {
+    "blocked": {"type": "boolean"},
+    "source": {"type": "string", "enum": ["off", "model_armor", "error"], "description": "error = screening failed and the call was let through (fail-open)."},
+    "filters": {"type": "array", "items": {"type": "string"}, "description": "Model Armor filters that matched."},
+    "detail": {"type": "string"},
+}}
+_CHAT_ENVELOPE = {"type": "object", "description": "One agent message.", "additionalProperties": True, "properties": {
+    "session_id": {"type": "string"}, "message_id": {"type": "string"}, "role": {"type": "string"}, "language": {"type": "string"},
+    "text": {"type": "string"}, "tool_calls": {"type": "array", "items": {}}, "latency_ms": {"type": ["integer", "null"]}, "ts": {"type": "string"},
+    "guard": {"type": "object", "description": "Optional. Present only when Model Armor screening ran (TAAL_MODEL_ARMOR_TEMPLATE set on the service); absent otherwise.",
+              "properties": {"prompt": _GUARD_VERDICT, "reply": _GUARD_VERDICT}},
+}}
+_CHAT_200 = {200: {"description": "A list of agent messages as JSON when the request sends Accept: application/json; otherwise the same messages as a text/event-stream, one per `data:` line.",
+                   "content": {"application/json": {"schema": {"type": "array", "items": _CHAT_ENVELOPE}}, "text/event-stream": {"schema": {"type": "string"}}}}}
+
 
 # ----------------------------------------------------------------------------- routes
 
@@ -253,6 +288,12 @@ _MODEL_503 = {503: {"description": "Every configured model is unavailable; retry
 # a single Cloud Run instance at min-instances=0; would need a shared store (Firestore/Redis) to
 # hold across multiple instances, not needed at this traffic level.
 _RATE_LIMITS: dict[str, list[float]] = defaultdict(list)
+# Process-wide caps on top of the per-visitor ones. The visitor id is a header the client sets, so a
+# caller rotating it gets a fresh per-visitor bucket every time; these caps bound total Gemini spend
+# no matter how many ids are used. Sized well above judge traffic (a judge runs a few of each).
+GLOBAL_PLAN_CAP = 120
+GLOBAL_CHAT_CAP = 600
+GLOBAL_CAPTURE_CAP = 60
 _RATE_LIMIT_LOCK = threading.Lock()
 
 
@@ -265,7 +306,14 @@ def _rate_limit(request: Request, bucket: str, max_calls: int, window_s: float, 
         calls = _RATE_LIMITS[key]
         calls[:] = [t for t in calls if now - t < window_s]
         if len(calls) >= max_calls:
-            raise HTTPException(429, f"rate limit: at most {max_calls} {bucket} calls per {int(window_s)}s per visitor; wait and retry")
+            # Seconds until the oldest call in the window ages out, i.e. the first moment a slot frees up.
+            retry_after = max(1, math.ceil(min(calls) + window_s - now))
+            if who:
+                msg = (f"demo capacity: the shared limit of {max_calls} {bucket} calls per {max(1, int(window_s // 60))} minutes "
+                       f"is reached; try again in about {retry_after} seconds")
+            else:
+                msg = f"rate limit: at most {max_calls} {bucket} calls per {int(window_s)}s per visitor; wait and retry"
+            raise HTTPException(429, msg, headers={"Retry-After": str(retry_after)})
         calls.append(now)
 
 
@@ -391,11 +439,12 @@ def play(play_id: str, store: LocalStore = Depends(store_for)) -> dict[str, Any]
     return out
 
 
-@app.post("/plan")
+@app.post("/plan", responses=_RATE_429)
 async def plan(req: PlanRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     # A planner run is a real Gemini call taking ~90-110s; a generous cap (a demo runs at most a
     # handful) still bounds an unauthenticated visitor's worst-case spend.
     _rate_limit(request, "plan", max_calls=20, window_s=900)
+    _rate_limit(request, "plan", max_calls=GLOBAL_PLAN_CAP, window_s=900, who="all")
     try:
         out = await run_planner_async(store.root, req.gap_id) if not isinstance(store, OverlayStore) else await _plan_overlay(store, req.gap_id)
     except KeyError as e:
@@ -516,9 +565,10 @@ def _live_play_id(store: LocalStore, gap_id: str, version: str) -> str:
     return next(pid for n in range(1, 1000) if (pid := base if n == 1 else f"{base}{n}") not in taken)
 
 
-@app.post("/rerun", response_model=RerunAccepted, status_code=202)
+@app.post("/rerun", response_model=RerunAccepted, status_code=202, responses=_RATE_429)
 async def rerun(req: RerunRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     _rate_limit(request, "plan", max_calls=20, window_s=900)  # same planner call as /plan; shares its bucket
+    _rate_limit(request, "plan", max_calls=GLOBAL_PLAN_CAP, window_s=900, who="all")
     if not store.find("gaps", gap_id=req.gap_id):
         raise HTTPException(404, f"unknown gap {req.gap_id}")
     vid = visitor_id(request)  # store_for already requires this for a mutating request; never None here
@@ -682,12 +732,33 @@ def events_stream(run_id: str, request: Request, speed: float = Query(4.0, ge=0.
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
-@app.post("/chat", responses=_MODEL_503)
+async def _screened_chat(store: LocalStore, req: ChatRequest, request: Request) -> list[dict[str, Any]]:
+    """run_chat_async behind Model Armor (services/api/model_armor.py). With no template configured
+    both screens return "off" and this is exactly the old call; the envelope gains a `guard` field
+    only when screening actually ran, so the response contract is unchanged otherwise."""
+    now_iso = _iso(_now())
+    inbound = await asyncio.to_thread(model_armor.screen_prompt, req.text)
+    if inbound.blocked:
+        sid = req.session_id
+        return [{"session_id": sid, "message_id": f"{sid}-{int(time.time() * 1000)}", "role": "agent", "language": req.language or "en", "text": model_armor.BLOCKED_PROMPT_REPLY, "tool_calls": [], "latency_ms": None, "ts": now_iso, "guard": {"prompt": inbound.as_dict()}}]
+    envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=now_iso, visitor_id=visitor_id(request))
+    if inbound.source == "off":
+        return envelopes
+    for env in envelopes:
+        outbound = await asyncio.to_thread(model_armor.screen_reply, env.get("text") or "")
+        if outbound.blocked:
+            env["text"] = model_armor.BLOCKED_REPLY_TEXT
+        env["guard"] = {"prompt": inbound.as_dict(), "reply": outbound.as_dict()}
+    return envelopes
+
+
+@app.post("/chat", responses={**_CHAT_200, **_RATE_429, **_MODEL_503})
 async def chat(req: ChatRequest, request: Request, store: LocalStore = Depends(store_for)) -> StreamingResponse:
     # A generous cap for a single-visitor demo (a scripted walkthrough sends well under a dozen
     # messages); wide enough that no legitimate judge session is at risk of tripping it.
     _rate_limit(request, "chat", max_calls=60, window_s=900)
-    envelopes = await run_chat_async(store, req.session_id, req.text, req.customer_id, now_iso=_iso(_now()), visitor_id=visitor_id(request))
+    _rate_limit(request, "chat", max_calls=GLOBAL_CHAT_CAP, window_s=900, who="all")
+    envelopes = await _screened_chat(store, req, request)
     if "application/json" in (request.headers.get("accept") or ""):
         return JSONResponse(envelopes)
 
@@ -715,10 +786,14 @@ async def reset(request: Request, store: LocalStore = Depends(store_for)) -> dic
     return {"ok": False, "namespace": "base", "restored_from": None, "detail": "no visitor id: the base tenant is never reset through the API"}
 
 
-@app.post("/capture", responses=_MODEL_503)
-def capture(req: CaptureRequest, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
+@app.post("/capture", responses={**_RATE_429, **_MODEL_503})
+def capture(req: CaptureRequest, request: Request, store: LocalStore = Depends(store_for)) -> dict[str, Any]:
     if not req.photo_ref and not req.image_data_url:
         raise HTTPException(422, "photo_ref or image_data_url required")
+    if req.image_data_url:
+        # Only an uploaded photo reaches Gemini; a sample photo_ref replays a recorded read.
+        _rate_limit(request, "capture", max_calls=10, window_s=900)
+        _rate_limit(request, "capture", max_calls=GLOBAL_CAPTURE_CAP, window_s=900, who="all")
     return intake(store, req.node_id, req.photo_ref, req.image_data_url)
 
 

@@ -175,6 +175,30 @@ paths:
                 additionalProperties: true
                 type: object
                 title: Response Plan Plan Post
+        '429':
+          description: 'Spend cap reached; the window is 15 minutes and clears itself.
+            `Retry-After` is whole seconds until the oldest counted call expires.
+            Two messages: a per-visitor cap says "rate limit: at most N <bucket> calls
+            per 900s per visitor; wait and retry"; the shared, process-wide cap says
+            "demo capacity: the shared limit of N <bucket> calls per 15 minutes is
+            reached; try again in about S seconds".'
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying (at least 1).
+              schema:
+                type: integer
+                minimum: 1.0
+          content:
+            application/json:
+              examples:
+                per_visitor:
+                  value:
+                    detail: 'rate limit: at most 20 plan calls per 900s per visitor;
+                      wait and retry'
+                shared:
+                  value:
+                    detail: 'demo capacity: the shared limit of 120 plan calls per
+                      15 minutes is reached; try again in about 240 seconds'
         '422':
           description: Validation Error
           content:
@@ -221,6 +245,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RerunAccepted'
+        '429':
+          description: 'Spend cap reached; the window is 15 minutes and clears itself.
+            `Retry-After` is whole seconds until the oldest counted call expires.
+            Two messages: a per-visitor cap says "rate limit: at most N <bucket> calls
+            per 900s per visitor; wait and retry"; the shared, process-wide cap says
+            "demo capacity: the shared limit of N <bucket> calls per 15 minutes is
+            reached; try again in about S seconds".'
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying (at least 1).
+              schema:
+                type: integer
+                minimum: 1.0
+          content:
+            application/json:
+              examples:
+                per_visitor:
+                  value:
+                    detail: 'rate limit: at most 20 plan calls per 900s per visitor;
+                      wait and retry'
+                shared:
+                  value:
+                    detail: 'demo capacity: the shared limit of 120 plan calls per
+                      15 minutes is reached; try again in about 240 seconds'
         '422':
           description: Validation Error
           content:
@@ -360,10 +408,118 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: 'A list of agent messages as JSON when the request sends Accept:
+            application/json; otherwise the same messages as a text/event-stream,
+            one per `data:` line.'
           content:
             application/json:
-              schema: {}
+              schema:
+                items:
+                  properties:
+                    session_id:
+                      type: string
+                    message_id:
+                      type: string
+                    role:
+                      type: string
+                    language:
+                      type: string
+                    text:
+                      type: string
+                    tool_calls:
+                      items: {}
+                      type: array
+                    latency_ms:
+                      type:
+                      - integer
+                      - 'null'
+                    ts:
+                      type: string
+                    guard:
+                      properties:
+                        prompt:
+                          properties:
+                            blocked:
+                              type: boolean
+                            source:
+                              type: string
+                              enum:
+                              - 'off'
+                              - model_armor
+                              - error
+                              description: error = screening failed and the call was
+                                let through (fail-open).
+                            filters:
+                              items:
+                                type: string
+                              type: array
+                              description: Model Armor filters that matched.
+                            detail:
+                              type: string
+                          type: object
+                          required:
+                          - blocked
+                          - source
+                          - filters
+                        reply:
+                          properties:
+                            blocked:
+                              type: boolean
+                            source:
+                              type: string
+                              enum:
+                              - 'off'
+                              - model_armor
+                              - error
+                              description: error = screening failed and the call was
+                                let through (fail-open).
+                            filters:
+                              items:
+                                type: string
+                              type: array
+                              description: Model Armor filters that matched.
+                            detail:
+                              type: string
+                          type: object
+                          required:
+                          - blocked
+                          - source
+                          - filters
+                      type: object
+                      description: Optional. Present only when Model Armor screening
+                        ran (TAAL_MODEL_ARMOR_TEMPLATE set on the service); absent
+                        otherwise.
+                  additionalProperties: true
+                  type: object
+                  description: One agent message.
+                type: array
+            text/event-stream:
+              schema:
+                type: string
+        '429':
+          description: 'Spend cap reached; the window is 15 minutes and clears itself.
+            `Retry-After` is whole seconds until the oldest counted call expires.
+            Two messages: a per-visitor cap says "rate limit: at most N <bucket> calls
+            per 900s per visitor; wait and retry"; the shared, process-wide cap says
+            "demo capacity: the shared limit of N <bucket> calls per 15 minutes is
+            reached; try again in about S seconds".'
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying (at least 1).
+              schema:
+                type: integer
+                minimum: 1.0
+          content:
+            application/json:
+              examples:
+                per_visitor:
+                  value:
+                    detail: 'rate limit: at most 20 plan calls per 900s per visitor;
+                      wait and retry'
+                shared:
+                  value:
+                    detail: 'demo capacity: the shared limit of 120 plan calls per
+                      15 minutes is reached; try again in about 240 seconds'
         '503':
           description: Every configured model is unavailable; retry after `retry_after_s`.
           content:
@@ -410,6 +566,30 @@ paths:
                 additionalProperties: true
                 type: object
                 title: Response Capture Capture Post
+        '429':
+          description: 'Spend cap reached; the window is 15 minutes and clears itself.
+            `Retry-After` is whole seconds until the oldest counted call expires.
+            Two messages: a per-visitor cap says "rate limit: at most N <bucket> calls
+            per 900s per visitor; wait and retry"; the shared, process-wide cap says
+            "demo capacity: the shared limit of N <bucket> calls per 15 minutes is
+            reached; try again in about S seconds".'
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying (at least 1).
+              schema:
+                type: integer
+                minimum: 1.0
+          content:
+            application/json:
+              examples:
+                per_visitor:
+                  value:
+                    detail: 'rate limit: at most 20 plan calls per 900s per visitor;
+                      wait and retry'
+                shared:
+                  value:
+                    detail: 'demo capacity: the shared limit of 120 plan calls per
+                      15 minutes is reached; try again in about 240 seconds'
         '503':
           description: Every configured model is unavailable; retry after `retry_after_s`.
           content:
@@ -1158,6 +1338,7 @@ components:
         image_data_url:
           anyOf:
           - type: string
+            maxLength: 28000000
           - type: 'null'
           title: Image Data Url
       type: object

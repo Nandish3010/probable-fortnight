@@ -7,7 +7,7 @@ Dates are the dates of the measurement, not of the deck.
 | Slide | Claim | Source |
 |---|---|---|
 | 1 | Title block: Gemini 3.5 Flash plans in an ADK agent (guardrails price every rupee, holdout on every play); hero Rs 9,191 recovered vs doing nothing on one tea lot, projected | `config/models.toml:23`; `agents/planner/agent.py:29`; `eval/raw/tea_recorded_beat_2026-10-12.json:25-26` |
-| 1 | Team: Nandish (lead), Rinu (co-builder) | `README.md:132` |
+| 1 | Team: Nandish (lead), Rinu (co-builder) | `README.md:134` |
 | 1 | FSSAI advisory, 3 Dec 2024, file RCD-13/1/2024-Regulatory-FSSAI(E-13150): minimum 30% shelf life or 45 days at delivery | `README.md:103`; `eval/raw/docs_truth_sweep_2026-09-27/fssai_citation.json` |
 | 1 | Either-limit reading is Taal's configurable default | `README.md:103`; `config/tenant.demo.toml:6-18` |
 | 2 | Sourced loss figure, as reported: Blinkit inventory losses about 1.8% of net order value (NOV), Inc42, 22 Jul 2026 (the Eternal letter it cites could not be opened, so the deck cites Inc42 only); NOV Rs 17,132 cr and 2,443 stores (same article); 17,132 / 2,443 x 4 x 1.8% = about Rs 0.5 cr per store per year; covers all inventory loss (expiry, shrinkage, damage, pilferage, transit) and annualises one quarter, so it is context for scale, not a Taal result. Source URL: https://inc42.com/buzz/blinkits-q1-adjusted-ebitda-rises-to-%e2%82%b9102-cr-others-losses-rise-on-nugget-rd/ | `docs/impact_numbers.md:22` |
@@ -92,7 +92,7 @@ Dates are the dates of the measurement, not of the deck.
 | 15 | Projected at 5%: ₹347,356 margin, ₹706,183 waste avoided | `eval/raw/portfolio_prior_sensitivity_2026-10-09.json`; `docs/impact_math.md` |
 | 15 | Measured on real customers: none yet | `docs/pilot.md:19-20` |
 | 15 | 7 usable responses; 3 of 7 write off weekly or daily | `eval/raw/feedback_summary_2026-10-09/summary.md:7-9`; `eval/raw/feedback_summary_2026-10-09/summary.md:72-73` |
-| 16 | Today: services run as owner-role deploy identity; CI uses a stored key; secrets in managed store. Next: least-privilege service accounts and workload identity | `infra/README.md:94-109` (owner role, deviation not yet corrected); `.github/workflows/verify.yml:93-95` (stored key credentials_json); `infra/README.md:225-227`; `infra/README.md:239-241` (Secret Manager) |
+| 16 | Today: services run as owner-role deploy identity; CI uses a stored key; secrets in managed store. Next: least-privilege service accounts and workload identity | `infra/README.md:94-109` (owner role, deviation not yet corrected); `.github/workflows/verify.yml:93-95` (stored key credentials_json); `infra/README.md:225-227`; `infra/README.md:252-254` (Secret Manager) |
 | 16 | Models pinned (gemini-3.5-flash, Flash-Lite fallback); gemini-2.5-flash retires 20 Oct 2026 | `config/models.toml:23`; `docs/DECISIONS.md:52` |
 | 16 | Measured: Sense 3.8 s (local, 300 SKUs), chat p50 4.56 s, p95 6.48 s (50 calls, 28 Sep, gemini-2.5-flash, pre-switch; same as slide 12); live plan p50 26.5 s and p95 31.8 s (22/24, 11 Oct, gemini-3.5-flash, prompt v6); Approve about 2 to 3 s warm (13 Oct, after batch 2; first call after idle takes longer) | `docs/scale.md:11`; `eval/raw/customer_latency_2026-09-28/analysis.json:5-8`; `eval/raw/plan_live_2026-10-12.json`; `eval/raw/approve_timing_2026-10-13b.json:25-30` |
 | 16 | Estimate: 20,000 SKUs, 500 nodes; breaks first: max-instances 1 with re-plan state in process memory, then the planner queue | `docs/scale.md:37-38`; `docs/scale.md:95-97`; `infra/deploy.sh:239` |

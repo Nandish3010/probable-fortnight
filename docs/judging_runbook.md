@@ -47,6 +47,29 @@ make smoke-judging
 
 `/health` must report `"status": "ok"` and the web root must answer 200. Roll back `taal-agents` and `taal-web` independently. After `update-traffic --to-revisions`, new deploys no longer take traffic automatically; return to the newest with `gcloud run services update-traffic <svc> --to-latest --region asia-south1 --project amru-509214` once a fix is deployed. Revisions serving on 14 Oct 2026: `taal-agents-00145-xvm` and `taal-web-00081-h95` (from `main` at 7b6ce15); the revisions before them were `taal-agents-00143-8v9` and `taal-web-00080-72v`.
 
+## Spend caps and 429s
+
+The model-calling endpoints are capped so an unauthenticated caller cannot run up the Gemini bill. Every cap is a 15-minute sliding window (900 s), kept in memory on the single `taal-agents` instance, so it resets on a redeploy or a cold start. Values are in `services/api/main.py` (`GLOBAL_PLAN_CAP`, `GLOBAL_CHAT_CAP`, `GLOBAL_CAPTURE_CAP` and the per-visitor numbers on each route).
+
+| Endpoint | What it spends | Per visitor | Shared, all visitors |
+|---|---|---|---|
+| `POST /plan`, `POST /rerun` (Plan live) | one planner run (several model calls) | 20 | 120 |
+| `POST /chat` | one chat turn | 60 | 600 |
+| `POST /capture` with an uploaded photo | one vision read | 10 | 60 |
+
+Sample photos (`photo_ref`), Approve, and every read endpoint are not capped. A "visitor" is the `X-Taal-Visitor` id the web app sends (or the client address without it).
+
+What a 429 means for a judge: nothing is broken and nothing needs a deploy. The cap clears itself; the response carries a `Retry-After` header (whole seconds until the oldest counted call leaves the window, at least 1) and the demo works again after that. One judge is far from the per-visitor numbers; a shared cap is only reached by heavy traffic or abuse.
+
+Telling the two apart by the message in `detail`:
+
+- Per visitor: `rate limit: at most N <bucket> calls per 900s per visitor; wait and retry`. Only that browser is affected; another visitor id still works.
+- Shared cap: `demo capacity: the shared limit of N <bucket> calls per 15 minutes is reached; try again in about S seconds`. Every visitor is affected for that bucket until calls age out.
+
+Do not raise a cap during judging without the owner (a deploy is needed, and the rule above applies). To free a shared cap at once, restarting the instance clears the counters, which is also a deploy-level action.
+
+Model Armor: off unless `TAAL_MODEL_ARMOR_TEMPLATE` is set on `taal-agents`; to switch it off without a code deploy: `gcloud run services update taal-agents --region asia-south1 --remove-env-vars TAAL_MODEL_ARMOR_TEMPLATE`. When on, a `/chat` envelope carries an optional `guard` object (prompt and reply verdicts); it fails open, so a Model Armor error lets the turn through.
+
 ## Keep-warm
 
 `min-instances` stays 0 on `taal-agents` and `taal-web`. Two Cloud Scheduler jobs in `asia-south1` send a plain GET so a judge's first hit is usually warm:
