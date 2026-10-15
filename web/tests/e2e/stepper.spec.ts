@@ -14,7 +14,7 @@ const states = (page: Page) =>
     .locator("li")
     .evaluateAll((lis) => lis.map((li) => (li as HTMLElement).dataset.state));
 
-const RESTARTED_TEXT = "Your demo session was restarted. Run the demo again from the start.";
+const RESTARTED_TEXT = "Your demo session was restarted, so we began a new one for you.";
 
 /** A browser whose crumbs say the visitor approved the hero play (and so does nothing on the server). */
 async function seedApprovedCrumb(page: Page) {
@@ -230,27 +230,26 @@ test.describe("ticks are derived, not stored on the server", () => {
 });
 
 test.describe("sandbox restarted", () => {
-  test("the crumbs say approved, /plays says proposed: one banner, the steps lock, Start again clears it", async ({ page }) => {
+  test("the crumbs say approved, /plays says proposed: the app starts over by itself, with one calm note and nothing locked", async ({ page }) => {
     await approveHero(page);
     await forgetMockApprovals(page); // the demo server restarted: it has forgotten the approval
     await page.reload();
 
-    const banner = page.getByTestId("sandbox-banner");
-    await expect(banner).toBeVisible();
-    await expect(banner).toHaveAttribute("role", "status");
-    await expect(banner).toContainText(RESTARTED_TEXT);
-    await expect(page.getByTestId("sandbox-banner")).toHaveCount(1); // one banner, not one per component
-    // everything but Spot is locked (and says so), and every step is still a link
-    await expect.poll(() => states(page)).toEqual(["next", "locked", "current", "locked", "locked"]);
-    await expect(step(page, "plan").locator('[data-part="caption"]')).toHaveText("Start again");
+    const note = page.getByTestId("sandbox-banner");
+    await expect(note).toBeVisible();
+    await expect(note).toHaveAttribute("role", "status");
+    await expect(note).toContainText(RESTARTED_TEXT);
+    await expect(page.getByTestId("sandbox-banner")).toHaveCount(1); // one note, not one per component
+    await expect(note.getByRole("button")).toHaveCount(0); // nothing for the visitor to press
+    await expect(page.getByRole("button", { name: "Start again" })).toHaveCount(0);
+    // the steps start from the beginning at once (Offer and Measure wait for an approval, as at the start)
+    await expect.poll(() => states(page)).toEqual(["next", "next", "current", "locked", "locked"]);
     await expect(step(page, "plan").getByRole("link")).toHaveAttribute("href", "/desk");
     // the card shows the play as it is on the server: not approved
     await page.getByRole("button", { name: "Run the 60-second beat" }).click();
     await expect(page.getByTestId("approve-button")).toBeVisible();
 
-    await banner.getByRole("button", { name: "Start again" }).click();
-    await expect(banner).toHaveCount(0);
-    await expect.poll(() => states(page)).toEqual(["next", "next", "current", "locked", "locked"]);
+    await expect(note).toHaveCount(0, { timeout: 15_000 }); // it goes by itself
     await page.reload();
     await expect(page.getByTestId("sandbox-banner")).toHaveCount(0);
   });
@@ -260,7 +259,8 @@ test.describe("sandbox restarted", () => {
     await injectMockFaults(page, { "/plays": { kind: "not_found" } });
     await page.goto("/chat");
     await expect(page.getByTestId("sandbox-banner")).toContainText(RESTARTED_TEXT);
-    await expect(step(page, "approve").locator('[data-part="caption"]')).toHaveText("Start again");
+    await expect(step(page, "approve").locator('[data-part="caption"]')).not.toHaveText("Start again");
+    await expect(page.getByRole("button", { name: "Start again" })).toHaveCount(0);
   });
 
   test("no banner for a visitor who never approved, even when /plays is a 404", async ({ page }) => {
@@ -270,7 +270,7 @@ test.describe("sandbox restarted", () => {
     await expect(page.getByTestId("sandbox-banner")).toHaveCount(0);
   });
 
-  test("Approve answering 404 for a play the visitor approved shows the banner", async ({ page }) => {
+  test("Approve answering 404 for a play the visitor approved shows the note", async ({ page }) => {
     // The crumbs say approved; the server still lists it as approved, so the page offers no Approve
     // button. Reaching the 404 from Approve itself needs a card that still has the button: use the
     // Desk's chips play, approve it, then fail the next Approve of the same play.
