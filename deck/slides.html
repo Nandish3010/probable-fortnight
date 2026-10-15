@@ -573,13 +573,13 @@ sup { font-size: .6em; }
   <div class="grid">
     <div class="card b"><div class="l"><span>Live plan</span><span class="dt">11 Oct</span></div><div class="v">22/24</div><div class="d">plans written by the model on the deployed app, 0 fallbacks</div><div class="fine">plan_live_2026-10-12.json</div></div>
     <div class="card b"><div class="l"><span>Customer chat</span><span class="dt">14 Oct</span></div><div class="v">3.66 s<small> p50</small></div><div class="d">p95 4.36 s, down from 8.44 s; Model Armor on</div><div class="fine">customer_latency_2026-10-14_before_after</div></div>
-    <div class="card b"><div class="l"><span>Approve</span><span class="dt">13 Oct</span></div><div class="v">1.4–1.7 s</div><div class="d">warm, five samples; 3.3 s before</div><div class="fine">approve_timing_2026-10-13c.json</div></div>
+    <div class="card b"><div class="l"><span>Approve</span><span class="dt">15 Oct</span></div><div class="v">1.4–1.9 s</div><div class="d">warm, ten samples, 13 to 15 Oct; 3.3 s before</div><div class="fine">approve_timing_2026-10-15.json</div></div>
     <div class="card b"><div class="l"><span>Photo intake</span><span class="dt">14 Oct</span></div><div class="v">30/30</div><div class="d">dates read correctly on synthetic photos, not real phone photos</div><div class="fine">vision_synthetic.json</div></div>
-    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 4 attack cases got through; 3 are now fixed in code, 1 photo case is not. Model Armor screens every chat message.</div><div class="fine">eval/evaluation.md (adversarial)</div></div>
+    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. Model Armor screens every chat message.</div><div class="fine">eval/evaluation.md (adversarial)</div></div>
     <div class="card b"><div class="l"><span>Planner evalsets</span><span class="dt">14 Oct</span></div><div class="v">39/46</div><div class="d">first proposal accepted by the guardrails</div><div class="fine">live_eval_2026-10-14/summary.json</div></div>
     <div class="card b"><div class="l"><span>Tests in CI</span><span class="dt">every PR</span></div><div class="v">960+</div><div class="d">pytest and Playwright in make verify, before every deploy</div><div class="fine">.github/workflows/verify.yml</div></div>
   </div>
-  <div class="ext">Full method, caveats and every source file: eval/evaluation.md and deck/claims.md. Forecast backtests: eval/external_backtest.md.</div>
+  <div class="ext">On the public backtest the forecaster does not beat a naive seasonal baseline (WAPE 1.12); Taal's value is the loop after the forecast (eval/external_backtest.md). Method and every source: eval/evaluation.md, deck/claims.md.</div>
   <div class="foot"><span></span><span>12 / 18</span></div>
 </section>
 
@@ -673,7 +673,7 @@ sup { font-size: .6em; }
       </ul></div>
     <div class="card c"><h3>Scalability</h3>
       <ul>
-        <li><b>Measured:</b> Sense 3.8 s (local, 300 SKUs); chat p50 3.66 s, p95 4.36 s (14 Oct, gemini-3.5-flash, Model Armor on, local API); live plan p50 26.5 s, p95 31.8 s (22/24, 11 Oct); Approve 1.4 to 1.7 s warm (13 Oct; first call after idle takes longer).</li>
+        <li><b>Measured:</b> Sense 3.8 s (local, 300 SKUs); chat p50 3.66 s, p95 4.36 s (14 Oct, gemini-3.5-flash, Model Armor on, local API); live plan p50 26.5 s, p95 31.8 s (22/24, 11 Oct); Approve 1.4 to 1.9 s warm (13 to 15 Oct; first call after idle takes longer).</li>
         <li><b>Estimate:</b> 20,000 SKUs, 500 nodes.<span class="tag">estimate</span></li>
         <li>Breaks first: max-instances 1 with re-plan state in memory, then the planner queue.</li>
       </ul></div>
@@ -702,10 +702,10 @@ sup { font-size: .6em; }
     <table>
       <tr><th>Measured</th><th>Before</th><th>What we changed</th><th>After</th></tr>
       <tr><td>Chat p95, same 24 prompts</td><td>8.44 s</td><td>stock prefetch, Model Armor client reuse, minimal thinking</td><td>4.36 s, Model Armor on (14 Oct)</td></tr>
-      <tr><td>Approve, warm</td><td>3.3 s (12 Oct)</td><td>offer copy generated ahead of Approve</td><td>1.4–1.7 s (13 Oct, five samples)</td></tr>
+      <tr><td>Approve, warm</td><td>3.3 s (12 Oct)</td><td>offer copy generated ahead of Approve</td><td>1.4–1.9 s (13 to 15 Oct, ten samples)</td></tr>
       <tr><td>Live planner</td><td>no_play, 110.9 s (20 Sep, pre-switch)</td><td>gap lookup moved into code</td><td>22 of 24 model-authored (11 Oct)</td></tr>
       <tr><td>Planner evalsets</td><td>43/46 match, 1/46 trajectory (old recordings)</td><td>re-recorded on gemini-3.5-flash</td><td>46/46, 18/46: regression guard, not accuracy</td></tr>
-      <tr><td>Adversarial eval</td><td>10 of 60 attack runs got through</td><td>code-only fixes</td><td>consent change refused by the tool; V3 3/3, P3 3/3; V6 not fixed</td></tr>
+      <tr><td>Adversarial eval</td><td>10 of 60 runs (4 cases) got through</td><td>code-only fixes</td><td>3 cases fixed in code; V6 not fixed</td></tr>
     </table>
   </div>
   <div class="note" style="position:absolute; left:120px; right:120px; top:986px; font-size:20px">Rows are copied from docs/learning_curve.md, which also lists the changes that made a number worse. Pre-switch means gemini-2.5-flash.</div>

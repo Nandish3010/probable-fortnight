@@ -11,16 +11,16 @@ Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Clou
 | Hero play vs doing nothing | **₹9,191** recovered | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; lift +0.3 pp, 95% CI -8.7 to +1.6. A 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
-| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each, frozen). Of 4 cases that got through, 3 are fixed in code (V3 3/3, P3 3/3, C8 refused by the tool); the cropped-label case (V6) is not. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
+| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each). 10 of 60 attack runs (4 attack cases) got through in the frozen run; 3 cases are fixed in code (consent change blocked in every run, V3 3/3, P3 3/3); the cropped-label case (V6) is not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
 | Model Armor | Screens every chat message and reply; live check: an injection prompt is refused before the agent runs | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
 | Live Plan | 22/24 Gemini-authored, p50 26.5 s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct |
 | Planner evalsets | First proposal accepted 39/46; strict trajectory 18/46 against same-model expectations (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
-| Approve | 1.4 to 1.7 s warm | MEASURED, 13 Oct, `taal-agents-00143-8v9` |
-| Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s (was 4.24 s and 8.44 s before the stock prefetch, Model Armor client reuse and minimal thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
-| Accessibility | 0 serious or critical axe findings in 20 first-paint scans | MEASURED, mock mode, 14 Oct |
+| Approve | 1.4 to 1.9 s warm (10 samples) | MEASURED, 13 to 15 Oct, `taal-agents-00155-drd` |
+| Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s (was 4.24 s and 8.44 s; see the learning curve) | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
+| Accessibility | 0 serious or critical axe findings (20 scans) | MEASURED, mock mode, 14 Oct |
 | Tests | 500+ pytest, 600+ Playwright | `make verify` gate |
 
-Every figure has a dated source in [`eval/raw/`](eval/raw/) or [`deck/claims.md`](deck/claims.md).
+Each figure has a dated source: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
 
 ## Judge quick-start
 
@@ -121,7 +121,7 @@ Projected margin per node (tenant total ÷ 16 nodes) at three response priors (`
 | 5% | ₹21,710 | 21,710 x 365/28 = ₹283,005 (₹2.83 lakh) |
 | 10% | ₹38,698 | 38,698 x 365/28 = ₹504,456 (₹5.04 lakh) |
 
-**Running it.** About ₹6.5 per planned play ($0.0777, `gemini-3.5-flash` at list prices, 46 plays, 14 Oct, `eval/raw/live_eval_2026-10-14/summary.json`); offer copy is generated once and stored; both services scale to zero. Production path: [`docs/scale.md`](docs/scale.md).
+**Running it.** About ₹6.5 per planned play ($0.0777, `gemini-3.5-flash` list prices, 14 Oct, `eval/raw/live_eval_2026-10-14/summary.json`); offer copy is generated once and stored; both services scale to zero. Production path: [`docs/scale.md`](docs/scale.md).
 
 **Fair-use limits.** Per 15 minutes, all visitors share 120 plan runs, 600 chat turns and 60 photo reads; each visitor gets 20, 60 and 10 (uploads up to about 20 MB). Sample photos are unlimited. A limit returns HTTP 429 with `Retry-After` and clears itself.
 

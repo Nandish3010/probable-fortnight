@@ -66,7 +66,7 @@ play_writeoff_axis = discount_cost_inr + residual_writeoff_play
 
 ## Part 1.2 — Same axis: net margin retained, for all three options
 
-Net margin retained = actual profit earned on units sold, minus the cost of inventory in the
+Net margin retained = actual margin earned on units sold, minus the cost of inventory in the
 same 368-unit lot that ends up written off. This charges every option for the same residual it
 does not clear, and credits the play's own mechanic margin (not merely a discount figure).
 

@@ -14,7 +14,7 @@ Run it once a day from a checkout of `main` (needs only `python3`; no credential
 make smoke-judging
 ```
 
-`harness/smoke_judging.py` prints PASS or FAIL per check and exits non-zero if any fails. It uses one fresh `X-Taal-Visitor` sandbox per run, so the shared base tenant is never written. The chat turn must finish within 10 s and Approve within 5 s (`CHAT_MAX_S` and `APPROVE_MAX_S` in the script); a slower answer is a FAIL even when the content is right, because a judge waiting that long sees a broken demo. It makes two model calls (Plan live and one chat turn), so run it once, not in a loop.
+`harness/smoke_judging.py` prints PASS or FAIL per check and exits non-zero if any fails. It uses one new `X-Taal-Visitor` sandbox per run, so the shared base tenant is never written. The chat turn must finish within 10 s and Approve within 5 s (`CHAT_MAX_S` and `APPROVE_MAX_S` in the script); a slower answer is a FAIL even when the content is right, because a judge waiting that long sees a broken demo. It makes two model calls (Plan live and one chat turn), so run it once, not in a loop.
 
 | Check | Expected |
 |---|---|

@@ -80,9 +80,9 @@ example lives in `data/samples/`, checked byte-for-byte against the generator by
 
 | Profile | Who | Footprint | Estimated monthly cost |
 |---|---|---|---|
-| **Micro** [estimate] | one shop, one node, <= 500 SKUs, <= 1,000 customers, ~2 plays/day | shared multi-tenant deployment; Firestore-only serving; BigQuery in the free tier; on-device first-pass vision; no Looker | Gemini ~ Rs 150-300; everything else inside free tiers -> **~ Rs 200-500** |
-| **Mid** (the demo persona) [estimate] | 300 SKUs, 10 nodes, 6 outlets, ~4,000 customers, ~30 plays/night, ~500 conversations/month | same deployment; BigQuery a few GB; Cloud Run scale-to-zero; Looker Studio (free) | Planner ~ Rs 900-2,000; conversations ~ Rs 700; BigQuery ~ Rs 400-1,600; Cloud Run/Firestore ~ Rs 0-800 -> **~ Rs 2,500-5,000** |
-| **Large** [estimate] | 20,000 SKUs, 500 nodes, 1M customers, ~2,000 gaps/night after triage, ~20,000 conversations/month | dedicated project; Cloud Tasks fan-out; batch Planner; partitioned BigQuery; still scale-to-zero serving | Planner ~ Rs 60,000-150,000 (batch + caching, triaged); conversations ~ Rs 26,000; BigQuery ~ Rs 8,000-25,000; Cloud Run ~ Rs 4,000-8,000 -> **~ Rs 1-2 lakh**, against rupees at stake in the crores |
+| **Micro** [estimate] | one shop, one node, <= 500 SKUs, <= 1,000 customers, ~2 plays/day | shared multi-tenant deployment; Firestore-only serving; BigQuery in the free tier; on-device first-pass vision; no Looker | Gemini ~ ₹150-300; everything else inside free tiers -> **~ ₹200-500** |
+| **Mid** (the demo persona) [estimate] | 300 SKUs, 10 nodes, 6 outlets, ~4,000 customers, ~30 plays/night, ~500 conversations/month | same deployment; BigQuery a few GB; Cloud Run scale-to-zero; Looker Studio (free) | Planner ~ ₹900-2,000; conversations ~ ₹700; BigQuery ~ ₹400-1,600; Cloud Run/Firestore ~ ₹0-800 -> **~ ₹2,500-5,000** |
+| **Large** [estimate] | 20,000 SKUs, 500 nodes, 1M customers, ~2,000 gaps/night after triage, ~20,000 conversations/month | dedicated project; Cloud Tasks fan-out; batch Planner; partitioned BigQuery; still scale-to-zero serving | Planner ~ ₹60,000-150,000 (batch + caching, triaged); conversations ~ ₹26,000; BigQuery ~ ₹8,000-25,000; Cloud Run ~ ₹4,000-8,000 -> **~ ₹1-2 lakh**, against rupees at stake in the crores |
 
 All three profiles run the same code with a tenant config; the difference is triage thresholds,
 budget caps, and whether Looker Studio is attached (DECISIONS §18.5). Every rupee figure in this
