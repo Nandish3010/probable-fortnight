@@ -18,7 +18,7 @@ import { prefersReducedMotion } from "../lib/motion";
 import { recordedGaps, recordedPlays } from "../lib/recorded";
 import { useWaking } from "../lib/useWaking";
 import { WakingNotice } from "./WakingNotice";
-import type { Play } from "../lib/types";
+import type { Gap, Play } from "../lib/types";
 import styles from "./DecisionFeed.module.css";
 
 type FeedState =
@@ -59,7 +59,7 @@ export function DecisionFeed({
   afterFirst,
 }: {
   now?: Date;
-  onHeroPlay?: (play: Play | null) => void;
+  onHeroPlay?: (play: Play | null, gap?: Gap | null) => void;
   /** Rendered under the first decision card (the phone landing puts the compact loop there). */
   afterFirst?: ReactNode;
 }) {
@@ -81,7 +81,7 @@ export function DecisionFeed({
       if (seq !== loadSeq.current) return;
       const items = pickFeed(gaps, plays, HERO_GAP_ID);
       setState({ status: "ready", items, recorded: false });
-      heroCb.current?.(items[0]?.play ?? null);
+      heroCb.current?.(items[0]?.play ?? null, items[0]?.gap ?? null);
     } catch (e) {
       if (seq !== loadSeq.current) return;
       setState({ status: "error", error: toApiError(e, "/gaps") });
@@ -99,7 +99,7 @@ export function DecisionFeed({
     const [gaps, plays] = await Promise.all([recordedGaps(), recordedPlays()]);
     const items = pickFeed(gaps, plays, HERO_GAP_ID);
     setState({ status: "ready", items, recorded: true });
-    heroCb.current?.(items[0]?.play ?? null);
+    heroCb.current?.(items[0]?.play ?? null, items[0]?.gap ?? null);
   }
 
   function goNext(from: number) {

@@ -47,7 +47,7 @@
 /* One quiet line under the hero sentence. */
 .subline {
   margin: 0 0 var(--space-3);
-  max-width: 60ch;
+  max-width: 100ch;
   color: var(--text-muted);
   font-size: var(--fs-md);
   line-height: var(--lh-md);
@@ -118,8 +118,14 @@
     margin-bottom: var(--space-1);
   }
 
-  /* Once the beat is open the card and Approve need the room. */
-  .topCompact [data-testid="loop-strip"] {
+  /* Once the beat is open the card and Approve need the room: the opened card carries the figure itself. */
+  .topCompact [data-testid="loop-strip"],
+  .topCompact [data-testid="preview-figure"],
+  .topCompact [data-testid="hero-assure"] {
+    display: none;
+  }
+
+  .topCompact .stripRow {
     display: none;
   }
 
@@ -154,10 +160,26 @@
   margin-block-end: 0;
 }
 
+/* The loop in one line, and what the visitor can rely on before pressing anything, on the same row when
+   there is room (a phone wraps the second under the first). */
+.stripRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: var(--space-5);
+  row-gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.stripRow > [data-testid="loop-strip"] {
+  margin: 0;
+}
+
 .assure {
   margin: 0;
   color: var(--text-muted);
   font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
 }
 
 /* Where to go next: a ruled list, hairlines between rows, no cards and no shadows. */

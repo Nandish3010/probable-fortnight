@@ -8,6 +8,8 @@ import { DecisionFeed, FeedSkeleton } from "../components/DecisionFeed";
 import { DecisionPreview } from "../components/DecisionPreview";
 import { ErrorCard } from "../components/ErrorCard";
 import { HealthStrip, TenantLine } from "../components/HealthStrip";
+import { HeroProof } from "../components/HeroProof";
+import { Basis } from "../components/BasisTag";
 import { Icon } from "../components/icons";
 import { LoopStrip } from "../components/LoopStrip";
 import { PlayCard } from "../components/PlayCard";
@@ -20,6 +22,7 @@ import { getGaps, getPlays, resetDemoData } from "../lib/api";
 import { toApiError, type ApiError } from "../lib/apiError";
 import { formatDemoDate } from "../lib/format";
 import { HERO_GAP_ID } from "../lib/hero";
+import { heroProofData } from "../lib/heroProof";
 import { clearProgress } from "../lib/progressStore";
 import { recordedGaps, recordedPlays } from "../lib/recorded";
 import { clearTourSeen } from "../lib/tour";
@@ -30,9 +33,11 @@ import { useWaking } from "../lib/useWaking";
 import type { Gap, Play } from "../lib/types";
 import styles from "./page.module.css";
 
+// What Taal is, in one sentence (the page's h1). The user line and the figure under it come from the loaded gap
+// (lib/heroProof.ts); the assurance line states what the visitor can rely on before pressing anything.
 const HERO_LINE =
-  "Taal finds the stock you will throw away and sells it first: legally, to the right people, with a holdout to prove it.";
-const SUBLINE = "A planner proposes, you approve, and a holdout group measures what it did.";
+  "Taal spots stock at risk, plans a play with Gemini, a person approves, the offer goes out, and a holdout measures it.";
+const ASSURE = "No sign-in. Reset is per visitor. Synthetic data, labelled.";
 
 interface Beat {
   gap: Gap | null;
@@ -72,6 +77,7 @@ export default function LandingPage() {
   // up it is the beat below: one button, then one decision card.
   const phone = useIsPhone();
   const [feedPlay, setFeedPlay] = useState<Play | null>(null);
+  const [feedGap, setFeedGap] = useState<Gap | null>(null);
   // Bumped by Reset so the feed loads afresh.
   const [feedKey, setFeedKey] = useState(0);
   const [beatStarted, setBeatStarted] = useState(false);
@@ -163,6 +169,7 @@ export default function LandingPage() {
       }
       setFeedKey((k) => k + 1);
       setFeedPlay(null);
+      setFeedGap(null);
       setBeatStarted(false);
       setBeatError(null);
       setBeatLoaded(false);
@@ -193,6 +200,10 @@ export default function LandingPage() {
   }
   // The tour starts once a decision card is on screen: the beat card from 768 px up, the loaded feed below.
   const tourReady = phone ? feedPlay !== null : Boolean(beatReady);
+  // The hero's figure and user line follow whichever gap this layout has loaded.
+  const heroGap = phone ? feedGap : (gap ?? preview?.gap ?? null);
+  const heroPlay = phone ? feedPlay : (play ?? preview?.play ?? null);
+  const proof = heroProofData(heroGap, heroPlay, serverNow);
 
   // The button that started the beat is gone once the card mounts, which would drop keyboard focus
   // on <body>. Put it on the card's title instead (unless the visitor already moved on to another
@@ -225,9 +236,18 @@ export default function LandingPage() {
     <main id="main-content" tabIndex={-1} className="page">
       <section className={`${styles.top} ${beatReady ? styles.topCompact : ""}`}>
         <h1 className={styles.heroLine}>{HERO_LINE}</h1>
-        <p className={styles.subline} data-testid="hero-subline">{SUBLINE}</p>
+        {/* The user, named, with the lot that is at stake: from the loaded gap, else the recorded flagship's own values. */}
+        <Basis kind="synthetic" tag="none" as="p" className={styles.subline} data-testid="hero-subline">
+          {proof.userLine}
+        </Basis>
+        <HeroProof gap={heroGap} play={heroPlay} now={serverNow} />
         {/* The loop in one line, above the decision at every width; the full diagram sits below the decision. */}
-        <LoopStrip />
+        <div className={styles.stripRow}>
+          <LoopStrip />
+          <p className={styles.assure} data-testid="hero-assure">
+            {ASSURE}
+          </p>
+        </div>
         <div className={styles.meta}>
           <p
             className={styles.clock}
@@ -243,7 +263,14 @@ export default function LandingPage() {
 
       {phone ? (
         <section className={styles.phoneLanding} data-testid="phone-landing">
-          <DecisionFeed key={feedKey} now={serverNow} onHeroPlay={setFeedPlay} />
+          <DecisionFeed
+            key={feedKey}
+            now={serverNow}
+            onHeroPlay={(p, g) => {
+              setFeedPlay(p);
+              setFeedGap(g ?? null);
+            }}
+          />
           <ChatPanel play={feedPlay} wakingNotice={feedPlay !== null} />
         </section>
       ) : (
@@ -266,12 +293,11 @@ export default function LandingPage() {
             ) : (
               <div className={`card ${styles.decisionCard}`}>
                 {!beatStarted ? (
-                  <DecisionPreview gap={preview?.gap ?? null} play={preview?.play ?? null} now={serverNow}>
+                  <DecisionPreview gap={preview?.gap ?? null} play={preview?.play ?? null}>
                     <button type="button" className="hero__cta" onClick={runTheBeat}>
                       Run the 60-second beat
                     </button>
                     <WatchPlanLive />
-                    <p className={styles.assure}>No sign-in. Reset is per visitor. Synthetic data, labelled.</p>
                   </DecisionPreview>
                 ) : beatError ? (
                   <>
