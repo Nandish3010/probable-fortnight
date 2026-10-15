@@ -319,7 +319,7 @@ sup { font-size: .6em; }
   <div class="loop"><img src="../docs/loop.svg" alt="The Taal loop: Forecast, Propose, Approve, Offer, Measure, with priors updating from Measure back to Forecast"></div>
   <div class="res">
     <div><div class="l">Tea · Gemini run · projected</div><div class="v" style="font-size:64px">₹9,191</div><div class="d">recovered vs doing nothing (₹9,397 waste avoided − ₹206 transfer); ₹6,186 ahead of a blanket 20% markdown</div></div>
-    <div><div class="l">Holdout · synthetic orders</div><div class="v">+0.3 pp</div><div class="d">pp = percentage points. 95% confidence interval (CI) −8.7 to +1.6. 1 of 355 treated responded, 0 of 39 held out. SYNTHETIC, inconclusive. Chips, 323 / 29 (19 Sep): also inconclusive</div></div>
+    <div><div class="l">Holdout · synthetic orders</div><div class="v">+0.3 pp</div><div class="d">pp = percentage points. 95% confidence interval −8.7 to +1.6. 1 of 355 treated responded, 0 of 39 held out. SYNTHETIC, inconclusive. A 5 pp lift needs about 1,156 customers (SIMULATION)</div></div>
     <div><div class="l">What this proves</div><div class="v">The loop closes</div><div class="d">Measure runs end to end on synthetic orders; effect size needs a real pilot</div></div>
   </div>
   <div class="ci"><b>Theme</b>Taal forecasts stock per SKU and node nightly, with festival effects, and drafts human-approved offers.</div>
@@ -506,7 +506,7 @@ sup { font-size: .6em; }
     <tr><td>Google ADK planner (Gemini 3.5 Flash)</td><td>Proposes the play: mechanic, audience, window, in a LoopAgent (max 3) with 6 tools</td></tr>
     <tr><td>Gemini on Vertex AI</td><td>Drafts the offer, chats with the customer, reads the pallet photo</td></tr>
     <tr><td>Model Armor</td><td>Screens every customer chat message and reply for prompt injection and jailbreak (live since 14 Oct, revision taal-agents-00149-sw6)</td></tr>
-    <tr><td>BigQuery AI.GENERATE_TABLE</td><td>Writes the offer copy before Approve; used if ready within 3 s, else templated copy. The API reports which (copy.source).</td></tr>
+    <tr><td>BigQuery AI.GENERATE_TABLE</td><td>Pre-generated the offer copy for the 7 seeded plays; stored and reused at Approve. Other plays try one call within 3 s, then templates.</td></tr>
     <tr><td>Local forecaster (BigQuery AI.FORECAST nightly)</td><td>Re-forecasts the write-off on Approve; the nightly batch feeds Sense</td></tr>
     <tr><td>Firestore</td><td>Stores practitioner feedback, live in the deployed service</td></tr>
     <tr><td>Cloud Run, Jobs and Scheduler</td><td>Serves the app and API; runs Sense and Measure nightly; scales to zero</td></tr>
@@ -643,16 +643,16 @@ sup { font-size: .6em; }
       <p>Projected. 368 units, ₹9,200 at stake. Net <span style="white-space:nowrap">−₹8,468</span> vs <span style="white-space:nowrap">−₹8,189</span>.</p></div>
     <div class="card c"><div class="label">Response prior sensitivity · projected</div>
       <table>
-        <tr><th>Prior</th><th>Margin</th><th>Waste avoided</th></tr>
-        <tr><td>2%</td><td>₹1.41 lakh</td><td>₹3.26 lakh</td></tr>
-        <tr class="def"><td>5% default</td><td>₹3.47 lakh</td><td>₹7.06 lakh</td></tr>
-        <tr><td>10%</td><td>₹6.19 lakh</td><td>₹11.18 lakh</td></tr>
+        <tr><th>Prior</th><th>Margin</th><th>Per node / year</th></tr>
+        <tr><td>2%</td><td>₹1.41 lakh</td><td>₹1.15 lakh</td></tr>
+        <tr class="def"><td>5% default</td><td>₹3.47 lakh</td><td>₹2.83 lakh</td></tr>
+        <tr><td>10%</td><td>₹6.19 lakh</td><td>₹5.04 lakh</td></tr>
       </table>
-      <p>Seeded tenant, 28-day horizon, 550 grocery gaps; plays planned at each prior: 421 (2%), 424 (5%), 423 (10%).</p></div>
+      <p>Seeded tenant, 28-day run, 550 gaps. Per node / year = margin ÷ 16 nodes × 365/28.</p></div>
     <div class="card c"><div class="label">Measured vs projected</div>
       <ul>
         <li><b>Measured on real customers:</b> none yet.</li>
-        <li><b>Synthetic holdout, Tea:</b> 355 treated, 39 held back; 1 responder vs 0, inconclusive.</li><li><b>Synthetic holdout, Chips (19 Sep):</b> 323 treated, 29 held back; +1.5 points, 95% CI −12.4 to +5.6, crosses zero.</li>
+        <li><b>Synthetic holdout, Tea:</b> 355 treated, 39 held back; 1 responder vs 0, inconclusive.</li><li><b>Power (SIMULATION):</b> a 5 pp lift needs about 1,156 customers at a 90/10 split.</li>
         <li><b>Projected at 5%:</b> ₹347,356 margin, ₹706,183 waste avoided.</li>
       </ul></div>
   </div>
@@ -667,7 +667,7 @@ sup { font-size: .6em; }
   <div class="cols">
     <div class="card c"><h3>Production path</h3>
       <ul>
-        <li><b>Today:</b> services run as the owner-role deploy identity; CI uses a stored key. Secrets sit in a managed store.</li>
+        <li><b>Today:</b> services run as the owner-role deploy identity; CI uses a stored key. Secrets sit in a managed store. Fair-use limits cap plan, chat and photo calls per visitor and in total.</li>
         <li><b>Next:</b> least-privilege service accounts and workload identity.</li>
         <li>Model IDs pinned with retirement dates: gemini-3.5-flash live, Flash-Lite fallback; the previous model retires 20 Oct 2026.</li>
       </ul></div>
