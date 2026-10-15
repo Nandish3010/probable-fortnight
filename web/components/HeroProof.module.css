@@ -42,11 +42,19 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* On a wide screen it sits in the same row as the figure; on a phone it wraps under it. */
+/* On a wide screen it sits in the same row as the figure. On a phone it is left out: the PROJECTED and SYNTHETIC tags
+   say the same, and the first decision card has to stay reachable (its sticky Approve bar needs the card to start
+   inside the first screen, approve-choreography.spec.ts "at 375x812"). */
 .honesty {
   color: var(--text-muted);
   font-size: var(--fs-xs);
   line-height: var(--lh-xs);
+}
+
+@media (max-width: 767px) {
+  .honesty {
+    display: none;
+  }
 }
 
 /* It fades in once, opacity only, 160 ms; there is no fade under prefers-reduced-motion. */

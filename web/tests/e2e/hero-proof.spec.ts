@@ -74,7 +74,7 @@ test.describe("the primary action and the detailed loop", () => {
     await expect(page.getByTestId("preview-figure")).toBeHidden(); // the opened card carries its own figure
     await page.waitForTimeout(600);
     const [approve] = await settledRects(page.getByTestId("approve-button"));
-    expect(approve.y).toBeLessThanOrEqual(715);
+    expect(approve.y).toBeLessThanOrEqual(740); // the same limit as approve-choreography.spec.ts (Linux text runs about 15 px taller)
   });
 });
 
