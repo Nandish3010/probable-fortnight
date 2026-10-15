@@ -4,6 +4,8 @@ Taal turns a retailer's write-off forecast into a human-approved, holdout-tested
 
 For a dark-store team clearing a lot before its online sell-by: on the live Desk, 103 packs of Darjeeling Tea, 24 days left, ₹35,020 at stake. Forecast, Propose, Approve, Offer, Measure. Retail & Commerce, Google Cloud AI Builder Cup 2026.
 
+**Why us.** We work in a category team at Supertails, an Indian pet-care e-commerce company: Nandish on pricing, Rinu on online sales and part of the P&L. Near-expiry and slow-moving stock is a standing cost: written off, or holding storage and capital. Taal starts with near-expiry stock; phase 2 is slow-moving SKUs to remove. Taal has not been used at Supertails; all data here is synthetic.
+
 | Result | Figure | Label |
 |---|---|---|
 | Hero play vs doing nothing | **₹9,191** recovered | PROJECTED, synthetic |
@@ -11,11 +13,11 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 | Holdout | 355 treated, 39 held out; lift +0.3 pp, 95% CI -8.7 to +1.6. A 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
 | Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each). 10 of 60 attack runs (4 attack cases) got through in the frozen run; 3 cases are fixed in code (consent change blocked in every run, V3 3/3, P3 3/3); the cropped-label case (V6) is not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
 | Model Armor | Screens every chat message and reply; live check: an injection prompt is refused before the agent runs | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
-| Live Plan | 22/24 Gemini-authored, p50 26.5 s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct |
+| Live Plan | 22/24 Gemini-authored, p50 26.5 s, p95 31.8 s; the 2 misses were cold-instance 404s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct |
 | Planner evalsets | First proposal accepted 39/46; strict trajectory 18/46 against same-model expectations (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
 | Approve | 1.4 to 1.9 s warm (10 samples) | MEASURED, 13 to 15 Oct, `taal-agents-00155-drd` |
 | Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s (was 4.24 s and 8.44 s; see the learning curve) | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
-| Accessibility | 0 serious or critical axe findings (20 scans) | MEASURED, mock mode, 14 Oct |
+| Accessibility | 0 serious or critical axe findings | MEASURED, mock mode, 14 Oct |
 | Tests | 500+ pytest, 600+ Playwright | `make verify` gate |
 
 Dated sources: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
@@ -62,14 +64,13 @@ Detail: [`docs/gen_ai_detail.md`](docs/gen_ai_detail.md).
 ## Evidence
 
 - **ADK evalsets (14 Oct, `gemini-3.5-flash`, prompt v7):** response match 46/46, strict trajectory 18/46, first proposal accepted 39/46, against expectations re-recorded from the same model: a regression guard, not accuracy.
-- **Live Plan:** 22 of 24 model-planned, 0 fallbacks, p50 26.5 s, p95 31.8 s (11 Oct, prompt v6); 2 runs lost to a cold-instance 404 count as not passed.
 
-**Learning curve:** [`docs/learning_curve.md`](docs/learning_curve.md) (measured, changed, re-measured, including changes that made a number worse).
+**Learning curve:** [`docs/learning_curve.md`](docs/learning_curve.md), including changes that made a number worse.
 On the public retail backtest the forecaster does not beat a naive seasonal baseline (all-days WAPE 1.12 vs 0.99, [`eval/external_backtest.md`](eval/external_backtest.md)); Taal's value is the loop after the forecast.
 
 **Tests and CI:** 511 pytest functions and 607 Playwright cases (14 Oct); `make verify` gates every pull request, and `main` deploys only when green, then a smoke job runs.
 
-Vision: 30/30 dates on synthetic photos (14 Oct, `vision_synthetic.json`). Pre-switch (`gemini-2.5-flash`): agent simulation 190/190 (21 Sep), run cost ₹486 (23 Sep). Narrative: [`docs/eval_narrative.md`](docs/eval_narrative.md), [`eval/evaluation.md`](eval/evaluation.md).
+Vision: 30/30 on synthetic photos (14 Oct). Pre-switch (`gemini-2.5-flash`): agent simulation 190/190, run cost ₹486. Narrative: [`docs/eval_narrative.md`](docs/eval_narrative.md), [`eval/evaluation.md`](eval/evaluation.md).
 
 ## What is real and what is simulated
 
@@ -77,14 +78,14 @@ Vision: 30/30 dates on synthetic photos (14 Oct, `vision_synthetic.json`). Pre-s
 |---|---|---|
 | Forecast and gaps | SYNTHETIC | local forecaster over seeded Kutumb Mart history |
 | Plays | RECORDED, SCRIPTED | Tea and chips are committed Gemini runs; others scripted; Plan live is LIVE |
-| Offers | LIVE | treated customers only, consent and STOP enforced by code, on a SYNTHETIC audience |
-| Orders | LIVE, SYNTHETIC | chat and the MCP order call run live; the order lands in your sandbox |
+| Offers | LIVE | treated customers only; consent and STOP enforced by code |
+| Orders | LIVE, SYNTHETIC | chat and the MCP order call run live, in your sandbox |
 | Holdout | LIVE, SYNTHETIC | live hash assignment; result from one fast-forwarded synthetic order |
 | Customers | SYNTHETIC | 4,000 customers, 300 SKUs, 16 nodes, one fictional tenant |
 | Photos | SCRIPTED | AI-generated samples replay recorded reads; a real upload is live, experimental |
-| Copy | RECORDED | BigQuery-generated ahead of time and stored; the validator runs live |
+| Copy | RECORDED | BigQuery-generated ahead of time and stored |
 
-The app's badges are LIVE, REPLAY (RECORDED here) and SYNTHETIC. No pilot has run.
+Badges: LIVE, REPLAY (RECORDED here), SYNTHETIC. No pilot has run.
 
 ## Architecture
 
@@ -130,7 +131,6 @@ Projected margin per node (tenant total ÷ 16 nodes) at three response priors (`
 - Cold start: `min-instances` is 0.
 - Sessions and re-plan state live in process memory (wiped on redeploy), hence `max-instances` 1.
 - All data is synthetic; the holdout is inconclusive and under-powered by design (SIMULATION: a 5 pp lift needs about 1,156 customers, `eval/raw/holdout_power_2026-10-14.json`).
-- Offer copy is pre-generated for the seven seeded plays only; others try one BigQuery call, then templates.
 - No voice; vision accuracy on real photos is unmeasured; the ₹486 run cost is pre-switch.
 - One adversarial case is open: a cropped label can still produce an invented SKU row (V6).
 
