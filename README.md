@@ -34,7 +34,7 @@ Also try **Plan live** (a live Gemini re-plan, about 27 s).
 
 | Live app | Video | Deck | Repo | API health |
 |---|---|---|---|---|
-| [taal-web](https://taal-web-2obkp776ca-el.a.run.app) | [Demo video (2:43)](https://drive.google.com/file/d/1hBKapntHMnc4FNybRqSEWods2MTrluBw/view?usp=sharing) | [PDF](docs/deck.pdf) | [GitHub](https://github.com/Nandish3010/probable-fortnight) | [/health](https://taal-agents-2obkp776ca-el.a.run.app/health) |
+| [taal-web](https://taal-web-2obkp776ca-el.a.run.app) | [Demo video (2:35)](https://drive.google.com/file/d/1hBKapntHMnc4FNybRqSEWods2MTrluBw/view?usp=sharing) | [PDF](docs/deck.pdf) | [GitHub](https://github.com/Nandish3010/probable-fortnight) | [/health](https://taal-agents-2obkp776ca-el.a.run.app/health) |
 
 ## How Gen AI is used
 
@@ -70,7 +70,7 @@ Chat latency on 14 Oct was p50 4.45 s, p95 8.70 s, worse in the tail than 6.48 s
 
 **Approve (13 Oct):** 2.1 to 2.5 s warm, then 1.4 to 1.7 s (five warm samples, not a percentile).
 
-Pre-switch cards (`gemini-2.5-flash`, not re-run since the 10 Oct switch): agent simulation 190/190 (21 Sep), vision 30/30 on synthetic photos (21 Sep), chat p50 4.56 s, p95 6.48 s (50 calls, 28 Sep), run cost ₹486 (usage to 23 Sep). Narrative: [`docs/eval_narrative.md`](docs/eval_narrative.md), [`eval/evaluation.md`](eval/evaluation.md).
+Pre-switch cards (`gemini-2.5-flash`, not re-run since the 10 Oct switch): agent simulation 190/190 (21 Sep), run cost ₹486 (usage to 23 Sep). Re-measured on `gemini-3.5-flash` on 14 Oct: vision 30/30 on synthetic photos (`eval/raw/live_eval_2026-10-14/vision_synthetic.json`) and chat latency (row above). Narrative: [`docs/eval_narrative.md`](docs/eval_narrative.md), [`eval/evaluation.md`](eval/evaluation.md).
 
 ## What is real and what is simulated
 
