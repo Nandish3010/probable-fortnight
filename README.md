@@ -2,9 +2,7 @@
 
 Taal turns a retailer's write-off forecast into a human-approved, holdout-tested offer for the right customers.
 
-On the live Desk: 103 packs of Darjeeling Tea, 24 days to the online sell-by, ₹35,020 at stake.
-
-Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Cloud AI Builder Cup 2026.
+For a dark-store team clearing a lot before its online sell-by: on the live Desk, 103 packs of Darjeeling Tea, 24 days left, ₹35,020 at stake. Forecast, Propose, Approve, Offer, Measure. Retail & Commerce, Google Cloud AI Builder Cup 2026.
 
 | Result | Figure | Label |
 |---|---|---|
@@ -20,11 +18,11 @@ Forecast, Propose, Approve, Offer, Measure. Retail & Commerce entry, Google Clou
 | Accessibility | 0 serious or critical axe findings (20 scans) | MEASURED, mock mode, 14 Oct |
 | Tests | 500+ pytest, 600+ Playwright | `make verify` gate |
 
-Each figure has a dated source: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
+Dated sources: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
 
 ## Judge quick-start
 
-No sign-in; each visitor gets a private sandbox (Reset restores it). Data is synthetic and labelled; the demo clock is pinned to 12 Sep 2026. After idle, first load takes about 10 s. Model calls have [fair-use limits](#impact-and-limits); a limit shows the retry time.
+No sign-in; each visitor gets a private sandbox (Reset restores it). Data is synthetic and labelled; the demo clock is 12 Sep 2026. After idle, first load takes about 10 s. Model calls have [fair-use limits](#impact-and-limits); a limit shows the retry time.
 
 1. Open <https://taal-web-2obkp776ca-el.a.run.app> and click **Run the 60-second beat**. You land on the Darjeeling Tea gap (103 units, ₹35,020 at stake).
 2. Click **Approve**: it reads "Recovered vs doing nothing ₹9,191" (projected): 355 customers treated, 39 held out. The play still nets -₹25,829; ₹9,191 is the gain over doing nothing.
@@ -63,7 +61,7 @@ Detail: [`docs/gen_ai_detail.md`](docs/gen_ai_detail.md).
 
 ## Evidence
 
-- **ADK evalsets (14 Oct, `gemini-3.5-flash`, prompt v7):** response match 46/46, strict trajectory 18/46, first proposal accepted 39/46, against expectations re-recorded from the same model: a regression guard, not accuracy. History: 43/46 and 1/46 (12 Oct, older recordings).
+- **ADK evalsets (14 Oct, `gemini-3.5-flash`, prompt v7):** response match 46/46, strict trajectory 18/46, first proposal accepted 39/46, against expectations re-recorded from the same model: a regression guard, not accuracy.
 - **Live Plan:** 22 of 24 model-planned, 0 fallbacks, p50 26.5 s, p95 31.8 s (11 Oct, prompt v6); 2 runs lost to a cold-instance 404 count as not passed.
 
 **Learning curve:** [`docs/learning_curve.md`](docs/learning_curve.md) (measured, changed, re-measured, including changes that made a number worse).
@@ -121,7 +119,10 @@ Projected margin per node (tenant total ÷ 16 nodes) at three response priors (`
 | 5% | ₹21,710 | 21,710 x 365/28 = ₹283,005 (₹2.83 lakh) |
 | 10% | ₹38,698 | 38,698 x 365/28 = ₹504,456 (₹5.04 lakh) |
 
-**Running it.** About ₹6.5 per planned play ($0.0777, `gemini-3.5-flash` list prices, 14 Oct, `eval/raw/live_eval_2026-10-14/summary.json`); offer copy is generated once and stored; both services scale to zero. Production path: [`docs/scale.md`](docs/scale.md).
+**What it costs to run**
+- About ₹6.5 per planned play ($0.0777 at `gemini-3.5-flash` list prices, 14 Oct, `eval/raw/live_eval_2026-10-14/summary.json`).
+- Offer copy is generated once and stored; both services scale to zero.
+- Production path: [`docs/scale.md`](docs/scale.md).
 
 **Fair-use limits.** Per 15 minutes, all visitors share 120 plan runs, 600 chat turns and 60 photo reads; each visitor gets 20, 60 and 10 (uploads up to about 20 MB). Sample photos are unlimited. A limit returns HTTP 429 with `Retry-After` and clears itself.
 
