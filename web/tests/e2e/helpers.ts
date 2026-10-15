@@ -43,6 +43,8 @@ export type MockFaultKind = "network" | "timeout" | "http" | "model_unavailable"
 export interface MockFaultSpec {
   kind: MockFaultKind;
   retry_after_s?: number;
+  /** For rate_limited: which cap, as the API's 429 text tells them apart ("demo capacity" is shared). */
+  scope?: "shared" | "visitor";
   /** Fail this many calls, then behave normally. Omit to fail every call. */
   times?: number;
 }
