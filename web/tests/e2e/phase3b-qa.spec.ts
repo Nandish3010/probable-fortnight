@@ -8,7 +8,7 @@ import { assertNoHorizontalOverflow, injectMockFaults } from "./helpers";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
-/** A browser whose crumbs say the visitor approved the chips play, which the mock outcomes have measured. */
+/** A browser whose crumbs say the visitor approved the chips play, which the mock outcomes have measured (and the mock server knows it). */
 async function seedApprovedChips(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem("taal_visitor", "v-qa");
@@ -21,6 +21,9 @@ async function seedApprovedChips(page: Page) {
         approved: [{ play_id: "play_chips_ds07_v1", gap_id: "gap_chips_ds07", at: "2026-09-12T03:30:00Z" }],
       }),
     );
+    // the mock sandbox agrees: a browser whose crumbs say approved while the server lists the play as proposed is a
+    // restarted demo, and the app then starts over (lib/progressStore.ts)
+    window.localStorage.setItem("taal_mock_approved", JSON.stringify(["play_chips_ds07_v1"]));
   });
 }
 
