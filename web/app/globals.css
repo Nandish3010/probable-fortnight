@@ -481,12 +481,14 @@ code, .id {
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
-  font-size: var(--fs-xs);
-  line-height: var(--lh-xs);
-  font-weight: var(--fw-medium);
+  /* 14 px, weight 600: a provenance label has to read in a 1920x1080 video frame. */
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-caps);
   font-family: var(--font-sans);
-  padding: 4px 10px;
+  /* The larger type keeps the badge as tall as before: 20 px line + 2 px padding top and bottom. */
+  padding: 2px 10px;
   border-radius: 999px;
   border: 1px solid transparent;
   /* A badge may carry a long detail ("model · live · 12.3 s · refc_play_..."). It wraps instead of
@@ -570,6 +572,12 @@ code, .id {
   background: var(--tint-live);
   color: var(--live-text);
   border-color: color-mix(in srgb, var(--live) 35%, transparent);
+}
+
+/* A LIVE or REPLAY badge's detail is the data's provenance ("SYNTHETIC data", "recorded copy"): as strong as its label. */
+.badge--live .badge__detail,
+.badge--replay .badge__detail {
+  font-weight: var(--fw-semibold);
 }
 
 .badge__detail {
@@ -1764,15 +1772,17 @@ textarea:focus-visible {
    assumption, solid for a measurement. No colour. */
 .basis {
   display: inline-block;
-  padding: 0 6px;
+  padding: 0 8px;
   border-radius: 4px;
   border: 1px dashed var(--border-strong);
   color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  /* 14 px, weight 600, in the sans (the mono face has no 600): PROJECTED, SYNTHETIC, RECORDED and MEASURED have to
+     read in a 1920x1080 video frame. */
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
   line-height: 1.25rem;
-  font-weight: var(--fw-medium);
-  letter-spacing: 0;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
   text-transform: none;
   vertical-align: 1px;
   white-space: nowrap;

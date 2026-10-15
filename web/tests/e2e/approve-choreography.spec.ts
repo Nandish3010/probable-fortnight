@@ -56,7 +56,9 @@ test.describe("submitting: honest steps and timer", () => {
     // the response: ticks land one after another, then the list folds into one line
     await expect(steps.nth(0)).toHaveAttribute("data-state", "done", { timeout: 6000 });
     await expect(steps.nth(2)).toHaveAttribute("data-state", "done");
-    await expect(page.getByTestId("approve-steps-summary")).toContainText(/^Done in \d+(\.\d)? s: offer written, forecast updated, holdout set aside$/);
+    // No per-run figure: Approve is measured on the deployed service (1.4 to 1.9 s, README), so the page states no other time for it
+    await expect(page.getByTestId("approve-steps-summary")).toHaveText(/^Done: offer written, forecast updated, holdout set aside$/);
+    await expect(page.getByTestId("approve-steps-summary")).not.toContainText(/\d/);
     await expect(page.getByTestId("approve-timer")).toHaveCount(0);
     await approveSettled(page);
   });

@@ -5,8 +5,7 @@ import { mockCalls } from "./helpers";
 // legend with its tooltips, Reset behind a confirm dialog at the end of the tab order, the
 // prefetched beat, and the inline SVG icons.
 
-const HERO_LINE =
-  "Taal finds the stock you will throw away and sells it first: legally, to the right people, with a holdout to prove it.";
+const HERO_LINE = "Taal spots stock at risk, plans a play with Gemini, a person approves, the offer goes out, and a holdout measures it.";
 
 test.describe("landing: hero, strip, clock, legend", () => {
   test("the hero line is the one h1 and comes before everything else on the page", async ({ page }) => {

@@ -301,6 +301,11 @@ export default function PlayDeskPage() {
   // reset the panel for it), start the run. Runs at most once per page load.
   useEffect(() => {
     if (autoPlan.current !== "armed" || !selected || selected.gap_id !== HERO_GAP_ID) return;
+    if (selected.status === "approved") {
+      // A new run on an approved play would push it down the inbox behind a "Proposed" one: say why instead.
+      autoPlan.current = "off";
+      return;
+    }
     autoPlan.current = "started";
     void handlePlanLive(selected.gap_id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -440,12 +445,20 @@ export default function PlayDeskPage() {
                     <button
                       type="button"
                       onClick={() => handlePlanLive(selected.gap_id)}
-                      disabled={planStarting || rerunAccepted !== null}
+                      disabled={planStarting || rerunAccepted !== null || approved}
+                      aria-describedby={approved ? "plan-live-reason" : undefined}
                       data-testid="plan-live"
                     >
                       {planStarting || rerunAccepted ? "Planning live…" : "Plan live"}
                     </button>
                   </div>
+                  {approved ? (
+                    // A run adds a newer play for the gap, and the inbox shows the newest: the approved play would look
+                    // un-approved. So it is off for an approved play, and Reset is the way to plan it again.
+                    <p className="muted trace-section__hint" id="plan-live-reason" data-testid="plan-live-reason">
+                      This play is approved. Reset the demo to plan it again.
+                    </p>
+                  ) : null}
                   <p className="muted trace-section__hint">
                     The trace below is the recorded run. <strong>Plan live</strong> runs the planner on this gap now and
                     streams each tool call and guardrail check as it happens, with the time elapsed.{" "}

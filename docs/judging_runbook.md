@@ -4,6 +4,8 @@ For the judging window, 19 Oct to 6 Nov 2026. Live app: <https://taal-web-2obkp7
 
 **Deploy rule: no deploy from 19 Oct to 6 Nov unless the live demo is broken.** A push to `main` deploys to Cloud Run (`.github/workflows/verify.yml`), so nothing merges in that window except a fix for a broken demo, and it is smoke-checked straight after.
 
+**Merge freeze:** nothing merges to `main` from 17 Oct 18:00 IST to 6 Nov except a fix for a broken demo.
+
 **Who to call:** the owner, Nandish.
 
 ## Daily 5-minute smoke
@@ -23,6 +25,14 @@ make smoke-judging
 | One Approve on Tea (`play_tea_ds04_v1`) | 355 treated, 39 held out; `copy.source` `existing`; `copy.provenance` `bigquery_pregenerated`; about 1.4 to 2.5 s warm; over 5 s FAILS |
 | One chat turn as Ravi (`CUST-RAVI:web`) | a non-empty reply (one model call) in 10 s or less; slower FAILS |
 | One Plan live (`POST /rerun` on `gap_tea_ds04`, then poll `/rerun/<run_id>`) | `status` done, `planner_source` model, about 20 to 35 s (one model call) |
+
+Three more daily checks, by hand:
+
+| Check | How | Expected |
+|---|---|---|
+| Gemini behind a green `/health` | the Plan live row above is a real model call; `/health` only reports configuration | `planner_source` model; a rules plan or a 503 means Gemini is degraded |
+| Fair-use caps | read the status of every smoke call | no HTTP 429; a 429 names the bucket and `Retry-After` (the shared cap is 120 plans, 600 chat turns, 60 photo reads per 15 min) |
+| Cloud Billing | `gcloud billing projects describe amru-509214 --format='value(billingEnabled)'` (owner's account) | `True`; if billing stops, Vertex calls fail while the static pages still load |
 
 Point it at other URLs with `make smoke-judging WEB=https://... API=https://...`. If a check fails, repeat that one step by hand once (an idle service can answer the first call slowly; a 503 `model_unavailable` clears after `retry_after_s`), then roll back below if it is still red.
 

@@ -23,3 +23,15 @@ export function getVisitorId(): string {
     return randomId();
   }
 }
+
+/** Starts a new sandbox for this browser: a new visitor id replaces the stored one (lib/session.ts, when the
+ * API no longer has the old one). Returns the new id. */
+export function replaceVisitorId(): string {
+  const created = randomId();
+  try {
+    window.localStorage.setItem(KEY, created);
+  } catch {
+    // Storage blocked: ids are per load already (see getVisitorId), so there is nothing stale to replace.
+  }
+  return created;
+}

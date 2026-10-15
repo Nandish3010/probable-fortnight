@@ -149,12 +149,12 @@ test.describe("Chat: 503 model_unavailable", () => {
     await expect(log).not.toContainText(/live call failed/i);
   });
 
-  test("429 says 'Too many requests' and how long to wait", async ({ page }) => {
+  test("429 without a stated cap says 'Too many requests' and how long to wait (the capped cases are in rate-limit.spec.ts)", async ({ page }) => {
     await injectMockFaults(page, { "/chat": { kind: "rate_limited", retry_after_s: 9, times: 1 } });
     await page.goto("/chat");
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByTestId("error-card")).toContainText("Too many requests");
-    await expect(page.getByTestId("error-card")).toContainText("Please wait 9 seconds and try again.");
+    await expect(page.getByTestId("error-card")).toContainText("Please wait about 9 seconds and try again.");
   });
 });
 

@@ -22,6 +22,8 @@ import {
   type Crumbs,
   type Progress,
 } from "./progress";
+import { onSessionHealed } from "./session";
+import { showRestartNote } from "./sessionNote";
 import { getVisitorId } from "./visitor";
 
 export interface ProgressSnapshot {
@@ -68,6 +70,15 @@ function storage(): Storage | null {
 }
 
 function emit(next: ProgressSnapshot) {
+  // This browser remembers an approval the sandbox does not know (the demo server restarted): there is
+  // nothing for the visitor to do about it, so forget the old progress here and say so once, calmly
+  // (components/SandboxBanner.tsx). The steps never lock behind a "Start again".
+  if (next.ready && next.progress.restarted) {
+    clearCrumbs(storage(), getVisitorId());
+    pendingApproved.clear();
+    showRestartNote();
+    next = snapshotOf(EMPTY_CRUMBS, { ...next.api, approveNotFound: false, playsNotFound: false }, true);
+  }
   snapshot = next;
   listeners.forEach((l) => l());
 }
@@ -173,6 +184,16 @@ export function clearProgress() {
   emit(snapshotOf(EMPTY_CRUMBS, { ...snapshot.api, approveNotFound: false }, true));
   void refreshProgress();
 }
+
+// The API no longer had this browser's sandbox and lib/session.ts started a new one (a new visitor id): read the
+// new id's crumbs (none), drop what the old sandbox said, and ask the new one. A word of it only when the visitor
+// had progress to lose.
+onSessionHealed(({ hadProgress }) => {
+  pendingApproved.clear();
+  if (hadProgress) showRestartNote();
+  emit(snapshotOf(readCrumbs(storage(), getVisitorId()), NO_FACTS, true));
+  void refreshProgress();
+});
 
 // ---------- React ----------
 

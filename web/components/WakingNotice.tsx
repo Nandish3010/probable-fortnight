@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { registerWakingNotice } from "../lib/sessionNote";
 import type { WakingPhase } from "../lib/useWaking";
 import styles from "./WakingNotice.module.css";
 
@@ -25,6 +26,9 @@ export function WakingNotice({ phase, onRetry, className = "" }: { phase: Waking
     },
     [],
   );
+  // While this notice is on screen the restart note (components/SandboxBanner.tsx) stays out of the way; a layout
+  // effect, so the two are never painted together.
+  useLayoutEffect(() => (phase === "idle" ? undefined : registerWakingNotice()), [phase]);
   return (
     <div role="status" aria-live="polite" className={`${styles.region} ${className}`}>
       {phase === "idle" ? null : (

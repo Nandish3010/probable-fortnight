@@ -7,11 +7,13 @@
 //     JSON.stringify({ "/chat": { kind: "model_unavailable", retry_after_s: 2, times: 1 } })))
 // Keys are path prefixes ("/chat", "/gaps", "/events"); the longest matching prefix wins. `times`
 // limits how many calls fail (then the route behaves normally again); omit it to fail every call.
-import { ApiError, type ApiErrorKind } from "./apiError";
+import { ApiError, type ApiErrorKind, type RateScope } from "./apiError";
 
 export interface MockFault {
   kind: ApiErrorKind;
   retry_after_s?: number;
+  /** For rate_limited: which cap (see lib/apiError.ts RateScope). */
+  scope?: RateScope;
   times?: number;
 }
 
@@ -66,6 +68,7 @@ export async function mockGate(path: string): Promise<void> {
     endpoint: path,
     status: STATUS_BY_KIND[fault.kind],
     retryAfterSeconds: fault.retry_after_s,
+    rateScope: fault.scope,
   });
 }
 

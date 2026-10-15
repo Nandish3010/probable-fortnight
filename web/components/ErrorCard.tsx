@@ -5,8 +5,9 @@ import { toApiError, type ApiError } from "../lib/apiError";
 import { DEFAULT_RETRY_SECONDS, errorCopy } from "../lib/errorCopy";
 import styles from "./ErrorCard.module.css";
 
-/** Whole seconds left before a model_unavailable retry is allowed; ticks once a second. */
-function useCountdown(seconds: number, active: boolean): number {
+/** Whole seconds left before a retry is allowed (a busy model, a spend cap); ticks once a second. `error` restarts
+ * it when a new failure of the same length replaces the old one while the card stays on screen. */
+function useCountdown(seconds: number, active: boolean, error: unknown): number {
   const [left, setLeft] = useState(active ? seconds : 0);
   useEffect(() => {
     if (!active) return;
@@ -18,14 +19,15 @@ function useCountdown(seconds: number, active: boolean): number {
       if (remaining === 0) clearInterval(id);
     }, 250);
     return () => clearInterval(id);
-  }, [seconds, active]);
+  }, [seconds, active, error]);
   return left;
 }
 
 /**
  * Every failed load, call and stream renders through this card instead of a spinner that never
- * ends. role="alert" so a screen reader hears it at once. For model_unavailable the Retry button
- * waits out the number of seconds the server asked for (a retry sooner only meets the same 503).
+ * ends. role="alert" so a screen reader hears it at once. For model_unavailable and rate_limited the Retry
+ * button waits out the number of seconds the server asked for (a retry sooner only meets the same answer),
+ * counting down on the button.
  */
 export function ErrorCard({
   error,
@@ -46,9 +48,10 @@ export function ErrorCard({
 }) {
   const err = toApiError(error);
   const copy = errorCopy(err);
-  const waits = err.kind === "model_unavailable" && Boolean(onRetry);
-  const wait = err.retryAfterSeconds ?? DEFAULT_RETRY_SECONDS;
-  const left = useCountdown(wait, waits);
+  const waits = (err.kind === "model_unavailable" || err.kind === "rate_limited") && Boolean(onRetry);
+  // A 429 without Retry-After does not lock the button (nothing says for how long); a busy model asks for the default.
+  const wait = Math.ceil(err.retryAfterSeconds ?? (err.kind === "rate_limited" ? 0 : DEFAULT_RETRY_SECONDS));
+  const left = useCountdown(wait, waits, err);
   const locked = waits && left > 0;
 
   // Retry removes this card when it works, taking keyboard focus with it. When that happens,

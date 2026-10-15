@@ -1,6 +1,6 @@
 "use client";
 
-import { APPROVE_STEPS, copyStepLine, formatElapsed, workingCopy } from "../lib/approveMachine";
+import { APPROVE_STEPS, copyStepLine, workingCopy } from "../lib/approveMachine";
 import { PROVENANCE } from "../lib/planSteps";
 import { Icon } from "./icons";
 import styles from "./ApproveSteps.module.css";
@@ -76,7 +76,8 @@ export function ApproveSteps({
       {collapsed && elapsedMs !== null ? (
         <p className={styles.summary} data-testid="approve-steps-summary">
           <Icon name="check" size={16} />
-          Done in {formatElapsed(elapsedMs)}: offer written, forecast updated, holdout set aside
+          {/* No per-run time here: Approve's duration is a measured range stated in the README, not a number this page makes up. */}
+          Done: offer written, forecast updated, holdout set aside
         </p>
       ) : null}
     </div>

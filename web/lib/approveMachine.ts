@@ -148,7 +148,7 @@ export function approveReducer(state: ApproveState, action: ApproveAction): Appr
   }
 }
 
-/** "Done in 11.8 s" from a duration in ms. */
+/** "11.8 s" from a duration in ms (no longer shown on the Approve result, which states no per-run time). */
 export function formatElapsed(ms: number): string {
   return `${(ms / 1000).toFixed(1)} s`;
 }
