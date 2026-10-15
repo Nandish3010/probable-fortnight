@@ -32,7 +32,7 @@ test.describe("feed: order and labels", () => {
     await page.goto("/");
     const feed = page.getByTestId("decision-feed");
     await expect(feed).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Taal finds the stock you will throw away");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Taal spots stock at risk, plans a play with Gemini");
     await expect(feed.getByRole("heading", { level: 2 })).toHaveText(["Decision 1 of 3", "Decision 2 of 3", "Decision 3 of 3"]);
     await expect(feed.locator("[data-mode='feed']")).toHaveCount(3);
     const names = await feed.locator("[data-mode='feed'] h3").allTextContents();

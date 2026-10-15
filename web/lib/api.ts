@@ -38,6 +38,7 @@ import { ApiError, errorFromResponse, toApiError } from "./apiError";
 import { mockApproveFor, mockJson } from "./mockData";
 import { mockDelayMs, mockGate } from "./mockFaults";
 import { clearMockMeasure, mockMeasure, mockMeasuredRows, rememberMockOrder } from "./mockMeasure";
+import { healStaleSession, isSandboxRead } from "./session";
 import { getVisitorId } from "./visitor";
 
 export { ApiError, toApiError } from "./apiError";
@@ -103,13 +104,36 @@ async function runRequest<T>(
   path: string,
   init: RequestInit | undefined,
   opts: RequestOptions | undefined,
+  consume: (res: Response) => Promise<T>,
+): Promise<T> {
+  const visitorId = getVisitorId();
+  try {
+    return await runRequestOnce(path, init, opts, consume, visitorId);
+  } catch (e) {
+    // A per-visitor read that answers 404 means this browser's sandbox is gone (lib/session.ts): start
+    // a new one and read again, once. A read that was already in flight under the old id when another one
+    // started the new session just reads again under the new id.
+    if (e instanceof ApiError && e.kind === "not_found" && isSandboxRead(e.endpoint, init?.method)) {
+      if (getVisitorId() !== visitorId || healStaleSession()) {
+        return runRequestOnce(path, init, opts, consume, getVisitorId());
+      }
+    }
+    throw e;
+  }
+}
+
+async function runRequestOnce<T>(
+  path: string,
+  init: RequestInit | undefined,
+  opts: RequestOptions | undefined,
   // Runs while the timer is still armed: for JSON the body read is timed too, for a stream it is
   // the identity so a long stream is not cut by the header timeout.
   consume: (res: Response) => Promise<T>,
+  visitorId: string,
 ): Promise<T> {
   const endpoint = path.split("?")[0];
   const headers = new Headers(init?.headers);
-  headers.set("X-Taal-Visitor", getVisitorId());
+  headers.set("X-Taal-Visitor", visitorId);
   if (init?.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }

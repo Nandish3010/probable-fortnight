@@ -10,6 +10,18 @@ export interface ErrorCopy {
   body: string;
 }
 
+/** A spend cap, not a fault: which cap, and how long to wait (the API sends the seconds in Retry-After). */
+function rateLimited(error: ApiError): ErrorCopy {
+  const wait = error.retryAfterSeconds !== undefined ? `about ${Math.ceil(error.retryAfterSeconds)} seconds` : "a moment";
+  if (error.rateScope === "shared") {
+    return { title: "The demo is busy", body: `The demo is busy right now (shared usage limit). Please wait ${wait} and try again.` };
+  }
+  if (error.rateScope === "visitor") {
+    return { title: "Feature limit reached", body: `You have used the limit for this feature. Please wait ${wait}.` };
+  }
+  return { title: "Too many requests", body: `Please wait ${wait} and try again.` };
+}
+
 /** The plain-language copy for each failure kind. Exported so a unit test can pin the wording. */
 export function errorCopy(error: ApiError): ErrorCopy {
   const seconds = error.retryAfterSeconds ?? DEFAULT_RETRY_SECONDS;
@@ -34,12 +46,7 @@ export function errorCopy(error: ApiError): ErrorCopy {
       title: "This demo session was restarted",
       body: "Your sandbox was reset. Run the demo again from the start.",
     },
-    rate_limited: {
-      title: "Too many requests",
-      body: error.retryAfterSeconds !== undefined
-        ? `Please wait ${seconds} seconds and try again.`
-        : "Please wait a moment and try again.",
-    },
+    rate_limited: rateLimited(error),
     http: {
       title: "Something went wrong",
       body: error.status > 0

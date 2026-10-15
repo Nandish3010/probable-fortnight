@@ -1,0 +1,74 @@
+/* The hero's figure block: the number is the loudest thing on the first screen (design_spec.md 5.1). */
+.proof {
+  margin: 0 0 var(--space-3);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Instrument Serif, weight 400, only at 28 px and up (--fs-figure is 28 px on a phone, 40 px from 768 px). */
+.amount {
+  font-size: var(--fs-figure);
+  line-height: 1.05;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: var(--serif-tracking);
+  color: var(--text);
+  font-variant-numeric: lining-nums;
+}
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The margin over a blanket markdown: the one green chip on the first screen, as on the Approve result. */
+.beat {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--state-pass-bd);
+  background: var(--state-pass-bg);
+  color: var(--state-pass-fg);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* On a wide screen it sits in the same row as the figure. On a phone it is left out: the PROJECTED and SYNTHETIC tags
+   say the same, and the first decision card has to stay reachable (its sticky Approve bar needs the card to start
+   inside the first screen, approve-choreography.spec.ts "at 375x812"). */
+.honesty {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+@media (max-width: 767px) {
+  .honesty {
+    display: none;
+  }
+}
+
+/* It fades in once, opacity only, 160 ms; there is no fade under prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes figureFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .amount {
+    animation: figureFade 160ms ease-out backwards;
+  }
+}

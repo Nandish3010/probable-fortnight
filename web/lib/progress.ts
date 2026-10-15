@@ -71,6 +71,12 @@ export interface Crumbs {
 
 export const EMPTY_CRUMBS: Crumbs = { spot: false, plan: false, offer: false, approved: [], fastForwarded: [] };
 
+/** True when the visitor had done anything the stepper would show (used to decide whether a restarted demo
+ * is worth a word at all). */
+export function hasProgress(c: Crumbs): boolean {
+  return c.spot || c.plan || c.offer || c.approved.length > 0;
+}
+
 export const CRUMB_KEY_PREFIX = "taal_progress:";
 
 /** One key per visitor id. */
