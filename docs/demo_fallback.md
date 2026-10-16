@@ -5,7 +5,7 @@ For a live presentation of Taal. If Gemini is slow or returns an error on stage,
 ## Before you present
 
 1. Open the live app in tab 1 and run the judge path once (Run the 60-second beat, Approve, Chat as Ravi) so both Cloud Run services are warm.
-2. In tab 2, open the demo video at Plan live (1:13) or Approve (1:21) (link in the README).
+2. In tab 2, open the demo video at Plan live (1:22) or Approve (1:37) (link in the README).
 3. In tab 3, keep the recorded Tea run: `eval/raw/tea_recorded_beat_2026-10-12.json` (the committed Gemini run behind the Desk), and `eval/raw/plan_live_2026-10-12.md` (22 of 24 live plans, 11 Oct).
 
 ## What the app itself does when a model call fails
@@ -32,7 +32,7 @@ Checked on the live app on 14 and 15 Oct (revision `taal-agents-00155-drd` for t
 | Add to cart | "Your order for Darjeeling Tea 100G has been placed ... the total is ₹450." |
 | STOP | "You have successfully unsubscribed from our marketing messages." |
 
-Demo video (v11b, 2:35, link in the README) at these points: Play Desk 1:01, Plan live 1:13, Approve 1:21, Result 1:29, Customer chat 1:38, Measure 1:53, Safety 2:06.
+Demo video (v12, 3:14, link in the README) at these points: Play Desk 1:01, Plan live 1:22, Plan live trace 1:30, Approve 1:37, Result 1:44, Customer chat 1:50, Kannada 2:05, Measure 2:10, Safety 2:29.
 
 ## What to say
 
