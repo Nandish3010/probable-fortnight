@@ -18,7 +18,7 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 | Hero play vs doing nothing | Transfer to the outlet that can sell the tea plus a targeted nudge: **₹9,191** projected recovery (₹9,397 waste avoided minus ₹206 transfer cost) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; lift +0.3 pp, 95% CI -8.7 to +1.6. A 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
-| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each). 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
+| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each). 10 of 60 runs (4 cases) got through; all 4 cases fixed in code since and re-run (the model still attempts the consent change; the tool refuses it). [Details](eval/evaluation.md#v6-fix-re-run-16-oct-2026-code-only-the-frozen-results-above-are-unchanged) | MEASURED, `gemini-3.5-flash`, 14 Oct; V6 re-run 16 Oct |
 | Model Armor | Screens every chat message and reply; verified live; fails open (the turn goes ahead, marked, and code guardrails still apply) | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
 | Live Plan | 22/24 Gemini-authored, p50 26.5 s, p95 31.8 s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct (v7 ships; not re-run) |
 | Planner evalsets | First proposal accepted 39/46; response match 46/46; strict trajectory 18/46 against same-model recordings (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
@@ -125,7 +125,7 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
 - `/health` reports configuration, not live probes; `make smoke-judging` checks liveness.
 - Vision accuracy on real photos is unmeasured.
-- Open adversarial case: a cropped label can produce an invented SKU row (V6).
+- A photo whose product and date are both unreadable now returns no row (the V6 fix); the operator retakes it.
 
 [Runbook](docs/judging_runbook.md), [demo fallback](docs/demo_fallback.md). Pilot design: [`docs/pilot.md`](docs/pilot.md).
 
