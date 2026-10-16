@@ -49,7 +49,7 @@ Also try **Plan live** (a live Gemini re-plan, about 27 s).
 
 | Live app | Video | Deck | Repo | Configuration check |
 |---|---|---|---|---|
-| [taal-web](https://taal-web-2obkp776ca-el.a.run.app) | [Demo video (2:44)](https://drive.google.com/file/d/1hBKapntHMnc4FNybRqSEWods2MTrluBw/view?usp=sharing) | [PDF](docs/deck.pdf) | [GitHub](https://github.com/Nandish3010/probable-fortnight) | [/health](https://taal-agents-2obkp776ca-el.a.run.app/health) |
+| [taal-web](https://taal-web-2obkp776ca-el.a.run.app) | [Demo video (3:14)](https://drive.google.com/file/d/1hBKapntHMnc4FNybRqSEWods2MTrluBw/view?usp=sharing) | [PDF](docs/deck.pdf) | [GitHub](https://github.com/Nandish3010/probable-fortnight) | [/health](https://taal-agents-2obkp776ca-el.a.run.app/health) |
 
 ## How Gen AI is used
 

@@ -10,7 +10,7 @@ tests: ["make docs"]
 ## Deterministic (CI gate)
 - [x] README lint: title first, "Judge quick-start" within the first 40 lines, links resolve, no vendor names
 - [x] Screenshots referenced from the README exist under `docs/screenshots/`
-- [ ] Video file length <= 2:45
+- [x] Video file length 3:00 to 4:00 (the submission form asks for 3 to 4 minutes; v12 is 3:14)
 - [ ] Links public (fetched in an incognito-like check)
 - [ ] Deck PDF opens; documentation PDF exists
 - [x] `DATA_LICENSES.md` present; no third-party raw data in the tree
