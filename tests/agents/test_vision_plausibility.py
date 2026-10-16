@@ -40,10 +40,29 @@ def test_v6_invented_sku_outside_the_catalogue_is_dropped(monkeypatch, base_stor
     assert _live(monkeypatch, base_store, [row])["rows"] == []
 
 
-def test_v6_recorded_wrong_but_real_sku_stays_flagged(monkeypatch, base_store):
-    """SKU-MILK-BREAD-400G is a real catalogue SKU, so it cannot be dropped by code; it must stay flagged."""
-    res = _live(monkeypatch, base_store, _recorded("V6-rotated-cropped-label__run1.json"))
+@pytest.mark.parametrize("run", [1, 2, 3])
+def test_v6_recorded_unreadable_label_yields_no_rows(monkeypatch, base_store, run):
+    """SKU-MILK-BREAD-400G is a real catalogue SKU, but it was read at 0.4 with no date: nothing to confirm."""
+    assert _live(monkeypatch, base_store, _recorded(f"V6-rotated-cropped-label__run{run}.json"))["rows"] == []
+
+
+def test_unreadable_drop_keeps_a_confident_product_with_a_missing_date(monkeypatch, base_store):
+    row = {"sku_guess": "SKU-NACHOS-200G", "sku_confidence": 0.5, "best_before_date": None, "date_confidence": 0.1, "facings_count": 2, "count_confidence": 0.9}
+    res = _live(monkeypatch, base_store, [row])
     assert len(res["rows"]) == 1 and res["rows"][0]["needs_confirmation"]
+    assert _live(monkeypatch, base_store, [{**row, "sku_confidence": 0.49}])["rows"] == []
+
+
+def test_unreadable_drop_keeps_a_weak_product_with_a_readable_date(monkeypatch, base_store):
+    row = {"sku_guess": "SKU-NACHOS-200G", "sku_confidence": 0.2, "best_before_date": "2026-10-12", "date_confidence": 0.99, "facings_count": 2, "count_confidence": 0.9}
+    assert _live(monkeypatch, base_store, [row])["rows"][0]["needs_confirmation"]
+
+
+def test_no_recorded_read_would_be_dropped_as_unreadable():
+    """Every recorded live control and staged pallet read keeps all its rows under drop_unreadable."""
+    reads = [json.loads(p.read_text())["rows"] for p in vision.FIXTURES.glob("*.json")]
+    reads += [json.loads(p.read_text())["output"]["rows"] for p in RAW.glob("VC*__run*.json")]
+    assert reads and all(vision.drop_unreadable({"rows": [dict(r) for r in rows]}) == [] for rows in reads)
 
 
 def test_low_sku_confidence_is_always_flagged(monkeypatch, base_store):
