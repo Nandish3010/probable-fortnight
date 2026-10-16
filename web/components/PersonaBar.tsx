@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useChatCustomerName } from "../lib/chatCustomer";
 import { PERSONAS, initialOf, personaForPath, viewAsName, type Persona } from "../lib/personas";
 import styles from "./PersonaBar.module.css";
 
@@ -31,8 +32,11 @@ function Avatar({ persona, size }: { persona: Persona; size: number }) {
  * nothing is held in client state. */
 export function PersonaBar() {
   const pathname = usePathname();
-  const current = personaForPath(pathname);
-  if (!current) return null;
+  const base = personaForPath(pathname);
+  // On /chat the line follows the customer chosen in the chat panel's picker.
+  const chatName = useChatCustomerName();
+  if (!base) return null;
+  const current: Persona = pathname && pathname.replace(/\/+$/, "") === "/chat" && chatName ? { ...base, name: chatName } : base;
   const others = PERSONAS.filter((p) => p.id !== current.id);
   return (
     <aside className={styles.bar} aria-label="Who this screen is for" data-testid="persona-bar" data-persona={current.id}>

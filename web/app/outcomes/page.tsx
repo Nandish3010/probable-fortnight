@@ -15,6 +15,7 @@ import { GAP_TYPE_LABEL, label } from "../../lib/labels";
 import { isApproved } from "../../lib/progress";
 import { FF_EXPLAINER, sampleSizeLine } from "../../lib/fastForward";
 import { refreshProgress, useProgress } from "../../lib/progressStore";
+import { powerLineText } from "../../lib/holdoutPower";
 import { recordedOutcomes } from "../../lib/recorded";
 import type { MeasureResponse, Outcome, Play, PortfolioSummary, PriorUpdate } from "../../lib/types";
 import portfolio from "../../mocks/portfolio_summary.json";
@@ -360,6 +361,17 @@ function SummaryCard({
   );
 }
 
+/** The power of the holdout design (lib/holdoutPower.ts), under the result card whether it shows a
+ * measured row or the empty state. A simulation of the design, so it is tagged and never states a lift. */
+function PowerLine() {
+  return (
+    <p className={styles.powerLine} data-testid="power-line">
+      <span className="basis" title="A simulation of the measurement design, not a result.">SIMULATION</span>
+      <span>{powerLineText()}</span>
+    </p>
+  );
+}
+
 export default function OutcomesPage() {
   const [outcomes, setOutcomes] = useState<Outcome[] | null>(null);
   const [featuredPlay, setFeaturedPlay] = useState<Play | null>(null);
@@ -491,6 +503,7 @@ export default function OutcomesPage() {
         measureResult={measureResult}
         fastForwarded={myOutcome ? progress.crumbs.fastForwarded.includes(myOutcome.play_id) : false}
       />
+      <PowerLine />
       {showFastForward && ffPlay ? (
         <FastForwardPanel
           play={ffPlay}

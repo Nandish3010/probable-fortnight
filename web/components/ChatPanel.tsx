@@ -9,7 +9,8 @@ import { label as idLabel } from "../lib/labels";
 import { prefersReducedMotion } from "../lib/motion";
 import { personaCaption } from "../lib/playText";
 import { recordOffer, useProgress } from "../lib/progressStore";
-import { treatedCustomerFor } from "../lib/treatedPersona";
+import { setChatCustomerName } from "../lib/chatCustomer";
+import { firstName, treatedCustomerFor } from "../lib/treatedPersona";
 import { useWaking } from "../lib/useWaking";
 import { SeededCallBadge } from "./Badge";
 import { Details } from "./Details";
@@ -234,6 +235,13 @@ export function ChatPanel({
 
   const active = customers.find((c) => c.customer_id === activeId);
   const displayName = active?.display_name ?? "Meena";
+  // The persona bar and the stepper (on /chat only) name the customer chosen in this picker.
+  const activeFirstName = active ? firstName(active) : null;
+  useEffect(() => {
+    if (!showCustomerPicker || compact) return;
+    setChatCustomerName(activeFirstName);
+    return () => setChatCustomerName(null);
+  }, [showCustomerPicker, compact, activeFirstName]);
 
   // `text` is what the API receives; `shown` is what the visitor's bubble says. A quick-reply sends its
   // internal payload ("add:SKU-...") but the bubble shows the button's label. The bubble appears at

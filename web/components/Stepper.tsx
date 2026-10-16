@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { Icon } from "./icons";
 import { STEPS, stepAccessibleName, stepViews, type Progress, type StepId } from "../lib/progress";
+import { useChatCustomerName } from "../lib/chatCustomer";
 import { startProgress, useProgress } from "../lib/progressStore";
 import styles from "./Stepper.module.css";
 
@@ -22,11 +23,14 @@ export function Stepper({ current, progress }: { current: StepId | null; progres
 
   const p = progress ?? live.progress;
   const views = stepViews(current, p);
+  // On /chat the Offer step names the customer chosen in the chat panel; elsewhere it keeps its persona.
+  const chatName = useChatCustomerName();
 
   return (
     <nav aria-label="Progress" className={styles.stepper} data-testid="stepper">
       <ol className={styles.list}>
-        {STEPS.map((step, i) => {
+        {STEPS.map((baseStep, i) => {
+          const step = baseStep.id === "offer" && current === "offer" && chatName ? { ...baseStep, persona: chatName } : baseStep;
           const view = views[i];
           const title = view.state === "locked" && view.hint ? view.hint : `${step.label}: ${step.destination}`;
           return (
