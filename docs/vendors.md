@@ -14,7 +14,7 @@ code and tests.
 
 | | (a) Online sell-by | (b) Holdout | (c) Forecast write-back | (d) India / quick-commerce |
 |---|---|---|---|---|
-| **Taal** | Yes: each lot's `online_sellby_date` comes from the tenant's versioned rule (`agents/gate/sellby.py:24`), and a dark-store lot's deadline is that date, not expiry (`jobs/sense/gaps.py`, `deadline = sellby if ...`); `tests/unit/test_sellby.py`, `tests/unit/test_ingest.py` | Yes: `holdout_required` is one of the eight rules every play must pass (`agents/gate/guardrails.py:157`); tenant floor `min_holdout_fraction = 0.05`; `tests/unit/test_guardrails.py:98` | Yes: approve writes the play into `future_regressors` and re-forecasts the series (`services/api/approve.py:144`); `tests/sql/test_forecast.py:23` | Built for Indian quick-commerce dark stores; the tenant is seeded, no live retailer yet |
+| **Taal** | Yes: each lot's `online_sellby_date` comes from the tenant's versioned rule (`agents/gate/sellby.py:26`), and a dark-store lot's deadline is that date, not expiry (`jobs/sense/gaps.py`, `deadline = sellby if ...`); `tests/unit/test_sellby.py`, `tests/unit/test_ingest.py` | Yes: `holdout_required` is one of the eight rules every play must pass (`agents/gate/guardrails.py:161`); tenant floor `min_holdout_fraction = 0.05`; `tests/unit/test_guardrails.py:98` | Yes: approve writes the play into `future_regressors` and re-forecasts the series (`services/api/approve.py:144`); `tests/sql/test_forecast.py:23` | Built for Indian quick-commerce dark stores; the tenant is seeded, no live retailer yet |
 | Blue Yonder | Not verified | Not verified | Not verified | Partial |
 | RELEX | Partial | Not verified | Partial | Partial |
 | Wasteless | No | Not verified | Not verified | Not verified |

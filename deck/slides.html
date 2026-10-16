@@ -283,10 +283,10 @@ sup { font-size: .6em; }
   <div class="big">Taal</div>
   <div class="tag">The agent that sells what the forecast says you'll throw away.</div>
   <div class="lcol">
-    <p class="one">Taal spots stock at risk, plans a play with Gemini, a person approves, the offer goes out, and a holdout measures it.</p>
+    <p class="one">Taal spots stock at risk, plans a play with Gemini, a person approves, the offer goes out, and a holdout measures it. The agent is refused by code until its play carries a holdout; code assigns the groups, and the app says plainly when the result has not proved anything yet.</p>
     <div class="dcard hero"><b>₹9,191</b><span>projected recovery vs doing nothing on one tea lot; +₹6,186 vs a blanket markdown<em>Projected</em></span></div>
     <p class="who">For a dark-store manager clearing 103 packs of Darjeeling tea, 24 days from sell-by, ₹35,020 at stake. Synthetic data, labelled.</p>
-    <p class="crew"><b>Nandish</b> · lead &nbsp; <b>Rinu</b> · co-builder. We are in a category team at Supertails, an Indian pet-care e-commerce company. Taal has not been used at Supertails.</p>
+    <p class="crew"><b>Nandish</b> · lead &nbsp; <b>Rinu</b> · co-builder</p>
   </div>
   <div class="shot"><img src="img/decision-card.png" width="830"><div class="cap">The live Play Desk, 16 Oct: the tea play, priced by code, waiting for a person to approve</div></div>
   <div class="foot"><span>github.com/Nandish3010/probable-fortnight</span><span>1 / 18</span></div>
@@ -330,14 +330,14 @@ sup { font-size: .6em; }
     <div><div class="l">Holdout · synthetic orders</div><div class="v">+0.3 pp</div><div class="d">pp = percentage points. 95% confidence interval −8.7 to +1.6. 1 of 355 treated responded, 0 of 39 held out. SYNTHETIC, inconclusive. A 5 pp lift needs about 1,156 customers (SIMULATION)</div></div>
     <div><div class="l">What this proves</div><div class="v">The loop closes</div><div class="d">Measure runs end to end on synthetic orders; effect size needs a real pilot</div></div>
   </div>
-  <div class="ci"><b>Theme</b>Taal forecasts stock per SKU and node nightly, with festival effects, and drafts human-approved offers.</div>
+  <div class="ci"><b>The headline</b>The first value is the right decision (transfer vs markdown); the holdout proves the offer part.</div>
   <div class="foot"><span></span><span>3 / 18</span></div>
 </section>
 
 <!-- 4 · Differentiation -->
 <section class="slide s3">
   <div class="kicker">What is new · differentiation</div>
-  <h2 class="title">The agent is refused until it designs its own test.</h2>
+  <h2 class="title">No play without a holdout, enforced in code.</h2>
   <table>
     <tr><th></th><th>Online sell-by cut-off</th><th>Holdout per promo</th><th>Promo → forecast write-back</th><th>India / q-commerce</th></tr>
     <tr class="taal"><td>Taal</td><td><span class="pill">Yes</span></td><td><span class="pill">Yes</span></td><td><span class="pill">Yes</span></td><td>Built for it; seeded tenant</td></tr>
@@ -350,10 +350,10 @@ sup { font-size: .6em; }
   <div class="fn note"><b>Not verified</b> = no public evidence found in vendor pages read on 2026-10-09; it does not mean the feature is absent. Partial and No are our reading of those pages. Afresh and Flashfood are different product categories.</div>
   <div class="steps">
     <div><b>1 · Gemini proposes</b>mechanic, audience and rationale for the at-risk lot, in an ADK loop</div>
-    <div><b>2 · Code refuses it without a test</b>The rule (rule_holdout_required): reject if the holdout fraction is outside [0.05, 0.9], min_treated_n is unset, or the seed is missing</div>
+    <div><b>2 · Code refuses it without a holdout</b>The rule (rule_holdout_required): reject if the holdout fraction is outside [0.05, 0.9], min_treated_n is unset, or the seed is missing; code then sets the seed and assigns the groups</div>
     <div><b>3 · The result says what it proved</b>Tea: +0.3 pp, 95% CI −8.7 to +1.6, INCONCLUSIVE, SYNTHETIC. About 1,156 customers needed for a 5 pp lift (SIMULATION)</div>
   </div>
-  <div class="new"><b>Each safety layer measured on its own:</b> the tool refused every cross-customer call (the model tried 3 of 3 times); Model Armor blocked 3 of 8 chat injection cases and fails open; V6 is open. <b>Method:</b> protocol committed before any model call, a run is INVALID if a fallback model answers, spend cap enforced.</div>
+  <div class="new"><b>Each safety layer measured on its own:</b> the tool refused every cross-customer call (the model tried 3 of 3 times); Model Armor blocked 3 of 8 chat injection cases and fails open; V6 is open. <b>Method:</b> protocol committed before any model call, a run is INVALID if a fallback model answers, spend cap enforced. <b>Why it compounds:</b> every measured play updates that retailer's response prior for its mechanic and category; a tool that skips the holdout has nothing to learn from.</div>
   <div class="foot"><span></span><span>4 / 18</span></div>
 </section>
 
@@ -582,11 +582,11 @@ sup { font-size: .6em; }
   <div class="kicker">Performance report</div>
   <h2 class="title">Measured and dated, on gemini-3.5-flash.</h2>
   <div class="grid">
-    <div class="card b"><div class="l"><span>Live plan</span><span class="dt">11 Oct</span></div><div class="v">22/24</div><div class="d">plans written by the model on the deployed app, 0 fallbacks</div><div class="fine">plan_live_2026-10-12.json</div></div>
+    <div class="card b"><div class="l"><span>Live plan</span><span class="dt">11 Oct</span></div><div class="v">22/24</div><div class="d">plans written by the model on the deployed app, 0 fallbacks; prompt v6, v7 ships</div><div class="fine">plan_live_2026-10-12.json</div></div>
     <div class="card b"><div class="l"><span>Customer chat</span><span class="dt">14 Oct</span></div><div class="v">3.66 s<small> p50</small></div><div class="d">p95 4.36 s, down from 8.44 s; Model Armor on</div><div class="fine">customer_latency_2026-10-14_before_after</div></div>
-    <div class="card b"><div class="l"><span>Approve</span><span class="dt">15 Oct</span></div><div class="v">1.4–1.9 s</div><div class="d">warm, ten samples, 13 to 15 Oct; 3.3 s before</div><div class="fine">approve_timing_2026-10-15.json</div></div>
+    <div class="card b"><div class="l"><span>Approve</span><span class="dt">15 Oct</span></div><div class="v">1.4–1.9 s</div><div class="d">warm, recorded play, no model call; ten samples, 13 to 15 Oct; 3.3 s before</div><div class="fine">approve_timing_2026-10-15.json</div></div>
     <div class="card b"><div class="l"><span>Planner evalsets</span><span class="dt">14 Oct</span></div><div class="v">39/46</div><div class="d">first proposal accepted by the guardrails</div><div class="fine">live_eval_2026-10-14/summary.json</div></div>
-    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. Model Armor screens every chat message.</div><div class="fine">eval/evaluation.md (adversarial)</div></div>
+    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. Model Armor screens every chat message and fails open.</div><div class="fine">eval/evaluation.md (adversarial)</div></div>
     <div class="card b w2"><div class="l"><span>Public backtest, UCI Online Retail II</span><span class="dt">14 Oct</span></div><div class="v">WAPE 1.12<small> vs 0.99 naive seasonal</small></div><div class="d">The forecaster does not beat a naive seasonal baseline here. The loop after the forecast is the product.</div><div class="fine">eval/external_backtest.md · external_backtest_v2_2026-10-14.json</div></div>
   </div>
   <div class="ext"><b>Also measured:</b> photo intake 30/30 dates read on synthetic photos, not real phone photos (14 Oct, vision_synthetic.json); 1,700+ tests (870 pytest + 833 Playwright, collected 16 Oct) in make verify before every deploy. Method and every source: eval/evaluation.md, deck/claims.md.</div>
@@ -683,7 +683,7 @@ sup { font-size: .6em; }
       </ul></div>
     <div class="card c"><h3>How we kept it fast</h3>
       <ul>
-        <li>Offer copy generated ahead and stored, so Approve takes 1.4 to 1.9 s warm (13 to 15 Oct; 3.3 s before).</li>
+        <li>Offer copy generated ahead and stored, so Approve takes 1.4 to 1.9 s warm (recorded play, no model call; 13 to 15 Oct; 3.3 s before).</li>
         <li>Chat p95 8.4 s to 4.4 s (14 Oct): stock prefetch, client reuse, minimal thinking.</li>
         <li>Services scale to zero; the first call after idle takes longer. Breaks first: max-instances 1 with re-plan state in memory.</li>
       </ul></div>
