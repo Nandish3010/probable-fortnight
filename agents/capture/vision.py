@@ -35,11 +35,11 @@ LOG = logging.getLogger(__name__)
 # a photographed stock table produced. Above it a human confirms, nothing is auto-accepted.
 MAX_PLAUSIBLE_FACINGS = 60
 SKU_CONFIDENCE_FLOOR = 0.3
-# A live row whose SKU is read below this is dropped as a guess (16 Oct 2026). Chosen AFTER the frozen
-# V6 run (cropped label read as SKU-MILK-BREAD-400G at 0.4, 3 of 3) and checked against the eval's genuine
-# reads (VC1/VC2 0.8-0.99) and the other attacks (0.85-1.0); so a V6 re-run passing is expected, not an
-# independent test. Rows between this and 0.7 stay, flagged for a person.
-SKU_DROP_FLOOR = 0.5
+# V6 (adversarial eval, 14 Oct 2026; fixed 16 Oct). A live row with no readable date AND a product guess
+# below this confidence carries nothing an operator can confirm, so it is dropped rather than shown as a
+# product. Chosen AFTER seeing V6 (sku_confidence 0.4, date null, 3 of 3 runs): every genuine live read
+# and every recorded read in the repo has sku_confidence >= 0.8 or a readable date (unit test).
+SKU_UNREADABLE_FLOOR = 0.5
 
 PROMPT = (
     "You are reading a retail pallet or shelf photo for a grocery dark store in Bengaluru. For every distinct "
@@ -75,8 +75,8 @@ def drop_unknown_skus(result: dict[str, Any], names: dict[str, str]) -> list[str
     logged rather than shown as a real product; the output schema is closed, so no extra field can
     carry the reason. Limit, stated plainly: the recorded V6 invention (SKU-MILK-BREAD-400G) is a REAL
     catalogue SKU (every SKU is stocked at every node in the seeded tenant, so a per-node list adds
-    nothing). Code cannot know what is in the photo, so that row is not dropped: it stays flagged
-    (sku_confidence 0.4 < 0.7, date null) and cannot reach inventory unconfirmed.
+    nothing). Code cannot know what is in the photo, so this check does not drop that row;
+    `drop_unreadable` does, because its product guess is weak AND its date is unreadable.
     Returns the dropped SKUs."""
     kept, dropped = [], []
     for r in result["rows"]:
@@ -87,17 +87,19 @@ def drop_unknown_skus(result: dict[str, Any], names: dict[str, str]) -> list[str
     return [r["sku_guess"] for r in dropped]
 
 
-def drop_unreadable_skus(result: dict[str, Any]) -> list[str]:
-    """V6 follow-up (16 Oct 2026): a row whose sku_confidence is below SKU_DROP_FLOOR names a
-    catalogue SKU the model could not read (the frozen V6 run returned SKU-MILK-BREAD-400G at 0.4 for
-    a cropped nachos label). Such a row is a guess, not a read, so it is dropped on a LIVE read rather
-    than shown with a product name; the person adds that item by hand. Recorded sample reads never
-    reach this path. Returns the dropped SKUs."""
+def drop_unreadable(result: dict[str, Any]) -> list[str]:
+    """V6: a LIVE row whose best-before date is null and whose sku_confidence is below
+    SKU_UNREADABLE_FLOOR is a guess about a label the model could not read (V6: a cropped, rotated
+    label read as SKU-MILK-BREAD-400G at 0.4 with no date). It is dropped and logged, not shown as a
+    product; zero rows is the honest answer for such a photo. A row with a readable date, or a
+    confident product with a missing date, is kept (the operator can fill in the date). Returns the
+    dropped SKUs."""
     kept, dropped = [], []
     for r in result["rows"]:
-        (dropped if float(r["sku_confidence"]) < SKU_DROP_FLOOR else kept).append(r)
+        unreadable = r.get("best_before_date") is None and r["sku_confidence"] < SKU_UNREADABLE_FLOOR
+        (dropped if unreadable else kept).append(r)
     if dropped:
-        LOG.warning("vision: dropped rows whose SKU is a guess (sku_confidence < %s): %s", SKU_DROP_FLOOR, [r["sku_guess"] for r in dropped])
+        LOG.warning("vision: dropped unreadable rows (no date, weak product guess): %s", [r["sku_guess"] for r in dropped])
     result["rows"] = kept
     return [r["sku_guess"] for r in dropped]
 
@@ -206,7 +208,7 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     if backend == "vertex" and not recorded:
         result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models)
         drop_unknown_skus(result, names)
-        drop_unreadable_skus(result)
+        drop_unreadable(result)
         annotate(result, names)
         flag_implausible(result, names)
         return result
