@@ -18,16 +18,16 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 | Hero play vs doing nothing | Transfer to the outlet that can sell the tea plus a targeted nudge: **₹9,191** projected recovery (₹9,397 waste avoided minus ₹206 transfer cost) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; +0.3 pp, 95% CI -8.7 to +1.6; a 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
-| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs each). 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
+| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs). 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
 | Model Armor | Screens every chat message and reply; verified live; fails open, code guardrails still apply (`services/api/model_armor.py:7-10,98`) | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
-| Live Plan | 22/24 Gemini-authored, p50 26.5 s, p95 31.8 s | MEASURED, `gemini-3.5-flash`, prompt v6, 11 Oct (v7 ships; not re-run) |
 | Planner evalsets | First proposal accepted 39/46; response match 46/46; strict trajectory 18/46 against same-model recordings (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
 | Approve | 1.4 to 1.9 s warm (10 samples; recorded play, no model call) | MEASURED, 13 to 15 Oct, `taal-agents-00155-drd` |
-| Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s (p95 was 8.44 s) | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
+| Chat latency (Model Armor on) | p50 3.66 s, p95 4.36 s (was 8.44 s) | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
 | Accessibility | no serious or critical axe issues | MEASURED, mock mode, 14 Oct |
 | Tests | 870 pytest, 833 Playwright (+34 live) | collected, 16 Oct; `make verify` gate |
+| Live Plan (older run) | 22/24 model-authored, p50 26.5 s | MEASURED, 11 Oct, prompt v6 (v7 ships; not re-run) |
 
-Sources: [`eval/raw/`](eval/raw/) and [`deck/claims.md`](deck/claims.md).
+Sources: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
 
 ## Judge quick-start
 
@@ -47,13 +47,13 @@ Then type (tested 15 Oct):
 
 Also try **Plan live** (a live Gemini re-plan, about 27 s).
 
-| Live app | Video | Deck | Repo | API health |
+| Live app | Video | Deck | Repo | Configuration check |
 |---|---|---|---|---|
 | [taal-web](https://taal-web-2obkp776ca-el.a.run.app) | [Demo video (2:35)](https://drive.google.com/file/d/1hBKapntHMnc4FNybRqSEWods2MTrluBw/view?usp=sharing) | [PDF](docs/deck.pdf) | [GitHub](https://github.com/Nandish3010/probable-fortnight) | [/health](https://taal-agents-2obkp776ca-el.a.run.app/health) |
 
 ## How Gen AI is used
 
-`gemini-3.5-flash` on Vertex AI does the language and judgement work; `gemini-3.5-flash-lite` is the fallback on 404, 429 or 5xx.
+`gemini-3.5-flash` on Vertex AI does the language and judgement work; `gemini-3.5-flash-lite` is the fallback on 404, 429 or 5xx. The forecast is a deliberately simple baseline (it loses to a naive seasonal one); BigQuery runs the nightly batch and stored copy; Taal adds the decide, approve, measure loop.
 
 - **Planner.** An ADK `LlmAgent` in a `LoopAgent` (up to 3 iterations, six deterministic tools) proposes mechanic, audience and rationale.
 - **Eight deterministic guardrails** (margin floor, frequency cap, consent, sell-by line, subscriber discount, open stockout, holdout, cite-or-drop) reject a play and send the reason back.
@@ -70,7 +70,7 @@ Also try **Plan live** (a live Gemini re-plan, about 27 s).
 
 ## Evidence
 
-[Learning curve](docs/learning_curve.md), with the changes that made a number worse. On the public retail backtest the forecaster does not beat a naive seasonal baseline (all-days WAPE 1.12 vs 0.99, [`eval/external_backtest.md`](eval/external_backtest.md)); Taal's value is the loop after the forecast. `make verify` gates every pull request on the stub model backend, and a post-deploy smoke makes real model calls. Vision 30/30 on synthetic photos (14 Oct). [`eval/evaluation.md`](eval/evaluation.md).
+[Learning curve](docs/learning_curve.md), with the changes that made a number worse. Public backtest: all-days WAPE 1.12 vs 0.99 for a naive seasonal baseline ([`eval/external_backtest.md`](eval/external_backtest.md)). `make verify` gates every pull request on the stub model backend, and a post-deploy smoke makes real model calls. Vision 30/30 on synthetic photos (14 Oct). [`eval/evaluation.md`](eval/evaluation.md).
 
 ## What is real and what is simulated
 
@@ -94,7 +94,7 @@ The write-off owner (category or dark-store operations) uses and pays. It needs 
 | Vertex Gemini | proposal, photo read, chat |
 | ADK 2.9.0 | the planner loop and its tools |
 | Model Armor | screens chat messages and replies |
-| BigQuery | nightly batch jobs and the stored offer copy (`AI.GENERATE_TABLE`); the Desk forecast is local |
+| BigQuery | nightly batch and stored offer copy (`AI.GENERATE_TABLE`) |
 | Firestore | practitioner feedback |
 | MCP order tool | places the order from chat |
 | Cloud Scheduler | nightly jobs; keep-warm pings during judging |
@@ -117,13 +117,13 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 | 5% | ₹21,710 | ₹2.83 lakh |
 | 10% | ₹38,698 | ₹5.04 lakh |
 
-**What it costs to run.** About ₹6.5 per planned play (`gemini-3.5-flash` list prices, 14 Oct, `eval/raw/live_eval_2026-10-14/summary.json`); offer copy is generated once and stored; services scale to zero when idle. Production path: [`docs/scale.md`](docs/scale.md).
+**What it costs to run.** About ₹6.5 per planned play (`gemini-3.5-flash` list prices, 14 Oct); offer copy is generated once and stored; services scale to zero when idle. Production path: [`docs/scale.md`](docs/scale.md).
 
 **Fair-use limits.** Per 15 minutes: 120 plan runs, 600 chat turns and 60 photo reads shared; 20, 60 and 10 per visitor. A limit returns HTTP 429 with `Retry-After` and clears itself.
 
 **What breaks first**
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
-- `/health` reports configuration, not live probes; `make smoke-judging` checks liveness.
+- `/health` is a configuration check; `make smoke-judging` checks liveness.
 - Vision accuracy on real photos is unmeasured.
 - Open adversarial case: a cropped label can produce an invented SKU row (V6).
 
