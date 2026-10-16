@@ -29,7 +29,7 @@ test.describe("lib/holdoutPower: the constants equal the committed file", () => 
 
   test("the sentence is the agreed one, numbers formatted for reading", () => {
     expect(powerLineText()).toBe(
-      "This holdout (355 treated, 39 held out) is under-powered by design. At the seeded base rate it could only detect a lift of about 12.4 pp (80% power, 95% confidence); resolving a 5 pp lift would take about 1,156 orders at the same 90/10 split. A simulation of the measurement design, not a result.",
+      "The Tea beat's holdout (355 treated, 39 held out) is under-powered by design. At the seeded base rate it could only detect a lift of about 12.4 pp (80% power, 95% confidence); resolving a 5 pp lift would take about 1,156 orders at the same 90/10 split. A simulation of the measurement design, not a result.",
     );
   });
 

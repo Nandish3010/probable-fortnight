@@ -22,7 +22,7 @@ export const HOLDOUT_POWER = {
 /** The note's sentence, with the numbers formatted for reading. */
 export function powerLineText(p: typeof HOLDOUT_POWER = HOLDOUT_POWER): string {
   return (
-    `This holdout (${count(p.treated)} treated, ${count(p.heldOut)} held out) is under-powered by design. ` +
+    `The Tea beat's holdout (${count(p.treated)} treated, ${count(p.heldOut)} held out) is under-powered by design. ` +
     `At the seeded base rate it could only detect a lift of about ${p.minDetectableLiftPp.toFixed(1)} pp ` +
     `(${p.powerPct}% power, ${p.confidencePct}% confidence); resolving a ${p.resolveLiftPp} pp lift would take about ` +
     `${count(p.resolveTotalN)} orders at the same 90/10 split. A simulation of the measurement design, not a result.`
