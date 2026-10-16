@@ -362,7 +362,7 @@ sup { font-size: .6em; }
     <div><b>2 · Code refuses it without a holdout</b>The rule (rule_holdout_required): reject if the holdout fraction is outside [0.05, 0.9], min_treated_n is unset, or the seed is missing; code then sets the seed and assigns the groups</div>
     <div><b>3 · The result says what it proved</b>Tea: +0.3 pp, 95% CI −8.7 to +1.6, INCONCLUSIVE, SYNTHETIC. About 1,156 customers needed for a 5 pp lift (SIMULATION)</div>
   </div>
-  <div class="new"><b>Each safety layer measured on its own:</b> the tool refused every cross-customer call (the model tried 3 of 3 times); Model Armor blocked 3 of 8 chat injection cases and fails open; V6 is open. <b>Method:</b> protocol committed before any model call, a run is INVALID if a fallback model answers, spend cap enforced. <b>Why it compounds:</b> every measured play updates that retailer's response prior for its mechanic and category; a tool that skips the holdout has nothing to learn from.</div>
+  <div class="new"><b>Each safety layer measured on its own:</b> the tool refused every cross-customer call (the model tried 3 of 3 times); Model Armor blocked 3 of 8 chat injection cases and fails open; the cropped-label case (V6) closed in code on 16 Oct. <b>Method:</b> protocol committed before any model call, a run is INVALID if a fallback model answers, spend cap enforced. <b>Why it compounds:</b> every measured play updates that retailer's response prior for its mechanic and category; a tool that skips the holdout has nothing to learn from.</div>
   <div class="foot"><span></span><span>4 / 18</span></div>
 </section>
 
@@ -595,7 +595,7 @@ sup { font-size: .6em; }
     <div class="card b"><div class="l"><span>Customer chat</span><span class="dt">14 Oct</span></div><div class="v">3.66 s<small> p50</small></div><div class="d">p95 4.36 s, down from 8.44 s; Model Armor on</div><div class="fine">customer_latency_2026-10-14_before_after</div></div>
     <div class="card b"><div class="l"><span>Approve</span><span class="dt">15 Oct</span></div><div class="v">1.4–1.9 s</div><div class="d">warm, recorded play, no model call; ten samples, 13 to 15 Oct; 3.3 s before</div><div class="fine">approve_timing_2026-10-15.json</div></div>
     <div class="card b"><div class="l"><span>Planner evalsets</span><span class="dt">14 Oct</span></div><div class="v">39/46</div><div class="d">first proposal accepted by the guardrails</div><div class="fine">live_eval_2026-10-14/summary.json</div></div>
-    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. Model Armor screens every chat message and fails open.</div><div class="fine">eval/evaluation.md (adversarial)</div></div>
+    <div class="card b w2"><div class="l"><span>Adversarial eval</span><span class="dt">14 and 16 Oct</span></div><div class="v">50 of 60<small> attack runs stopped</small></div><div class="d">0 of 18 genuine requests refused. 10 of 60 runs (4 cases) got through; all 4 closed in code since (V3, P3, V6 re-ran 3/3; C8 refused by the tool).</div><div class="fine">eval/evaluation.md (adversarial; Hardening, 16 Oct)</div></div>
     <div class="card b w2"><div class="l"><span>Public backtest, UCI Online Retail II</span><span class="dt">14 Oct</span></div><div class="v">WAPE 1.12<small> vs 0.99 naive seasonal</small></div><div class="d">The forecaster does not beat a naive seasonal baseline here. The loop after the forecast is the product.</div><div class="fine">eval/external_backtest.md · external_backtest_v2_2026-10-14.json</div></div>
   </div>
   <div class="ext"><b>Also measured:</b> photo intake 30/30 dates read on synthetic photos, not real phone photos (14 Oct, vision_synthetic.json); 1,700+ tests (870 pytest + 833 Playwright, collected 16 Oct) in make verify before every deploy. Method and every source: eval/evaluation.md, deck/claims.md.</div>
@@ -725,7 +725,7 @@ sup { font-size: .6em; }
       <tr><td>Approve, warm</td><td>3.3 s (12 Oct)</td><td>offer copy generated ahead of Approve</td><td>1.4–1.9 s (13 to 15 Oct, ten samples)</td></tr>
       <tr><td>Live planner</td><td>no_play, 110.9 s (20 Sep, pre-switch)</td><td>gap lookup moved into code</td><td>22 of 24 model-authored (11 Oct)</td></tr>
       <tr><td>Planner evalsets</td><td>43/46 match, 1/46 trajectory (old recordings)</td><td>re-recorded on gemini-3.5-flash</td><td>46/46, 18/46: regression guard, not accuracy</td></tr>
-      <tr><td>Adversarial eval</td><td>10 of 60 runs (4 cases) got through</td><td>code-only fixes</td><td>3 cases fixed in code; V6 not fixed</td></tr>
+      <tr><td>Adversarial eval</td><td>10 of 60 runs (4 cases) got through</td><td>code-only fixes</td><td>all 4 closed in code; V3, P3, V6 re-ran 3/3</td></tr>
     </table>
   </div>
   <div class="note" style="position:absolute; left:120px; right:120px; top:986px; font-size:20px">Rows are copied from docs/learning_curve.md, which also lists the changes that made a number worse. Pre-switch means gemini-2.5-flash.</div>

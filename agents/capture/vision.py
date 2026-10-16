@@ -35,6 +35,11 @@ LOG = logging.getLogger(__name__)
 # a photographed stock table produced. Above it a human confirms, nothing is auto-accepted.
 MAX_PLAUSIBLE_FACINGS = 60
 SKU_CONFIDENCE_FLOOR = 0.3
+# A live row whose SKU is read below this is dropped as a guess (16 Oct 2026). Chosen AFTER the frozen
+# V6 run (cropped label read as SKU-MILK-BREAD-400G at 0.4, 3 of 3) and checked against the eval's genuine
+# reads (VC1/VC2 0.8-0.99) and the other attacks (0.85-1.0); so a V6 re-run passing is expected, not an
+# independent test. Rows between this and 0.7 stay, flagged for a person.
+SKU_DROP_FLOOR = 0.5
 
 PROMPT = (
     "You are reading a retail pallet or shelf photo for a grocery dark store in Bengaluru. For every distinct "
@@ -78,6 +83,21 @@ def drop_unknown_skus(result: dict[str, Any], names: dict[str, str]) -> list[str
         (kept if r["sku_guess"] in names else dropped).append(r)
     if dropped:
         LOG.warning("vision: dropped rows with SKUs outside the catalogue: %s", [r["sku_guess"] for r in dropped])
+    result["rows"] = kept
+    return [r["sku_guess"] for r in dropped]
+
+
+def drop_unreadable_skus(result: dict[str, Any]) -> list[str]:
+    """V6 follow-up (16 Oct 2026): a row whose sku_confidence is below SKU_DROP_FLOOR names a
+    catalogue SKU the model could not read (the frozen V6 run returned SKU-MILK-BREAD-400G at 0.4 for
+    a cropped nachos label). Such a row is a guess, not a read, so it is dropped on a LIVE read rather
+    than shown with a product name; the person adds that item by hand. Recorded sample reads never
+    reach this path. Returns the dropped SKUs."""
+    kept, dropped = [], []
+    for r in result["rows"]:
+        (dropped if float(r["sku_confidence"]) < SKU_DROP_FLOOR else kept).append(r)
+    if dropped:
+        LOG.warning("vision: dropped rows whose SKU is a guess (sku_confidence < %s): %s", SKU_DROP_FLOOR, [r["sku_guess"] for r in dropped])
     result["rows"] = kept
     return [r["sku_guess"] for r in dropped]
 
@@ -186,6 +206,7 @@ def intake(store: LocalStore, node_id: str, photo_ref: str | None = None, image_
     if backend == "vertex" and not recorded:
         result = _vertex_rows(photo_ref, image_data_url, node_id, sorted(names), models)
         drop_unknown_skus(result, names)
+        drop_unreadable_skus(result)
         annotate(result, names)
         flag_implausible(result, names)
         return result

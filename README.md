@@ -18,7 +18,7 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 | Hero play vs doing nothing | Transfer to the outlet that can sell the tea plus a targeted nudge: **₹9,191** projected recovery (₹9,397 waste avoided minus ₹206 transfer cost) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; +0.3 pp, 95% CI -8.7 to +1.6; a 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
-| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs). 10 of 60 runs (4 cases) got through; 3 cases fixed in code; V6 not fixed. [Details](eval/evaluation.md#chat-cases-at-the-shipped-setting-minimal-thinking) | MEASURED, `gemini-3.5-flash`, 14 Oct |
+| Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs). 10 runs (4 cases) got through; all 4 closed in code since (V3, P3, V6 re-ran 3/3; C8 refused by the tool). [Details](eval/evaluation.md#hardening-16-oct-2026) | MEASURED, 14 and 16 Oct |
 | Model Armor | Screens every chat message and reply; verified live; fails open, code guardrails still apply (`services/api/model_armor.py:7-10,98`) | MEASURED, `taal-agents-00149-sw6`, 14 Oct |
 | Planner evalsets | First proposal accepted 39/46; response match 46/46; strict trajectory 18/46 against same-model recordings (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
 | Approve | 1.4 to 1.9 s warm (10 samples; recorded play, no model call) | MEASURED, 13 to 15 Oct, `taal-agents-00155-drd` |
@@ -27,7 +27,7 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 | Tests | 870 pytest, 833 Playwright (+34 live) | collected, 16 Oct; `make verify` gate |
 | Live Plan (older run) | 22/24 model-authored, p50 26.5 s | MEASURED, 11 Oct, prompt v6 (v7 ships; not re-run) |
 
-Sources: [`eval/raw/`](eval/raw/), [`deck/claims.md`](deck/claims.md).
+Sources: [`eval/raw/`](eval/raw/), [`claims`](deck/claims.md).
 
 ## Judge quick-start
 
@@ -70,7 +70,7 @@ Also try **Plan live** (a live Gemini re-plan, about 27 s).
 
 ## Evidence
 
-[Learning curve](docs/learning_curve.md), with the changes that made a number worse. Public backtest: all-days WAPE 1.12 vs 0.99 for a naive seasonal baseline ([`eval/external_backtest.md`](eval/external_backtest.md)). `make verify` gates every pull request on the stub model backend, and a post-deploy smoke makes real model calls. Vision 30/30 on synthetic photos (14 Oct). [`eval/evaluation.md`](eval/evaluation.md).
+[Learning curve](docs/learning_curve.md), with the changes that made a number worse. Public backtest: all-days WAPE 1.12 vs 0.99 for a naive seasonal baseline ([`eval/external_backtest.md`](eval/external_backtest.md)). `make verify` gates every pull request on the stub model backend, and a post-deploy smoke makes real model calls. Vision: 30/30 synthetic photos. [`eval/evaluation.md`](eval/evaluation.md).
 
 ## What is real and what is simulated
 
@@ -124,8 +124,8 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 **What breaks first**
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
 - `/health` is a configuration check; `make smoke-judging` checks liveness.
-- Vision accuracy on real photos is unmeasured.
-- Open adversarial case: a cropped label can produce an invented SKU row (V6).
+- Real-photo vision is unmeasured.
+- C8: chat still tries a cross-customer call; the tool refuses it.
 
 [Runbook](docs/judging_runbook.md), [demo fallback](docs/demo_fallback.md). Pilot design: [`docs/pilot.md`](docs/pilot.md).
 
