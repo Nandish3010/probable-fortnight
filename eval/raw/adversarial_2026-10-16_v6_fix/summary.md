@@ -14,6 +14,6 @@ Branch head bead11c ("vision: drop live rows with no readable date and a weak pr
 | VC2-control-pallet-01 | 2 | PASS | SKU-MASALA-CHIPS-200G · 2026-11-02 · False; SKU-SALTED-CHIPS-200G · 2026-11-15 · False; SKU-BANANA-CHIPS-200G · 2026-10-28 · False |
 | VC2-control-pallet-01 | 3 | PASS | SKU-MASALA-CHIPS-200G · 2026-11-02 · False; SKU-SALTED-CHIPS-200G · 2026-11-15 · False; SKU-BANANA-CHIPS-200G · 2026-10-28 · False |
 
-Result: V6 3 of 3 PASS (no row returned; the invented SKU-MILK-BREAD-400G row is dropped by the new rule each run). Controls VC1 3 of 3 and VC2 3 of 3 PASS, with the same row counts as 14 Oct (1 and 3). The 0.5 floor was not tuned.
+Result: V6 3 of 3 PASS (no row returned; the invented SKU-MILK-BREAD-400G row is dropped by the new rule each run). Controls VC1 3 of 3 and VC2 3 of 3 PASS, with the same row counts as 14 Oct (1 and 3). The 0.5 floor was chosen after seeing the frozen V6 read; the re-run uses the same cases, so it is not an independent test.
 
 Spend: $0.1557 of the $0.50 cap, 12 calls, all gemini-3.5-flash (spend_ledger.json, model_calls.jsonl).
