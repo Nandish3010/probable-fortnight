@@ -1,0 +1,331 @@
+"""Sealed decision-quality eval: run the real planner on the frozen scenarios and score it against the oracle.
+
+    make eval-sealed                                    # stub backend, plumbing check only, $0
+    TAAL_MODEL_BACKEND=vertex GOOGLE_CLOUD_PROJECT=... GOOGLE_APPLICATION_CREDENTIALS=... \\
+        python -m harness.sealed_eval --out eval/raw/sealed_<date> --cap-usd 10
+
+Protocol: eval/sealed/PROTOCOL.md. Scenarios: eval/sealed/scenarios.json; answer key: eval/sealed/oracle_answers.json.
+Each scenario runs once through `agents.planner.run.run_planner_async` on its own copy-on-write sandbox of the
+scenario's tenant, as the product runs it. The spend ledger, the SDK tap and the INVALID rule are the ones of
+harness/adversarial_eval.py (imported, not changed). Scenarios run `--concurrency` at a time (default 4); the cap is
+kept safe by reserving each run's estimate before it starts.
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import os
+import shutil
+import statistics
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import traceback
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from harness import adversarial_eval as ae
+from harness.checklists import ROOT
+
+SCEN = ROOT / "eval" / "sealed" / "scenarios.json"
+ANSWERS = ROOT / "eval" / "sealed" / "oracle_answers.json"
+DATA_ROOT = ROOT / ".local" / "sealed"
+RESERVE_USD = 0.30  # per planner run; the measured mean is $0.078 (eval/raw/live_eval_2026-10-14/summary.json)
+DEADLINE_S = 120.0
+TAAL_NOW = "2026-09-12T03:30:00Z"
+MECH_OF_CLASS = {"blanket_markdown": "outlet_markdown", "do_nothing": None}
+
+
+class Reserver:
+    """Cap safety under concurrency: a run starts only if spent + reserved by runs in flight + its own reserve fits the cap."""
+
+    def __init__(self, ledger: ae.Ledger | None, cap: float, reserve: float):
+        self.ledger, self.cap, self.reserve = ledger, cap, reserve
+        self.reserved = 0.0
+        self.lock = threading.Lock()
+
+    def try_start(self) -> bool:
+        if self.ledger is None:
+            return True
+        with self.lock:
+            if self.ledger.stopped or self.ledger.spent + self.reserved + self.reserve > self.cap:
+                return False
+            self.reserved += self.reserve
+            return True
+
+    def release(self) -> None:
+        if self.ledger is None:
+            return
+        with self.lock:
+            self.reserved = max(0.0, self.reserved - self.reserve)
+
+
+def recovery_of_play(play: dict[str, Any]) -> float:
+    cf = play["counterfactuals"]
+    return round(float(cf["do_nothing_inr"]) + float(cf["play_net_inr"]), 2)
+
+
+def _mech_ok(accepted: str | None, oracle_classes: list[str], top: dict[str, Any]) -> bool:
+    if accepted is None:
+        return "do_nothing" in oracle_classes
+    return any((MECH_OF_CLASS.get(c, c) == accepted) for c in oracle_classes)
+
+
+async def one_run(sc: dict[str, Any], ans: dict[str, Any], ctx: dict[str, Any], ledger: ae.Ledger | None, attempt: int) -> dict[str, Any]:
+    from agents.planner.run import run_planner_async
+    from eval.sealed.make_scenarios import ensure_tenant
+    from harness.record_planner_traces import sandbox
+
+    tag = f"{sc['scenario_id']}__run{attempt + 1}"
+    ae.RUN_TAG.set(tag)
+    t0 = time.time()
+    rec: dict[str, Any] = {"scenario_id": sc["scenario_id"], "stratum": sc["stratum"], "gap_id": sc["gap"]["gap_id"], "seed": sc["seed"], "attempt": attempt, "started_at": ae.now_utc(), "tag": tag}
+    work = ctx["tmp"] / tag
+    try:
+        base = await asyncio.to_thread(ensure_tenant, ctx["data_root"], sc["seed"])
+        store = await asyncio.to_thread(sandbox, base, work)
+        records: list[dict[str, Any]] = []
+
+        def on_event(kind: str, obj: Any) -> None:
+            d = obj.model_dump(mode="json", exclude_none=True) if hasattr(obj, "model_dump") else obj
+            records.append({"kind": "user", "content": d} if kind == "user" else {"kind": "event", "event": d})
+
+        out = await run_planner_async(store.root, sc["gap"]["gap_id"], backend=ctx["backend"], deadline_s=DEADLINE_S, on_event=on_event)
+        play = out.get("play")
+        if play:
+            rows = store.find("plays", play_id=play["play_id"])
+            play = json.loads(rows[-1]["play_json"]) if rows else play
+        drafts, texts, verdicts = ae.extract_drafts(records)
+        fb = str(out.get("fallback_reason") or "")
+        timeout_or_infra = fb.startswith("deadline exceeded") or fb.startswith("model unavailable")
+        model_play = play if (play and out.get("planner_source") == "model" and out.get("status") == "proposed") else None
+        audit = await asyncio.to_thread(ae.audit_final_play, store, model_play) if model_play else {}
+        guardrail_violation = bool(model_play) and not (audit.get("guardrails_all_passed") and not audit.get("money_mismatches") and audit.get("holdout_ok"))
+        events = out.get("events") or []
+        summary = next((e for e in reversed(events) if e.get("kind") == "run_summary"), {})
+        rec.update({
+            "status": "proposed" if model_play else "no_play", "planner_status": out.get("status"), "planner_source": out.get("planner_source"), "source": out.get("source"),
+            "fallback_reason": out.get("fallback_reason"), "accepted_play": model_play, "deterministic_fallback_play": play if (play and not model_play) else None,
+            "recovery_inr": recovery_of_play(model_play) if model_play else 0.0, "mechanic": model_play["mechanic"] if model_play else None,
+            "drafts": drafts, "model_texts": texts, "propose_play_verdicts": verdicts,
+            "first_proposal_accepted": bool(verdicts) and bool(verdicts[0]["valid"]), "propose_play_attempts": len(verdicts),
+            "iterations": out.get("iterations"), "elapsed_ms": out.get("elapsed_ms"), "audit": audit, "guardrail_violation_at_approve": guardrail_violation,
+            "run_summary": {k: summary.get(k) for k in ("run_id", "status", "iterations", "elapsed_ms", "usage", "model", "backend", "source")},
+            "oracle": {"best_classes_tied": ans["best_classes_tied"], "best_recovery_inr": ans["best_recovery_inr"], "blanket20_recovery_inr": ans["blanket20_recovery_inr"]},
+            "verdict": "VALID",
+        })
+        if timeout_or_infra:
+            rec.update({"verdict": "INVALID", "reason": f"timeout or infra: {fb}"})
+    except ae.SpendCapReached as e:
+        rec.update({"verdict": "NOT_RUN", "reason": f"spend cap: {e}"})
+    except BaseException as e:  # noqa: BLE001 -- a crashed run is a recorded outcome
+        if ledger is not None and ledger.stopped:
+            rec.update({"verdict": "NOT_RUN", "reason": "spend cap reached during the run"})
+        else:
+            rec.update({"verdict": "INVALID", "reason": f"infra/harness error {type(e).__name__}: {str(e)[:300]}", "traceback": traceback.format_exc()[-3000:]})
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    rec["wall_s"] = round(time.time() - t0, 1)
+    if ledger is not None:
+        calls = ledger.calls_for(tag)
+        rec["model_calls"] = [{k: c.get(k) for k in ("requested_model", "model_version", "usage", "usd", "error", "elapsed_s", "thinking_level")} for c in calls]
+        rec["usd"] = round(sum(c.get("usd", 0.0) for c in calls), 6)
+        rec["tokens"] = {k: sum((c["usage"] or {}).get(k, 0) for c in calls) for k in ("prompt", "cached", "candidates", "thoughts")}
+        rec["models_requested"] = sorted({c["requested_model"] for c in calls if c["requested_model"]})
+        rec["model_versions_reported"] = sorted({str(c["model_version"]) for c in calls if c["usage"]})
+        bad = ledger.invalid_reasons(tag)
+        if bad and rec["verdict"] != "NOT_RUN":
+            rec["verdict_before_invalidation"] = rec["verdict"]
+            rec.update({"verdict": "INVALID", "reason": "; ".join(sorted(set(bad)))})
+    else:
+        u = (rec.get("run_summary") or {}).get("usage") or {}
+        rec["usd"] = 0.0
+        rec["tokens"] = {"prompt": u.get("prompt_token_count", 0), "cached": u.get("cached_content_token_count", 0), "candidates": u.get("candidates_token_count", 0), "thoughts": u.get("thoughts_token_count", 0)}
+        rec["models_requested"] = rec["model_versions_reported"] = [ctx["backend"]]
+    return rec
+
+
+async def execute(scenarios: list[dict[str, Any]], answers: dict[str, Any], ctx: dict[str, Any], ledger: ae.Ledger | None, reserver: Reserver, out_dir: Path, concurrency: int) -> None:
+    sem = asyncio.Semaphore(concurrency)
+    raw = out_dir / "runs"
+    raw.mkdir(parents=True, exist_ok=True)
+
+    async def guarded(sc: dict[str, Any]) -> None:
+        async with sem:
+            sid = sc["scenario_id"]
+            if not reserver.try_start():
+                rec = {"scenario_id": sid, "stratum": sc["stratum"], "gap_id": sc["gap"]["gap_id"], "attempt": 0, "verdict": "NOT_RUN", "reason": f"spend cap: spent {ledger.spent:.4f} + reserved {reserver.reserved:.2f} + reserve {reserver.reserve} would pass {reserver.cap}" if ledger else "not run"}
+                (raw / f"{sid}.json").write_text(json.dumps(rec, indent=1) + "\n", encoding="utf-8")
+                print(f"  {sid} NOT_RUN", flush=True)
+                return
+            try:
+                first = await one_run(sc, answers[sid], ctx, ledger, 0)
+            finally:
+                reserver.release()
+            rec = first
+            if first["verdict"] == "INVALID":
+                (raw / f"{sid}__attempt0_invalid.json").write_text(json.dumps(first, indent=1, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
+                if reserver.try_start():
+                    try:
+                        again = await one_run(sc, answers[sid], ctx, ledger, 1)
+                    finally:
+                        reserver.release()
+                    again["first_attempt"] = {k: first.get(k) for k in ("verdict", "reason", "tag", "usd")}
+                    rec = again
+            (raw / f"{sid}.json").write_text(json.dumps(rec, indent=1, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
+            print(f"  {sid} {sc['stratum']:17s} {rec['verdict']:8s} {str(rec.get('mechanic')):20s} recovery {rec.get('recovery_inr')} / oracle {answers[sid]['best_recovery_inr']}" + (f"  ${ledger.spent:.3f}" if ledger else ""), flush=True)
+
+    await asyncio.gather(*(guarded(sc) for sc in scenarios))
+
+
+# ----------------------------------------------------------------------------- metrics
+
+def pct(xs: list[float], q: float) -> float:
+    s = sorted(xs)
+    if not s:
+        return float("nan")
+    k = (len(s) - 1) * q
+    lo, hi = int(k), min(int(k) + 1, len(s) - 1)
+    return s[lo] + (s[hi] - s[lo]) * (k - lo)
+
+
+def compute_metrics(scenarios: list[dict[str, Any]], answers: dict[str, Any], runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    valid = [(sc, runs[sc["scenario_id"]]) for sc in scenarios if runs.get(sc["scenario_id"], {}).get("verdict") == "VALID"]
+    excluded = [{"scenario_id": sc["scenario_id"], "verdict": runs.get(sc["scenario_id"], {}).get("verdict", "NOT_RUN"), "reason": runs.get(sc["scenario_id"], {}).get("reason")} for sc in scenarios if runs.get(sc["scenario_id"], {}).get("verdict") != "VALID"]
+    n = len(valid)
+    rows = []
+    for sc, r in valid:
+        a = answers[sc["scenario_id"]]
+        oracle_rec = a["best_recovery_inr"]
+        got = r["recovery_inr"]
+        rows.append({
+            "scenario_id": sc["scenario_id"], "stratum": sc["stratum"], "status": r["status"], "mechanic": r["mechanic"], "recovery_inr": got, "oracle_recovery_inr": oracle_rec, "oracle_classes": a["best_classes_tied"],
+            "captured": (got / oracle_rec) if oracle_rec > 0 else None, "regret_inr": round(oracle_rec - got, 2), "blanket20_recovery_inr": a["blanket20_recovery_inr"], "beats_blanket": got > a["blanket20_recovery_inr"],
+            "beat_over_blanket_inr": round(got - a["blanket20_recovery_inr"], 2), "mechanic_match": _mech_ok(r["mechanic"], a["best_classes_tied"], a), "within_5pct": oracle_rec > 0 and got >= 0.95 * oracle_rec,
+            "first_proposal_accepted": r["first_proposal_accepted"], "iterations": r["iterations"], "guardrail_violation": r["guardrail_violation_at_approve"], "elapsed_s": (r["elapsed_ms"] or 0) / 1000.0, "usd": r["usd"],
+        })
+    cap = [x["captured"] for x in rows if x["captured"] is not None]
+    by_stratum = {s: [x for x in rows if x["stratum"] == s] for s in sorted({x["stratum"] for x in rows})}
+
+    def restraint(stratum: str) -> dict[str, int]:
+        xs = by_stratum.get(stratum, [])
+        ok = [x for x in xs if (x["status"] == "no_play" if stratum == "do_nothing" else (x["status"] == "no_play" or x["mechanic"] == "outlet_markdown"))]
+        return {"correct": len(ok), "of": len(xs)}
+
+    lat = [x["elapsed_s"] for x in rows]
+    usd = [x["usd"] for x in rows]
+    return {
+        "scenarios": len(scenarios), "valid": n, "excluded": excluded,
+        "recovery_captured": {"median": statistics.median(cap) if cap else None, "p10": pct(cap, 0.10) if cap else None, "min": min(cap) if cap else None, "n": len(cap)},
+        "regret_inr": {"sum": round(sum(x["regret_inr"] for x in rows), 2), "median": statistics.median([x["regret_inr"] for x in rows]) if rows else None},
+        "mechanic_match": {"n": sum(x["mechanic_match"] for x in rows), "of": n}, "within_5pct": {"n": sum(x["within_5pct"] for x in rows), "of": n},
+        "beats_blanket20": {"n": sum(x["beats_blanket"] for x in rows), "of": n, "total_beat_inr": round(sum(x["beat_over_blanket_inr"] for x in rows), 2)},
+        "restraint": {"do_nothing_stratum": restraint("do_nothing"), "blanket_markdown_stratum": restraint("blanket_markdown")},
+        "first_proposal_accepted": {"n": sum(bool(x["first_proposal_accepted"]) for x in rows), "of": n}, "mean_iterations": statistics.mean([x["iterations"] or 0 for x in rows]) if rows else None,
+        "guardrail_violations_reaching_approve": sum(bool(x["guardrail_violation"]) for x in rows), "no_play": sum(x["status"] == "no_play" for x in rows),
+        "latency_s": {"p50": pct(lat, 0.5) if lat else None, "p95": pct(lat, 0.95) if lat else None},
+        "cost_usd": {"per_scenario_mean": statistics.mean(usd) if usd else None, "per_scenario_max": max(usd) if usd else None, "total": round(sum(usd), 4)},
+        "per_stratum": {s: {"n": len(v), "captured_median": (statistics.median([x["captured"] for x in v if x["captured"] is not None]) if any(x["captured"] is not None for x in v) else None), "regret_sum_inr": round(sum(x["regret_inr"] for x in v), 2), "beats_blanket": sum(x["beats_blanket"] for x in v), "mechanic_match": sum(x["mechanic_match"] for x in v)} for s, v in by_stratum.items()},
+        "rows": rows,
+    }
+
+
+def fmt(v: Any, nd: int = 3) -> str:
+    return "n/a" if v is None else (f"{v:.{nd}f}" if isinstance(v, float) else str(v))
+
+
+def write_summary(path: Path, meta: dict[str, Any], m: dict[str, Any]) -> None:
+    rc = m["recovery_captured"]
+    L = [f"# Sealed decision-quality eval ({meta['date']})", "",
+         f"Label: **{meta['label']}**. Model {meta['model']}, prompt {meta['prompt_version']}, scenarios {m['valid']} valid of {m['scenarios']}, concurrency {meta['concurrency']}, runs per scenario 1 (plus one re-run of an INVALID run). Protocol: eval/sealed/PROTOCOL.md.", "",
+         "Recovery is the projected recovery under Taal's own estimator (recovered versus doing nothing) on a synthetic tenant; the oracle optimises that same estimator. This measures decision quality inside Taal's economic model, not real-world outcomes.", "",
+         "| Metric | Result |", "|---|---|",
+         f"| Recovery captured (accepted / oracle), median / p10 / min | {fmt(rc['median'])} / {fmt(rc['p10'])} / {fmt(rc['min'])} (n={rc['n']}) |",
+         f"| Rupee regret, sum / median | {fmt(m['regret_inr']['sum'], 2)} / {fmt(m['regret_inr']['median'], 2)} |",
+         f"| Mechanic equals the oracle's | {m['mechanic_match']['n']} of {m['mechanic_match']['of']} |",
+         f"| Within 5% of oracle recovery | {m['within_5pct']['n']} of {m['within_5pct']['of']} |",
+         f"| Beats blanket 20% markdown | {m['beats_blanket20']['n']} of {m['beats_blanket20']['of']}; total beat INR {fmt(m['beats_blanket20']['total_beat_inr'], 2)} |",
+         f"| Correct restraint, do-nothing stratum | {m['restraint']['do_nothing_stratum']['correct']} of {m['restraint']['do_nothing_stratum']['of']} |",
+         f"| Correct restraint, blanket-markdown stratum | {m['restraint']['blanket_markdown_stratum']['correct']} of {m['restraint']['blanket_markdown_stratum']['of']} |",
+         f"| First proposal accepted by the gate | {m['first_proposal_accepted']['n']} of {m['first_proposal_accepted']['of']}; mean iterations {fmt(m['mean_iterations'], 2)} |",
+         f"| Runs ending with no accepted model play | {m['no_play']} |",
+         f"| **Guardrail violations reaching Approve (must be 0)** | **{m['guardrail_violations_reaching_approve']}** |",
+         f"| Latency p50 / p95 (s) | {fmt(m['latency_s']['p50'], 1)} / {fmt(m['latency_s']['p95'], 1)} |",
+         f"| Cost per scenario (USD) mean / max / total | {fmt(m['cost_usd']['per_scenario_mean'], 4)} / {fmt(m['cost_usd']['per_scenario_max'], 4)} / {fmt(m['cost_usd']['total'], 4)} |", "",
+         "## By stratum", "", "| Stratum | n | median captured | regret INR | beats blanket | mechanic match |", "|---|---|---|---|---|---|"]
+    for s, v in m["per_stratum"].items():
+        L.append(f"| {s} | {v['n']} | {fmt(v['captured_median'])} | {fmt(v['regret_sum_inr'], 2)} | {v['beats_blanket']} | {v['mechanic_match']} |")
+    L += ["", "## Per scenario", "", "| id | stratum | accepted mechanic | recovery | oracle best | captured | beats blanket | iterations |", "|---|---|---|---|---|---|---|---|"]
+    for x in m["rows"]:
+        L.append(f"| {x['scenario_id']} | {x['stratum']} | {x['mechanic'] or 'no play'} | {fmt(x['recovery_inr'], 2)} | {fmt(x['oracle_recovery_inr'], 2)} | {fmt(x['captured'])} | {x['beats_blanket']} | {x['iterations']} |")
+    if m["excluded"]:
+        L += ["", "## Excluded (INVALID or NOT RUN), reported and not scored", ""] + [f"- {e['scenario_id']}: {e['verdict']}: {e['reason']}" for e in m["excluded"]]
+    path.write_text("\n".join(L) + "\n", encoding="utf-8")
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--cap-usd", type=float, default=10.0)
+    ap.add_argument("--concurrency", type=int, default=4)
+    ap.add_argument("--backend", default=None)
+    ap.add_argument("--scenarios", default=str(SCEN))
+    ap.add_argument("--answers", default=str(ANSWERS))
+    ap.add_argument("--data-root", default=str(DATA_ROOT))
+    ap.add_argument("--only", default=None, help="comma-separated scenario ids")
+    args = ap.parse_args(argv)
+
+    from agents.gate.config import load_models
+
+    os.environ.setdefault("TAAL_NOW", TAAL_NOW)
+    models = load_models()
+    backend = args.backend or models["backend"]
+    live = backend == "vertex"
+    if live and not (os.environ.get(models["vertex"]["project_env"]) and os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")):
+        print("sealed_eval: vertex needs GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS; nothing run")
+        return 1
+    scen_doc = json.loads(Path(args.scenarios).read_text(encoding="utf-8"))
+    answers = json.loads(Path(args.answers).read_text(encoding="utf-8"))["answers"]
+    scenarios = [s for s in scen_doc["scenarios"] if not args.only or s["scenario_id"] in set(args.only.split(","))]
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ledger = ae.Ledger(args.cap_usd, models["ids"]["flash"], models["pricing"], out_dir / "model_calls.jsonl") if live else None
+    if ledger:
+        ae.install_tap(ledger)
+    reserver = Reserver(ledger, args.cap_usd, RESERVE_USD)
+    started = time.time()
+    with tempfile.TemporaryDirectory(prefix="taal_sealed_") as work:
+        ctx = {"tmp": Path(work), "backend": backend, "data_root": Path(args.data_root)}
+        asyncio.run(execute(scenarios, answers, ctx, ledger, reserver, out_dir, args.concurrency))
+    runs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((out_dir / "runs").glob("S[0-9][0-9].json"))}
+    m = compute_metrics(scenarios, answers, runs)
+    meta = {
+        "date": datetime.now(UTC).date().isoformat(), "run_at": ae.now_utc(), "backend": backend, "model": models["ids"]["flash"] if live else "stub-planner", "prompt_version": "v7",
+        "label": "measured" if live else "stub plumbing check (scripted stand-in, NOT the model; numbers are not results)", "concurrency": args.concurrency, "cap_usd": args.cap_usd, "reserve_usd_per_run": RESERVE_USD,
+        "planner_deadline_s": DEADLINE_S, "thinking": models.get("thinking"), "wall_s": round(time.time() - started, 1),
+        "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+        "scenarios_sha256": ae.sha256_file(Path(args.scenarios)), "oracle_answers_sha256": ae.sha256_file(Path(args.answers)),
+        "planner_prompt_sha256": ae.sha256_file(ROOT / "agents/planner/prompts/planner.md"), "provisional_scenarios": bool(scen_doc.get("provisional")),
+        "spent_usd": round(ledger.spent, 4) if ledger else 0.0, "model_calls": len(ledger.calls) if ledger else 0,
+        "max_calls_in_flight": ledger.max_inflight if ledger else 0,
+    }
+    (out_dir / "results.json").write_text(json.dumps({"meta": meta, "metrics": m}, indent=1, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
+    if ledger:
+        doc = {"model": meta["model"], "cap_usd": args.cap_usd, "total_usd": round(ledger.spent, 4), "model_calls": len(ledger.calls), "failed_calls": sum(1 for c in ledger.calls if c["error"]), "max_calls_in_flight": ledger.max_inflight,
+               "calls_by_requested_model": {k: sum(1 for c in ledger.calls if c["requested_model"] == k) for k in sorted({c["requested_model"] for c in ledger.calls})},
+               "calls_by_model_version_reported": {k: sum(1 for c in ledger.calls if c["usage"] and str(c["model_version"]) == k) for k in sorted({str(c["model_version"]) for c in ledger.calls if c["usage"]})},
+               "source": "usage_metadata of each response via the tap in harness/adversarial_eval.py; list prices from config/models.toml [pricing]"}
+        (out_dir / "spend_ledger.json").write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+    else:
+        (out_dir / "spend_ledger.json").write_text(json.dumps({"backend": backend, "total_usd": 0.0, "model_calls": 0, "note": "stub backend: no model call is made"}, indent=1) + "\n", encoding="utf-8")
+    write_summary(out_dir / "summary.md", meta, m)
+    print(f"valid {m['valid']}/{m['scenarios']}; spend ${meta['spent_usd']}; guardrail violations at Approve: {m['guardrail_violations_reaching_approve']}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

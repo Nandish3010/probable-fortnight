@@ -7,7 +7,7 @@ export TAAL_TENANT_CONFIG ?= config/tenant.demo.toml
 # it so play windows and the approve -> re-forecast beat do not go stale as real days pass.
 export TAAL_NOW ?= 2026-09-12T03:30:00Z
 
-.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces pregenerate-copy deck deploy smoke-judging clean
+.PHONY: vision-real-prep vision-real-eval feedback-summary ingest-roundtrip samples nightly-report live-test setup verify secrets lint schemas generate fixtures mocks openapi sense measure unit sql agents api-test web-test docs status demo api web eval eval-gaps planner-traces pregenerate-copy deck eval-sealed deploy smoke-judging clean
 
 setup:            ## install python + web deps
 	uv sync --group dev
@@ -109,6 +109,9 @@ demo: generate    ## local demo = api + web against generated data
 
 eval-gaps:        ## pick the 50 planner evalset gaps (stratified) -> eval/raw/planner_evalset_selection_<date>.json
 	uv run python -m harness.select_eval_gaps
+
+eval-sealed:      ## sealed decision-quality eval (eval/sealed/PROTOCOL.md). Stub backend = plumbing check, $0; TAAL_MODEL_BACKEND=vertex SEALED_OUT=eval/raw/sealed_<date> spends (cap $10)
+	uv run python -m harness.sealed_eval --out $(or $(SEALED_OUT),.local/sealed_out) --concurrency $(or $(SEALED_CONCURRENCY),4) --cap-usd $(or $(SEALED_CAP),10)
 
 planner-traces:   ## one recorded planner run per selected gap -> eval/raw/planner_traces_<date>/ (set TAAL_MODEL_BACKEND=vertex)
 	uv run python -m harness.record_planner_traces
