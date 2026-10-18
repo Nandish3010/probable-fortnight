@@ -5,7 +5,7 @@ Taal turns a write-off forecast into a human-approved play (a transfer, an offer
 **What is new here**
 - **No play without a holdout, enforced in code.** `rule_holdout_required` rejects a play without a holdout fraction of 5 to 90%, a minimum treated count and a seed (`agents/gate/guardrails.py:161-172`); code assigns the groups (`agents/planner/tools.py:422`). Statistical power is not checked.
 - **It says when nothing is proved yet.** A holdout interval that crosses zero reads INCONCLUSIVE, labelled SYNTHETIC; a power simulation states the data needed: about 1,156 customers for a 5 pp lift (`eval/raw/holdout_power_2026-10-14.json`). The ₹9,191 stays PROJECTED.
-- **Replay on real data (anonymised; past data, not a pilot).** Taal would have flagged 99% of expiry pull-outs a median 30 days ahead (MEASURED; precision 45%; a 60-days-of-stock rule fires at about the same time, so the value is sizing and choosing the action); estimated recovery ₹8 to 15 L in 11 weeks, about twice a blanket markdown (ESTIMATED). [Detail](#replay-on-real-data).
+- **Replay on real data (anonymised; past data, not a pilot).** First row of the results table; [detail and limits](#replay-on-real-data).
 - **Each safety layer measured on its own.** The tool refuses another customer's id every run though the chat model tries it 3 of 3 times (`agents/customer/tools.py:43-59`); Model Armor blocks 3 of 8 injection cases (`eval/evaluation.md:1167-1172`) and fails open (`services/api/model_armor.py:7-10,98`).
 - **Pre-registered evals.** Protocols are committed before any model call; a fallback-model answer voids the run. On 36 sealed scenarios from an unseen tenant, approved plays beat a blanket 20% markdown in 29 (16 of 23 where the markdown is profitable): our line of 30 was missed. 0 rule violations reached Approve (`eval/sealed/PROTOCOL.md`).
 - **Cite-or-drop that resists tricks.** Rationale numbers must match the play in Western or Indian digit grouping (`agents/gate/guardrails.py:221-228`); copied untrusted phrases are caught after folding look-alike characters (`agents/gate/untrusted.py:18-38`).
@@ -14,6 +14,7 @@ Taal turns a write-off forecast into a human-approved play (a transfer, an offer
 
 | Result | Figure | Label |
 |---|---|---|
+| Replay on real data (anonymised, 11 weeks) | would have flagged 99% of expiry pull-outs a median 30 days ahead; precision 45%; estimated recovery ₹8 to 15 L, about 2x a blanket markdown; a 60-days-of-stock rule fires about as early | MEASURED (flags), ESTIMATED (value); replay, not a pilot |
 | Sealed baseline eval | beats a blanket 20% markdown 29/36; 16/23 where the markdown is profitable (line 30: missed); 0 rule violations; deadlines 3 to 14 days, 21 of 36 from neighbouring cells | MEASURED, 19 Oct; projected, synthetic |
 | Hero play vs doing nothing | Transfer to the outlet that sells the tea plus a targeted nudge: **₹9,191** projected (₹9,397 waste avoided minus ₹206 transfer) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
@@ -21,16 +22,15 @@ Taal turns a write-off forecast into a human-approved play (a transfer, an offer
 | Adversarial eval | 50 of 60 attack runs stopped, 0 of 18 genuine requests refused (20 attacks, 6 controls, 3 runs). 10 runs (4 cases) got through; V3, P3, V6 since fixed and re-ran 3/3 (V6 threshold set after the frozen run); C8: the model still tries, the tool refuses every run. [Details](eval/evaluation.md#hardening-16-oct-2026) | MEASURED, 14 and 16 Oct |
 | Planner evalsets | First proposal accepted 39/46; response match 46/46; strict trajectory 18/46 against same-model recordings (a regression guard, not accuracy) | MEASURED, `gemini-3.5-flash`, prompt v7, re-recorded 14 Oct |
 | Approve | 1.4 to 1.9 s warm (10 samples; recorded play, no model call) | MEASURED, 13 to 15 Oct, `taal-agents-00155-drd` |
-| Chat latency; Model Armor on (verified live; fails open) | p50 3.66 s, p95 4.36 s | MEASURED, `gemini-3.5-flash`, 14 Oct, local API; Armor revision `taal-agents-00149-sw6` |
+| Chat latency; Model Armor on (verified live; fails open) | p50 3.66 s, p95 4.36 s | MEASURED, `gemini-3.5-flash`, 14 Oct, local API |
 | Accessibility | no serious or critical axe issues | MEASURED, mock mode, 14 Oct |
 | Tests | 870 pytest, 833 Playwright (+34 live) | collected, 16 Oct; `make verify` gate |
-| Live Plan (older run) | 22/24 model-authored, p50 26.5 s | MEASURED, 11 Oct, prompt v6 (v7 not re-run) |
 
 Sources: [`eval/raw/`](eval/raw/).
 
 ## Replay on real data
 
-On 3 months of real data from a pet-care e-commerce company, about ₹44.5 L of stock was pulled at the expiry cut-off in 11 weeks, roughly ₹2 crore a year (INFERRED, annualised: 11-week base, same rate all year, ignores seasonality). Replaying each week, Taal would have flagged 99% of it a median 30 days before the cut-off (MEASURED), and its transfer-or-markdown choice would have recovered an estimated ₹8 to 15 L in those 11 weeks, about twice a blanket markdown (ESTIMATED). Precision is 45% (MEASURED: 45% of flagged lots whose cut-off fell inside the window were later pulled). A simple 60-days-of-stock rule fires at about the same time, so Taal's added value is in sizing the shortfall and choosing the action, not in timing alone. A replay of past data, not a live pilot; aggregates only, source data not in the repo. Detail: [`docs/real_data_replay.md`](docs/real_data_replay.md). Limits:
+On 3 months of real data from a pet-care e-commerce company, about ₹44.5 L of stock was pulled at the expiry cut-off in 11 weeks, roughly ₹2 crore a year (INFERRED, annualised: 11-week base, same rate all year, ignores seasonality). Replaying each week, Taal would have flagged 99% of it a median 30 days before the cut-off (MEASURED), and its transfer-or-markdown choice would have recovered an estimated ₹8 to 15 L in those 11 weeks, about twice a blanket markdown (ESTIMATED). Precision 45% (MEASURED: flagged lots whose cut-off fell inside the window and were later pulled). A 60-days-of-stock rule fires at about the same time, so Taal's value is sizing the shortfall and choosing the action, not timing. Past data, not a live pilot; aggregates only. Detail: [`docs/real_data_replay.md`](docs/real_data_replay.md). Limits:
 - Expiry loss is inferred from stock leaving sellable inventory; it cannot separate destruction, returns booked elsewhere or miscounts.
 - Recall is flattered: the flag and the label both come from the same sales signal.
 - 11 weeks of data; only about 1,950 flagged lots reached their cut-off inside the window.
@@ -38,13 +38,13 @@ On 3 months of real data from a pet-care e-commerce company, about ₹44.5 L of 
 
 ## Judge quick-start
 
-No sign-in; private sandbox per visitor. Synthetic data, demo clock 12 Sep 2026; first load after idle takes about 10 s. [Fair-use limits](#impact-and-limits) apply.
+No sign-in; private sandbox per visitor; synthetic data; first load after idle takes about 10 s.
 
 1. Open <https://taal-web-2obkp776ca-el.a.run.app> and click **Run the 60-second beat**. You land on the Darjeeling Tea gap.
 2. Click **Approve**: it reads "Recovered vs doing nothing ₹9,191" (projected): 355 customers treated, 39 held out.
 3. Click **Chat as Ravi**. It asks "Any offers today?" for him and the Tea offer arrives. Click **Add to cart**: the order total is ₹450.
 
-Then type (tested 15 Oct): "Is the Darjeeling tea in stock?" (two packs, Add to cart); "Do you have Cola Zero?" (sizes in stock, synthetic prices); "STOP" (unsubscribed). Also try **Plan live** (Gemini re-plan, about 27 s).
+Then type (tested 15 Oct): "Is the Darjeeling tea in stock?" (two packs, Add to cart); "Do you have Cola Zero?" (sizes in stock, synthetic prices); "STOP" (unsubscribed). Also try **Plan live** (a live Gemini re-plan).
 
 | Live app | Video | Deck | Repo | Configuration check |
 |---|---|---|---|---|
@@ -67,11 +67,11 @@ Code, not the model, decides every rupee, the guardrails, the holdout and its as
 
 ## What is real and what is simulated
 
-- **LIVE:** Plan live (a Gemini call), chat and MCP orders, offers with consent and STOP enforced in code, holdout assignment.
-- **RECORDED:** the Tea and chips plays (committed Gemini runs), sample-photo reads, stored offer copy.
-- **SYNTHETIC:** the forecast history and one fictional tenant (4,000 customers, 300 SKUs, 16 nodes), and every order.
+- **LIVE:** Plan live, chat and MCP orders, consent and STOP in code, holdout assignment.
+- **RECORDED:** the Tea and chips plays, sample-photo reads, stored offer copy.
+- **SYNTHETIC:** one fictional tenant (4,000 customers, 300 SKUs, 16 nodes) and every order.
 
-Detail: [`docs/real_vs_simulated.md`](docs/real_vs_simulated.md). App badges: LIVE, REPLAY, SYNTHETIC. No live pilot has run; the replay used past data.
+[Detail](docs/real_vs_simulated.md). No live pilot has run; the replay used past data.
 
 ## How Taal connects to a real retailer
 
@@ -89,22 +89,22 @@ Cloud Run (`taal-web`, `taal-agents`; scale to zero; `max-instances` 1), Vertex 
 
 FSSAI's advisory of 3 Dec 2024 ([RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf)) asks online food sellers to deliver with at least 30% shelf life or 45 days left: an advisory, not law. Taal plans to that online sell-by line, which can fall weeks before the printed expiry.
 
-As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% of net order value (₹17,132 crore, 2,443 stores): about ₹0.5 crore per store a year (all inventory loss, a quarter annualised); context, not a Taal result.
+As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% of net order value: about ₹0.5 crore per store a year (all inventory loss, a quarter annualised); context, not a Taal result.
 
-3 of 7 surveyed practitioners write off stock weekly or daily.
+3 of 7 practitioners surveyed write off weekly or daily.
 
 Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prior_sensitivity_2026-10-09.json`), by response prior: 2%: ₹8,796 per 28 days, ₹1.15 lakh a year; 5%: ₹21,710, ₹2.83 lakh; 10%: ₹38,698, ₹5.04 lakh.
 
 **What it costs to run.** About ₹6.5 per planned play (`gemini-3.5-flash` list prices, 14 Oct). Production path: [`docs/scale.md`](docs/scale.md).
 
-**Fair-use limits.** Per 15 minutes: 120 plan runs, 600 chat turns and 60 photo reads shared; 20, 60 and 10 per visitor. A limit returns HTTP 429.
+**Fair-use limits.** Per 15 minutes: 120 plans, 600 chat turns, 60 photo reads shared; 20, 60, 10 per visitor.
 
 **What breaks first**
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
-- `/health` is a configuration check; `make smoke-judging` checks liveness.
-- Real-photo vision: unmeasured.
+- `/health` checks configuration; `make smoke-judging` checks liveness.
+- Real-photo vision unmeasured.
 
-[Runbook](docs/judging_runbook.md), [fallback](docs/demo_fallback.md). Pilot: [`docs/pilot.md`](docs/pilot.md).
+[Runbook](docs/judging_runbook.md), [pilot design](docs/pilot.md).
 
 ## Team and licence
 

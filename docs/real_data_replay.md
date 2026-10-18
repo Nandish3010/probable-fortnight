@@ -25,14 +25,6 @@ Aggregates from a private replay; the source data and code are not in this repo.
 
 Headline: "On 3 months of real data from a pet-care e-commerce company, about ₹44.5 L of stock was pulled at the expiry cut-off in 11 weeks, roughly ₹2 crore a year (INFERRED, annualised). Replaying each week, Taal would have flagged 99% of it a median 30 days before the cut-off (MEASURED), and its transfer-or-markdown choice would have recovered an estimated ₹8 to 15 L in those 11 weeks, about twice a blanket markdown (ESTIMATED)."
 
-## Wording rules applied
-
-- Used: "would have flagged", "estimated", "inferred", "replay on real data".
-- Not used: "saved", "recovered" without "would have" or "estimated", "piloted", "deployed at", a 99%-accuracy claim, or any claim that Taal beats the company's existing rules on timing.
-- Recall (99%) is never shown without precision (45%) and the stock-cover caveat (line 3).
-- No single value above ₹15 L is quoted, and the word "estimated" is kept.
-- The ERP write-off total is not presented as expiry loss.
-
 ## Limits
 
 - Expiry loss is inferred from stock leaving sellable inventory; it cannot separate destruction, returns booked elsewhere or miscounts.
