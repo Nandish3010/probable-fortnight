@@ -44,4 +44,18 @@ def deterministic_plan(ctx: PlannerContext, gap_id: str) -> dict[str, Any] | Non
             "expected_units": est["expected_outcome"]["units"], "expected_margin_inr": est["expected_outcome"]["margin_inr"],
             "rejected_because": "; ".join(result["errors"])[:400],
         })
+    # Last resort, only when every policy-ordered candidate was rejected: the best plain markdown (it passes the
+    # beats_markdown check by construction). The normal path above is unchanged.
+    for est in estimates:
+        alt = next((a for a in (est.get("alternatives") or []) if a.get("mechanic") == "markdown"), None)
+        if alt is not None:
+            cand = {"mechanic": "markdown", "mechanic_params": {"markdown_pct": alt["mechanic_params"]["markdown_pct"]}}
+            draft = drafting.build_draft(gap, audiences, cand, ctx.policy_version, ctx.run_id, holdout_fraction, min_treated_n, languages, ctx.as_of.isoformat())
+            md_est = pt.estimate_outcomes([draft])[0]
+            if "error" in md_est:
+                break
+            play = drafting.finish_draft(draft, gap, md_est, audiences, rejected, ctx.policy_text)
+            if pt.propose_play(play, tool_context)["valid"]:
+                return play
+            break
     return None

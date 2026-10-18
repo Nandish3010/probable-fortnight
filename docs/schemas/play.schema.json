@@ -24,7 +24,7 @@
         "deadline_type": { "type": "string", "enum": ["online_sellby", "expiry", "lead_time"] }
       }
     },
-    "mechanic": { "type": "string", "enum": ["bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge", "coupon", "outlet_markdown", "transfer_plus_nudge"] },
+    "mechanic": { "type": "string", "enum": ["bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge", "coupon", "outlet_markdown", "transfer_plus_nudge", "markdown"] },
     "mechanic_params": {
       "type": "object", "additionalProperties": false,
       "properties": {
@@ -34,7 +34,8 @@
         "transfer_to_node": { "type": "string" },
         "transfer_units": { "type": "integer", "minimum": 0 },
         "preorder_eta_date": { "type": "string", "format": "date" },
-        "markdown_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+        "markdown_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "end_date": { "type": "string", "format": "date" }
       }
     },
     "audience": {
@@ -110,7 +111,10 @@
       "properties": {
         "fraction": { "type": "number", "minimum": 0.05, "maximum": 0.9 },
         "seed": { "type": "string", "minLength": 4 },
-        "min_treated_n": { "type": "integer", "minimum": 1 }
+        "min_treated_n": { "type": "integer", "minimum": 1 },
+        "measurement": { "type": "string", "enum": ["holdout_customers", "holdout_nodes", "none"] },
+        "measurement_reason": { "type": "string" },
+        "node_ids": { "type": "array", "items": { "type": "string" } }
       }
     },
     "guardrails": {

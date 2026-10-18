@@ -346,6 +346,7 @@ def audit_final_play(store: Any, play: dict[str, Any]) -> dict[str, Any]:
         play, product.unit_cost, product.list_price, int(gap["units_at_risk"]),
         bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
         transfer_cost_per_unit=float(ctx.tenant.thresholds.get("transfer_cost_per_unit_inr", 2.0)),
+        baseline_units=pt.baseline_units_of(pt._estimator_context(ctx, play)) if play.get("mechanic") == "markdown" else 0.0,  # a markdown also discounts the baseline volume
     )
     h = play.get("holdout") or {}
     frac = h.get("fraction")
@@ -354,6 +355,11 @@ def audit_final_play(store: Any, play: dict[str, Any]) -> dict[str, Any]:
     diffs = [k for k in ("expected_outcome", "counterfactuals") if not _num_equal(est[k], play.get(k))]
     out["estimator_match"] = not diffs
     out["estimator_diffs"] = diffs
+    # the gate's beats_markdown check, re-run on the stored play (a clearing play must be within tolerance of the best markdown)
+    if play.get("objective") in ("clear_online_sellby", "clear_expiry"):
+        ectx = pt._estimator_context(ctx, play)
+        bm = gr.check_beats_markdown(play, est, pt._guardrail_context(ctx, play), ectx, sellby_passed=pt._markdown_blocked(ctx, gap) or bool(gap["evidence"].get("sellby_passed")))
+        out["beats_markdown_ok"], out["beats_markdown_detail"] = bool(bm["passed"]), bm["detail"]
     return out
 
 
