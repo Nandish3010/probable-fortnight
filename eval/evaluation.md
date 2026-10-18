@@ -1302,13 +1302,13 @@ Protocol, scenarios and baselines were committed and pushed before the first mod
 Method in five lines:
 1. 36 gaps from a generator seed no other file uses (40617833), chosen by features, not by any answer: gap type x lot band x deadline band, 2 per cell; 21 are borrowed from neighbouring cells because the synthetic generator has no 22-40 day deadlines and almost no lots over 200 units (`eval/sealed/cell_report.json`).
 2. The real planner ran once per scenario (`gemini-3.5-flash`, prompt v7, shipped thinking settings, LoopAgent max 3, same tools, concurrency 4, spend cap USD 10).
-3. Baselines come from the product's own estimator: doing nothing (0) and the blanket 20% markdown counterfactual; recovery is "recovered versus doing nothing", as in the INR 9,191 hero.
+3. Baselines come from the product's own estimator: doing nothing (0) and the blanket 20% markdown counterfactual; recovery is "recovered versus doing nothing", as in the ₹9,191 hero.
 4. Every accepted play was re-checked with `guardrails.check`, the money invariant and the holdout audit.
 5. Two runs were INVALID (a call went to `gemini-3.5-flash-lite`); each was re-run once and both re-runs were valid. A fallback play or no play would count as not beating a baseline; there were none.
 
 | Metric | Result | Pre-registered line |
 |---|---|---|
-| PRIMARY: beats blanket 20% markdown | **29 of 36**; INR 68,846 beaten by in those 29 (net over all 36: INR 13,173) | at least 30 of 36: **MISSED by one** |
+| PRIMARY: beats blanket 20% markdown | **29 of 36**; ₹68,846 beaten by in those 29 (net over all 36: ₹13,173) | at least 30 of 36: **MISSED by one** |
 | Beats doing nothing | 36 of 36 | reported |
 | HARD: guardrail violations reaching Approve | **0** | 0: **met** |
 | Outcomes: model-authored play / deterministic fallback / no play | 36 / 0 / 0 | reported |
