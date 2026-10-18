@@ -54,7 +54,7 @@ Taken from the `##` comments in the `Makefile` on 14 Oct 2026; the Makefile is t
 | `make planner-traces` | one recorded planner run per selected gap -> eval/raw/planner_traces_<date>/ (set TAAL_MODEL_BACKEND=vertex) |
 | `make pregenerate-copy` | demo plays' offer copy via BigQuery AI.GENERATE_TABLE -> fixtures/copy_pregenerated.json (set TAAL_MODEL_BACKEND=vertex, GOOGLE_CLOUD_PROJECT; run `make generate` first) |
 | `make eval` | planner evalset (stub or vertex per TAAL_MODEL_BACKEND) |
-| `make deck` | render deck/slides.html -> docs/deck.pdf (18 pages) and deck/png/slide_NN.png (needs `make setup`) |
+| `make deck` | render deck/slides.html -> docs/deck.pdf (19 pages) and deck/png/slide_NN.png (needs `make setup`) |
 | `make deploy` | gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT) |
 
 ## CI and deploy runbook
