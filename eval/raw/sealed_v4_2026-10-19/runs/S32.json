@@ -1,0 +1,470 @@
+{
+ "scenario_id": "S32",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_7dee46ec8c",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:53:05Z",
+ "tag": "S32__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_2",
+    "seg_4",
+    "seg_3",
+    "seg_1",
+    "seg_5"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 383,
+   "size_after_consent": 329
+  },
+  "mechanic": "bundle",
+  "gap_id": "gap_7dee46ec8c",
+  "mechanic_params": {
+   "bundle_sku": "SKU-CURD-1L",
+   "bundle_price": 65
+  },
+  "target": {
+   "sku": "SKU-MILK-BREAD-200G",
+   "node_ids": [
+    "DS-07"
+   ],
+   "batch_ids": [
+    "B-MILK-BREAD-200G-DS-07-01"
+   ],
+   "units": 136,
+   "deadline_date": "2026-09-18",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_7dee46ec8c_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-18T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_7dee46ec8c_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_7dee46ec8c_v1_2196d87b",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.54% (net price 65.00, cost 59.45) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 329 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 383 -> 329"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-MILK-BREAD-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-MILK-BREAD-200G at DS-07"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "15 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "136 units of Milk Bread 200G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-18; doing nothing writes off ₹3231 and a blanket 20% markdown costs ₹1490. This play uses a bundle with SKU-CURD-1L at ₹65 for 329 consented customers (Personal care regulars, Tea connoisseurs, Everyday staples shoppers, Sweets occasionals, Premium Tea regulars, Household essentials buyers): expected 36 units, margin ₹197, discount cost ₹355, waste avoided ₹844 (CI 2 to 104 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle with Curd 1L at INR 65.0 satisfies the 8% bakery margin floor and recovers INR 1041.68, which is within the tolerance of the best plain markdown while adhering to the policy preference for bundles over markdowns.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_7dee46ec8c"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-MILK-BREAD-200G-DS-07-01"
+   }
+  ],
+  "alternatives": [],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 35.54,
+   "margin_inr": 197.25,
+   "waste_avoided_inr": 844.43,
+   "discount_cost_inr": 355.4,
+   "ci_low": 1.92,
+   "ci_high": 103.68,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 3231.36,
+   "blanket_markdown_inr": 1490.37,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -2189.68
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 42.77,
+   "pct_of_rupees_at_stake": 1.446
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1041.68,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-TONED-MILK-1L",
+     "bundle_price": 58
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 12
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 62,
+     "bundle_sku": "SKU-CURD-1L"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_7dee46ec8c",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CURD-1L",
+     "bundle_price": 65
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_7dee46ec8c_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_7dee46ec8c_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 17589,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 1044.06; this play 1041.68; tolerance 50.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_7dee46ec8c_v1_2196d87b",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 17589,
+  "usage": {
+   "prompt_token_count": 31697,
+   "candidates_token_count": 628,
+   "thoughts_token_count": 1446,
+   "total_token_count": 33771,
+   "cached_content_token_count": 21599
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1044.06,
+  "blanket20_recovery_inr": 1740.99,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 18.4,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3918,
+    "candidates": 237,
+    "thoughts": 956,
+    "cached": 0
+   },
+   "usd": 0.018275,
+   "error": null,
+   "elapsed_s": 5.54,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5853,
+    "candidates": 188,
+    "thoughts": 266,
+    "cached": 3661
+   },
+   "usd": 0.008715,
+   "error": null,
+   "elapsed_s": 3.27,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6889,
+    "candidates": 110,
+    "thoughts": 102,
+    "cached": 5411
+   },
+   "usd": 0.00543,
+   "error": null,
+   "elapsed_s": 1.45,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7422,
+    "candidates": 80,
+    "thoughts": 96,
+    "cached": 5369
+   },
+   "usd": 0.006016,
+   "error": null,
+   "elapsed_s": 2.34,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7615,
+    "candidates": 13,
+    "thoughts": 26,
+    "cached": 7158
+   },
+   "usd": 0.002321,
+   "error": null,
+   "elapsed_s": 1.79,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.040757,
+ "tokens": {
+  "prompt": 31697,
+  "cached": 21599,
+  "candidates": 628,
+  "thoughts": 1446
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

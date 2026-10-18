@@ -1,0 +1,474 @@
+{
+ "scenario_id": "S15",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 1
+ },
+ "gap_id": "gap_c7bfdc9809",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:51:43Z",
+ "tag": "S15__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_c7bfdc9809",
+  "mechanic_params": {
+   "bundle_price": 147,
+   "bundle_sku": "SKU-CURD-200G"
+  },
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_4",
+    "seg_2",
+    "seg_3",
+    "seg_5",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 362,
+   "size_after_consent": 306
+  },
+  "mechanic": "bundle",
+  "target": {
+   "sku": "SKU-CREAM-BUN-400G",
+   "node_ids": [
+    "OUT-06"
+   ],
+   "batch_ids": [
+    "B-CREAM-BUN-400G-OUT-06-01"
+   ],
+   "units": 61,
+   "deadline_date": "2026-09-17",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_c7bfdc9809_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-17T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_c7bfdc9809_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_c7bfdc9809_v1_8ad1ba3e",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.53% (net price 147.00, cost 134.46) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 306 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 362 -> 306"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-BUN-400G at OUT-06"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "61 units of Cream Bun 400G at Outlet 06 (East Bengaluru) are projected unsold before the expiry deadline on 2026-09-17; doing nothing writes off ₹4183 and a blanket 20% markdown costs ₹1380. This play uses a bundle with SKU-CURD-200G at ₹147 for 306 consented customers (Personal care regulars, Everyday staples shoppers, Tea connoisseurs, Sweets occasionals, Household essentials buyers, Premium Tea regulars): expected 29 units, margin ₹368, discount cost ₹529, waste avoided ₹2015 (CI 2 to 86 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" The bundle play with Curd 200G at 147 INR is preferred by policy over markdowns, satisfies the bakery margin floor, and is expected to recover 368.43 INR while avoiding 2014.88 INR in waste.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_c7bfdc9809"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-CREAM-BUN-400G-OUT-06-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "expected_units": 32.73,
+    "expected_margin_inr": 259.22,
+    "rejected_because": "lower expected margin than the chosen play"
+   },
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "expected_units": 32.73,
+    "expected_margin_inr": 259.22,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 29.38,
+   "margin_inr": 368.43,
+   "waste_avoided_inr": 2014.88,
+   "discount_cost_inr": 528.84,
+   "ci_low": 1.58,
+   "ci_high": 85.71,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 4183.38,
+   "blanket_markdown_inr": 1379.5,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1800.07
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 39.78,
+   "pct_of_rupees_at_stake": 1.045
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2383.31,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_c7bfdc9809",
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 145,
+     "bundle_sku": "SKU-CURD-200G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_c7bfdc9809",
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_5",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_c7bfdc9809",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_c7bfdc9809",
+    "mechanic_params": {
+     "bundle_price": 147,
+     "bundle_sku": "SKU-CURD-200G"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_c7bfdc9809",
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_5",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_c7bfdc9809"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_c7bfdc9809_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_c7bfdc9809_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 13809,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_c7bfdc9809_v1_8ad1ba3e",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 13809,
+  "usage": {
+   "prompt_token_count": 22964,
+   "candidates_token_count": 609,
+   "thoughts_token_count": 1284,
+   "total_token_count": 24857,
+   "cached_content_token_count": 14362
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2557.56,
+  "blanket20_recovery_inr": 2803.88,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 15.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3908,
+    "candidates": 240,
+    "thoughts": 735,
+    "cached": 0
+   },
+   "usd": 0.016101,
+   "error": null,
+   "elapsed_s": 5.14,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5479,
+    "candidates": 274,
+    "thoughts": 296,
+    "cached": 3644
+   },
+   "usd": 0.009272,
+   "error": null,
+   "elapsed_s": 3.32,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6624,
+    "candidates": 81,
+    "thoughts": 230,
+    "cached": 5352
+   },
+   "usd": 0.006061,
+   "error": null,
+   "elapsed_s": 2.03,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6953,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 5366
+   },
+   "usd": 0.00387,
+   "error": null,
+   "elapsed_s": 0.89,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.035304,
+ "tokens": {
+  "prompt": 22964,
+  "cached": 14362,
+  "candidates": 609,
+  "thoughts": 1284
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

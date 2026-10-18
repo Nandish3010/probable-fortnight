@@ -1,0 +1,394 @@
+{
+ "scenario_id": "S25",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_98da578a61",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:52:25Z",
+ "tag": "S25__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_98da578a61",
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_2",
+    "seg_4",
+    "seg_3",
+    "seg_1",
+    "seg_5"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 384,
+   "size_after_consent": 329
+  },
+  "mechanic": "bundle",
+  "mechanic_params": {
+   "bundle_sku": "SKU-CHEESE-SLICES-200G",
+   "bundle_price": 170
+  },
+  "target": {
+   "sku": "SKU-WHEAT-BREAD-400G",
+   "node_ids": [
+    "DS-07"
+   ],
+   "batch_ids": [
+    "B-WHEAT-BREAD-400G-DS-07-01"
+   ],
+   "units": 202,
+   "deadline_date": "2026-09-16",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_98da578a61_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_98da578a61_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_98da578a61_v1_8d3bae76",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.41% (net price 170.00, cost 152.31) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 329 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 384 -> 329"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at DS-07"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "15 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "202 units of Wheat Bread 400G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-16; doing nothing writes off ₹13233 and a blanket 20% markdown costs ₹9339. This play uses a bundle with SKU-CHEESE-SLICES-200G at ₹170 for 329 consented customers (Personal care regulars, Tea connoisseurs, Everyday staples shoppers, Sweets occasionals, Premium Tea regulars, Household essentials buyers): expected 31 units, margin ₹545, discount cost ₹462, waste avoided ₹2020 (CI 2 to 90 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play pairs the at-risk Wheat Bread with Cheese Slices at a bundle price of INR 170, which maintains a margin above the category floor. It is the preferred policy lever over blanket markdowns and is estimated to recover INR 2565.05, beating the best plain markdown.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_98da578a61"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-WHEAT-BREAD-400G-DS-07-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "expected_units": 37.24,
+    "expected_margin_inr": 251.0,
+    "rejected_because": "lower expected margin than the chosen play"
+   },
+   {
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 15,
+     "end_date": "2026-09-16"
+    },
+    "expected_units": 65.98,
+    "expected_margin_inr": -957.41,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 30.83,
+   "margin_inr": 545.38,
+   "waste_avoided_inr": 2019.67,
+   "discount_cost_inr": 462.45,
+   "ci_low": 1.66,
+   "ci_high": 89.94,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 13233.02,
+   "blanket_markdown_inr": 9339.2,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -10667.97
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 42.77,
+   "pct_of_rupees_at_stake": 0.353
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2565.05,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CHEESE-SLICES-200G",
+     "bundle_price": 170
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "gap_id": "gap_98da578a61",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "mechanic": "markdown",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_98da578a61_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_98da578a61_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 10695,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 2430.49; this play 2565.05; tolerance 50.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_98da578a61_v1_8d3bae76",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 10695,
+  "usage": {
+   "prompt_token_count": 15655,
+   "candidates_token_count": 349,
+   "thoughts_token_count": 1058,
+   "total_token_count": 17062,
+   "cached_content_token_count": 9137
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2690.59,
+  "blanket20_recovery_inr": 3893.82,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 11.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3932,
+    "candidates": 246,
+    "thoughts": 768,
+    "cached": 0
+   },
+   "usd": 0.016526,
+   "error": null,
+   "elapsed_s": 4.97,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5675,
+    "candidates": 88,
+    "thoughts": 266,
+    "cached": 3649
+   },
+   "usd": 0.00745,
+   "error": null,
+   "elapsed_s": 2.98,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6048,
+    "candidates": 15,
+    "thoughts": 24,
+    "cached": 5488
+   },
+   "usd": 0.002216,
+   "error": null,
+   "elapsed_s": 0.89,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.026192,
+ "tokens": {
+  "prompt": 15655,
+  "cached": 9137,
+  "candidates": 349,
+  "thoughts": 1058
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1,0 +1,559 @@
+{
+ "scenario_id": "S33",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_68d1fdfd5d",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:53:09Z",
+ "tag": "S33__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "markdown_pct": 15,
+   "end_date": "2026-09-16"
+  },
+  "gap_id": "gap_68d1fdfd5d",
+  "mechanic": "markdown",
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "target": {
+   "sku": "SKU-CREAM-BUN-400G",
+   "node_ids": [
+    "DS-06"
+   ],
+   "batch_ids": [
+    "B-CREAM-BUN-400G-DS-06-01"
+   ],
+   "units": 221,
+   "deadline_date": "2026-09-16",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_68d1fdfd5d_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.83,
+   "seed": "seed-play_68d1fdfd5d_v1",
+   "min_treated_n": 20,
+   "measurement": "holdout_nodes",
+   "measurement_reason": "5 comparable at-risk node(s) keep the list price: DS-08, DS-05, DS-02, DS-10, DS-03",
+   "node_ids": [
+    "DS-08",
+    "DS-05",
+    "DS-02",
+    "DS-10",
+    "DS-03"
+   ]
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_68d1fdfd5d_v1_e4767c8f",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.35% (net price 76.50, cost 68.58) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-BUN-400G at DS-06"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 5 held-out node(s) DS-02, DS-03, DS-05, DS-08, DS-10, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "13 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "221 units of Cream Bun 400G at Dark store 06 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-16; doing nothing writes off ₹15156 and a blanket 15% markdown costs ₹11901. This play uses a 15% online price cut until 2026-09-16 for 0 consented customers (all): expected 71 units, margin ₹-1030, discount cost ₹2543, waste avoided ₹4844 (CI 35 to 106 units; prior n 0, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\" A 15% markdown is proposed as it is the most effective lever to clear the online sell-by breach, maximizing recovery and meeting the required threshold. Other targeted mechanics like bundles and coupons failed to meet the required recovery threshold.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_68d1fdfd5d"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-CREAM-BUN-400G-DS-06-01"
+   }
+  ],
+  "alternatives": [],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 70.64,
+   "margin_inr": -1029.89,
+   "waste_avoided_inr": 4844.49,
+   "discount_cost_inr": 2542.99,
+   "ci_low": 35.32,
+   "ci_high": 105.96,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 15156.18,
+   "blanket_markdown_inr": 11901.18,
+   "blanket_markdown_pct": 15.0,
+   "play_net_inr": -11341.58
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.026
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 3814.6,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CHEESE-SLICES-200G",
+     "bundle_price": 160
+    },
+    "gap_id": "gap_68d1fdfd5d"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "mechanic": "coupon",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_68d1fdfd5d"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "gap_id": "gap_68d1fdfd5d",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_68d1fdfd5d",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 12
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_68d1fdfd5d",
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_68d1fdfd5d",
+    "mechanic_params": {
+     "bundle_price": 175,
+     "bundle_sku": "SKU-CHEESE-SLICES-200G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "markdown",
+    "gap_id": "gap_68d1fdfd5d",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 12
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_68d1fdfd5d",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "gap_id": "gap_68d1fdfd5d",
+    "mechanic": "markdown",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_68d1fdfd5d_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "guardrail cite_or_drop: uncited numbers in rationale: 2754.72"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_68d1fdfd5d_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 22521,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 2754.72; this play 3814.60; tolerance 55.09)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_68d1fdfd5d_v1_e4767c8f",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 22521,
+  "usage": {
+   "prompt_token_count": 48705,
+   "candidates_token_count": 876,
+   "thoughts_token_count": 1379,
+   "total_token_count": 50960,
+   "cached_content_token_count": 33626
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2754.72,
+  "blanket20_recovery_inr": 4340.0,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 22.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3897,
+    "candidates": 246,
+    "thoughts": 447,
+    "cached": 0
+   },
+   "usd": 0.013291,
+   "error": null,
+   "elapsed_s": 4.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5394,
+    "candidates": 278,
+    "thoughts": 285,
+    "cached": 3624
+   },
+   "usd": 0.009092,
+   "error": null,
+   "elapsed_s": 3.82,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6744,
+    "candidates": 113,
+    "thoughts": 85,
+    "cached": 3555
+   },
+   "usd": 0.007809,
+   "error": null,
+   "elapsed_s": 2.17,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7451,
+    "candidates": 65,
+    "thoughts": 423,
+    "cached": 5283
+   },
+   "usd": 0.00928,
+   "error": null,
+   "elapsed_s": 2.79,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8253,
+    "candidates": 89,
+    "thoughts": 22,
+    "cached": 7057
+   },
+   "usd": 0.004237,
+   "error": null,
+   "elapsed_s": 1.58,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8392,
+    "candidates": 70,
+    "thoughts": 93,
+    "cached": 7053
+   },
+   "usd": 0.004987,
+   "error": null,
+   "elapsed_s": 2.69,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8574,
+    "candidates": 15,
+    "thoughts": 24,
+    "cached": 7054
+   },
+   "usd": 0.004058,
+   "error": null,
+   "elapsed_s": 0.92,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.052754,
+ "tokens": {
+  "prompt": 48705,
+  "cached": 33626,
+  "candidates": 876,
+  "thoughts": 1379
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

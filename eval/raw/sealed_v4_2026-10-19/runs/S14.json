@@ -1,0 +1,445 @@
+{
+ "scenario_id": "S14",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_82bfb488eb",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:51:37Z",
+ "tag": "S14__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_2",
+    "seg_4",
+    "seg_3",
+    "seg_1",
+    "seg_5"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 384,
+   "size_after_consent": 329
+  },
+  "gap_id": "gap_82bfb488eb",
+  "mechanic": "bundle",
+  "mechanic_params": {
+   "bundle_sku": "SKU-PANEER-400G",
+   "bundle_price": 140
+  },
+  "target": {
+   "sku": "SKU-WHEAT-BREAD-400G",
+   "node_ids": [
+    "OUT-04"
+   ],
+   "batch_ids": [
+    "B-WHEAT-BREAD-400G-OUT-04-01"
+   ],
+   "units": 73,
+   "deadline_date": "2026-09-19",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_82bfb488eb_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_82bfb488eb_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_82bfb488eb_v1_5a334bc3",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.47% (net price 140.00, cost 126.74) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 329 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 384 -> 329"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "16 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "73 units of Wheat Bread 400G at Outlet 04 (South Bengaluru) are projected unsold before the expiry deadline on 2026-09-19; doing nothing writes off ₹4782 and a blanket 20% markdown costs ₹1947. This play uses a bundle with SKU-PANEER-400G at ₹140 for 329 consented customers (Personal care regulars, Tea connoisseurs, Everyday staples shoppers, Sweets occasionals, Premium Tea regulars, Household essentials buyers): expected 32 units, margin ₹428, discount cost ₹484, waste avoided ₹2115 (CI 2 to 94 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play pairs Wheat Bread with Paneer 400G at a bundle price of 140 INR, which satisfies the 8.0% bakery margin floor. It targets all consented customers across segments to maximize reach and clear the expiry risk.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_82bfb488eb"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-WHEAT-BREAD-400G-OUT-04-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 130
+    },
+    "expected_units": 32.91,
+    "expected_margin_inr": 388.67,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 32.29,
+   "margin_inr": 428.17,
+   "waste_avoided_inr": 2115.32,
+   "discount_cost_inr": 484.35,
+   "ci_low": 1.74,
+   "ci_high": 94.2,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 4782.23,
+   "blanket_markdown_inr": 1947.47,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -2238.74
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 42.77,
+   "pct_of_rupees_at_stake": 0.977
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2543.49,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 125
+    },
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_82bfb488eb"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_82bfb488eb",
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_82bfb488eb",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 130
+    },
+    "gap_id": "gap_82bfb488eb"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_4",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_82bfb488eb",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 140
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_82bfb488eb_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_82bfb488eb_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 13924,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_82bfb488eb_v1_5a334bc3",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 13924,
+  "usage": {
+   "prompt_token_count": 22344,
+   "candidates_token_count": 544,
+   "thoughts_token_count": 1298,
+   "total_token_count": 24186,
+   "cached_content_token_count": 12623
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2690.59,
+  "blanket20_recovery_inr": 2834.76,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 15.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3882,
+    "candidates": 242,
+    "thoughts": 678,
+    "cached": 0
+   },
+   "usd": 0.015513,
+   "error": null,
+   "elapsed_s": 4.78,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5401,
+    "candidates": 212,
+    "thoughts": 385,
+    "cached": 3635
+   },
+   "usd": 0.009424,
+   "error": null,
+   "elapsed_s": 3.38,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6379,
+    "candidates": 76,
+    "thoughts": 209,
+    "cached": 3591
+   },
+   "usd": 0.008014,
+   "error": null,
+   "elapsed_s": 2.71,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6682,
+    "candidates": 14,
+    "thoughts": 26,
+    "cached": 5397
+   },
+   "usd": 0.003407,
+   "error": null,
+   "elapsed_s": 0.82,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.036358,
+ "tokens": {
+  "prompt": 22344,
+  "cached": 12623,
+  "candidates": 544,
+  "thoughts": 1298
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
