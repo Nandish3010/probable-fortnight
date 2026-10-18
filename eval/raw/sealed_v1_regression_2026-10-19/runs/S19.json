@@ -1,0 +1,876 @@
+{
+ "scenario_id": "S19",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_cc84629212",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:22Z",
+ "tag": "S19__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "alternatives": [
+   {
+    "expected_margin_inr": 64.39,
+    "mechanic": "coupon",
+    "expected_units": 30.81,
+    "rejected_because": "lower expected margin and recovery than the bundle play",
+    "mechanic_params": {
+     "discount_pct": 10
+    }
+   },
+   {
+    "expected_units": 12.34,
+    "rejected_because": "negative expected margin and lower recovery than the bundle play",
+    "mechanic": "markdown",
+    "expected_margin_inr": -113.08,
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   }
+  ],
+  "channel": "web_chat",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.00% (net price 80.00, cost 72.80) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 327 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 381 -> 327"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-500ML at DS-06"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "7 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "target": {
+   "node_ids": [
+    "DS-06"
+   ],
+   "units": 51,
+   "deadline_type": "online_sellby",
+   "batch_ids": [
+    "B-CURD-500ML-DS-06-01"
+   ],
+   "sku": "SKU-CURD-500ML",
+   "deadline_date": "2026-09-16"
+  },
+  "audience": {
+   "filters": {},
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_after_consent": 327,
+   "size_before_consent": 381,
+   "purpose": "marketing"
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-PAV-200G",
+   "bundle_price": 80
+  },
+  "citations": [
+   {
+    "ref": "gap_cc84629212",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-CURD-500ML-DS-06-01"
+   }
+  ],
+  "play_id": "play_cc84629212_v1",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending",
+   "variants": []
+  },
+  "expected_outcome": {
+   "units": 31.79,
+   "margin_inr": 228.89,
+   "waste_avoided_inr": 1221.05,
+   "discount_cost_inr": 317.9,
+   "ci_low": 1.71,
+   "ci_high": 92.74,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 1958.91,
+   "blanket_markdown_inr": 1288.38,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -508.97
+  },
+  "holdout": {
+   "seed": "seed-play_cc84629212_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "gap_id": "gap_cc84629212",
+  "objective": "clear_online_sellby",
+  "mechanic": "bundle",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "rationale": "To clear the online sell-by breach of Curd 500ML at Dark store 06, we propose a bundle play with Pav 200G at a bundle price of 80 INR. This play is expected to recover more than doing nothing, which has a do-nothing value of 1958.91 INR and a play net value of -508.97 INR. This represents a beat over a blanket markdown, which has a recovery of 1288.38 INR and a play net value of -508.97 INR.",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_cc84629212_v1_02d68172",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 35.24,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1449.94,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "holdout": {
+     "seed": "seed-play_cc84629212_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "gap_id": "gap_cc84629212",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 381,
+     "size_after_consent": 327,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 51,
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "sku": "SKU-CURD-500ML",
+     "node_ids": [
+      "DS-06"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "gap_id": "gap_cc84629212",
+    "target": {
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "node_ids": [
+      "DS-06"
+     ],
+     "units": 51
+    },
+    "mechanic": "markdown",
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "seed": "seed-play_cc84629212_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_cc84629212_v1",
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_price": 80,
+     "bundle_sku": "SKU-PAV-200G"
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_cc84629212",
+    "audience": {
+     "size_before_consent": 381,
+     "size_after_consent": 327,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "target": {
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ],
+     "node_ids": [
+      "DS-06"
+     ],
+     "sku": "SKU-CURD-500ML",
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "margin_inr": 228.89,
+     "waste_avoided_inr": 1221.05,
+     "ci_high": 92.74,
+     "discount_cost_inr": 317.9,
+     "ci_low": 1.71,
+     "prior_n": 20,
+     "units": 31.79,
+     "measured_n": 0
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 381,
+     "size_after_consent": 327
+    },
+    "gap_id": "gap_cc84629212",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "mechanic": "bundle",
+    "target": {
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "node_ids": [
+      "DS-06"
+     ],
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-200G",
+     "bundle_price": 80
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_cc84629212_v1",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_cc84629212"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     },
+     {
+      "ref": "B-CURD-500ML-DS-06-01",
+      "type": "stock"
+     }
+    ],
+    "holdout": {
+     "seed": "seed-play_cc84629212_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "expected_outcome": {
+     "ci_low": 1.71,
+     "estimator_version": "est-v2",
+     "units": 31.79,
+     "waste_avoided_inr": 1221.05,
+     "margin_inr": 228.89,
+     "ci_high": 92.74,
+     "prior_n": 20,
+     "measured_n": 0,
+     "discount_cost_inr": 317.9
+    },
+    "alternatives": [
+     {
+      "expected_units": 30.81,
+      "expected_margin_inr": 64.39,
+      "mechanic_params": {
+       "discount_pct": 10
+      },
+      "mechanic": "coupon",
+      "rejected_because": "lower expected margin and recovery than the bundle play"
+     },
+     {
+      "rejected_because": "negative expected margin and lower recovery than the bundle play",
+      "expected_margin_inr": -113.08,
+      "mechanic": "markdown",
+      "expected_units": 12.34,
+      "mechanic_params": {
+       "markdown_pct": 10
+      }
+     }
+    ],
+    "audience": {
+     "size_before_consent": 381,
+     "size_after_consent": 327,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "objective": "clear_online_sellby",
+    "play_id": "play_cc84629212_v1",
+    "target": {
+     "sku": "SKU-CURD-500ML",
+     "units": 51,
+     "node_ids": [
+      "DS-06"
+     ],
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16"
+    },
+    "mechanic": "bundle",
+    "guardrails": [
+     {
+      "detail": "net margin 9.00% (net price 80.00, cost 72.80) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 327 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "passed": true,
+      "detail": "audience filtered by consent: 381 -> 327",
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-CURD-500ML in audience"
+     },
+     {
+      "detail": "no stockout gap for SKU-CURD-500ML at DS-06",
+      "passed": true,
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 1288.38,
+     "do_nothing_inr": 1958.91,
+     "play_net_inr": -508.97
+    },
+    "gap_id": "gap_cc84629212",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-200G",
+     "bundle_price": 80
+    },
+    "rationale": "To clear the online sell-by breach of Curd 500ML at Dark store 06, we propose a bundle play with Pav 200G at a bundle price of 80 INR. This play is expected to recover 1449.94 INR versus doing nothing (1958.91 INR plus -508.97 INR). This represents a beat of 161.56 INR over a blanket markdown (1288.38 INR plus -508.97 INR).",
+    "channel": "web_chat",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    }
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "alternatives": [
+     {
+      "expected_margin_inr": 64.39,
+      "mechanic": "coupon",
+      "expected_units": 30.81,
+      "rejected_because": "lower expected margin and recovery than the bundle play",
+      "mechanic_params": {
+       "discount_pct": 10
+      }
+     },
+     {
+      "expected_units": 12.34,
+      "rejected_because": "negative expected margin and lower recovery than the bundle play",
+      "mechanic": "markdown",
+      "expected_margin_inr": -113.08,
+      "mechanic_params": {
+       "markdown_pct": 10
+      }
+     }
+    ],
+    "channel": "web_chat",
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 9.00% (net price 80.00, cost 72.80) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 327 customers under 2 plays in 7 days"
+     },
+     {
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 381 -> 327",
+      "passed": true
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-500ML in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CURD-500ML at DS-06"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+     }
+    ],
+    "target": {
+     "node_ids": [
+      "DS-06"
+     ],
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CURD-500ML-DS-06-01"
+     ],
+     "sku": "SKU-CURD-500ML",
+     "deadline_date": "2026-09-16"
+    },
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 327,
+     "size_before_consent": 381,
+     "purpose": "marketing"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-200G",
+     "bundle_price": 80
+    },
+    "citations": [
+     {
+      "ref": "gap_cc84629212",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     },
+     {
+      "type": "stock",
+      "ref": "B-CURD-500ML-DS-06-01"
+     }
+    ],
+    "play_id": "play_cc84629212_v1",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "ci_low": 1.71,
+     "waste_avoided_inr": 1221.05,
+     "ci_high": 92.74,
+     "units": 31.79,
+     "measured_n": 0,
+     "prior_n": 20,
+     "discount_cost_inr": 317.9,
+     "margin_inr": 228.89
+    },
+    "counterfactuals": {
+     "play_net_inr": -508.97,
+     "do_nothing_inr": 1958.91,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 1288.38
+    },
+    "holdout": {
+     "seed": "seed-play_cc84629212_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_cc84629212",
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "rationale": "To clear the online sell-by breach of Curd 500ML at Dark store 06, we propose a bundle play with Pav 200G at a bundle price of 80 INR. This play is expected to recover more than doing nothing, which has a do-nothing value of 1958.91 INR and a play net value of -508.97 INR. This represents a beat over a blanket markdown, which has a recovery of 1288.38 INR and a play net value of -508.97 INR."
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_cc84629212_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "guardrail cite_or_drop: uncited numbers in rationale: 161.56"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_cc84629212_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 50627,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "no markdown depth clears the margin floor"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_cc84629212_v1_02d68172",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 50627,
+  "usage": {
+   "prompt_token_count": 49527,
+   "candidates_token_count": 3506,
+   "thoughts_token_count": 6778,
+   "cached_content_token_count": 33520,
+   "total_token_count": 59811
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1135.78,
+  "blanket20_recovery_inr": 670.53,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 51.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4991,
+    "candidates": 730,
+    "thoughts": 1354,
+    "cached": 3817
+   },
+   "usd": 0.023199,
+   "error": null,
+   "elapsed_s": 8.7,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7289,
+    "candidates": 401,
+    "thoughts": 659,
+    "cached": 3725
+   },
+   "usd": 0.016989,
+   "error": null,
+   "elapsed_s": 5.38,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8461,
+    "candidates": 1176,
+    "thoughts": 4400,
+    "cached": 5523
+   },
+   "usd": 0.060961,
+   "error": null,
+   "elapsed_s": 20.92,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13769,
+    "candidates": 1184,
+    "thoughts": 340,
+    "cached": 7498
+   },
+   "usd": 0.026672,
+   "error": null,
+   "elapsed_s": 6.32,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 15017,
+    "candidates": 15,
+    "thoughts": 25,
+    "cached": 12957
+   },
+   "usd": 0.005933,
+   "error": null,
+   "elapsed_s": 7.64,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.133754,
+ "tokens": {
+  "prompt": 49527,
+  "cached": 33520,
+  "candidates": 3506,
+  "thoughts": 6778
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

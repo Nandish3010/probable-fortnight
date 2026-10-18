@@ -112,7 +112,7 @@ def _sentence_for_policy(policy_text: str, mechanic: str) -> str:
         low = line.lower()
         if mechanic == "transfer_plus_nudge" and "transfer" in low:
             return line.strip()
-        if mechanic in ("coupon", "outlet_markdown") and "margin floor" in low:
+        if mechanic in ("coupon", "outlet_markdown", "markdown") and "margin floor" in low:
             return line.strip()
         if mechanic == "bundle" and "bundle" in low:
             return line.strip()
@@ -136,7 +136,7 @@ def finish_draft(draft: dict[str, Any], gap: dict[str, Any], estimate: dict[str,
     params = d["mechanic_params"]
     how = {
         "bundle": f"a bundle with {params.get('bundle_sku')} at ₹{float(params.get('bundle_price') or 0):.0f}",
-        "coupon": f"a {float(params.get('discount_pct') or 0):.0f}% coupon", "outlet_markdown": f"a {float(params.get('markdown_pct') or 0):.0f}% in-store markdown",
+        "coupon": f"a {float(params.get('discount_pct') or 0):.0f}% coupon", "outlet_markdown": f"a {float(params.get('markdown_pct') or 0):.0f}% in-store markdown", "markdown": f"a {float(params.get('markdown_pct') or 0):.0f}% online price cut until {params.get('end_date') or gap['deadline_date']}",
         "transfer_plus_nudge": f"a transfer of {int(params.get('transfer_units') or 0)} units to {params.get('transfer_to_node')} with a nudge",
         "preorder": f"a pre-order for the {params.get('preorder_eta_date')} delivery", "substitution": "substitution offers", "usual_order_addon": "a usual-order add-on", "subscription_nudge": "a subscription nudge",
     }[d["mechanic"]]

@@ -1,0 +1,726 @@
+{
+ "scenario_id": "S05",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_88c1112c97",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:42:53Z",
+ "tag": "S05__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_88c1112c97",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.10% (net price 68.00, cost 61.13) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 432 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-PAV-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-PAV-400G at OUT-01"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "6 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "citations": [
+   {
+    "ref": "gap_88c1112c97",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "play_id": "play_88c1112c97_v1",
+  "mechanic_params": {
+   "markdown_pct": 15
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_88c1112c97_v1"
+  },
+  "rationale": "This play addresses the expiry risk of Pav 400G at Outlet 01 by applying a 15% outlet markdown. The play is expected to recover 945.29 INR compared to doing nothing, which recovers 733.56 INR. It also beats a blanket markdown by recovering 1378.13 INR compared to 1166.40 INR. Other options like bundles and online markdowns were rejected due to negative expected margins.",
+  "target": {
+   "sku": "SKU-PAV-400G",
+   "units": 12,
+   "batch_ids": [
+    "B-PAV-400G-OUT-01-01"
+   ],
+   "deadline_date": "2026-09-24",
+   "deadline_type": "expiry",
+   "node_ids": [
+    "OUT-01"
+   ]
+  },
+  "alternatives": [
+   {
+    "mechanic": "bundle",
+    "expected_units": 30.82,
+    "mechanic_params": {
+     "bundle_sku": "SKU-CHEESE-SLICES-500ML",
+     "bundle_price": 140
+    },
+    "rejected_because": "negative expected margin of -61.95 INR",
+    "expected_margin_inr": -61.95
+   },
+   {
+    "mechanic": "markdown",
+    "expected_units": 12,
+    "expected_margin_inr": -1083.96,
+    "rejected_because": "negative expected margin of -1083.96 INR",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   }
+  ],
+  "copy": {
+   "variants": [],
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending"
+  },
+  "objective": "clear_expiry",
+  "counterfactuals": {
+   "do_nothing_inr": 733.56,
+   "blanket_markdown_inr": 1166.4,
+   "blanket_markdown_pct": 15.0,
+   "play_net_inr": 211.73
+  },
+  "expected_outcome": {
+   "units": 30.82,
+   "margin_inr": 211.73,
+   "waste_avoided_inr": 733.56,
+   "discount_cost_inr": 369.84,
+   "ci_low": 1.66,
+   "ci_high": 89.91,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "channel": "outlet",
+  "mechanic": "outlet_markdown",
+  "window": {
+   "end": "2026-09-24T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "audience": {
+   "size_before_consent": 512,
+   "size_after_consent": 432,
+   "purpose": "marketing",
+   "filters": {},
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_4",
+    "seg_2",
+    "seg_3",
+    "seg_1"
+   ]
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_88c1112c97_v1_7a53c7e6",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 10.73,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 945.29,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_88c1112c97",
+    "holdout": {
+     "seed": "seed-play_88c1112c97_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "units": 12,
+     "node_ids": [
+      "OUT-01"
+     ],
+     "batch_ids": [
+      "B-PAV-400G-OUT-01-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-PAV-400G"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CHEESE-SLICES-500ML",
+     "bundle_price": 140
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_1"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 432,
+     "size_before_consent": 512
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_1"
+     ],
+     "size_after_consent": 432,
+     "size_before_consent": 512
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_88c1112c97_v1",
+     "fraction": 0.1
+    },
+    "mechanic": "outlet_markdown",
+    "channel": "web_chat",
+    "gap_id": "gap_88c1112c97",
+    "objective": "clear_expiry",
+    "target": {
+     "units": 12,
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-PAV-400G-OUT-01-01"
+     ],
+     "sku": "SKU-PAV-400G"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "outlet",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "gap_id": "gap_88c1112c97",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_88c1112c97_v1",
+     "min_treated_n": 20
+    },
+    "target": {
+     "sku": "SKU-PAV-400G",
+     "batch_ids": [
+      "B-PAV-400G-OUT-01-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "units": 12
+    },
+    "mechanic": "markdown",
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "outlet",
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "gap_id": "gap_88c1112c97",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "guardrails": [],
+    "play_id": "play_88c1112c97_v1",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 432,
+     "size_before_consent": 512,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "alternatives": [],
+    "mechanic": "outlet_markdown",
+    "expected_outcome": {
+     "ci_low": 1.66,
+     "units": 30.82,
+     "estimator_version": "est-v2",
+     "ci_high": 89.91,
+     "measured_n": 0,
+     "prior_n": 20,
+     "margin_inr": 211.73,
+     "waste_avoided_inr": 733.56,
+     "discount_cost_inr": 369.84
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "target": {
+     "deadline_type": "expiry",
+     "units": 12,
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-PAV-400G-OUT-01-01"
+     ],
+     "node_ids": [
+      "OUT-01"
+     ],
+     "sku": "SKU-PAV-400G"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_88c1112c97_v1"
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_88c1112c97"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "gap_id": "gap_88c1112c97",
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 10.10% (net price 68.00, cost 61.13) vs bakery floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 432 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "outlet channel: no personal message, consent not required",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true,
+      "rule": "sellby_disclosure"
+     },
+     {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-PAV-400G in audience"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-PAV-400G at OUT-01"
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "citations": [
+     {
+      "ref": "gap_88c1112c97",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "play_id": "play_88c1112c97_v1",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_88c1112c97_v1"
+    },
+    "rationale": "This play addresses the expiry risk of Pav 400G at Outlet 01 by applying a 15% outlet markdown. The play is expected to recover 945.29 INR compared to doing nothing, which recovers 733.56 INR. It also beats a blanket markdown by recovering 1378.13 INR compared to 1166.40 INR. Other options like bundles and online markdowns were rejected due to negative expected margins.",
+    "target": {
+     "sku": "SKU-PAV-400G",
+     "units": 12,
+     "batch_ids": [
+      "B-PAV-400G-OUT-01-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-01"
+     ]
+    },
+    "alternatives": [
+     {
+      "mechanic": "bundle",
+      "expected_units": 30.82,
+      "mechanic_params": {
+       "bundle_sku": "SKU-CHEESE-SLICES-500ML",
+       "bundle_price": 140
+      },
+      "rejected_because": "negative expected margin of -61.95 INR",
+      "expected_margin_inr": -61.95
+     },
+     {
+      "mechanic": "markdown",
+      "expected_units": 12,
+      "expected_margin_inr": -1083.96,
+      "rejected_because": "negative expected margin of -1083.96 INR",
+      "mechanic_params": {
+       "markdown_pct": 15
+      }
+     }
+    ],
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "objective": "clear_expiry",
+    "counterfactuals": {
+     "blanket_markdown_inr": 1166.4,
+     "do_nothing_inr": 733.56,
+     "blanket_markdown_pct": 15,
+     "play_net_inr": 211.73
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 733.56,
+     "margin_inr": 211.73,
+     "discount_cost_inr": 369.84,
+     "estimator_version": "est-v2",
+     "ci_low": 1.66,
+     "measured_n": 0,
+     "prior_n": 20,
+     "ci_high": 89.91,
+     "units": 30.82
+    },
+    "channel": "outlet",
+    "mechanic": "outlet_markdown",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "size_before_consent": 512,
+     "size_after_consent": 432,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_4",
+      "seg_2",
+      "seg_3",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_88c1112c97_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_88c1112c97_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 15893,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_88c1112c97_v1_7a53c7e6",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 15893,
+  "usage": {
+   "prompt_token_count": 26699,
+   "candidates_token_count": 2597,
+   "thoughts_token_count": 528,
+   "total_token_count": 29824,
+   "cached_content_token_count": 16045
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1580.19,
+  "blanket20_recovery_inr": -821.64,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 16.3,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5032,
+    "candidates": 902,
+    "thoughts": 314,
+    "cached": 0
+   },
+   "usd": 0.020341,
+   "error": null,
+   "elapsed_s": 5.78,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6406,
+    "candidates": 546,
+    "thoughts": 136,
+    "cached": 3659
+   },
+   "usd": 0.011888,
+   "error": null,
+   "elapsed_s": 3.16,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7164,
+    "candidates": 1133,
+    "thoughts": 67,
+    "cached": 5367
+   },
+   "usd": 0.015731,
+   "error": null,
+   "elapsed_s": 4.87,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8097,
+    "candidates": 16,
+    "thoughts": 11,
+    "cached": 7019
+   },
+   "usd": 0.003204,
+   "error": null,
+   "elapsed_s": 1.04,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.051164,
+ "tokens": {
+  "prompt": 26699,
+  "cached": 16045,
+  "candidates": 2597,
+  "thoughts": 528
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

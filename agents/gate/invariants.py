@@ -21,6 +21,7 @@ def recompute_play_money(
     bundle_partner_unit_cost: float = 0.0,
     bundle_partner_list_price: float = 0.0,
     transfer_cost_per_unit: float = 2.0,
+    baseline_units: float = 0.0,
 ) -> dict[str, float]:
     """Margin, discount cost and waste avoided for `play`, recomputed from its own units and
     mechanic params plus product economics -- the same formulas documented in estimator.py's
@@ -35,6 +36,11 @@ def recompute_play_money(
         discount = list_price * pct / 100.0
         margin = units * (list_price - discount - unit_cost)
         discount_cost = units * discount
+    elif mechanic == "markdown":
+        # site-wide cut: it also applies to the `baseline_units` that would have sold anyway
+        discount = list_price * float(params.get("markdown_pct", 0) or 0) / 100.0
+        margin = units * (list_price - discount - unit_cost) - baseline_units * discount
+        discount_cost = (baseline_units + units) * discount
     elif mechanic == "bundle":
         bundle_price = float(params.get("bundle_price", 0) or 0)
         margin = units * (bundle_price - unit_cost - bundle_partner_unit_cost)
@@ -63,11 +69,12 @@ def check_play_money(
     bundle_partner_list_price: float = 0.0,
     transfer_cost_per_unit: float = 2.0,
     tolerance_inr: float = TOLERANCE_INR,
+    baseline_units: float = 0.0,
 ) -> list[str]:
     """Mismatch descriptions between `play["expected_outcome"]` and the independent
     recomputation; empty means they agree within `tolerance_inr`. Callers that write plays
     (agents/planner/tools.py::propose_play) block the write when this is non-empty."""
-    recomputed = recompute_play_money(play, unit_cost, list_price, units_at_risk, bundle_partner_unit_cost, bundle_partner_list_price, transfer_cost_per_unit)
+    recomputed = recompute_play_money(play, unit_cost, list_price, units_at_risk, bundle_partner_unit_cost, bundle_partner_list_price, transfer_cost_per_unit, baseline_units)
     reported = play.get("expected_outcome") or {}
     problems = []
     for key, label in (("margin_inr", "margin_inr"), ("discount_cost_inr", "discount_cost_inr"), ("waste_avoided_inr", "waste_avoided_inr")):

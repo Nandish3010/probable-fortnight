@@ -21,6 +21,7 @@ export type Mechanic =
   | "subscription_nudge"
   | "coupon"
   | "outlet_markdown"
+  | "markdown"
   | "transfer_plus_nudge";
 
 export type Channel = "web_chat" | "app_push" | "outlet";
@@ -129,6 +130,11 @@ export interface Holdout {
   fraction: number;
   seed: string;
   min_treated_n: number;
+  /** Omitted for customer-targeted plays. A site-wide `markdown` cannot hold out customers: it holds out
+   * nodes when it can, otherwise it is not measured (the card says so). */
+  measurement?: "holdout_customers" | "holdout_nodes" | "none";
+  measurement_reason?: string;
+  node_ids?: string[];
 }
 
 export interface Guardrail {

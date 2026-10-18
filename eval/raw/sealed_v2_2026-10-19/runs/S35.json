@@ -1,0 +1,729 @@
+{
+ "scenario_id": "S35",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_db7dd677f4",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:19:19Z",
+ "tag": "S35__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_db7dd677f4"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "alternatives": [
+   {
+    "expected_margin_inr": 41.19,
+    "expected_units": 28.41,
+    "mechanic": "coupon",
+    "rejected_because": "recovers more than 500.00 INR less than the best plain markdown play",
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   {
+    "mechanic": "bundle",
+    "expected_units": 29.12,
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-400G",
+     "bundle_price": 42
+    },
+    "expected_margin_inr": 56.49,
+    "rejected_because": "recovers more than 500.00 INR less than the best plain markdown play"
+   }
+  ],
+  "objective": "clear_online_sellby",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 12.00% (net price 22.50, cost 19.80) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-PANEER-400G at DS-08"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 1 held-out node(s) DS-10, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "7 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "play_id": "play_db7dd677f4_v1",
+  "counterfactuals": {
+   "do_nothing_inr": 2435.4,
+   "blanket_markdown_inr": 1115.9,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -852.98
+  },
+  "rationale": "To clear the Paneer 400G lot at risk of online sell-by breach, we propose a 10% markdown. This play is expected to clear 97.38 units, avoiding 1928.12 INR in waste. The recovered-versus-doing-nothing figure is 1582.42 INR. The beat over a blanket markdown is 262.92 INR. Other targeted plays like coupons and bundles were rejected because they recover more than 500.00 INR less than this optimal markdown.",
+  "holdout": {
+   "seed": "seed-play_db7dd677f4_v1",
+   "fraction": 0.5,
+   "min_treated_n": 20,
+   "measurement": "holdout_nodes",
+   "node_ids": [
+    "DS-10"
+   ],
+   "measurement_reason": "1 comparable at-risk node(s) keep the list price: DS-10"
+  },
+  "target": {
+   "deadline_date": "2026-09-22",
+   "units": 123,
+   "deadline_type": "online_sellby",
+   "node_ids": [
+    "DS-08"
+   ],
+   "sku": "SKU-PANEER-400G",
+   "batch_ids": [
+    "B-PANEER-400G-DS-08-01"
+   ]
+  },
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-22"
+  },
+  "channel": "web_chat",
+  "gap_id": "gap_db7dd677f4",
+  "mechanic": "markdown",
+  "expected_outcome": {
+   "units": 97.38,
+   "margin_inr": -345.7,
+   "waste_avoided_inr": 1928.12,
+   "discount_cost_inr": 852.07,
+   "ci_low": 48.69,
+   "ci_high": 123.0,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "window": {
+   "end": "2026-09-22T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_db7dd677f4_v1_389762e2",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.162
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1582.42,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_after_consent": 265,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_2",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 315
+    },
+    "gap_id": "gap_db7dd677f4",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "deadline_date": "2026-09-22",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ],
+     "units": 123,
+     "sku": "SKU-PANEER-400G",
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_db7dd677f4_v1"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "audience": {
+     "filters": {},
+     "size_after_consent": 265,
+     "purpose": "marketing",
+     "size_before_consent": 315,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_2",
+      "seg_4"
+     ]
+    },
+    "target": {
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-22",
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ],
+     "sku": "SKU-PANEER-400G",
+     "units": 123
+    },
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_db7dd677f4_v1",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_db7dd677f4",
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-400G",
+     "bundle_price": 42
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "units": 123,
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-22",
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ],
+     "sku": "SKU-PANEER-400G"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_db7dd677f4",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "filters": {},
+     "size_after_consent": 0,
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_db7dd677f4_v1",
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "filters": {},
+     "size_after_consent": 0
+    },
+    "mechanic": "markdown",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "gap_id": "gap_db7dd677f4",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-22",
+     "units": 123,
+     "node_ids": [
+      "DS-08"
+     ],
+     "sku": "SKU-PANEER-400G"
+    },
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "seed": "seed-play_db7dd677f4_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "node_ids": [
+      "DS-08"
+     ],
+     "units": 123,
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-22",
+     "sku": "SKU-PANEER-400G"
+    },
+    "gap_id": "gap_db7dd677f4",
+    "holdout": {
+     "seed": "seed-play_db7dd677f4_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "size_before_consent": 0
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_db7dd677f4"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "alternatives": [
+     {
+      "expected_margin_inr": 41.19,
+      "expected_units": 28.41,
+      "mechanic": "coupon",
+      "rejected_because": "recovers more than 500.00 INR less than the best plain markdown play",
+      "mechanic_params": {
+       "discount_pct": 15
+      }
+     },
+     {
+      "mechanic": "bundle",
+      "expected_units": 29.12,
+      "mechanic_params": {
+       "bundle_sku": "SKU-WHEAT-BREAD-400G",
+       "bundle_price": 42
+      },
+      "expected_margin_inr": 56.49,
+      "rejected_because": "recovers more than 500.00 INR less than the best plain markdown play"
+     }
+    ],
+    "objective": "clear_online_sellby",
+    "guardrails": [
+     {
+      "detail": "net margin 12.00% (net price 22.50, cost 19.80) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required",
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "markdown: a public shelf price, no offer is made to any customer"
+     },
+     {
+      "detail": "no stockout gap for SKU-PANEER-400G at DS-08",
+      "passed": true,
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "node holdout: 1 held-out node(s) DS-10, 1 treated",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "size_after_consent": 0
+    },
+    "play_id": "play_db7dd677f4_v1",
+    "counterfactuals": {
+     "play_net_inr": -852.98,
+     "do_nothing_inr": 2435.4,
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 1115.9
+    },
+    "rationale": "To clear the Paneer 400G lot at risk of online sell-by breach, we propose a 10% markdown. This play is expected to clear 97.38 units, avoiding 1928.12 INR in waste. The recovered-versus-doing-nothing figure is 1582.42 INR. The beat over a blanket markdown is 262.92 INR. Other targeted plays like coupons and bundles were rejected because they recover more than 500.00 INR less than this optimal markdown.",
+    "holdout": {
+     "seed": "seed-play_db7dd677f4_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "target": {
+     "deadline_date": "2026-09-22",
+     "units": 123,
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ],
+     "sku": "SKU-PANEER-400G",
+     "batch_ids": [
+      "B-PANEER-400G-DS-08-01"
+     ]
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_db7dd677f4",
+    "mechanic": "markdown",
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "ci_high": 123,
+     "measured_n": 0,
+     "waste_avoided_inr": 1928.12,
+     "margin_inr": -345.7,
+     "units": 97.38,
+     "discount_cost_inr": 852.07,
+     "ci_low": 48.69,
+     "prior_n": 0
+    },
+    "window": {
+     "end": "2026-09-22T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_db7dd677f4_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_db7dd677f4_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 30699,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 1582.42; this play 1582.42; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_db7dd677f4_v1_389762e2",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 30699,
+  "usage": {
+   "prompt_token_count": 39213,
+   "candidates_token_count": 2586,
+   "thoughts_token_count": 1857,
+   "cached_content_token_count": 27375,
+   "total_token_count": 43656
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1582.42,
+  "blanket20_recovery_inr": 1218.15,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 32.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4994,
+    "candidates": 880,
+    "thoughts": 923,
+    "cached": 3817
+   },
+   "usd": 0.020422,
+   "error": null,
+   "elapsed_s": 10.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7317,
+    "candidates": 275,
+    "thoughts": 386,
+    "cached": 3685
+   },
+   "usd": 0.013145,
+   "error": null,
+   "elapsed_s": 4.21,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8179,
+    "candidates": 278,
+    "thoughts": 37,
+    "cached": 5478
+   },
+   "usd": 0.008479,
+   "error": null,
+   "elapsed_s": 1.89,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8675,
+    "candidates": 1139,
+    "thoughts": 488,
+    "cached": 7235
+   },
+   "usd": 0.019677,
+   "error": null,
+   "elapsed_s": 6.87,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10048,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 7160
+   },
+   "usd": 0.006313,
+   "error": null,
+   "elapsed_s": 0.88,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.068036,
+ "tokens": {
+  "prompt": 39213,
+  "cached": 27375,
+  "candidates": 2586,
+  "thoughts": 1857
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

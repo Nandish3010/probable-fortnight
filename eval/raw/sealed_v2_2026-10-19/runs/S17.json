@@ -1,0 +1,893 @@
+{
+ "scenario_id": "S17",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 2
+ },
+ "gap_id": "gap_2e9720b00d",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:26Z",
+ "tag": "S17__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "copy": {
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ],
+   "variants": []
+  },
+  "rationale": "To clear the expiry risk of 19 units of Toned Milk 400G at Outlet 04, we propose a bundle play with Milk Bread 400G at a bundle price of 160 rupees. This play targets 334 customers across six segments. The expected margin is 309.56 rupees, recovering 1955.72 rupees compared to doing nothing (1646.16 rupees plus 309.56 rupees). This beats a blanket markdown recovery of 5919.76 rupees (5610.2 rupees plus 309.56 rupees) because the lot is past its online sell-by date, making online markdown unavailable. The play respects the dairy margin floor of 8.00% with a net margin of 9.31%.",
+  "mechanic": "bundle",
+  "mechanic_params": {
+   "bundle_price": 160,
+   "bundle_sku": "SKU-MILK-BREAD-400G"
+  },
+  "play_id": "play_2e9720b00d_v1",
+  "alternatives": [
+   {
+    "rejected_because": "lower expected margin than the bundle play",
+    "mechanic": "outlet_markdown",
+    "expected_margin_inr": 173.8,
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "expected_units": 20.79
+   },
+   {
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "expected_margin_inr": -1243.71,
+    "expected_units": 19,
+    "rejected_because": "lower expected margin than the bundle play",
+    "mechanic": "markdown"
+   }
+  ],
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_2e9720b00d"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.31% (net price 160.00, cost 145.11) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 334 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 390 -> 334"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-TONED-MILK-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-TONED-MILK-400G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "14 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "expected_outcome": {
+   "units": 20.79,
+   "margin_inr": 309.56,
+   "waste_avoided_inr": 1646.16,
+   "discount_cost_inr": 207.9,
+   "ci_low": 1.12,
+   "ci_high": 60.65,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "holdout": {
+   "seed": "seed-play_2e9720b00d_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 1646.16,
+   "blanket_markdown_inr": 5610.2,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 309.56
+  },
+  "window": {
+   "end": "2026-09-24T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "target": {
+   "batch_ids": [
+    "B-TONED-MILK-400G-OUT-04-01"
+   ],
+   "sku": "SKU-TONED-MILK-400G",
+   "units": 19,
+   "deadline_date": "2026-09-24",
+   "deadline_type": "expiry",
+   "node_ids": [
+    "OUT-04"
+   ]
+  },
+  "objective": "clear_expiry",
+  "channel": "web_chat",
+  "gap_id": "gap_2e9720b00d",
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_2",
+    "seg_3",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_after_consent": 334,
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 390
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_2e9720b00d_v1_e6b6d947",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 28.98,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1955.72,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 160,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "audience": {
+     "size_after_consent": 334,
+     "purpose": "marketing",
+     "size_before_consent": 390,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "target": {
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "units": 19,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-TONED-MILK-400G",
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ]
+    },
+    "gap_id": "gap_2e9720b00d",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "seed": "seed-play_2e9720b00d_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "size_before_consent": 390,
+     "size_after_consent": 334,
+     "purpose": "marketing"
+    },
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-TONED-MILK-400G",
+     "units": 19,
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ]
+    },
+    "gap_id": "gap_2e9720b00d",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_2e9720b00d_v1",
+     "fraction": 0.1
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "markdown",
+    "target": {
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 19,
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-TONED-MILK-400G",
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ]
+    },
+    "gap_id": "gap_2e9720b00d",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_2e9720b00d_v1",
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "guardrails": [],
+    "audience": {
+     "size_after_consent": 334,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 390,
+     "filters": {}
+    },
+    "objective": "clear_expiry",
+    "expected_outcome": {
+     "measured_n": 0,
+     "prior_n": 20,
+     "discount_cost_inr": 207.9,
+     "ci_high": 60.65,
+     "waste_avoided_inr": 1646.16,
+     "ci_low": 1.12,
+     "units": 20.79,
+     "estimator_version": "est-v2",
+     "margin_inr": 309.56
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_2e9720b00d_v1"
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "ref": "gap_2e9720b00d",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic_params": {
+     "bundle_price": 160,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "gap_id": "gap_2e9720b00d",
+    "target": {
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ],
+     "sku": "SKU-TONED-MILK-400G",
+     "units": 19
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "play_id": "play_2e9720b00d_v1",
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "target": {
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-TONED-MILK-400G",
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 19
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 207.9,
+     "ci_high": 60.65,
+     "ci_low": 1.12,
+     "estimator_version": "est-v2",
+     "margin_inr": 309.56,
+     "prior_n": 20,
+     "waste_avoided_inr": 1646.16,
+     "units": 20.79,
+     "measured_n": 0
+    },
+    "counterfactuals": {
+     "play_net_inr": 309.56,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 5610.2,
+     "do_nothing_inr": 1646.16
+    },
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_2e9720b00d_v1",
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 160
+    },
+    "rationale": "To clear the expiry risk of 19 units of Toned Milk 400G at Outlet 04, we propose a bundle play with Milk Bread 400G at a bundle price of 160 rupees. This play targets 334 customers across six segments. The expected margin is 309.56 rupees, recovering 1955.72 rupees compared to doing nothing (1646.16 rupees plus 309.56 rupees). This beats a blanket markdown recovery of 5919.76 rupees (5610.2 rupees plus 309.56 rupees) because the lot is past its online sell-by date, making online markdown unavailable. The play respects the dairy margin floor of 8.00% with a net margin of 9.31%.",
+    "play_id": "play_2e9720b00d_v1",
+    "alternatives": [
+     {
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic_params": {
+       "markdown_pct": 5
+      },
+      "expected_units": 20.79,
+      "expected_margin_inr": 173.8
+     },
+     {
+      "mechanic": "markdown",
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic_params": {
+       "markdown_pct": 5
+      },
+      "expected_units": 19,
+      "expected_margin_inr": -1243.71
+     }
+    ],
+    "guardrails": [
+     {
+      "detail": "net margin 9.31% (net price 160.00, cost 145.11) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 334 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "audience filtered by consent: 390 -> 334",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-TONED-MILK-400G in audience"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-TONED-MILK-400G at OUT-04"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "audience": {
+     "size_before_consent": 390,
+     "size_after_consent": 334,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing"
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_2e9720b00d"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "objective": "clear_expiry",
+    "gap_id": "gap_2e9720b00d"
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "rationale": "To clear the expiry risk of 19 units of Toned Milk 400G at Outlet 04, we propose a bundle play with Milk Bread 400G at a bundle price of 160 rupees. This play targets 334 customers across six segments. The expected margin is 309.56 rupees, recovering 1955.72 rupees compared to doing nothing (1646.16 rupees plus 309.56 rupees). This beats a blanket markdown recovery of 5919.76 rupees (5610.2 rupees plus 309.56 rupees) because the lot is past its online sell-by date, making online markdown unavailable. The play respects the dairy margin floor of 8.00% with a net margin of 9.31%.",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 160,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "play_id": "play_2e9720b00d_v1",
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic": "outlet_markdown",
+      "expected_margin_inr": 173.8,
+      "mechanic_params": {
+       "markdown_pct": 5
+      },
+      "expected_units": 20.79
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 5
+      },
+      "expected_margin_inr": -1243.71,
+      "expected_units": 19,
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic": "markdown"
+     }
+    ],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_2e9720b00d"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 9.31% (net price 160.00, cost 145.11) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 334 customers under 2 plays in 7 days"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 390 -> 334"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-TONED-MILK-400G in audience"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-TONED-MILK-400G at OUT-04",
+      "passed": true
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "expected_outcome": {
+     "waste_avoided_inr": 1646.16,
+     "ci_high": 60.65,
+     "ci_low": 1.12,
+     "measured_n": 0,
+     "margin_inr": 309.56,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "units": 20.79,
+     "discount_cost_inr": 207.9
+    },
+    "holdout": {
+     "seed": "seed-play_2e9720b00d_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 1646.16,
+     "play_net_inr": 309.56,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 5610.2
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "batch_ids": [
+      "B-TONED-MILK-400G-OUT-04-01"
+     ],
+     "sku": "SKU-TONED-MILK-400G",
+     "units": 19,
+     "deadline_date": "2026-09-24",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "gap_id": "gap_2e9720b00d",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 334,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 390
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_2e9720b00d_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "$: 'copy' is a required property"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_2e9720b00d_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 28071,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_2e9720b00d_v1_e6b6d947",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 28071,
+  "usage": {
+   "prompt_token_count": 41778,
+   "candidates_token_count": 3901,
+   "thoughts_token_count": 2815,
+   "cached_content_token_count": 29165,
+   "total_token_count": 48494
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2020.38,
+  "blanket20_recovery_inr": -3964.04,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 28.4,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5028,
+    "candidates": 896,
+    "thoughts": 1004,
+    "cached": 3819
+   },
+   "usd": 0.021435,
+   "error": null,
+   "elapsed_s": 8.2,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7105,
+    "candidates": 569,
+    "thoughts": 31,
+    "cached": 3703
+   },
+   "usd": 0.012164,
+   "error": null,
+   "elapsed_s": 2.83,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7785,
+    "candidates": 1199,
+    "thoughts": 1706,
+    "cached": 5427
+   },
+   "usd": 0.033546,
+   "error": null,
+   "elapsed_s": 10.25,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10429,
+    "candidates": 1221,
+    "thoughts": 48,
+    "cached": 7265
+   },
+   "usd": 0.018982,
+   "error": null,
+   "elapsed_s": 4.66,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 11431,
+    "candidates": 16,
+    "thoughts": 26,
+    "cached": 8951
+   },
+   "usd": 0.005985,
+   "error": null,
+   "elapsed_s": 1.04,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.092112,
+ "tokens": {
+  "prompt": 41778,
+  "cached": 29165,
+  "candidates": 3901,
+  "thoughts": 2815
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

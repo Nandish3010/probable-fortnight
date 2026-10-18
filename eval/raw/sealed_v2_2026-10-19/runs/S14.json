@@ -1,0 +1,714 @@
+{
+ "scenario_id": "S14",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_050bdb383a",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:09Z",
+ "tag": "S14__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "play_id": "play_050bdb383a_v1",
+  "expected_outcome": {
+   "units": 29.53,
+   "margin_inr": 66.15,
+   "waste_avoided_inr": 598.28,
+   "discount_cost_inr": 73.83,
+   "ci_low": 1.59,
+   "ci_high": 86.15,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "gap_id": "gap_050bdb383a",
+  "copy": {
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ],
+   "variants": []
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 1438.46,
+   "blanket_markdown_inr": 1000.0,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -774.03
+  },
+  "holdout": {
+   "seed": "seed-play_050bdb383a_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "window": {
+   "end": "2026-09-19T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.96% (net price 22.50, cost 20.26) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 296 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at OUT-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "13 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "alternatives": [
+   {
+    "rejected_because": "lower expected margin than outlet markdown",
+    "mechanic": "bundle",
+    "expected_margin_inr": -2.28,
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 40
+    },
+    "expected_units": 37.96
+   }
+  ],
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "citations": [
+   {
+    "ref": "gap_050bdb383a",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "rationale": "This play implements a 10% outlet markdown for Wheat Bread 400G at Outlet 03 to clear the expiry risk of 71 units before the 2026-09-19 deadline. The play targets 296 customers across six high-affinity segments. The expected outcome is to clear 29.53 units, recovering 664.43 rupees over doing nothing (do_nothing_inr of 1438.46 plus play_net_inr of -774.03). This beats a blanket markdown by 225.97 rupees (blanket_markdown_inr of 1000 plus play_net_inr of -774.03). The net margin of 9.96% remains above the bakery category floor of 8.00%.",
+  "mechanic": "outlet_markdown",
+  "audience": {
+   "size_after_consent": 296,
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_5",
+    "seg_2",
+    "seg_4",
+    "seg_3"
+   ],
+   "purpose": "marketing",
+   "size_before_consent": 359,
+   "filters": {}
+  },
+  "target": {
+   "sku": "SKU-WHEAT-BREAD-400G",
+   "batch_ids": [
+    "B-WHEAT-BREAD-400G-OUT-03-01"
+   ],
+   "node_ids": [
+    "OUT-03"
+   ],
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-19",
+   "units": 71
+  },
+  "objective": "clear_expiry",
+  "channel": "outlet",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_050bdb383a_v1_2f46635e",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 24.83,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 664.43,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_050bdb383a_v1"
+    },
+    "channel": "web_chat",
+    "objective": "clear_expiry",
+    "target": {
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-OUT-03-01"
+     ],
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 71,
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_date": "2026-09-19"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 359,
+     "filters": [],
+     "size_after_consent": 296,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_5",
+      "seg_2",
+      "seg_4",
+      "seg_3"
+     ]
+    },
+    "gap_id": "gap_050bdb383a",
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_5",
+      "seg_2",
+      "seg_4",
+      "seg_3"
+     ],
+     "size_after_consent": 296,
+     "size_before_consent": 359,
+     "purpose": "marketing",
+     "filters": []
+    },
+    "mechanic": "bundle",
+    "channel": "web_chat",
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 71,
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-19",
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_type": "expiry"
+    },
+    "gap_id": "gap_050bdb383a",
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 40
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_050bdb383a_v1_bundle",
+     "fraction": 0.1
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "size_before_consent": 0,
+     "purpose": "marketing",
+     "filters": [],
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "gap_id": "gap_050bdb383a",
+    "target": {
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-OUT-03-01"
+     ],
+     "units": 71,
+     "deadline_date": "2026-09-19",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "markdown",
+    "holdout": {
+     "seed": "seed-play_050bdb383a_v1_md",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "channel": "outlet",
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "units": 71,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-19",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-OUT-03-01"
+     ]
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_050bdb383a"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "play_id": "play_050bdb383a_v1",
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "play_net_inr": -774.03,
+     "blanket_markdown_inr": 1000,
+     "do_nothing_inr": 1438.46
+    },
+    "audience": {
+     "size_before_consent": 359,
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 296,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_5",
+      "seg_2",
+      "seg_4",
+      "seg_3"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "guardrails": [],
+    "gap_id": "gap_050bdb383a",
+    "objective": "clear_expiry",
+    "alternatives": [],
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 73.83,
+     "measured_n": 0,
+     "waste_avoided_inr": 598.28,
+     "ci_high": 86.15,
+     "estimator_version": "est-v2",
+     "prior_n": 20,
+     "ci_low": 1.59,
+     "margin_inr": 66.15,
+     "units": 29.53
+    },
+    "mechanic": "outlet_markdown",
+    "channel": "outlet",
+    "holdout": {
+     "seed": "seed-play_050bdb383a_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "play_id": "play_050bdb383a_v1",
+    "expected_outcome": {
+     "units": 29.53,
+     "prior_n": 20,
+     "waste_avoided_inr": 598.28,
+     "ci_high": 86.15,
+     "discount_cost_inr": 73.83,
+     "ci_low": 1.59,
+     "estimator_version": "est-v2",
+     "margin_inr": 66.15,
+     "measured_n": 0
+    },
+    "gap_id": "gap_050bdb383a",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 1438.46,
+     "play_net_inr": -774.03,
+     "blanket_markdown_inr": 1000
+    },
+    "holdout": {
+     "seed": "seed-play_050bdb383a_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 9.96% (net price 22.50, cost 20.26) vs bakery floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 296 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "outlet channel: no personal message, consent not required"
+     },
+     {
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience",
+      "rule": "subscription_protect"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at OUT-03"
+     },
+     {
+      "rule": "holdout_required",
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than outlet markdown",
+      "mechanic": "bundle",
+      "expected_margin_inr": -2.28,
+      "mechanic_params": {
+       "bundle_sku": "SKU-PANEER-400G",
+       "bundle_price": 40
+      },
+      "expected_units": 37.96
+     }
+    ],
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "citations": [
+     {
+      "ref": "gap_050bdb383a",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "rationale": "This play implements a 10% outlet markdown for Wheat Bread 400G at Outlet 03 to clear the expiry risk of 71 units before the 2026-09-19 deadline. The play targets 296 customers across six high-affinity segments. The expected outcome is to clear 29.53 units, recovering 664.43 rupees over doing nothing (do_nothing_inr of 1438.46 plus play_net_inr of -774.03). This beats a blanket markdown by 225.97 rupees (blanket_markdown_inr of 1000 plus play_net_inr of -774.03). The net margin of 9.96% remains above the bakery category floor of 8.00%.",
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "size_after_consent": 296,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_5",
+      "seg_2",
+      "seg_4",
+      "seg_3"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 359,
+     "filters": {}
+    },
+    "target": {
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-OUT-03-01"
+     ],
+     "node_ids": [
+      "OUT-03"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-19",
+     "units": 71
+    },
+    "objective": "clear_expiry",
+    "channel": "outlet"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_050bdb383a_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_050bdb383a_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 22511,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_050bdb383a_v1_2f46635e",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 22511,
+  "usage": {
+   "prompt_token_count": 27957,
+   "candidates_token_count": 2669,
+   "thoughts_token_count": 1528,
+   "cached_content_token_count": 19717,
+   "total_token_count": 32154
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 752.08,
+  "blanket20_recovery_inr": 876.91,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 22.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5020,
+    "candidates": 909,
+    "thoughts": 421,
+    "cached": 3540
+   },
+   "usd": 0.016193,
+   "error": null,
+   "elapsed_s": 9.29,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6512,
+    "candidates": 598,
+    "thoughts": 94,
+    "cached": 3665
+   },
+   "usd": 0.012153,
+   "error": null,
+   "elapsed_s": 3.36,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7271,
+    "candidates": 1148,
+    "thoughts": 989,
+    "cached": 5371
+   },
+   "usd": 0.025178,
+   "error": null,
+   "elapsed_s": 7.96,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9154,
+    "candidates": 14,
+    "thoughts": 24,
+    "cached": 7141
+   },
+   "usd": 0.004876,
+   "error": null,
+   "elapsed_s": 0.9,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.0584,
+ "tokens": {
+  "prompt": 27957,
+  "cached": 19717,
+  "candidates": 2669,
+  "thoughts": 1528
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

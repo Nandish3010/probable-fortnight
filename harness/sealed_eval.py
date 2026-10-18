@@ -63,6 +63,14 @@ class Reserver:
             self.reserved = max(0.0, self.reserved - self.reserve)
 
 
+def prompt_version() -> str:
+    """Top entry of agents/planner/prompts/CHANGELOG.md (v7 for the first sealed eval, v8 with the markdown option)."""
+    import re
+
+    m = re.search(r"^- (v\d+)\b", (ROOT / "agents/planner/prompts/CHANGELOG.md").read_text(encoding="utf-8"), re.M)
+    return m.group(1) if m else "unknown"
+
+
 def recovery_of_play(play: dict[str, Any]) -> float:
     cf = play["counterfactuals"]
     return round(float(cf["do_nothing_inr"]) + float(cf["play_net_inr"]), 2)
@@ -97,7 +105,7 @@ async def one_run(sc: dict[str, Any], ans: dict[str, Any], ctx: dict[str, Any], 
         timeout_or_infra = fb.startswith("deadline exceeded") or fb.startswith("model unavailable")
         model_play = play if (play and out.get("planner_source") == "model" and out.get("status") == "proposed") else None
         audit = await asyncio.to_thread(ae.audit_final_play, store, model_play) if model_play else {}
-        guardrail_violation = bool(model_play) and not (audit.get("guardrails_all_passed") and not audit.get("money_mismatches") and audit.get("holdout_ok"))
+        guardrail_violation = bool(model_play) and not (audit.get("guardrails_all_passed") and not audit.get("money_mismatches") and audit.get("holdout_ok") and audit.get("beats_markdown_ok", True))
         events = out.get("events") or []
         summary = next((e for e in reversed(events) if e.get("kind") == "run_summary"), {})
         rec.update({
@@ -210,7 +218,36 @@ def compute_metrics(scenarios: list[dict[str, Any]], answers: dict[str, Any], ru
         if x["outcome"] == "model_play":
             mix[x["mechanic"]] = mix.get(x["mechanic"], 0) + 1
     beating = [x for x in rows if x["beats_blanket"]]
+    v2 = {}
+    if any("blanket_legal_recovery_inr" in a for a in answers.values()):
+        legal = {sc["scenario_id"]: answers[sc["scenario_id"]] for sc, _ in valid}
+        for x in rows:
+            a = legal[x["scenario_id"]]
+            x["beats_legal_blanket"] = x["outcome"] == "model_play" and x["recovery_inr"] > a["blanket_legal_recovery_inr"]
+            x["ceiling_beats_blanket20"] = bool(a["upper_bound_beats_blanket20"])
+        ceil = [x for x in rows if x["ceiling_beats_blanket20"]]
+        v2["v3"] = {
+            "beats_legal_blanket": {"n": sum(x["beats_legal_blanket"] for x in rows), "of": n},
+            "ceiling_scenarios_where_a_legal_play_can_beat_blanket20": len(ceil),
+            "ceiling_scenarios_beaten": sum(1 for x in ceil if x["beats_blanket"]),
+            "blanket20_floor_illegal_scenarios": sum(1 for sc, _ in valid if not answers[sc["scenario_id"]]["blanket20_is_floor_legal"]),
+            "valid_runs": n, "mean_model_calls": statistics.mean(len(r["model_calls"]) for _, r in valid) if valid else None,
+            "mean_prompt_tokens": statistics.mean(r["tokens"]["prompt"] for _, r in valid) if valid else None,
+        }
+    if any("markdown_is_best_baseline" in a for a in answers.values()):
+        flagged = [(sc, x) for sc, x in zip((sc for sc, _ in valid), rows, strict=True) if answers[sc["scenario_id"]].get("markdown_is_best_baseline")]
+        md_all = [x for x in rows if x["outcome"] == "model_play" and x["mechanic"] == "markdown"]
+        best_bl = {sc["scenario_id"]: answers[sc["scenario_id"]].get("best_blanket_recovery_inr") for sc, _ in valid}
+        v2 = {
+            "markdown_chosen_where_best_baseline_is_markdown": {"n": sum(1 for _, x in flagged if x["outcome"] == "model_play" and x["mechanic"] == "markdown"), "of": len(flagged)},
+            "markdown_chosen_total": len(md_all),
+            "net_over_best_blanket_inr_all_scenarios": round(sum(x["recovery_inr"] - (best_bl[x["scenario_id"]] or 0.0) for x in rows), 2),
+            "by_stratum": {st: {"n": sum(1 for sc, _ in valid if answers[sc["scenario_id"]].get("stratum") == st), "beats_blanket": sum(1 for (sc, _), x in zip(valid, rows, strict=True) if answers[sc["scenario_id"]].get("stratum") == st and x["beats_blanket"]),
+                                "net_over_blanket20_inr": round(sum(x["beat_over_blanket_inr"] for (sc, _), x in zip(valid, rows, strict=True) if answers[sc["scenario_id"]].get("stratum") == st), 2)}
+                           for st in sorted({a.get("stratum") for a in answers.values() if a.get("stratum")})},
+        }
     return {
+        **v2,
         "scenarios": len(scenarios), "valid": n, "excluded": excluded,
         "beats_blanket20": {"n": len(beating), "of": n, "total_beat_inr_where_beaten": round(sum(x["beat_over_blanket_inr"] for x in beating), 2), "net_over_blanket_inr_all_scenarios": round(sum(x["beat_over_blanket_inr"] for x in rows), 2)},
         "beats_do_nothing": {"n": sum(x["beats_do_nothing"] for x in rows), "of": n},
@@ -233,7 +270,7 @@ def fmt(v: Any, nd: int = 3) -> str:
 def write_summary(path: Path, meta: dict[str, Any], m: dict[str, Any]) -> None:
     ub = m["estimator_upper_bound_secondary"]
     L = [f"# Sealed decision-quality eval ({meta['date']})", "",
-         f"Label: **{meta['label']}**. Model {meta['model']}, prompt {meta['prompt_version']}, {m['valid']} valid scenarios of {m['scenarios']}, concurrency {meta['concurrency']}, 1 run per scenario (plus one re-run of an INVALID run). Protocol: eval/sealed/PROTOCOL.md.", "",
+         f"Label: **{meta['label']}**. Model {meta['model']}, prompt {meta['prompt_version']}, {m['valid']} valid scenarios of {m['scenarios']}, concurrency {meta['concurrency']}, 1 run per scenario (plus one re-run of an INVALID run). Protocol: {meta.get('protocol', 'eval/sealed/PROTOCOL.md')}.", "",
          "Recovery is the projected recovery under Taal's own estimator (recovered versus doing nothing) on a synthetic tenant, not a real-world outcome. A fallback play or no play counts as not beating either baseline.", "",
          "| Metric | Result |", "|---|---|",
          f"| **PRIMARY: beats blanket 20% markdown** | **{m['beats_blanket20']['n']} of {m['beats_blanket20']['of']}**; rupees by which it beats it where it does INR {fmt(m['beats_blanket20']['total_beat_inr_where_beaten'], 2)} (net over all scenarios INR {fmt(m['beats_blanket20']['net_over_blanket_inr_all_scenarios'], 2)}) |",
@@ -245,8 +282,27 @@ def write_summary(path: Path, meta: dict[str, Any], m: dict[str, Any]) -> None:
          f"| Cost per scenario (USD) mean / max; total spend | {fmt(m['cost_usd']['per_scenario_mean'], 4)} / {fmt(m['cost_usd']['per_scenario_max'], 4)}; {fmt(m['cost_usd']['total'], 4)} |",
          f"| Mechanic mix of accepted plays | {', '.join(f'{k} {v}' for k, v in sorted(m['mechanic_mix'].items())) or 'none'} |",
          f"| SECONDARY, estimator upper bound (not a best play): captured ratio median / p10 / min | {fmt(ub['captured_median'])} / {fmt(ub['captured_p10'])} / {fmt(ub['captured_min'])} (n={ub['n']}) |", "",
-         "The upper bound is the highest recovery among the candidates in the oracle's grid that pass every guardrail, scored by the same estimator. The estimator ignores discount depth and counts a bundle's full price per responding unit, so the bound favours a lowest-discount bundle; it is not an optimal or best-possible play.", "",
-         "## By gap type", "", "| Gap type | n | beats blanket |", "|---|---|---|"]
+         ("The upper bound is the highest recovery among the candidates in the oracle's grid that pass every guardrail, scored by the same estimator. The estimator ignores discount depth and counts a bundle's full price per responding unit, so the bound favours a lowest-discount bundle; it is not an optimal or best-possible play." if "markdown_chosen_total" not in m else
+          "The upper bound is the larger of the best allowed markdown play and the oracle's best legal non-markdown play (beats_markdown gate off), scored by the same est-v2 estimator; it is not an optimal or best-possible play."), "",
+         ]
+    if "markdown_chosen_total" in m:
+        mw = m["markdown_chosen_where_best_baseline_is_markdown"]
+        L += ["", "## Markdown option (v2 metrics)", "", "| Metric | Result |", "|---|---|",
+              f"| **Chooses a markdown where the best baseline is a markdown** | **{mw['n']} of {mw['of']}** |",
+              f"| Net rupees vs blanket 20% markdown, all scenarios | INR {fmt(m['beats_blanket20']['net_over_blanket_inr_all_scenarios'], 2)} |",
+              f"| Net rupees vs the best blanket depth (10/20/35%), all scenarios | INR {fmt(m['net_over_best_blanket_inr_all_scenarios'], 2)} |",
+              f"| Markdown chosen, all scenarios | {m['markdown_chosen_total']} |"]
+        for st, v in m["by_stratum"].items():
+            L.append(f"| Stratum {st}: n / beats blanket 20% / net vs blanket 20% | {v['n']} / {v['beats_blanket']} / INR {fmt(v['net_over_blanket20_inr'], 2)} |")
+    if "v3" in m:
+        v3 = m["v3"]
+        L += ["", "## Legal-baseline view (v3 metrics)", "", "| Metric | Result |", "|---|---|",
+              f"| Beats the best margin-floor-LEGAL blanket depth (0 if none is legal) | {v3['beats_legal_blanket']['n']} of {v3['beats_legal_blanket']['of']} |",
+              f"| Blanket 20% is floor-illegal in | {v3['blanket20_floor_illegal_scenarios']} of {m['valid']} scenarios |",
+              f"| Scenarios where the model-free upper bound exceeds blanket 20% (a legal play can beat it) | {v3['ceiling_scenarios_where_a_legal_play_can_beat_blanket20']} |",
+              f"| Of those, beaten by the planner | {v3['ceiling_scenarios_beaten']} |",
+              f"| Valid runs; mean model calls per run; mean prompt tokens per run | {v3['valid_runs']}; {fmt(v3['mean_model_calls'], 1)}; {fmt(v3['mean_prompt_tokens'], 0)} |"]
+    L += ["", "## By gap type", "", "| Gap type | n | beats blanket |", "|---|---|---|"]
     for t, v in m["by_gap_type"].items():
         L.append(f"| {t} | {v['n']} | {v['beats_blanket']} |")
     L += ["", "## Per scenario", "", "| id | outcome | mechanic | recovery | blanket 20% | upper bound | beats blanket | iterations |", "|---|---|---|---|---|---|---|---|"]
@@ -261,11 +317,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True)
     ap.add_argument("--cap-usd", type=float, default=10.0)
-    ap.add_argument("--concurrency", type=int, default=4)
+    ap.add_argument("--concurrency", type=int, default=3)
+    ap.add_argument("--retry-429", type=int, default=4, help="retry a 429 this many times with backoff before the SDK fails over to the fallback model (0 = off, the v1/v2 behaviour)")
     ap.add_argument("--backend", default=None)
     ap.add_argument("--scenarios", default=str(SCEN))
     ap.add_argument("--answers", default=str(ANSWERS))
     ap.add_argument("--data-root", default=str(DATA_ROOT))
+    ap.add_argument("--protocol", default="eval/sealed/PROTOCOL.md")
     ap.add_argument("--only", default=None, help="comma-separated scenario ids")
     args = ap.parse_args(argv)
 
@@ -285,17 +343,22 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     ledger = ae.Ledger(args.cap_usd, models["ids"]["flash"], models["pricing"], out_dir / "model_calls.jsonl") if live else None
     if ledger:
+        ae.RETRY_429 = max(0, args.retry_429)
         ae.install_tap(ledger)
     reserver = Reserver(ledger, args.cap_usd, RESERVE_USD)
     started = time.time()
+    from eval.sealed.make_scenarios import ensure_tenant
+
+    for seed in sorted({s["seed"] for s in scenarios}):  # build each tenant once, before the runs start (concurrent first builds raced in the v2 regression)
+        ensure_tenant(Path(args.data_root), seed)
     with tempfile.TemporaryDirectory(prefix="taal_sealed_") as work:
         ctx = {"tmp": Path(work), "backend": backend, "data_root": Path(args.data_root)}
         asyncio.run(execute(scenarios, answers, ctx, ledger, reserver, out_dir, args.concurrency))
     runs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((out_dir / "runs").glob("S[0-9][0-9].json"))}
     m = compute_metrics(scenarios, answers, runs)
     meta = {
-        "date": datetime.now(UTC).date().isoformat(), "run_at": ae.now_utc(), "backend": backend, "model": models["ids"]["flash"] if live else "stub-planner", "prompt_version": "v7",
-        "label": "measured" if live else "stub plumbing check (scripted stand-in, NOT the model; numbers are not results)", "concurrency": args.concurrency, "cap_usd": args.cap_usd, "reserve_usd_per_run": RESERVE_USD,
+        "date": datetime.now(UTC).date().isoformat(), "run_at": ae.now_utc(), "backend": backend, "model": models["ids"]["flash"] if live else "stub-planner", "prompt_version": prompt_version(), "protocol": args.protocol,
+        "label": "measured" if live else "stub plumbing check (scripted stand-in, NOT the model; numbers are not results)", "concurrency": args.concurrency, "retry_429": args.retry_429 if live else 0, "cap_usd": args.cap_usd, "reserve_usd_per_run": RESERVE_USD,
         "planner_deadline_s": DEADLINE_S, "thinking": models.get("thinking"), "wall_s": round(time.time() - started, 1),
         "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
         "preregistration_commit": os.environ.get("SEALED_PREREG_COMMIT") or subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),

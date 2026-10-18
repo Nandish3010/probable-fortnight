@@ -74,6 +74,11 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "In-store offer this week: {name} at {markdown_pct}% off. Best before {best_before}.",
             "Pick up {name} for {markdown_pct}% less in store this week. Best before {best_before}.",
         ],
+        "markdown": [
+            "{name}: {markdown_pct}% off online until {end_date}. Best before {best_before}.",
+            "Now {markdown_pct}% off online: {name}, until {end_date}. Best before {best_before}.",
+            "Price drop on {name}: {markdown_pct}% off online until {end_date}. Best before {best_before}.",
+        ],
         "transfer_plus_nudge": [
             "{name} is now available at your nearest Kutumb Mart outlet. Best before {best_before}.",
             "{name} is now on the shelf at your nearest Kutumb Mart outlet. Best before {best_before}.",
@@ -119,6 +124,10 @@ TEMPLATES: dict[str, dict[str, str | list[str]]] = {
             "ಅಂಗಡಿಯಲ್ಲಿ ಈ ವಾರದ ಕೊಡುಗೆ: {name}ಗೆ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "ಈ ವಾರ ಅಂಗಡಿಗೆ ಬಂದಾಗ {name} ತೆಗೆದುಕೊಳ್ಳಿ, {markdown_pct}% ರಿಯಾಯಿತಿ ಇದೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
         ],
+        "markdown": [
+            "{name}: ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ {end_date}ರವರೆಗೆ {markdown_pct}% ರಿಯಾಯಿತಿ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+            "ಈಗ ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ {name}ಗೆ {markdown_pct}% ರಿಯಾಯಿತಿ, {end_date}ರವರೆಗೆ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
+        ],
         "transfer_plus_nudge": [
             "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
             "{name} ಈಗ ನಿಮ್ಮ ಹತ್ತಿರದ ಕುಟುಂಬ ಮಾರ್ಟ್ ಔಟ್‌ಲೆಟ್‌ನ ಶೆಲ್ಫ್‌ನಲ್ಲಿ ಲಭ್ಯ. ಬಳಕೆಗೆ ಉತ್ತಮ {best_before}ರವರೆಗೆ.",
@@ -152,7 +161,7 @@ def generate_copy(play: dict[str, Any], product: dict[str, Any], partner: dict[s
     ctx = {
         "name": product["name"], "partner": (partner or {}).get("name", ""), "bundle_price": f"{float(params.get('bundle_price') or 0):g}",
         "discount_pct": f"{float(params.get('discount_pct') or 0):g}", "markdown_pct": f"{float(params.get('markdown_pct') or 0):g}",
-        "eta": _fmt_date(params.get("preorder_eta_date")), "best_before": _fmt_date(best_before),
+        "eta": _fmt_date(params.get("preorder_eta_date")), "end_date": _fmt_date(params.get("end_date")), "best_before": _fmt_date(best_before),
     }
     variants = []
     for i, seg in enumerate(play["audience"]["segment_ids"]):
@@ -187,8 +196,8 @@ def _offer_facts(sku_name: str, mechanic: str, discount_pct: float | None, bundl
     cart", and for a bundle it dropped the partner product entirely."""
     if mechanic == "bundle" and partner_name and bundle_price is not None:
         return f"Offer: {sku_name} and {partner_name} bought together for ₹{bundle_price:g}; name both products."
-    if mechanic in ("coupon", "outlet_markdown") and discount_pct is not None:
-        where = " in store" if mechanic == "outlet_markdown" else ""
+    if mechanic in ("coupon", "outlet_markdown", "markdown") and discount_pct is not None:
+        where = " in store" if mechanic == "outlet_markdown" else (" online" if mechanic == "markdown" else "")
         return f"Offer: {discount_pct:g}% off {sku_name}{where}."
     return {
         "transfer_plus_nudge": f"Offer: {sku_name} is now available at the customer's nearest Kutumb Mart outlet. Nothing is free and there is no discount.",

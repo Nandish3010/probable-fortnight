@@ -1,0 +1,926 @@
+{
+ "scenario_id": "S24",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_3052ad4339",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:46:28Z",
+ "tag": "S24__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "counterfactuals": {
+   "do_nothing_inr": 6477.44,
+   "blanket_markdown_inr": 3682.61,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -3160.42
+  },
+  "channel": "web_chat",
+  "rationale": "This play implements a public shelf markdown on the lot at risk to clear the supply gap before the online sell-by deadline. Other targeted mechanics like coupons were evaluated but rejected because their expected recovery fell significantly below the best plain markdown performance. The markdown percentage is set to comply with the category margin floor while maximizing waste avoidance. A node-level holdout is established to measure the play's effectiveness.",
+  "play_id": "play_3052ad4339_v1",
+  "expected_outcome": {
+   "units": 72.9,
+   "margin_inr": -753.72,
+   "waste_avoided_inr": 4070.74,
+   "discount_cost_inr": 1785.98,
+   "ci_low": 36.45,
+   "ci_high": 109.34,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_3052ad4339"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending",
+   "variants": []
+  },
+  "alternatives": [
+   {
+    "expected_units": 25.8,
+    "rejected_because": "recovers less than the best plain markdown recovery",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "mechanic": "coupon",
+    "expected_margin_inr": 184.73
+   }
+  ],
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 11.37% (net price 63.00, cost 55.84) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-BUN-200G at DS-09"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 1 held-out node(s) DS-06, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "gap_id": "gap_3052ad4339",
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-19"
+  },
+  "objective": "clear_online_sellby",
+  "target": {
+   "deadline_type": "online_sellby",
+   "sku": "SKU-CREAM-BUN-200G",
+   "node_ids": [
+    "DS-09"
+   ],
+   "deadline_date": "2026-09-19",
+   "units": 116,
+   "batch_ids": [
+    "B-CREAM-BUN-200G-DS-09-01"
+   ]
+  },
+  "mechanic": "markdown",
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_3052ad4339_v1",
+   "fraction": 0.5,
+   "measurement": "holdout_nodes",
+   "node_ids": [
+    "DS-06"
+   ],
+   "measurement_reason": "1 comparable at-risk node(s) keep the list price: DS-06"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_3052ad4339_v1_968d9579",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.061
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 3317.02,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_3052ad4339",
+    "mechanic": "bundle",
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 116,
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "sku": "SKU-CREAM-BUN-200G",
+     "node_ids": [
+      "DS-09"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-19"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_3052ad4339_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-FULL-CREAM-MILK-200G",
+     "bundle_price": 125
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3"
+     ],
+     "size_before_consent": 301,
+     "size_after_consent": 256,
+     "filters": {},
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_before_consent": 301,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 256
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_3052ad4339_v1"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-200G",
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "node_ids": [
+      "DS-09"
+     ],
+     "units": 116
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "channel": "web_chat",
+    "gap_id": "gap_3052ad4339"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_3052ad4339_v1"
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "markdown",
+    "target": {
+     "node_ids": [
+      "DS-09"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "units": 116,
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-200G"
+    },
+    "channel": "web_chat",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0
+    },
+    "gap_id": "gap_3052ad4339",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "objective": "clear_online_sellby",
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "ci_low": 54.67,
+     "prior_n": 0,
+     "units": 109.34,
+     "ci_high": 116,
+     "measured_n": 0,
+     "waste_avoided_inr": 6105.55,
+     "discount_cost_inr": 3061.59,
+     "margin_inr": -1513.34
+    },
+    "channel": "web_chat",
+    "mechanic": "markdown",
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-19",
+     "units": 116,
+     "sku": "SKU-CREAM-BUN-200G",
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "node_ids": [
+      "DS-09"
+     ]
+    },
+    "gap_id": "gap_3052ad4339",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "audience": {
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "filters": {}
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_3052ad4339_v1",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_3052ad4339",
+    "audience": {
+     "size_after_consent": 0,
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 0
+    },
+    "target": {
+     "node_ids": [
+      "DS-09"
+     ],
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "units": 116,
+     "sku": "SKU-CREAM-BUN-200G"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_3052ad4339_v1"
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "markdown",
+    "expected_outcome": {
+     "units": 72.9,
+     "margin_inr": -753.72,
+     "prior_n": 0,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "ci_high": 116,
+     "waste_avoided_inr": 3317.02,
+     "ci_low": 54.67,
+     "discount_cost_inr": 3061.59
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_after_consent": 0,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "target": {
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-200G",
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "units": 116,
+     "node_ids": [
+      "DS-09"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_3052ad4339_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_3052ad4339",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_3052ad4339",
+    "objective": "clear_online_sellby",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 256,
+     "size_before_consent": 301
+    },
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_3052ad4339_v1"
+    },
+    "target": {
+     "deadline_date": "2026-09-19",
+     "node_ids": [
+      "DS-09"
+     ],
+     "units": 116,
+     "sku": "SKU-CREAM-BUN-200G",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_3052ad4339_v1"
+    },
+    "gap_id": "gap_3052ad4339",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "mechanic_params": {
+     "transfer_units": 116,
+     "transfer_to_node": "OUT-05"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "target": {
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-200G",
+     "deadline_date": "2026-09-19",
+     "units": 116,
+     "node_ids": [
+      "DS-09"
+     ]
+    },
+    "audience": {
+     "filters": {},
+     "size_after_consent": 0,
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing"
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "counterfactuals": {
+     "play_net_inr": -3160.42,
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 6477.44,
+     "blanket_markdown_inr": 3682.61
+    },
+    "channel": "web_chat",
+    "rationale": "This play implements a public shelf markdown on the lot at risk to clear the supply gap before the online sell-by deadline. Other targeted mechanics like coupons were evaluated but rejected because their expected recovery fell significantly below the best plain markdown performance. The markdown percentage is set to comply with the category margin floor while maximizing waste avoidance. A node-level holdout is established to measure the play's effectiveness.",
+    "play_id": "play_3052ad4339_v1",
+    "expected_outcome": {
+     "units": 72.9,
+     "prior_n": 0,
+     "ci_high": 109.34,
+     "measured_n": 0,
+     "discount_cost_inr": 1785.98,
+     "waste_avoided_inr": 4070.74,
+     "ci_low": 36.45,
+     "margin_inr": -753.72,
+     "estimator_version": "est-v2"
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_3052ad4339"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "alternatives": [
+     {
+      "expected_units": 25.8,
+      "rejected_because": "recovers less than the best plain markdown recovery",
+      "mechanic_params": {
+       "discount_pct": 10
+      },
+      "mechanic": "coupon",
+      "expected_margin_inr": 184.73
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 11.37% (net price 63.00, cost 55.84) vs bakery floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+     },
+     {
+      "rule": "consent_required",
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required",
+      "passed": true
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "markdown: a public shelf price, no offer is made to any customer"
+     },
+     {
+      "detail": "no stockout gap for SKU-CREAM-BUN-200G at DS-09",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "detail": "node holdout: 1 held-out node(s) DS-06, 1 treated",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ],
+    "audience": {
+     "size_after_consent": 0,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "gap_id": "gap_3052ad4339",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-200G",
+     "node_ids": [
+      "DS-09"
+     ],
+     "deadline_date": "2026-09-19",
+     "units": 116,
+     "batch_ids": [
+      "B-CREAM-BUN-200G-DS-09-01"
+     ]
+    },
+    "mechanic": "markdown",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_3052ad4339_v1",
+     "fraction": 0.1
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_3052ad4339_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_3052ad4339_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 35198,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 3317.02; this play 3317.02; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_3052ad4339_v1_968d9579",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 35198,
+  "usage": {
+   "prompt_token_count": 71379,
+   "candidates_token_count": 3680,
+   "thoughts_token_count": 3300,
+   "cached_content_token_count": 53883,
+   "total_token_count": 78359
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3317.02,
+  "blanket20_recovery_inr": 3926.08,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 35.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5080,
+    "candidates": 913,
+    "thoughts": 714,
+    "cached": 3822
+   },
+   "usd": 0.018814,
+   "error": null,
+   "elapsed_s": 7.11,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7007,
+    "candidates": 409,
+    "thoughts": 451,
+    "cached": 3688
+   },
+   "usd": 0.014599,
+   "error": null,
+   "elapsed_s": 4.15,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8032,
+    "candidates": 406,
+    "thoughts": 67,
+    "cached": 5469
+   },
+   "usd": 0.009814,
+   "error": null,
+   "elapsed_s": 2.4,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8671,
+    "candidates": 292,
+    "thoughts": 35,
+    "cached": 7191
+   },
+   "usd": 0.006866,
+   "error": null,
+   "elapsed_s": 1.88,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9182,
+    "candidates": 316,
+    "thoughts": 197,
+    "cached": 7132
+   },
+   "usd": 0.009638,
+   "error": null,
+   "elapsed_s": 2.51,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9871,
+    "candidates": 311,
+    "thoughts": 257,
+    "cached": 8865
+   },
+   "usd": 0.008746,
+   "error": null,
+   "elapsed_s": 3.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10593,
+    "candidates": 1018,
+    "thoughts": 1566,
+    "cached": 8830
+   },
+   "usd": 0.029947,
+   "error": null,
+   "elapsed_s": 10.1,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 12943,
+    "candidates": 15,
+    "thoughts": 13,
+    "cached": 8886
+   },
+   "usd": 0.008437,
+   "error": null,
+   "elapsed_s": 1.16,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.106861,
+ "tokens": {
+  "prompt": 71379,
+  "cached": 53883,
+  "candidates": 3680,
+  "thoughts": 3300
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1,0 +1,707 @@
+{
+ "scenario_id": "S30",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 2
+ },
+ "gap_id": "gap_f9c7769dde",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:21:18Z",
+ "tag": "S30__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "window": {
+   "end": "2026-09-24T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "alternatives": [
+   {
+    "expected_margin_inr": 74.33,
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "expected_units": 31.63,
+    "mechanic": "coupon",
+    "rejected_because": "lower expected margin than the bundle play"
+   },
+   {
+    "mechanic": "markdown",
+    "expected_margin_inr": -2496.49,
+    "rejected_because": "negative expected margin and lower than the bundle play",
+    "expected_units": 12,
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 1246.8,
+   "blanket_markdown_inr": 3366.25,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 580.73
+  },
+  "rationale": "This play targets dairy occasionals, everyday staples shoppers, festival sweets loyalists, tea connoisseurs, personal care regulars, and household essentials buyers to clear 12 units of Cream 400G at DS-04 before the online sell-by deadline of 2026-09-24. We bundle Cream 400G with Milk Bread 400G for 195 INR, which yields a net margin of 9.42%, exceeding the category floor of 8.00%. The play is expected to clear 31.63 units, recovering 1827.53 INR (do_nothing_inr of 1246.8 plus play_net_inr of 580.73), which beats the blanket markdown recovery of 3946.98 INR (blanket_markdown_inr of 3366.25 plus play_net_inr of 580.73).",
+  "channel": "web_chat",
+  "mechanic": "bundle",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_f9c7769dde"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "gap_id": "gap_f9c7769dde",
+  "objective": "clear_online_sellby",
+  "target": {
+   "batch_ids": [
+    "B-CREAM-400G-DS-04-01"
+   ],
+   "node_ids": [
+    "DS-04"
+   ],
+   "deadline_date": "2026-09-24",
+   "units": 12,
+   "sku": "SKU-CREAM-400G",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_f9c7769dde_v1",
+  "holdout": {
+   "seed": "seed-play_f9c7769dde_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "expected_outcome": {
+   "units": 31.63,
+   "margin_inr": 580.73,
+   "waste_avoided_inr": 1246.8,
+   "discount_cost_inr": 632.6,
+   "ci_low": 1.71,
+   "ci_high": 92.28,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "mechanic_params": {
+   "bundle_price": 195,
+   "bundle_sku": "SKU-MILK-BREAD-400G"
+  },
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending",
+   "variants": []
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.42% (net price 195.00, cost 176.64) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 442 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 507 -> 442"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CREAM-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-400G at DS-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "14 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "purpose": "marketing",
+   "filters": {},
+   "size_after_consent": 442,
+   "size_before_consent": 507
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_f9c7769dde_v1_e1373c84",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 21.0,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1827.53,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "size_after_consent": 443,
+     "size_before_consent": 507,
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_f9c7769dde_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 195
+    },
+    "target": {
+     "batch_ids": [
+      "B-CREAM-400G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-400G",
+     "units": 12,
+     "node_ids": [
+      "DS-04"
+     ]
+    },
+    "gap_id": "gap_f9c7769dde",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_f9c7769dde_v1",
+     "min_treated_n": 20
+    },
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-CREAM-400G-DS-04-01"
+     ],
+     "sku": "SKU-CREAM-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 12
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_f9c7769dde",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "coupon",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 507,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 443
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_f9c7769dde_v1",
+     "min_treated_n": 20
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "node_ids": [
+      "DS-04"
+     ],
+     "sku": "SKU-CREAM-400G",
+     "units": 12,
+     "batch_ids": [
+      "B-CREAM-400G-DS-04-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24"
+    },
+    "gap_id": "gap_f9c7769dde",
+    "channel": "web_chat",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic": "markdown",
+    "audience": {
+     "size_before_consent": 0,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "size_after_consent": 0
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "web_chat",
+    "gap_id": "gap_f9c7769dde",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 507,
+     "filters": {},
+     "size_after_consent": 442
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 195
+    },
+    "target": {
+     "sku": "SKU-CREAM-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "units": 12,
+     "batch_ids": [
+      "B-CREAM-400G-DS-04-01"
+     ]
+    },
+    "mechanic": "bundle",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_f9c7769dde_v1",
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "ci_high": 92.28,
+     "prior_n": 20,
+     "discount_cost_inr": 632.6,
+     "waste_avoided_inr": 1246.8,
+     "ci_low": 1.71,
+     "units": 31.63,
+     "margin_inr": 580.73,
+     "measured_n": 0
+    },
+    "play_id": "play_f9c7769dde_v1",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 74.33,
+      "mechanic_params": {
+       "discount_pct": 15
+      },
+      "expected_units": 31.63,
+      "mechanic": "coupon",
+      "rejected_because": "lower expected margin than the bundle play"
+     },
+     {
+      "mechanic": "markdown",
+      "expected_margin_inr": -2496.49,
+      "rejected_because": "negative expected margin and lower than the bundle play",
+      "expected_units": 12,
+      "mechanic_params": {
+       "markdown_pct": 15
+      }
+     }
+    ],
+    "counterfactuals": {
+     "play_net_inr": 580.73,
+     "blanket_markdown_inr": 3366.25,
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 1246.8
+    },
+    "rationale": "This play targets dairy occasionals, everyday staples shoppers, festival sweets loyalists, tea connoisseurs, personal care regulars, and household essentials buyers to clear 12 units of Cream 400G at DS-04 before the online sell-by deadline of 2026-09-24. We bundle Cream 400G with Milk Bread 400G for 195 INR, which yields a net margin of 9.42%, exceeding the category floor of 8.00%. The play is expected to clear 31.63 units, recovering 1827.53 INR (do_nothing_inr of 1246.8 plus play_net_inr of 580.73), which beats the blanket markdown recovery of 3946.98 INR (blanket_markdown_inr of 3366.25 plus play_net_inr of 580.73).",
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f9c7769dde"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "gap_id": "gap_f9c7769dde",
+    "objective": "clear_online_sellby",
+    "target": {
+     "batch_ids": [
+      "B-CREAM-400G-DS-04-01"
+     ],
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_date": "2026-09-24",
+     "units": 12,
+     "sku": "SKU-CREAM-400G",
+     "deadline_type": "online_sellby"
+    },
+    "play_id": "play_f9c7769dde_v1",
+    "holdout": {
+     "seed": "seed-play_f9c7769dde_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "expected_outcome": {
+     "ci_high": 92.28,
+     "estimator_version": "est-v2",
+     "waste_avoided_inr": 1246.8,
+     "units": 31.63,
+     "margin_inr": 580.73,
+     "discount_cost_inr": 632.6,
+     "ci_low": 1.71,
+     "measured_n": 0,
+     "prior_n": 20
+    },
+    "mechanic_params": {
+     "bundle_price": 195,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 9.42% (net price 195.00, cost 176.64) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 442 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "audience filtered by consent: 507 -> 442",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "no active subscribers of SKU-CREAM-400G in audience",
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-CREAM-400G at DS-04",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+     }
+    ],
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 442,
+     "size_before_consent": 507
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_f9c7769dde_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_f9c7769dde_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 21162,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "no markdown depth clears the margin floor"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_f9c7769dde_v1_e1373c84",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 21162,
+  "usage": {
+   "prompt_token_count": 27361,
+   "candidates_token_count": 2637,
+   "thoughts_token_count": 1286,
+   "cached_content_token_count": 18206,
+   "total_token_count": 31284
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2283.79,
+  "blanket20_recovery_inr": -2119.45,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 21.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5024,
+    "candidates": 908,
+    "thoughts": 293,
+    "cached": 3819
+   },
+   "usd": 0.014508,
+   "error": null,
+   "elapsed_s": 5.17,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6389,
+    "candidates": 474,
+    "thoughts": 78,
+    "cached": 3658
+   },
+   "usd": 0.010575,
+   "error": null,
+   "elapsed_s": 3.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7042,
+    "candidates": 1241,
+    "thoughts": 892,
+    "cached": 5378
+   },
+   "usd": 0.02475,
+   "error": null,
+   "elapsed_s": 8.18,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8906,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 5351
+   },
+   "usd": 0.007115,
+   "error": null,
+   "elapsed_s": 1.77,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.056948,
+ "tokens": {
+  "prompt": 27361,
+  "cached": 18206,
+  "candidates": 2637,
+  "thoughts": 1286
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

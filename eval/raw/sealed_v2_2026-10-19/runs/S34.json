@@ -1,0 +1,1023 @@
+{
+ "scenario_id": "S34",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_4ffcda9b8e",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:19:19Z",
+ "tag": "S34__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "window": {
+   "end": "2026-09-18T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "audience": {
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_4",
+    "seg_5"
+   ],
+   "size_before_consent": 380,
+   "size_after_consent": 328,
+   "filters": {}
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 1539.76,
+   "blanket_markdown_inr": 694.55,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -702.69
+  },
+  "expected_outcome": {
+   "units": 34.59,
+   "margin_inr": 136.28,
+   "waste_avoided_inr": 700.79,
+   "discount_cost_inr": 207.54,
+   "ci_low": 1.87,
+   "ci_high": 100.91,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_4ffcda9b8e_v1",
+   "fraction": 0.1
+  },
+  "objective": "clear_online_sellby",
+  "rationale": "This play bundles Wheat Bread 400G with Paneer 400G for a combined price of 44.00 INR to clear the online sell-by gap at DS-10. The play is expected to sell 34.59 units, avoiding 700.79 INR in waste. The play recovers 837.07 INR compared to doing nothing (1539.76 INR plus play_net_inr of -702.69 INR) and has a relative performance of -8.14 INR compared to a blanket markdown (694.55 INR plus play_net_inr of -702.69 INR). This play satisfies Kutumb Mart's policy by preferring bundles over blanket markdowns while maintaining a net margin of 8.95%, which is above the 8.00% bakery floor.",
+  "mechanic": "bundle",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.95% (net price 44.00, cost 40.06) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 328 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 380 -> 328"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at DS-10"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "13 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "mechanic_params": {
+   "bundle_sku": "SKU-PANEER-400G",
+   "bundle_price": 44
+  },
+  "alternatives": [
+   {
+    "expected_margin_inr": 73.29,
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "expected_units": 32.72,
+    "rejected_because": "policy prefers bundles over coupons",
+    "mechanic": "coupon"
+   }
+  ],
+  "channel": "web_chat",
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_4ffcda9b8e"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "target": {
+   "units": 76,
+   "node_ids": [
+    "DS-10"
+   ],
+   "sku": "SKU-WHEAT-BREAD-400G",
+   "deadline_date": "2026-09-18",
+   "batch_ids": [
+    "B-WHEAT-BREAD-400G-DS-10-01"
+   ],
+   "deadline_type": "online_sellby"
+  },
+  "gap_id": "gap_4ffcda9b8e",
+  "play_id": "play_4ffcda9b8e_v1",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_4ffcda9b8e_v1_172a1684",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 26.86,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 837.07,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_4ffcda9b8e",
+    "channel": "app_push",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic": "coupon",
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 76,
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "node_ids": [
+      "DS-10"
+     ],
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-18"
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {},
+     "size_before_consent": 380,
+     "size_after_consent": 328
+    },
+    "holdout": {
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_4ffcda9b8e",
+    "audience": {
+     "size_after_consent": 328,
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_4ffcda9b8e_v1"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-18",
+     "node_ids": [
+      "DS-10"
+     ],
+     "units": 76,
+     "sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "bundle",
+    "channel": "app_push",
+    "mechanic_params": {
+     "bundle_price": 42,
+     "bundle_sku": "SKU-PANEER-400G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_after_consent": 0,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "target": {
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "node_ids": [
+      "DS-10"
+     ],
+     "units": 76,
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_date": "2026-09-18",
+     "deadline_type": "online_sellby"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "mechanic": "markdown",
+    "holdout": {
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "gap_id": "gap_4ffcda9b8e",
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "deadline_date": "2026-09-18",
+     "units": 76,
+     "node_ids": [
+      "DS-10"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ]
+    },
+    "mechanic": "bundle",
+    "audience": {
+     "size_before_consent": 380,
+     "purpose": "marketing",
+     "size_after_consent": 328,
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ]
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_4ffcda9b8e",
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "holdout": {
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_price": 42,
+     "bundle_sku": "SKU-PANEER-400G"
+    },
+    "objective": "clear_online_sellby",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "size_after_consent": 328,
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "size_before_consent": 380
+    },
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-18",
+     "units": 76,
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "node_ids": [
+      "DS-10"
+     ]
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_4ffcda9b8e",
+    "channel": "web_chat",
+    "mechanic": "coupon",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_before_consent": 380,
+     "size_after_consent": 328,
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "target": {
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "node_ids": [
+      "DS-10"
+     ],
+     "units": 76
+    },
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "channel": "app_push",
+    "gap_id": "gap_4ffcda9b8e",
+    "objective": "clear_online_sellby",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_4ffcda9b8e_v1"
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_4ffcda9b8e",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 44
+    },
+    "audience": {
+     "size_after_consent": 328,
+     "size_before_consent": 380,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {}
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "target": {
+     "deadline_date": "2026-09-18",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-10"
+     ],
+     "units": 76,
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "channel": "app_push",
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "app_push",
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "target": {
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_date": "2026-09-18",
+     "deadline_type": "online_sellby",
+     "units": 76,
+     "node_ids": [
+      "DS-10"
+     ],
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ]
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 328,
+     "size_before_consent": 380
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_4ffcda9b8e_v1"
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 52,
+     "bundle_sku": "SKU-CURD-400G"
+    },
+    "gap_id": "gap_4ffcda9b8e"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_4ffcda9b8e_v1"
+    },
+    "audience": {
+     "size_before_consent": 380,
+     "filters": {},
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "node_ids": [
+      "DS-10"
+     ],
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "units": 76,
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-18"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 44
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_4ffcda9b8e"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "size_before_consent": 380,
+     "size_after_consent": 328,
+     "filters": {}
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 1539.76,
+     "play_net_inr": -702.69,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 694.55
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 700.79,
+     "discount_cost_inr": 207.54,
+     "measured_n": 0,
+     "ci_low": 1.87,
+     "prior_n": 20,
+     "ci_high": 100.91,
+     "estimator_version": "est-v2",
+     "margin_inr": 136.28,
+     "units": 34.59
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_4ffcda9b8e_v1",
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby",
+    "rationale": "This play bundles Wheat Bread 400G with Paneer 400G for a combined price of 44.00 INR to clear the online sell-by gap at DS-10. The play is expected to sell 34.59 units, avoiding 700.79 INR in waste. The play recovers 837.07 INR compared to doing nothing (1539.76 INR plus play_net_inr of -702.69 INR) and has a relative performance of -8.14 INR compared to a blanket markdown (694.55 INR plus play_net_inr of -702.69 INR). This play satisfies Kutumb Mart's policy by preferring bundles over blanket markdowns while maintaining a net margin of 8.95%, which is above the 8.00% bakery floor.",
+    "mechanic": "bundle",
+    "guardrails": [
+     {
+      "detail": "net margin 8.95% (net price 44.00, cost 40.06) vs bakery floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 328 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 380 -> 328",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at DS-10",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ],
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 44
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 73.29,
+      "mechanic_params": {
+       "discount_pct": 10
+      },
+      "expected_units": 32.72,
+      "rejected_because": "policy prefers bundles over coupons",
+      "mechanic": "coupon"
+     }
+    ],
+    "channel": "web_chat",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_4ffcda9b8e"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "target": {
+     "units": 76,
+     "node_ids": [
+      "DS-10"
+     ],
+     "sku": "SKU-WHEAT-BREAD-400G",
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-WHEAT-BREAD-400G-DS-10-01"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "gap_id": "gap_4ffcda9b8e",
+    "play_id": "play_4ffcda9b8e_v1"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_4ffcda9b8e_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_4ffcda9b8e_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 43844,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 902.83; this play 837.07; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_4ffcda9b8e_v1_172a1684",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 43844,
+  "usage": {
+   "prompt_token_count": 65333,
+   "candidates_token_count": 4282,
+   "thoughts_token_count": 3323,
+   "cached_content_token_count": 48019,
+   "total_token_count": 72938
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 902.83,
+  "blanket20_recovery_inr": 845.21,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 44.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5036,
+    "candidates": 989,
+    "thoughts": 578,
+    "cached": 3819
+   },
+   "usd": 0.018151,
+   "error": null,
+   "elapsed_s": 6.66,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7065,
+    "candidates": 362,
+    "thoughts": 633,
+    "cached": 3647
+   },
+   "usd": 0.016092,
+   "error": null,
+   "elapsed_s": 7.67,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8221,
+    "candidates": 344,
+    "thoughts": 64,
+    "cached": 5428
+   },
+   "usd": 0.009543,
+   "error": null,
+   "elapsed_s": 2.61,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8794,
+    "candidates": 1042,
+    "thoughts": 517,
+    "cached": 7141
+   },
+   "usd": 0.01934,
+   "error": null,
+   "elapsed_s": 7.1,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10801,
+    "candidates": 362,
+    "thoughts": 348,
+    "cached": 7012
+   },
+   "usd": 0.014438,
+   "error": null,
+   "elapsed_s": 3.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 11672,
+    "candidates": 1169,
+    "thoughts": 1157,
+    "cached": 10466
+   },
+   "usd": 0.026744,
+   "error": null,
+   "elapsed_s": 9.81,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13744,
+    "candidates": 14,
+    "thoughts": 26,
+    "cached": 10506
+   },
+   "usd": 0.007472,
+   "error": null,
+   "elapsed_s": 0.91,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.11178,
+ "tokens": {
+  "prompt": 65333,
+  "cached": 48019,
+  "candidates": 4282,
+  "thoughts": 3323
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

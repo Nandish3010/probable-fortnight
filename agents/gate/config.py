@@ -34,6 +34,21 @@ class TenantConfig:
     policy_version: str
     policy_text: str
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
+    elasticity: dict[str, float] = field(default_factory=dict)
+
+    def elasticity_for(self, category: str) -> float:
+        """Units uplift per unit of discount fraction (est-v2). Category entry, then `[elasticity] default`,
+        then `thresholds.markdown_elasticity`, then 1.0."""
+        if category in self.elasticity:
+            return float(self.elasticity[category])
+        if "default" in self.elasticity:
+            return float(self.elasticity["default"])
+        return float(self.thresholds.get("markdown_elasticity", 1.0))
+
+    def markdown_setting(self, name: str, default: Any) -> Any:
+        """`[markdown]` table of the tenant config: depths_pct, beats_tolerance_inr, beats_tolerance_pct,
+        clearance_window_days (0 = exception off), clearance_margin_floor_pct, ramp_days (0 = off)."""
+        return (self.raw.get("markdown") or {}).get(name, default)
 
     def margin_floor(self, category: str) -> float:
         return float(self.margin_floor_pct.get(category, self.margin_floor_pct["default"]))
@@ -53,6 +68,7 @@ def load_tenant(path: str | Path | None = None) -> TenantConfig:
         policy_version=d["policy"]["version"],
         policy_text=d["policy"]["text"],
         raw=d,
+        elasticity={k: float(v) for k, v in (d.get("elasticity") or {}).items()},
     )
 
 

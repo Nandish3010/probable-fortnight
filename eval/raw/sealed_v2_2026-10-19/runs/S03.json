@@ -1,0 +1,1031 @@
+{
+ "scenario_id": "S03",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_c50f5923fd",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:14:44Z",
+ "tag": "S03__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "holdout": {
+   "seed": "seed-play_c50f5923fd_v1",
+   "min_treated_n": 20,
+   "fraction": 0.1
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 11.42% (net price 205.00, cost 181.59) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 277 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 319 -> 277"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "transfer_plus_nudge is not a discount play"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "transfer_plus_nudge does not push SKU-FULL-CREAM-MILK-1L; stockout rule not applicable"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "5 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 3268.62,
+   "blanket_markdown_inr": 3391.11,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -36.0
+  },
+  "rationale": "This transfer play moves the milk units to Outlet 04 to clear the expiry risk. The play achieves an expected margin of 3232.62 INR compared to a do_nothing_inr of 3268.62 INR, resulting in a play_net_inr of -36.00 INR. It also compares to a blanket_markdown_inr of 3391.11 INR with a play_net_inr of -36.00 INR. This transfer is highly preferred over markdowns under the policy.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_c50f5923fd"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "expected_outcome": {
+   "units": 18.0,
+   "margin_inr": 3232.62,
+   "waste_avoided_inr": 3268.62,
+   "discount_cost_inr": 0.0,
+   "ci_low": 1.01,
+   "ci_high": 18.0,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "channel": "web_chat",
+  "audience": {
+   "purpose": "marketing",
+   "size_after_consent": 277,
+   "filters": {},
+   "size_before_consent": 319,
+   "segment_ids": [
+    "seg_5",
+    "seg_2",
+    "seg_3",
+    "seg_6",
+    "seg_4"
+   ]
+  },
+  "objective": "clear_expiry",
+  "mechanic_params": {
+   "transfer_units": 18,
+   "transfer_to_node": "OUT-04"
+  },
+  "mechanic": "transfer_plus_nudge",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-23T23:59:59Z"
+  },
+  "target": {
+   "node_ids": [
+    "OUT-03"
+   ],
+   "sku": "SKU-FULL-CREAM-MILK-1L",
+   "batch_ids": [
+    "B-FULL-CREAM-MILK-1L-OUT-03-01"
+   ],
+   "deadline_date": "2026-09-23",
+   "deadline_type": "expiry",
+   "units": 18
+  },
+  "alternatives": [
+   {
+    "expected_units": 18.73,
+    "mechanic": "outlet_markdown",
+    "rejected_because": "lower expected margin than the transfer play",
+    "mechanic_params": {
+     "markdown_pct": 3
+    },
+    "expected_margin_inr": 323.28
+   }
+  ],
+  "play_id": "play_c50f5923fd_v1",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "gap_id": "gap_c50f5923fd",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_c50f5923fd_v1_e1cac020",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 36.01,
+   "pct_of_rupees_at_stake": 1.222
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 3232.62,
+ "mechanic": "transfer_plus_nudge",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_c50f5923fd_v1"
+    },
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "audience": {
+     "size_before_consent": 319,
+     "size_after_consent": 277,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 18,
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "gap_id": "gap_c50f5923fd",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown",
+    "target": {
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "units": 18,
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "deadline_date": "2026-09-23"
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_c50f5923fd",
+    "holdout": {
+     "seed": "seed-play_c50f5923fd_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 277,
+     "filters": {},
+     "size_before_consent": 319,
+     "purpose": "marketing"
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_c50f5923fd_v1"
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 0,
+     "size_before_consent": 0
+    },
+    "gap_id": "gap_c50f5923fd",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "target": {
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "units": 18,
+     "node_ids": [
+      "OUT-03"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "outlet",
+    "guardrails": [],
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "play_id": "play_c50f5923fd_v1",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "size_after_consent": 277,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 319,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "seed": "seed-play_c50f5923fd_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "objective": "clear_expiry",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_c50f5923fd"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "gap_id": "gap_c50f5923fd",
+    "counterfactuals": {
+     "play_net_inr": 54.5,
+     "blanket_markdown_inr": 1695.55,
+     "do_nothing_inr": 3268.62,
+     "blanket_markdown_pct": 10
+    },
+    "expected_outcome": {
+     "units": 18.73,
+     "estimator_version": "est-v2",
+     "prior_n": 20,
+     "margin_inr": 54.5,
+     "discount_cost_inr": 383.97,
+     "measured_n": 0,
+     "ci_high": 54.64,
+     "waste_avoided_inr": 3268.62,
+     "ci_low": 1.01
+    },
+    "target": {
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "deadline_type": "expiry",
+     "units": 18,
+     "node_ids": [
+      "OUT-03"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "gap_id": "gap_c50f5923fd",
+    "target": {
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "units": 18,
+     "node_ids": [
+      "OUT-03"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 3
+    },
+    "mechanic": "outlet_markdown",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_c50f5923fd_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 319,
+     "size_after_consent": 277,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "channel": "outlet"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "mechanic": "transfer_plus_nudge",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_c50f5923fd_v1"
+    },
+    "audience": {
+     "size_after_consent": 277,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 319
+    },
+    "mechanic_params": {
+     "transfer_units": 18,
+     "transfer_to_node": "OUT-04"
+    },
+    "target": {
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 18,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-FULL-CREAM-MILK-1L"
+    },
+    "gap_id": "gap_c50f5923fd"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_c50f5923fd",
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 319,
+     "size_after_consent": 277,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_c50f5923fd_v1"
+    },
+    "channel": "outlet",
+    "counterfactuals": {
+     "blanket_markdown_inr": 1974.97,
+     "play_net_inr": 323.28,
+     "do_nothing_inr": 3268.62,
+     "blanket_markdown_pct": 3
+    },
+    "mechanic_params": {
+     "markdown_pct": 3
+    },
+    "target": {
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "units": 18
+    },
+    "guardrails": [],
+    "expected_outcome": {
+     "prior_n": 20,
+     "discount_cost_inr": 115.19,
+     "waste_avoided_inr": 3268.62,
+     "measured_n": 0,
+     "ci_low": 1.01,
+     "estimator_version": "est-v2",
+     "units": 18.73,
+     "margin_inr": 323.28,
+     "ci_high": 54.64
+    },
+    "citations": [
+     {
+      "ref": "gap_c50f5923fd",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "play_id": "play_c50f5923fd_v1",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_c50f5923fd_v1",
+     "min_treated_n": 20
+    },
+    "objective": "clear_expiry",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "mechanic_params": {
+     "transfer_units": 18,
+     "transfer_to_node": "OUT-04"
+    },
+    "guardrails": [],
+    "counterfactuals": {
+     "blanket_markdown_inr": 3391.11,
+     "do_nothing_inr": 3268.62,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -36
+    },
+    "play_id": "play_c50f5923fd_v1",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_c50f5923fd"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 319,
+     "size_after_consent": 277,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "expected_outcome": {
+     "prior_n": 20,
+     "units": 18,
+     "ci_high": 18,
+     "waste_avoided_inr": 3268.62,
+     "estimator_version": "est-v2",
+     "margin_inr": 3232.62,
+     "measured_n": 0,
+     "ci_low": 1.01,
+     "discount_cost_inr": 0
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_c50f5923fd",
+    "mechanic": "transfer_plus_nudge",
+    "target": {
+     "units": 18,
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_c50f5923fd_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 11.42% (net price 205.00, cost 181.59) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 277 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 319 -> 277",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "detail": "transfer_plus_nudge is not a discount play",
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "transfer_plus_nudge does not push SKU-FULL-CREAM-MILK-1L; stockout rule not applicable"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "counterfactuals": {
+     "play_net_inr": -36,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 3391.11,
+     "do_nothing_inr": 3268.62
+    },
+    "rationale": "This transfer play moves the milk units to Outlet 04 to clear the expiry risk. The play achieves an expected margin of 3232.62 INR compared to a do_nothing_inr of 3268.62 INR, resulting in a play_net_inr of -36.00 INR. It also compares to a blanket_markdown_inr of 3391.11 INR with a play_net_inr of -36.00 INR. This transfer is highly preferred over markdowns under the policy.",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_c50f5923fd"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 0,
+     "prior_n": 20,
+     "measured_n": 0,
+     "ci_low": 1.01,
+     "units": 18,
+     "waste_avoided_inr": 3268.62,
+     "ci_high": 18,
+     "margin_inr": 3232.62
+    },
+    "channel": "web_chat",
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 277,
+     "filters": {},
+     "size_before_consent": 319,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "transfer_units": 18,
+     "transfer_to_node": "OUT-04"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-1L",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-1L-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "units": 18
+    },
+    "alternatives": [
+     {
+      "expected_units": 18.73,
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower expected margin than the transfer play",
+      "mechanic_params": {
+       "markdown_pct": 3
+      },
+      "expected_margin_inr": 323.28
+     }
+    ],
+    "play_id": "play_c50f5923fd_v1",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_c50f5923fd"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_c50f5923fd_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_c50f5923fd_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 44884,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_c50f5923fd_v1_e1cac020",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 44884,
+  "usage": {
+   "prompt_token_count": 60018,
+   "candidates_token_count": 4403,
+   "thoughts_token_count": 3468,
+   "total_token_count": 67889,
+   "cached_content_token_count": 42400
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3795.86,
+  "blanket20_recovery_inr": -122.49,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 46.7,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4984,
+    "candidates": 885,
+    "thoughts": 439,
+    "cached": 0
+   },
+   "usd": 0.021331,
+   "error": null,
+   "elapsed_s": 6.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6486,
+    "candidates": 594,
+    "thoughts": 111,
+    "cached": 3669
+   },
+   "usd": 0.012233,
+   "error": null,
+   "elapsed_s": 3.65,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7265,
+    "candidates": 630,
+    "thoughts": 649,
+    "cached": 7173
+   },
+   "usd": 0.013997,
+   "error": null,
+   "elapsed_s": 11.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8644,
+    "candidates": 596,
+    "thoughts": 120,
+    "cached": 7114
+   },
+   "usd": 0.010787,
+   "error": null,
+   "elapsed_s": 3.1,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9434,
+    "candidates": 602,
+    "thoughts": 31,
+    "cached": 7013
+   },
+   "usd": 0.011418,
+   "error": null,
+   "elapsed_s": 2.82,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10140,
+    "candidates": 1081,
+    "thoughts": 2094,
+    "cached": 8647
+   },
+   "usd": 0.035323,
+   "error": null,
+   "elapsed_s": 13.43,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13065,
+    "candidates": 15,
+    "thoughts": 24,
+    "cached": 8784
+   },
+   "usd": 0.008899,
+   "error": null,
+   "elapsed_s": 1.42,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.113988,
+ "tokens": {
+  "prompt": 60018,
+  "cached": 42400,
+  "candidates": 4403,
+  "thoughts": 3468
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1,0 +1,767 @@
+{
+ "scenario_id": "S30",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_40f30409f0",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:18:33Z",
+ "tag": "S30__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-19"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.80% (net price 193.50, cost 176.48) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FLAVOURED-MILK-500ML at DS-01"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 1 held-out node(s) DS-07, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "4 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_40f30409f0"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "holdout": {
+   "fraction": 0.5,
+   "seed": "seed-play_40f30409f0_v1",
+   "min_treated_n": 20,
+   "measurement": "holdout_nodes",
+   "node_ids": [
+    "DS-07"
+   ],
+   "measurement_reason": "1 comparable at-risk node(s) keep the list price: DS-07"
+  },
+  "play_id": "play_40f30409f0_v1",
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "gap_id": "gap_40f30409f0",
+  "rationale": "To clear the online sell-by breach of Flavoured Milk 500ML at Dark store 01, we propose a markdown. This play is expected to recover INR 10383.64 versus doing nothing. The play net margin is INR -7264.36, which is better than the blanket markdown recovery of INR 8529.65. This play satisfies all policy guidelines, including the category margin floor.",
+  "copy": {
+   "variants": [],
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending"
+  },
+  "expected_outcome": {
+   "units": 74.3,
+   "margin_inr": -2728.82,
+   "waste_avoided_inr": 13112.46,
+   "discount_cost_inr": 5590.86,
+   "ci_low": 37.15,
+   "ci_high": 100.0,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "channel": "web_chat",
+  "target": {
+   "deadline_type": "online_sellby",
+   "node_ids": [
+    "DS-01"
+   ],
+   "sku": "SKU-FLAVOURED-MILK-500ML",
+   "deadline_date": "2026-09-19",
+   "batch_ids": [
+    "B-FLAVOURED-MILK-500ML-DS-01-01"
+   ],
+   "units": 100
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 17648.0,
+   "blanket_markdown_inr": 8529.65,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -7264.36
+  },
+  "mechanic": "markdown",
+  "alternatives": [
+   {
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "rejected_because": "recovers less than the best plain markdown",
+    "mechanic": "coupon",
+    "expected_units": 48.4,
+    "expected_margin_inr": 303.47
+   },
+   {
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-BUN-200G",
+     "bundle_price": 250
+    },
+    "rejected_because": "recovers less than the best plain markdown",
+    "expected_margin_inr": 336.23,
+    "expected_units": 50.41,
+    "mechanic": "bundle"
+   }
+  ],
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_40f30409f0_v1_8ffe847b",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.022
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 10383.64,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "gap_id": "gap_40f30409f0",
+    "objective": "clear_online_sellby",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "target": {
+     "units": 100,
+     "deadline_type": "online_sellby",
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ],
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_date": "2026-09-19"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 440,
+     "size_before_consent": 512
+    },
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "holdout": {
+     "seed": "seed-play_40f30409f0_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_40f30409f0_v1_md",
+     "fraction": 0.1
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "units": 100,
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "deadline_date": "2026-09-19",
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ]
+    },
+    "gap_id": "gap_40f30409f0",
+    "channel": "web_chat",
+    "mechanic": "markdown",
+    "audience": {
+     "filters": {},
+     "size_after_consent": 0,
+     "purpose": "marketing",
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "target": {
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ],
+     "units": 100,
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "deadline_date": "2026-09-19"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 512,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 440
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 250,
+     "bundle_sku": "SKU-CREAM-BUN-200G"
+    },
+    "gap_id": "gap_40f30409f0",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_40f30409f0_v1_bnd",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_40f30409f0",
+    "target": {
+     "units": 100,
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-19",
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_40f30409f0_v1_md10",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "filters": {},
+     "size_before_consent": 0
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "gap_id": "gap_40f30409f0",
+    "target": {
+     "node_ids": [
+      "DS-01"
+     ],
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ],
+     "units": 100,
+     "deadline_date": "2026-09-19"
+    },
+    "play_id": "play_40f30409f0_v1",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "counterfactuals": {
+     "play_net_inr": -7264.36,
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 8529.65,
+     "do_nothing_inr": 17648
+    },
+    "objective": "clear_online_sellby",
+    "guardrails": [],
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "units": 74.3,
+     "margin_inr": -2728.82,
+     "waste_avoided_inr": 13112.46,
+     "discount_cost_inr": 5590.86,
+     "measured_n": 0,
+     "ci_high": 100,
+     "prior_n": 0,
+     "ci_low": 37.15
+    },
+    "channel": "web_chat",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "purpose": "marketing"
+    },
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "end_date": "2026-09-19",
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -2728.82,
+      "rejected_because": "reference only: the best plain markdown (10% off, same demand model) recovers INR 10383.64 versus doing nothing; a proposal that recovers more than 519.18 less is rejected",
+      "expected_units": 74.3,
+      "mechanic": "markdown"
+     }
+    ],
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_40f30409f0_v1_md10"
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 8.80% (net price 193.50, cost 176.48) vs dairy floor 8.00%"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+     },
+     {
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true,
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "markdown: a public shelf price, no offer is made to any customer",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "detail": "no stockout gap for SKU-FLAVOURED-MILK-500ML at DS-01",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "detail": "node holdout: 1 held-out node(s) DS-08, 1 treated",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_40f30409f0"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "objective": "clear_online_sellby",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_40f30409f0_v1_md10",
+     "min_treated_n": 20
+    },
+    "play_id": "play_40f30409f0_v1",
+    "audience": {
+     "size_after_consent": 0,
+     "filters": {},
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing"
+    },
+    "gap_id": "gap_40f30409f0",
+    "rationale": "To clear the online sell-by breach of Flavoured Milk 500ML at Dark store 01, we propose a markdown. This play is expected to recover INR 10383.64 versus doing nothing. The play net margin is INR -7264.36, which is better than the blanket markdown recovery of INR 8529.65. This play satisfies all policy guidelines, including the category margin floor.",
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "expected_outcome": {
+     "ci_low": 37.15,
+     "waste_avoided_inr": 13112.46,
+     "measured_n": 0,
+     "estimator_version": "est-v2",
+     "margin_inr": -2728.82,
+     "units": 74.3,
+     "prior_n": 0,
+     "discount_cost_inr": 5590.86,
+     "ci_high": 100
+    },
+    "channel": "web_chat",
+    "target": {
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-01"
+     ],
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "deadline_date": "2026-09-19",
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-DS-01-01"
+     ],
+     "units": 100
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 8529.65,
+     "play_net_inr": -7264.36,
+     "do_nothing_inr": 17648
+    },
+    "mechanic": "markdown",
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "discount_pct": 15
+      },
+      "rejected_because": "recovers less than the best plain markdown",
+      "mechanic": "coupon",
+      "expected_units": 48.4,
+      "expected_margin_inr": 303.47
+     },
+     {
+      "mechanic_params": {
+       "bundle_sku": "SKU-CREAM-BUN-200G",
+       "bundle_price": 250
+      },
+      "rejected_because": "recovers less than the best plain markdown",
+      "expected_margin_inr": 336.23,
+      "expected_units": 50.41,
+      "mechanic": "bundle"
+     }
+    ]
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_40f30409f0_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_40f30409f0_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 41624,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 10383.64; this play 10383.64; tolerance 519.18)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_40f30409f0_v1_8ffe847b",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 41624,
+  "usage": {
+   "prompt_token_count": 40205,
+   "candidates_token_count": 2999,
+   "thoughts_token_count": 2599,
+   "cached_content_token_count": 27356,
+   "total_token_count": 45803
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 10383.64,
+  "blanket20_recovery_inr": 9661.18,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 45.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5019,
+    "candidates": 958,
+    "thoughts": 582,
+    "cached": 3819
+   },
+   "usd": 0.017856,
+   "error": null,
+   "elapsed_s": 9.15,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7072,
+    "candidates": 302,
+    "thoughts": 450,
+    "cached": 3664
+   },
+   "usd": 0.013673,
+   "error": null,
+   "elapsed_s": 8.39,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8008,
+    "candidates": 599,
+    "thoughts": 186,
+    "cached": 5468
+   },
+   "usd": 0.012865,
+   "error": null,
+   "elapsed_s": 3.32,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8940,
+    "candidates": 1124,
+    "thoughts": 1354,
+    "cached": 7201
+   },
+   "usd": 0.02859,
+   "error": null,
+   "elapsed_s": 11.26,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 11166,
+    "candidates": 16,
+    "thoughts": 27,
+    "cached": 7204
+   },
+   "usd": 0.008152,
+   "error": null,
+   "elapsed_s": 1.02,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.081136,
+ "tokens": {
+  "prompt": 40205,
+  "cached": 27356,
+  "candidates": 2999,
+  "thoughts": 2599
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -7,10 +7,20 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 from .config import TenantConfig, load_tenant
-from .estimator import DISCOUNT_MECHANICS, EstimatorContext, GapFacts, Product, unit_economics
+from .estimator import (
+    DISCOUNT_MECHANICS,
+    MARKDOWN_MECHANIC,
+    EstimatorContext,
+    GapFacts,
+    Product,
+    best_markdown,
+    recovery_of,
+    unit_economics,
+)
 from .models import GUARDRAIL_RULES
 from .untrusted import copied_run
 
@@ -34,6 +44,9 @@ class GuardrailContext:
     # P3: free text a person (not the operator) can write and that reaches the model through a tool (gap
     # evidence strings); empty when the caller supplies none, which leaves cite_or_drop as before.
     untrusted_texts: tuple[str, ...] = ()
+    # `markdown` only: today's date for the clearance exception, and the nodes where the sku is at risk now.
+    as_of: date | None = None
+    at_risk_node_ids: tuple[str, ...] = ()
 
     def estimator_context(self, units_at_risk: int = 0) -> EstimatorContext:
         return EstimatorContext(
@@ -77,18 +90,40 @@ def filter_audience_by_subscription(customer_ids: Iterable[str], subscribers: It
 # Rules
 # ---------------------------------------------------------------------------------------------
 
+def clearance_floor(draft: dict[str, Any], ctx: GuardrailContext) -> float | None:
+    """The reduced margin floor of the tenant's clearance exception, or None when it does not apply. Off unless
+    `[markdown] clearance_window_days` > 0; applies only to the `markdown` mechanic, inside that many days of
+    the lot's sell-by line (target.deadline_date)."""
+    window = int(ctx.tenant.markdown_setting("clearance_window_days", 0) or 0)
+    if draft.get("mechanic") != MARKDOWN_MECHANIC or window <= 0 or ctx.as_of is None:
+        return None
+    deadline = (draft.get("target") or {}).get("deadline_date")
+    try:
+        days_left = (date.fromisoformat(str(deadline)) - ctx.as_of).days
+    except ValueError:
+        return None
+    if days_left > window:
+        return None
+    return float(ctx.tenant.markdown_setting("clearance_margin_floor_pct", 0.0))
+
+
 def rule_margin_floor(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
     floor = ctx.product.margin_floor_pct
+    exception = clearance_floor(draft, ctx)
     econ = unit_economics(draft["mechanic"], draft.get("mechanic_params") or {}, ctx.estimator_context())
     pct = econ["margin_pct"]
-    detail = (
-        f"net margin {pct:.2f}% (net price {econ['net_price']:.2f}, cost {econ['unit_cost']:.2f}) "
-        f"vs {ctx.product.category} floor {floor:.2f}%"
-    )
+    if exception is not None and exception < floor:
+        floor_note = f"clearance floor {exception:.2f}% (within {int(ctx.tenant.markdown_setting('clearance_window_days', 0))} days of the sell-by line; category floor {floor:.2f}%)"
+        floor = exception
+    else:
+        floor_note = f"{ctx.product.category} floor {floor:.2f}%"
+    detail = f"net margin {pct:.2f}% (net price {econ['net_price']:.2f}, cost {econ['unit_cost']:.2f}) vs {floor_note}"
     return _result("margin_floor", pct >= floor, detail)
 
 
 def rule_frequency_cap(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        return _result("frequency_cap", True, "markdown: a shelf price, no customer is contacted; frequency cap not applicable")
     cap = int(ctx.tenant.thresholds.get("frequency_cap_per_7d", 2))
     if ctx.audience_customer_ids is None:
         return _result("frequency_cap", True, f"no audience ids supplied; cap {cap}/7d enforced at assignment")
@@ -99,6 +134,8 @@ def rule_frequency_cap(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str
 
 
 def rule_consent_required(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        return _result("consent_required", True, "markdown: a shelf price, no customer is contacted; consent not required")
     aud = draft.get("audience") or {}
     if draft.get("channel") == "outlet":
         return _result("consent_required", True, "outlet channel: no personal message, consent not required")
@@ -135,6 +172,8 @@ def rule_sellby_disclosure(draft: dict[str, Any], ctx: GuardrailContext) -> dict
 
 
 def rule_subscription_protect(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        return _result("subscription_protect", True, "markdown: a public shelf price, no offer is made to any customer")
     if draft.get("mechanic") not in DISCOUNT_MECHANICS:
         return _result("subscription_protect", True, f"{draft.get('mechanic')} is not a discount play")
     if ctx.audience_customer_ids is None:
@@ -159,6 +198,9 @@ def rule_no_cannibalise_stockout(draft: dict[str, Any], ctx: GuardrailContext) -
 
 
 def rule_holdout_required(draft: dict[str, Any], ctx: GuardrailContext) -> dict[str, Any]:
+    """Customer-targeted plays: a customer holdout (fraction, seed, min_treated_n). A `markdown` cannot hold out
+    customers, so it carries `holdout.measurement`: "holdout_nodes" (held-out node ids, none of them treated) or
+    "none" with a reason the decision card must show ("this play cannot be measured against a holdout")."""
     h = draft.get("holdout") or {}
     min_fraction = float(ctx.tenant.thresholds.get("min_holdout_fraction", 0.05))
     fraction = h.get("fraction")
@@ -169,7 +211,53 @@ def rule_holdout_required(draft: dict[str, Any], ctx: GuardrailContext) -> dict[
         return _result("holdout_required", False, f"min_treated_n {min_treated!r} not set to a positive integer")
     if not h.get("seed"):
         return _result("holdout_required", False, "holdout seed missing")
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        measurement = h.get("measurement")
+        treated = set((draft.get("target") or {}).get("node_ids") or [])
+        if measurement == "holdout_nodes":
+            held = list(h.get("node_ids") or [])
+            if not held or not treated:
+                return _result("holdout_required", False, "markdown measurement holdout_nodes needs held-out node_ids and treated target nodes")
+            if treated & set(held):
+                return _result("holdout_required", False, f"held-out nodes {sorted(treated & set(held))} are also treated")
+            return _result("holdout_required", True, f"node holdout: {len(held)} held-out node(s) {', '.join(sorted(held))}, {len(treated)} treated")
+        if measurement == "none" and str(h.get("measurement_reason") or "").strip():
+            return _result("holdout_required", True, f"markdown cannot be measured against a holdout: {h['measurement_reason']}")
+        return _result("holdout_required", False, f"markdown measurement {measurement!r}: needs holdout_nodes, or none with a reason")
     return _result("holdout_required", True, f"holdout {fraction:.0%}, min_treated_n {min_treated}")
+
+
+# ---------------------------------------------------------------------------------------------
+# beats_markdown: a gate check beside the eight rules (not a ninth rule: the card and the docs say eight)
+# ---------------------------------------------------------------------------------------------
+
+def markdown_depths(tenant: TenantConfig) -> list[float]:
+    return [float(x) for x in tenant.markdown_setting("depths_pct", [10, 20, 35])]
+
+
+def beats_markdown_tolerance(tenant: TenantConfig, best_inr: float) -> float:
+    return max(float(tenant.markdown_setting("beats_tolerance_inr", 500)), float(tenant.markdown_setting("beats_tolerance_pct", 5.0)) / 100.0 * abs(best_inr))
+
+
+def check_beats_markdown(draft: dict[str, Any], est: dict[str, Any], ctx: GuardrailContext, est_ctx: EstimatorContext, sellby_passed: bool = False) -> dict[str, Any]:
+    """Reject a play whose projected recovery is below the best allowed markdown by more than the tolerance.
+    Both figures come from the same demand model (estimator.units_sold_at_discount). The best markdown is
+    computed at the tenant's depths that clear the margin floor (clearance exception included); it is not
+    compared when the lot is past its online sell-by (an online price cut is not allowed then)."""
+    if sellby_passed:
+        return {"rule": "beats_markdown", "passed": True, "detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)", "best_markdown": None}
+    floor = clearance_floor({**draft, "mechanic": MARKDOWN_MECHANIC}, ctx)
+    best = best_markdown(est_ctx, markdown_depths(ctx.tenant), floor_pct=floor if (floor is not None and floor < ctx.product.margin_floor_pct) else None, end_date=(draft.get("target") or {}).get("deadline_date"))
+    if best is None:
+        return {"rule": "beats_markdown", "passed": True, "detail": "no markdown depth clears the margin floor", "best_markdown": None}
+    mine = recovery_of(est)
+    tol = beats_markdown_tolerance(ctx.tenant, best["recovery_inr"])
+    gap = best["recovery_inr"] - mine
+    if gap > tol:
+        return {"rule": "beats_markdown", "passed": False, "best_markdown": best,
+                "detail": f"a markdown at {best['markdown_pct']:g}% recovers INR {gap:.2f} more ({best['recovery_inr']:.2f} vs {mine:.2f}, tolerance {tol:.2f}); propose it or a play that beats it"}
+    return {"rule": "beats_markdown", "passed": True, "best_markdown": best,
+            "detail": f"within tolerance of the best markdown ({best['markdown_pct']:g}% recovers {best['recovery_inr']:.2f}; this play {mine:.2f}; tolerance {tol:.2f})"}
 
 
 # ---------------------------------------------------------------------------------------------

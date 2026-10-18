@@ -1,5 +1,18 @@
 # Planner prompt changelog
 
+- v9 (2026-10-19, branch planner/markdown-option, not deployed): two edits from the diagnosis of the v2 sealed run
+  (eval/evaluation.md): (1) the best-markdown reference is stated once, in the first `estimate_outcomes` result, not in every
+  result (input tokens per run were +39% over v1); (2) a citation `ref` is an id, never a rupee figure (2 of the 6
+  first-proposal rejections in v2 were `outcome:<number>` citations that do not resolve).
+
+- v8 (2026-10-19, branch planner/markdown-option, not deployed): adds the `markdown` mechanic (site-wide online price
+  cut, `markdown_pct`; end date, audience and node-level measurement set by the tools) and one instruction: for large
+  lots with little time left, a plain markdown is often best; propose it when it beats targeted plays. Step 2 tells the
+  model that `estimate_outcomes` returns the best plain markdown in `alternatives`, and that `propose_play` rejects a
+  play recovering more than the tolerance less than it (`beats_markdown`, which outranks a soft policy preference).
+  Citation example `est-v1` -> `est-v2`. Reason: the sealed eval of 19 Oct (eval/raw/sealed_2026-10-19/) found the planner
+  never chose a markdown and lost 7 of 36 scenarios to the blanket 20% markdown by about INR 55,700 in total.
+
 - v7 (2026-10-12): step 3 now tells the model to state, in the rationale, the recovered-versus-doing-nothing
   figure (`do_nothing_inr` + `play_net_inr`) and the beat over a blanket markdown (`blanket_markdown_inr` +
   `play_net_inr`), each quoted from the estimator result. Reason: eight live Tea runs recorded on 12 Oct

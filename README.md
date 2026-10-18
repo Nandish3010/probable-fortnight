@@ -1,21 +1,21 @@
 # Taal
 
-Taal turns a write-off forecast into a human-approved play (a transfer, an offer or both). The agent is refused by code until its play carries a holdout; code assigns the groups, and the app says plainly when the result has not proved anything yet. For a dark-store team clearing a lot before its online sell-by: on the live Desk, 103 packs of Darjeeling Tea, 24 days left, ₹35,020 at stake. Forecast, Propose, Approve, Offer, Measure. Retail & Commerce, AI Builder Cup 2026.
+Taal turns a write-off forecast into a human-approved play (a transfer, an offer or both). Code refuses a customer-targeted play without a holdout and says plainly when a result has not proved anything yet. On the live Desk: 103 packs of Darjeeling Tea, 24 days to the online sell-by, ₹35,020 at stake. Retail & Commerce, AI Builder Cup 2026.
 
 **What is new here**
-- **No play without a holdout, enforced in code.** `rule_holdout_required` rejects a play without a holdout fraction of 5 to 90%, a minimum treated count and a seed (`agents/gate/guardrails.py:161-172`); code assigns the groups (`agents/planner/tools.py:422`). Statistical power is not checked.
-- **It says when nothing is proved yet.** A holdout interval that crosses zero reads INCONCLUSIVE, labelled SYNTHETIC; a power simulation states the data needed: about 1,156 customers for a 5 pp lift (`eval/raw/holdout_power_2026-10-14.json`). The ₹9,191 stays PROJECTED.
+- **No customer-targeted play without a holdout, enforced in code.** `rule_holdout_required` needs a 5 to 90% holdout, a minimum treated count and a seed (`agents/gate/guardrails.py:200-229`); code assigns the groups. Price cuts use a node holdout when one exists, else say they cannot be measured. Power is not checked.
+- **It says when nothing is proved yet.** An interval crossing zero reads INCONCLUSIVE; a power simulation says a 5 pp lift needs about 1,156 customers. The ₹9,191 stays PROJECTED.
 - **Replay on real data (anonymised; past data, not a pilot).** First row of the results table; [detail and limits](#replay-on-real-data).
-- **Each safety layer measured on its own.** The tool refuses another customer's id every run though the chat model tries it 3 of 3 times (`agents/customer/tools.py:43-59`); Model Armor blocks 3 of 8 injection cases (`eval/evaluation.md:1167-1172`) and fails open (`services/api/model_armor.py:7-10,98`).
-- **Pre-registered evals.** Protocols are committed before any model call; a fallback-model answer voids the run. On 36 sealed scenarios from an unseen tenant, approved plays beat a blanket 20% markdown in 29 (16 of 23 where the markdown is profitable): our line of 30 was missed. 0 rule violations reached Approve (`eval/sealed/PROTOCOL.md`).
-- **Cite-or-drop that resists tricks.** Rationale numbers must match the play in Western or Indian digit grouping (`agents/gate/guardrails.py:221-228`); copied untrusted phrases are caught after folding look-alike characters (`agents/gate/untrusted.py:18-38`).
+- **Each safety layer measured on its own.** The tool refuses another customer's id every run though the model tries it 3 of 3 times; Model Armor blocks 3 of 8 chat injection cases and fails open (`eval/evaluation.md`).
+- **Pre-registered evals.** Protocols are committed before any model call. Sealed v1, 36 scenarios: 29 beat a blanket 20% markdown, our line of 30 missed. With the markdown option, 36 new: 17 of 18 beatable won, markdown chosen in 14 of 15 where best, 0 rule violations; 2 of 7 lines missed (net vs a blanket below the margin floor; p50 31.3 s vs 30 s) (`eval/sealed/PROTOCOL_v3.md`).
+- **Cite-or-drop that resists tricks.** Rationale numbers must match the play (Western or Indian digit grouping); copied untrusted phrases are caught after folding look-alike characters (`agents/gate/untrusted.py`).
 
 **Why us.** We are in a category team at an Indian pet-care e-commerce company: Nandish on pricing, Rinu on online sales and part of the P&L. Near-expiry and slow-moving stock is a standing cost (write-offs, or tied-up storage and capital); phase 1 is near-expiry, phase 2 slow-moving SKUs. The live demo runs on a synthetic tenant; the replay below used the company's past data, not a live pilot.
 
 | Result | Figure | Label |
 |---|---|---|
 | Replay on real data (anonymised, 11 weeks) | would have flagged 99% of expiry pull-outs a median 30 days ahead; precision 45%; estimated recovery ₹8 to 15 L, about 2x a blanket markdown; a 60-days-of-stock rule fires about as early | MEASURED (flags), ESTIMATED (value); replay, not a pilot |
-| Sealed baseline eval | beats a blanket 20% markdown 29/36; 16/23 where the markdown is profitable (line 30: missed); 0 rule violations; deadlines 3 to 14 days, 21 of 36 from neighbouring cells | MEASURED, 19 Oct; projected, synthetic |
+| Sealed baseline eval | v1: 29/36 beat a blanket 20% markdown (line 30 missed); with the markdown option 17 of 18 beatable, 0 rule violations; a 20% cut is below the margin floor everywhere | MEASURED, 19 Oct; projected, synthetic |
 | Hero play vs doing nothing | Transfer to the outlet that sells the tea plus a targeted nudge: **₹9,191** projected (₹9,397 waste avoided minus ₹206 transfer) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; +0.3 pp, 95% CI -8.7 to +1.6; a 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
@@ -52,10 +52,10 @@ Then type (tested 15 Oct): "Is the Darjeeling tea in stock?" (two packs, Add to 
 
 ## How Gen AI is used
 
-`gemini-3.5-flash` on Vertex AI does the language and judgement work; `gemini-3.5-flash-lite` is the fallback on 404, 429 or 5xx. The forecast is a deliberately simple baseline (it loses to a naive seasonal one); Taal adds the decide, approve, measure loop.
+`gemini-3.5-flash` on Vertex AI does the language and judgement work; `gemini-3.5-flash-lite` is the fallback on 404, 429 or 5xx. The forecast is a deliberately simple baseline; Taal adds the decide, approve, measure loop.
 
 - **Planner.** An ADK `LlmAgent` in a `LoopAgent` (up to 3 iterations, six tools) proposes mechanic, audience and rationale.
-- **Eight guardrails** (margin floor, frequency cap, consent, sell-by line, subscriber discount, open stockout, holdout, cite-or-drop) reject a play and return the reason.
+- **Eight guardrails** (margin floor, frequency cap, consent, sell-by line, subscriber discount, open stockout, holdout, cite-or-drop) plus a beats-the-best-legal-markdown check reject a play and return the reason.
 - **Vision intake.** Gemini reads SKU, printed date and facings from a pallet photo, each with a confidence; rows under 70% need a human.
 - **Customer agent.** English and Kannada chat, MCP orders, STOP; held-out customers see no offer.
 
@@ -103,6 +103,7 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
 - `/health` checks configuration; `make smoke-judging` checks liveness.
 - Real-photo vision unmeasured.
+- C8: chat tries a cross-customer call; the tool refuses it.
 
 [Runbook](docs/judging_runbook.md), [pilot design](docs/pilot.md).
 

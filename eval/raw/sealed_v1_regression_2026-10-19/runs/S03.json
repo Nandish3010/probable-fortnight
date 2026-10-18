@@ -1,0 +1,1170 @@
+{
+ "scenario_id": "S03",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_f86833670e",
+ "seed": 40617833,
+ "attempt": 1,
+ "started_at": "2026-10-18T21:14:52Z",
+ "tag": "S03__run2",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "purpose": "marketing",
+   "filters": {},
+   "size_after_consent": 308,
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_4",
+    "seg_6"
+   ],
+   "size_before_consent": 359
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_f86833670e_v1"
+  },
+  "mechanic": "outlet_markdown",
+  "citations": [
+   {
+    "ref": "gap_f86833670e",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-23T23:59:59Z"
+  },
+  "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose an outlet markdown play with a 10% discount. This play recovers 900.00 INR compared to doing nothing (775.75 INR plus 124.25 INR). It also recovers 488.41 INR compared to a blanket markdown (364.16 INR plus 124.25 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+  "expected_outcome": {
+   "units": 25.0,
+   "margin_inr": 124.25,
+   "waste_avoided_inr": 775.75,
+   "discount_cost_inr": 100.0,
+   "ci_low": 1.35,
+   "ci_high": 72.93,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "alternatives": [
+   {
+    "rejected_because": "Failed margin floor guardrail (5.24% vs 8.00% floor).",
+    "expected_margin_inr": 91.75,
+    "expected_units": 25,
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 70,
+     "bundle_sku": "SKU-BUTTER-1L"
+    }
+   },
+   {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_units": 25,
+    "expected_margin_inr": -239.91,
+    "mechanic": "markdown",
+    "rejected_because": "Negative expected margin and lower recovery than outlet markdown."
+   }
+  ],
+  "channel": "outlet",
+  "counterfactuals": {
+   "do_nothing_inr": 775.75,
+   "blanket_markdown_inr": 364.16,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": 124.25
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 13.81% (net price 36.00, cost 31.03) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 308 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-RUSK-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-RUSK-400G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "10 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "copy": {
+   "variants": [],
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending"
+  },
+  "gap_id": "gap_f86833670e",
+  "objective": "clear_expiry",
+  "target": {
+   "deadline_type": "expiry",
+   "batch_ids": [
+    "B-RUSK-400G-OUT-04-01"
+   ],
+   "sku": "SKU-RUSK-400G",
+   "units": 25,
+   "node_ids": [
+    "OUT-04"
+   ],
+   "deadline_date": "2026-09-23"
+  },
+  "play_id": "play_f86833670e_v1",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_f86833670e_v1_0d008c92",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 11.58,
+   "pct_of_rupees_at_stake": 2.001
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 900.0,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_f86833670e",
+    "objective": "expiry_writeoff",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 70,
+     "bundle_sku": "SKU-BUTTER-1L"
+    },
+    "audience": {
+     "size_before_consent": 359,
+     "size_after_consent": 308,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "target": {
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "units": 25,
+     "sku": "SKU-RUSK-400G",
+     "node_ids": [
+      "OUT-04"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "expiry_writeoff",
+    "gap_id": "gap_f86833670e",
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "size_after_consent": 308,
+     "size_before_consent": 359
+    },
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "units": 25,
+     "sku": "SKU-RUSK-400G"
+    },
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_f86833670e",
+    "objective": "expiry_writeoff",
+    "target": {
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 25,
+     "sku": "SKU-RUSK-400G",
+     "deadline_date": "2026-09-23"
+    },
+    "audience": {
+     "size_before_consent": 0,
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "mechanic": "bundle",
+    "gap_id": "gap_f86833670e",
+    "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose a bundle play with Butter 1L for 70 INR. This bundle play recovers 867.50 INR compared to doing nothing (775.75 INR plus 91.75 INR). It also recovers 820.07 INR compared to a blanket markdown (728.32 INR plus 91.75 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_date": "2026-09-23",
+     "units": 25,
+     "deadline_type": "expiry",
+     "sku": "SKU-RUSK-400G"
+    },
+    "mechanic_params": {
+     "bundle_price": 70,
+     "bundle_sku": "SKU-BUTTER-1L"
+    },
+    "expected_outcome": {
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "ci_high": 72.93,
+     "waste_avoided_inr": 775.75,
+     "ci_low": 1.35,
+     "margin_inr": 91.75,
+     "units": 25,
+     "discount_cost_inr": 250,
+     "measured_n": 0
+    },
+    "audience": {
+     "size_after_consent": 308,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "size_before_consent": 359,
+     "purpose": "marketing"
+    },
+    "channel": "web_chat",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 728.32,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 91.75,
+     "do_nothing_inr": 775.75
+    },
+    "alternatives": [
+     {
+      "expected_units": 25,
+      "rejected_because": "Policy prefers bundles over markdowns, and the bundle play has positive expected margin.",
+      "mechanic": "outlet_markdown",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 124.25
+     },
+     {
+      "expected_margin_inr": -239.91,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_units": 25,
+      "mechanic": "markdown",
+      "rejected_because": "Negative expected margin and lower recovery than bundle."
+     }
+    ],
+    "play_id": "play_f86833670e_v1",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_f86833670e_v1"
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "citations": [
+     {
+      "ref": "gap_f86833670e",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "objective": "expiry_writeoff"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "play_id": "play_f86833670e_v1",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "alternatives": [
+     {
+      "mechanic": "bundle",
+      "mechanic_params": {
+       "bundle_sku": "SKU-BUTTER-1L",
+       "bundle_price": 70
+      },
+      "rejected_because": "Failed margin floor guardrail (5.24% vs 8.00% floor).",
+      "expected_units": 25,
+      "expected_margin_inr": 91.75
+     },
+     {
+      "mechanic": "markdown",
+      "expected_margin_inr": -239.91,
+      "rejected_because": "Negative expected margin and lower recovery than outlet markdown.",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_units": 25
+     }
+    ],
+    "objective": "expiry_writeoff",
+    "mechanic": "outlet_markdown",
+    "channel": "outlet",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 308,
+     "size_before_consent": 359
+    },
+    "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose an outlet markdown play with a 10% discount. This play recovers 900.00 INR compared to doing nothing (775.75 INR plus 124.25 INR). It also recovers 488.41 INR compared to a blanket markdown (364.16 INR plus 124.25 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_f86833670e_v1"
+    },
+    "gap_id": "gap_f86833670e",
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-400G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "units": 25
+    },
+    "expected_outcome": {
+     "margin_inr": 124.25,
+     "waste_avoided_inr": 775.75,
+     "estimator_version": "est-v2",
+     "ci_low": 1.35,
+     "discount_cost_inr": 100,
+     "prior_n": 20,
+     "ci_high": 72.93,
+     "units": 25,
+     "measured_n": 0
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f86833670e"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "counterfactuals": {
+     "play_net_inr": 124.25,
+     "blanket_markdown_inr": 364.16,
+     "do_nothing_inr": 775.75,
+     "blanket_markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "objective": "expiry_writeoff",
+    "target": {
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "sku": "SKU-RUSK-400G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 25
+    },
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "bundle_price": 70,
+       "bundle_sku": "SKU-BUTTER-1L"
+      },
+      "expected_margin_inr": 91.75,
+      "expected_units": 25,
+      "mechanic": "bundle",
+      "rejected_because": "Failed margin floor guardrail (5.24% vs 8.00% floor)."
+     },
+     {
+      "mechanic": "markdown",
+      "expected_margin_inr": -239.91,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "rejected_because": "Negative expected margin and lower recovery than outlet markdown.",
+      "expected_units": 25
+     }
+    ],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f86833670e"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "mechanic": "outlet_markdown",
+    "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose an outlet markdown play with a 10% discount. This play recovers 900.00 INR compared to doing nothing (775.75 INR plus 124.25 INR). It also recovers 488.41 INR compared to a blanket markdown (364.16 INR plus 124.25 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 364.16,
+     "play_net_inr": 124.25,
+     "do_nothing_inr": 775.75,
+     "blanket_markdown_pct": 10
+    },
+    "play_id": "play_f86833670e_v1",
+    "audience": {
+     "size_before_consent": 359,
+     "size_after_consent": 308,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "purpose": "marketing"
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "expected_outcome": {
+     "measured_n": 0,
+     "discount_cost_inr": 100,
+     "units": 25,
+     "margin_inr": 124.25,
+     "ci_low": 1.35,
+     "ci_high": 72.93,
+     "estimator_version": "est-v2",
+     "prior_n": 20,
+     "waste_avoided_inr": 775.75
+    },
+    "channel": "outlet",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "gap_id": "gap_f86833670e",
+    "guardrails": [
+     {
+      "detail": "net margin 13.81% (net price 36.00, cost 31.03) vs bakery floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 308 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "outlet channel: no personal message, consent not required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-RUSK-400G in audience"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-RUSK-400G at OUT-04",
+      "passed": true
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "10 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true
+     }
+    ]
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "outlet",
+    "expected_outcome": {
+     "ci_high": 72.93,
+     "waste_avoided_inr": 775.75,
+     "prior_n": 20,
+     "units": 25,
+     "estimator_version": "est-v2",
+     "ci_low": 1.35,
+     "discount_cost_inr": 100,
+     "measured_n": 0,
+     "margin_inr": 124.25
+    },
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_f86833670e",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 308,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "size_before_consent": 359
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 364.16,
+     "play_net_inr": 124.25,
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 775.75
+    },
+    "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose an outlet markdown play with a 10% discount. This play recovers 900.00 INR compared to doing nothing (775.75 INR plus 124.25 INR). It also recovers 488.41 INR compared to a blanket markdown (364.16 INR plus 124.25 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f86833670e"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "alternatives": [
+     {
+      "mechanic": "bundle",
+      "expected_units": 25,
+      "expected_margin_inr": 91.75,
+      "mechanic_params": {
+       "bundle_price": 70,
+       "bundle_sku": "SKU-BUTTER-1L"
+      },
+      "rejected_because": "Failed margin floor guardrail (5.24% vs 8.00% floor)."
+     },
+     {
+      "expected_margin_inr": -239.91,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "mechanic": "markdown",
+      "expected_units": 25,
+      "rejected_because": "Negative expected margin and lower recovery than outlet markdown."
+     }
+    ],
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "units": 25,
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ],
+     "sku": "SKU-RUSK-400G"
+    },
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "clear_expiry",
+    "play_id": "play_f86833670e_v1"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 308,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_6"
+     ],
+     "size_before_consent": 359
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_f86833670e_v1"
+    },
+    "mechanic": "outlet_markdown",
+    "citations": [
+     {
+      "ref": "gap_f86833670e",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "rationale": "To clear 25 units of Rusk 400G at risk of expiry by 2026-09-23, we propose an outlet markdown play with a 10% discount. This play recovers 900.00 INR compared to doing nothing (775.75 INR plus 124.25 INR). It also recovers 488.41 INR compared to a blanket markdown (364.16 INR plus 124.25 INR). The play targets 308 customers across segments seg_5, seg_1, seg_3, seg_2, seg_4, and seg_6. The near-expiry date of 2026-09-23 will be disclosed in the copy.",
+    "expected_outcome": {
+     "ci_high": 72.93,
+     "measured_n": 0,
+     "discount_cost_inr": 100,
+     "units": 25,
+     "waste_avoided_inr": 775.75,
+     "margin_inr": 124.25,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "ci_low": 1.35
+    },
+    "alternatives": [
+     {
+      "rejected_because": "Failed margin floor guardrail (5.24% vs 8.00% floor).",
+      "expected_margin_inr": 91.75,
+      "expected_units": 25,
+      "mechanic": "bundle",
+      "mechanic_params": {
+       "bundle_price": 70,
+       "bundle_sku": "SKU-BUTTER-1L"
+      }
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_units": 25,
+      "expected_margin_inr": -239.91,
+      "mechanic": "markdown",
+      "rejected_because": "Negative expected margin and lower recovery than outlet markdown."
+     }
+    ],
+    "channel": "outlet",
+    "counterfactuals": {
+     "play_net_inr": 124.25,
+     "do_nothing_inr": 775.75,
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 364.16
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 13.81% (net price 36.00, cost 31.03) vs bakery floor 8.00%"
+     },
+     {
+      "passed": true,
+      "detail": "all 308 customers under 2 plays in 7 days",
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "outlet channel: no personal message, consent not required",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "detail": "no active subscribers of SKU-RUSK-400G in audience",
+      "rule": "subscription_protect"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-RUSK-400G at OUT-04",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "10 number(s) in rationale all cited; 4 citation(s) resolve"
+     }
+    ],
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_f86833670e",
+    "objective": "clear_expiry",
+    "target": {
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ],
+     "sku": "SKU-RUSK-400G",
+     "units": 25,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_date": "2026-09-23"
+    },
+    "play_id": "play_f86833670e_v1"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_f86833670e_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "audience: 'filters' is a required property",
+    "objective: 'expiry_writeoff' is not one of ['clear_online_sellby', 'clear_expiry', 'prevent_stockout', 'rebalance', 'revive_slow_mover']",
+    "target: 'batch_ids' is a required property"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_f86833670e_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 33804,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_f86833670e_v1_0d008c92",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 33804,
+  "usage": {
+   "prompt_token_count": 53735,
+   "candidates_token_count": 5683,
+   "total_token_count": 59418,
+   "cached_content_token_count": 36338
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 894.22,
+  "blanket20_recovery_inr": 47.43,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 35.3,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 7.51,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 5001,
+    "candidates": 640,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.014588,
+   "error": null,
+   "elapsed_s": 2.75,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5846,
+    "candidates": 879,
+    "thoughts": 0,
+    "cached": 3654
+   },
+   "usd": 0.012922,
+   "error": null,
+   "elapsed_s": 3.84,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6735,
+    "candidates": 882,
+    "thoughts": 0,
+    "cached": 5342
+   },
+   "usd": 0.011912,
+   "error": null,
+   "elapsed_s": 3.8,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7624,
+    "candidates": 1166,
+    "thoughts": 0,
+    "cached": 5241
+   },
+   "usd": 0.01634,
+   "error": null,
+   "elapsed_s": 4.46,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8578,
+    "candidates": 908,
+    "thoughts": 0,
+    "cached": 6885
+   },
+   "usd": 0.012919,
+   "error": null,
+   "elapsed_s": 3.83,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9513,
+    "candidates": 1192,
+    "thoughts": 0,
+    "cached": 6800
+   },
+   "usd": 0.017399,
+   "error": null,
+   "elapsed_s": 4.52,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10438,
+    "candidates": 16,
+    "thoughts": 0,
+    "cached": 8416
+   },
+   "usd": 0.004883,
+   "error": null,
+   "elapsed_s": 1.44,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.090963,
+ "tokens": {
+  "prompt": 53735,
+  "cached": 36338,
+  "candidates": 5683,
+  "thoughts": 0
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite",
+ "first_attempt": {
+  "verdict": "INVALID",
+  "reason": "infra/harness error CalledProcessError: Command '['/Users/NS/AI_builder_taal/worktrees/markdown/.venv/bin/python', '-m', 'jobs.sense', '--data', '.local/sealed/seed_40617833']' returned non-zero exit status 1.",
+  "tag": "S03__run1",
+  "usd": 0
+ }
+}

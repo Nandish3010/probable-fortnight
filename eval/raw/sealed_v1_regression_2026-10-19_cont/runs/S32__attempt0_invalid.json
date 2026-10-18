@@ -1,0 +1,906 @@
+{
+ "scenario_id": "S32",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_286e4a4287",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:21:34Z",
+ "tag": "S32__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "discount_pct": 10
+  },
+  "target": {
+   "deadline_date": "2026-09-16",
+   "deadline_type": "online_sellby",
+   "units": 67,
+   "sku": "SKU-CREAM-BUN-400G",
+   "node_ids": [
+    "DS-05"
+   ],
+   "batch_ids": [
+    "B-CREAM-BUN-400G-DS-05-01"
+   ]
+  },
+  "expected_outcome": {
+   "units": 30.85,
+   "margin_inr": 141.91,
+   "waste_avoided_inr": 1107.52,
+   "discount_cost_inr": 138.83,
+   "ci_low": 1.66,
+   "ci_high": 90.0,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "channel": "web_chat",
+  "rationale": "This play recovers 1249.43 INR versus doing nothing, and beats a blanket markdown by 316.67 INR. We target high-affinity segments with a 10% coupon to clear the cream bun lot before its online sell-by date. This maintains a net margin of 11.36%, which is above the bakery floor of 8.00%.",
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en",
+    "kn"
+   ]
+  },
+  "gap_id": "gap_286e4a4287",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 11.36% (net price 40.50, cost 35.90) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 313 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 363 -> 313"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-BUN-400G at DS-05"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "5 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "alternatives": [
+   {
+    "expected_margin_inr": -125.82,
+    "expected_units": 18.92,
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "rejected_because": "lower expected margin than the coupon play"
+   }
+  ],
+  "play_id": "play_286e4a4287_v1",
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_286e4a4287_v1"
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "objective": "clear_online_sellby",
+  "citations": [
+   {
+    "ref": "gap_286e4a4287",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "mechanic": "coupon",
+  "audience": {
+   "filters": {},
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_4",
+    "seg_3",
+    "seg_2",
+    "seg_5"
+   ],
+   "size_before_consent": 363,
+   "size_after_consent": 313
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2405.3,
+   "blanket_markdown_inr": 1472.54,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1155.87
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_286e4a4287_v1_525ef715",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 40.69,
+   "pct_of_rupees_at_stake": 1.855
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1249.43,
+ "mechanic": "coupon",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_286e4a4287",
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "app_push",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_after_consent": 313,
+     "purpose": "marketing",
+     "size_before_consent": 363,
+     "filters": {}
+    },
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_286e4a4287_v1",
+     "fraction": 0.1
+    },
+    "mechanic": "coupon",
+    "target": {
+     "units": 67,
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ],
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-400G",
+     "node_ids": [
+      "DS-05"
+     ]
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 313,
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 363
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_286e4a4287_v2",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_286e4a4287",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-1L",
+     "bundle_price": 70
+    },
+    "target": {
+     "units": 67,
+     "node_ids": [
+      "DS-05"
+     ],
+     "deadline_date": "2026-09-16",
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "mechanic": "bundle",
+    "channel": "app_push"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_286e4a4287_v3",
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_286e4a4287",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "filters": {}
+    },
+    "target": {
+     "sku": "SKU-CREAM-BUN-400G",
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "units": 67,
+     "node_ids": [
+      "DS-05"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "channel": "outlet",
+    "objective": "clear_online_sellby",
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "size_after_consent": 313,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 363,
+     "filters": []
+    },
+    "channel": "web_chat",
+    "guardrails": [],
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "expected_outcome": {
+     "ci_high": 102.87,
+     "discount_cost_inr": 238,
+     "units": 35.26,
+     "margin_inr": 82.86,
+     "waste_avoided_inr": 1265.83,
+     "measured_n": 0,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "ci_low": 1.9
+    },
+    "objective": "clear_online_sellby",
+    "play_id": "play_286e4a4287_v1",
+    "gap_id": "gap_286e4a4287",
+    "alternatives": [
+     {
+      "rejected_because": "reference only",
+      "mechanic_params": [
+       "markdown_pct"
+      ],
+      "expected_units": 18.92,
+      "expected_margin_inr": -125.82,
+      "mechanic": "markdown"
+     }
+    ],
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en",
+      "kn"
+     ],
+     "variants": []
+    },
+    "mechanic": "coupon",
+    "target": {
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ],
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "units": 67,
+     "node_ids": [
+      "DS-05"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_286e4a4287_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "counterfactuals": {
+     "play_net_inr": -1056.61,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 1472.54,
+     "do_nothing_inr": 2405.3
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "channel": "app_push",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_286e4a4287_v1"
+    },
+    "target": {
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ],
+     "deadline_type": "online_sellby",
+     "units": 67,
+     "node_ids": [
+      "DS-05"
+     ],
+     "deadline_date": "2026-09-16",
+     "sku": "SKU-CREAM-BUN-400G"
+    },
+    "gap_id": "gap_286e4a4287",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 313,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 363
+    },
+    "objective": "clear_online_sellby",
+    "mechanic": "coupon",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "web_chat",
+    "target": {
+     "units": 67,
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ],
+     "node_ids": [
+      "DS-05"
+     ],
+     "sku": "SKU-CREAM-BUN-400G",
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby"
+    },
+    "guardrails": [],
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 138.83,
+     "prior_n": 20,
+     "ci_low": 1.66,
+     "ci_high": 90,
+     "measured_n": 0,
+     "estimator_version": "est-v2",
+     "units": 30.85,
+     "waste_avoided_inr": 1107.52,
+     "margin_inr": 141.91
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 313,
+     "size_before_consent": 363,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ]
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": -125.82,
+      "expected_units": 18.92,
+      "mechanic": "markdown",
+      "rejected_because": "lower expected margin than the coupon play",
+      "mechanic_params": {
+       "markdown_pct": 10
+      }
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "gap_id": "gap_286e4a4287",
+    "mechanic": "coupon",
+    "play_id": "play_286e4a4287_v1",
+    "objective": "clear_online_sellby",
+    "counterfactuals": {
+     "play_net_inr": -1155.87,
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 2405.3,
+     "blanket_markdown_inr": 1472.54
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_286e4a4287_v1"
+    },
+    "copy": {
+     "language_set": [
+      "en",
+      "kn"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "citations": [
+     {
+      "ref": "gap_286e4a4287",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "target": {
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "units": 67,
+     "sku": "SKU-CREAM-BUN-400G",
+     "node_ids": [
+      "DS-05"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-05-01"
+     ]
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "waste_avoided_inr": 1107.52,
+     "prior_n": 20,
+     "units": 30.85,
+     "ci_high": 90,
+     "ci_low": 1.66,
+     "measured_n": 0,
+     "margin_inr": 141.91,
+     "discount_cost_inr": 138.83
+    },
+    "channel": "web_chat",
+    "rationale": "This play recovers 1249.43 INR versus doing nothing, and beats a blanket markdown by 316.67 INR. We target high-affinity segments with a 10% coupon to clear the cream bun lot before its online sell-by date. This maintains a net margin of 11.36%, which is above the bakery floor of 8.00%.",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en",
+      "kn"
+     ]
+    },
+    "gap_id": "gap_286e4a4287",
+    "guardrails": [
+     {
+      "detail": "net margin 11.36% (net price 40.50, cost 35.90) vs bakery floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "passed": true,
+      "detail": "all 313 customers under 2 plays in 7 days",
+      "rule": "frequency_cap"
+     },
+     {
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 363 -> 313",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+     },
+     {
+      "detail": "no stockout gap for SKU-CREAM-BUN-400G at DS-05",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+     }
+    ],
+    "alternatives": [
+     {
+      "expected_margin_inr": -125.82,
+      "expected_units": 18.92,
+      "mechanic": "markdown",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "rejected_because": "lower expected margin than the coupon play"
+     }
+    ],
+    "play_id": "play_286e4a4287_v1",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_286e4a4287_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "objective": "clear_online_sellby",
+    "citations": [
+     {
+      "ref": "gap_286e4a4287",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "mechanic": "coupon",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_4",
+      "seg_3",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 363,
+     "size_after_consent": 313
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 1472.54,
+     "play_net_inr": -1155.87,
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 2405.3
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_286e4a4287_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_286e4a4287_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 34677,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 553.41; this play 1249.43; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_286e4a4287_v1_525ef715",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 34677,
+  "usage": {
+   "prompt_token_count": 47601,
+   "candidates_token_count": 3591,
+   "thoughts_token_count": 1740,
+   "cached_content_token_count": 32037,
+   "total_token_count": 52932
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1053.06,
+  "blanket20_recovery_inr": 932.76,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 36.5,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5018,
+    "candidates": 930,
+    "thoughts": 465,
+    "cached": 3818
+   },
+   "usd": 0.01642,
+   "error": null,
+   "elapsed_s": 6.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 0.29,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 6453,
+    "candidates": 585,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.016439,
+   "error": null,
+   "elapsed_s": 4.97,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7612,
+    "candidates": 329,
+    "thoughts": 310,
+    "cached": 5368
+   },
+   "usd": 0.010914,
+   "error": null,
+   "elapsed_s": 5.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8418,
+    "candidates": 676,
+    "thoughts": 15,
+    "cached": 7116
+   },
+   "usd": 0.010163,
+   "error": null,
+   "elapsed_s": 2.98,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9186,
+    "candidates": 1055,
+    "thoughts": 924,
+    "cached": 6994
+   },
+   "usd": 0.024363,
+   "error": null,
+   "elapsed_s": 8.22,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10914,
+    "candidates": 16,
+    "thoughts": 26,
+    "cached": 8741
+   },
+   "usd": 0.005444,
+   "error": null,
+   "elapsed_s": 2.04,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.083743,
+ "tokens": {
+  "prompt": 47601,
+  "cached": 32037,
+  "candidates": 3591,
+  "thoughts": 1740
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite"
+}

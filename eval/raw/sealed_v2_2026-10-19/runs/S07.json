@@ -1,0 +1,728 @@
+{
+ "scenario_id": "S07",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_f5c3c9eafa",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:15:30Z",
+ "tag": "S07__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.44% (net price 72.00, cost 65.92) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 333 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-200G at OUT-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "14 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "rationale": "This outlet markdown play targets 333 customers across six high-affinity segments to clear 75 units of Curd 200G at Outlet 03 before its expiry on 2026-09-18. Offering a 10% markdown yields an expected clearance of 30.82 units, recovering 2219.04 INR over doing nothing (do_nothing_inr of 4944.00 INR and play_net_inr of -2724.96 INR) and beating a blanket markdown by 979.93 INR (blanket_markdown_inr of 3704.89 INR and play_net_inr of -2724.96 INR). The net margin of 8.44% remains above the dairy category floor of 8.00%. A 10% holdout is maintained to measure the play's performance.",
+  "window": {
+   "end": "2026-09-18T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "play_id": "play_f5c3c9eafa_v1",
+  "target": {
+   "deadline_date": "2026-09-18",
+   "deadline_type": "expiry",
+   "batch_ids": [
+    "B-CURD-200G-OUT-03-01"
+   ],
+   "units": 75,
+   "sku": "SKU-CURD-200G",
+   "node_ids": [
+    "OUT-03"
+   ]
+  },
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_2",
+    "seg_3",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_after_consent": 333,
+   "size_before_consent": 389,
+   "purpose": "marketing",
+   "filters": {}
+  },
+  "objective": "clear_expiry",
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 4944.0,
+   "blanket_markdown_inr": 3704.89,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -2724.96
+  },
+  "mechanic": "outlet_markdown",
+  "gap_id": "gap_f5c3c9eafa",
+  "channel": "outlet",
+  "alternatives": [
+   {
+    "expected_margin_inr": 22.81,
+    "mechanic": "bundle",
+    "expected_units": 36.21,
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-200G",
+     "bundle_price": 130
+    },
+    "rejected_because": "lower expected margin than the outlet markdown play"
+   },
+   {
+    "expected_units": 40.48,
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "rejected_because": "negative expected margin and lot is past its online sell-by date",
+    "mechanic": "markdown",
+    "expected_margin_inr": -725.32
+   }
+  ],
+  "holdout": {
+   "seed": "seed-play_f5c3c9eafa_v1",
+   "min_treated_n": 20,
+   "fraction": 0.1
+  },
+  "copy": {
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ],
+   "variants": []
+  },
+  "expected_outcome": {
+   "units": 30.82,
+   "margin_inr": 187.39,
+   "waste_avoided_inr": 2031.65,
+   "discount_cost_inr": 246.56,
+   "ci_low": 1.66,
+   "ci_high": 89.91,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_f5c3c9eafa"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_f5c3c9eafa_v1_f76cff06",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 43.29,
+   "pct_of_rupees_at_stake": 0.955
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2219.04,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_expiry",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_f5c3c9eafa_v1",
+     "fraction": 0.1
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_f5c3c9eafa",
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 75,
+     "batch_ids": [
+      "B-CURD-200G-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-CURD-200G",
+     "deadline_type": "expiry"
+    },
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 389,
+     "purpose": "marketing",
+     "size_after_consent": 333
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_f5c3c9eafa_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_price": 130,
+     "bundle_sku": "SKU-PAV-200G"
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_expiry",
+    "mechanic": "bundle",
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "batch_ids": [
+      "B-CURD-200G-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-CURD-200G",
+     "units": 75,
+     "deadline_type": "expiry"
+    },
+    "gap_id": "gap_f5c3c9eafa",
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 333,
+     "size_before_consent": 389,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "audience": {
+     "filters": {},
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "purpose": "marketing"
+    },
+    "objective": "clear_expiry",
+    "gap_id": "gap_f5c3c9eafa",
+    "target": {
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "units": 75,
+     "node_ids": [
+      "OUT-03"
+     ],
+     "batch_ids": [
+      "B-CURD-200G-OUT-03-01"
+     ],
+     "sku": "SKU-CURD-200G"
+    },
+    "mechanic": "markdown",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_f5c3c9eafa_v1"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_f5c3c9eafa_v1"
+    },
+    "counterfactuals": {
+     "play_net_inr": -2724.96,
+     "do_nothing_inr": 4944,
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 3704.89
+    },
+    "mechanic": "outlet_markdown",
+    "target": {
+     "sku": "SKU-CURD-200G",
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 75,
+     "batch_ids": [
+      "B-CURD-200G-OUT-03-01"
+     ]
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "outlet",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f5c3c9eafa"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "gap_id": "gap_f5c3c9eafa",
+    "guardrails": [],
+    "expected_outcome": {
+     "ci_low": 1.66,
+     "units": 30.82,
+     "estimator_version": "est-v2",
+     "margin_inr": 187.39,
+     "discount_cost_inr": 246.56,
+     "ci_high": 89.91,
+     "prior_n": 20,
+     "waste_avoided_inr": 2031.65,
+     "measured_n": 0
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_expiry",
+    "play_id": "play_f5c3c9eafa_v1",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "audience": {
+     "size_before_consent": 389,
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 333,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 8.44% (net price 72.00, cost 65.92) vs dairy floor 8.00%"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "all 333 customers under 2 plays in 7 days"
+     },
+     {
+      "detail": "outlet channel: no personal message, consent not required",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-200G in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-CURD-200G at OUT-03"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+     }
+    ],
+    "rationale": "This outlet markdown play targets 333 customers across six high-affinity segments to clear 75 units of Curd 200G at Outlet 03 before its expiry on 2026-09-18. Offering a 10% markdown yields an expected clearance of 30.82 units, recovering 2219.04 INR over doing nothing (do_nothing_inr of 4944.00 INR and play_net_inr of -2724.96 INR) and beating a blanket markdown by 979.93 INR (blanket_markdown_inr of 3704.89 INR and play_net_inr of -2724.96 INR). The net margin of 8.44% remains above the dairy category floor of 8.00%. A 10% holdout is maintained to measure the play's performance.",
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "play_id": "play_f5c3c9eafa_v1",
+    "target": {
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-CURD-200G-OUT-03-01"
+     ],
+     "units": 75,
+     "sku": "SKU-CURD-200G",
+     "node_ids": [
+      "OUT-03"
+     ]
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 333,
+     "size_before_consent": 389,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 4944,
+     "blanket_markdown_inr": 3704.89,
+     "blanket_markdown_pct": 10,
+     "play_net_inr": -2724.96
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_f5c3c9eafa",
+    "channel": "outlet",
+    "alternatives": [
+     {
+      "expected_margin_inr": 22.81,
+      "mechanic": "bundle",
+      "expected_units": 36.21,
+      "mechanic_params": {
+       "bundle_sku": "SKU-PAV-200G",
+       "bundle_price": 130
+      },
+      "rejected_because": "lower expected margin than the outlet markdown play"
+     },
+     {
+      "expected_units": 40.48,
+      "mechanic_params": {
+       "markdown_pct": 15
+      },
+      "rejected_because": "negative expected margin and lot is past its online sell-by date",
+      "mechanic": "markdown",
+      "expected_margin_inr": -725.32
+     }
+    ],
+    "holdout": {
+     "seed": "seed-play_f5c3c9eafa_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 2031.65,
+     "units": 30.82,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "ci_low": 1.66,
+     "prior_n": 20,
+     "ci_high": 89.91,
+     "margin_inr": 187.39,
+     "discount_cost_inr": 246.56
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f5c3c9eafa"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ]
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_f5c3c9eafa_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_f5c3c9eafa_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 23101,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_f5c3c9eafa_v1_f76cff06",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 23101,
+  "usage": {
+   "prompt_token_count": 30614,
+   "candidates_token_count": 2702,
+   "thoughts_token_count": 2408,
+   "cached_content_token_count": 20214,
+   "total_token_count": 35724
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2456.61,
+  "blanket20_recovery_inr": 2478.21,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 23.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4975,
+    "candidates": 865,
+    "thoughts": 1324,
+    "cached": 3816
+   },
+   "usd": 0.024213,
+   "error": null,
+   "elapsed_s": 9.39,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7348,
+    "candidates": 594,
+    "thoughts": 269,
+    "cached": 3715
+   },
+   "usd": 0.015151,
+   "error": null,
+   "elapsed_s": 3.65,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8272,
+    "candidates": 1229,
+    "thoughts": 789,
+    "cached": 5462
+   },
+   "usd": 0.025516,
+   "error": null,
+   "elapsed_s": 7.92,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10019,
+    "candidates": 14,
+    "thoughts": 26,
+    "cached": 7221
+   },
+   "usd": 0.006204,
+   "error": null,
+   "elapsed_s": 0.92,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.071084,
+ "tokens": {
+  "prompt": 30614,
+  "cached": 20214,
+  "candidates": 2702,
+  "thoughts": 2408
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

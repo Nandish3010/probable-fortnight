@@ -1,0 +1,1070 @@
+{
+ "scenario_id": "S04",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_67f1a62927",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:42:50Z",
+ "tag": "S04__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "channel": "web_chat",
+  "audience": {
+   "size_after_consent": 207,
+   "segment_ids": [
+    "seg_3",
+    "seg_6",
+    "seg_2",
+    "seg_1"
+   ],
+   "size_before_consent": 245,
+   "purpose": "marketing",
+   "filters": {}
+  },
+  "citations": [
+   {
+    "ref": "gap_67f1a62927",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "play_id": "play_67f1a62927_v1",
+  "mechanic": "bundle",
+  "target": {
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-23",
+   "units": 41,
+   "node_ids": [
+    "OUT-06"
+   ],
+   "sku": "SKU-BUTTER-200G",
+   "batch_ids": [
+    "B-BUTTER-200G-OUT-06-01"
+   ]
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 6717.85,
+   "blanket_markdown_inr": 10342.8,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -2957.96
+  },
+  "rationale": "To clear the expiry risk of Butter 200G at Outlet 06, we propose a bundle play with Multigrain Bread 400G. This play targets high-affinity segments. It is preferred by policy over markdowns and has a positive expected margin.",
+  "mechanic_params": {
+   "bundle_price": 250,
+   "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+  },
+  "expected_outcome": {
+   "units": 20.36,
+   "margin_inr": 423.9,
+   "waste_avoided_inr": 3335.99,
+   "discount_cost_inr": 610.8,
+   "ci_low": 1.1,
+   "ci_high": 59.4,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "gap_id": "gap_67f1a62927",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "alternatives": [
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 8
+    },
+    "expected_margin_inr": 292.5,
+    "rejected_because": "Policy prefers bundles over markdowns",
+    "expected_units": 18.81
+   },
+   {
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "rejected_because": "Policy prefers bundles over markdowns and this has lower expected margin than the bundle play",
+    "expected_units": 17.1,
+    "expected_margin_inr": 365.94,
+    "mechanic": "outlet_markdown"
+   }
+  ],
+  "objective": "clear_expiry",
+  "holdout": {
+   "fraction": 0.1,
+   "min_treated_n": 20,
+   "seed": "seed-play_67f1a62927_v1"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.33% (net price 250.00, cost 229.18) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 207 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 245 -> 207"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-BUTTER-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-BUTTER-200G at OUT-06"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "2 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-23T23:59:59Z"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_67f1a62927_v1_e0e8f9bf",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 26.91,
+   "pct_of_rupees_at_stake": 0.459
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 3759.89,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 245,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_after_consent": 207,
+     "filters": {}
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "sku": "SKU-BUTTER-200G",
+     "units": 41,
+     "node_ids": [
+      "OUT-06"
+     ],
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_67f1a62927_v1",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_67f1a62927",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_67f1a62927_v1",
+     "min_treated_n": 20
+    },
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_after_consent": 207,
+     "filters": {},
+     "size_before_consent": 245
+    },
+    "gap_id": "gap_67f1a62927",
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "target": {
+     "sku": "SKU-BUTTER-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "units": 41,
+     "node_ids": [
+      "OUT-06"
+     ],
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 230,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "node_ids": [
+      "OUT-06"
+     ],
+     "deadline_type": "expiry",
+     "sku": "SKU-BUTTER-200G",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "units": 41
+    },
+    "objective": "clear_expiry",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "web_chat",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_67f1a62927_v1",
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_67f1a62927"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "size_before_consent": 245,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_after_consent": 207,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "mechanic": "outlet_markdown",
+    "objective": "clear_expiry",
+    "gap_id": "gap_67f1a62927",
+    "channel": "outlet",
+    "target": {
+     "units": 41,
+     "deadline_date": "2026-09-23",
+     "node_ids": [
+      "OUT-06"
+     ],
+     "sku": "SKU-BUTTER-200G",
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_67f1a62927_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_67f1a62927",
+    "target": {
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "units": 41,
+     "node_ids": [
+      "OUT-06"
+     ],
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "sku": "SKU-BUTTER-200G"
+    },
+    "channel": "outlet",
+    "mechanic": "outlet_markdown",
+    "objective": "clear_expiry",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_67f1a62927_v1",
+     "fraction": 0.1
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 207,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_before_consent": 245,
+     "filters": {}
+    },
+    "mechanic_params": {
+     "markdown_pct": 8
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 250
+    },
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "objective": "clear_expiry",
+    "target": {
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "units": 41,
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-06"
+     ],
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-BUTTER-200G"
+    },
+    "gap_id": "gap_67f1a62927",
+    "holdout": {
+     "seed": "seed-play_67f1a62927_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "audience": {
+     "size_after_consent": 207,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 245
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "channel": "outlet",
+    "target": {
+     "units": 41,
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "sku": "SKU-BUTTER-200G",
+     "node_ids": [
+      "OUT-06"
+     ]
+    },
+    "gap_id": "gap_67f1a62927",
+    "objective": "clear_expiry",
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_before_consent": 245,
+     "size_after_consent": 207,
+     "filters": {}
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_67f1a62927_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "markdown_pct": 5
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "target": {
+     "node_ids": [
+      "OUT-06"
+     ],
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ],
+     "sku": "SKU-BUTTER-200G",
+     "units": 41,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_67f1a62927_v1",
+     "fraction": 0.1
+    },
+    "audience": {
+     "size_after_consent": 207,
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 245,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 250
+    },
+    "gap_id": "gap_67f1a62927",
+    "channel": "web_chat",
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "objective": "clear_expiry",
+    "audience": {
+     "size_after_consent": 207,
+     "size_before_consent": 245,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_67f1a62927_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic": "bundle",
+    "guardrails": [
+     {
+      "detail": "net margin 8.33% (net price 250.00, cost 229.18) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 207 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 245 -> 207",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-BUTTER-200G in audience",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-BUTTER-200G at OUT-06",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+     }
+    ],
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 250
+    },
+    "play_id": "play_67f1a62927_v1",
+    "expected_outcome": {
+     "measured_n": 0,
+     "units": 20.36,
+     "ci_high": 59.4,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 610.8,
+     "ci_low": 1.1,
+     "waste_avoided_inr": 3335.99,
+     "margin_inr": 423.9
+    },
+    "gap_id": "gap_67f1a62927",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 6717.85,
+     "play_net_inr": -2694.96,
+     "blanket_markdown_inr": 10342.8
+    },
+    "citations": [
+     {
+      "ref": "gap_67f1a62927",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "channel": "web_chat",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "rationale": "To clear the expiry risk of 41 units of Butter 200G at Outlet 06, we propose a bundle play with Multigrain Bread 400G at a bundle price of 250 INR. This play targets high-affinity segments with a total size of 207 customers after consent. This play recovers 4022.89 INR versus doing nothing (do_nothing_inr of 6717.85 INR and play_net_inr of -2694.96 INR). It beats a blanket markdown by 7647.84 INR (blanket_markdown_inr of 10342.80 INR and play_net_inr of -2694.96 INR).",
+    "alternatives": [
+     {
+      "rejected_because": "Policy prefers bundles over markdowns",
+      "expected_margin_inr": 292.5,
+      "mechanic": "outlet_markdown",
+      "mechanic_params": {
+       "markdown_pct": 8
+      },
+      "expected_units": 18.81
+     },
+     {
+      "mechanic": "outlet_markdown",
+      "expected_units": 17.1,
+      "rejected_because": "Policy prefers bundles over markdowns and this has lower expected margin than the bundle play",
+      "expected_margin_inr": 365.94,
+      "mechanic_params": {
+       "markdown_pct": 5
+      }
+     }
+    ],
+    "target": {
+     "units": 41,
+     "sku": "SKU-BUTTER-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "node_ids": [
+      "OUT-06"
+     ],
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ]
+    }
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "channel": "web_chat",
+    "audience": {
+     "size_after_consent": 207,
+     "segment_ids": [
+      "seg_3",
+      "seg_6",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_before_consent": 245,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "citations": [
+     {
+      "ref": "gap_67f1a62927",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "play_id": "play_67f1a62927_v1",
+    "mechanic": "bundle",
+    "target": {
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "units": 41,
+     "node_ids": [
+      "OUT-06"
+     ],
+     "sku": "SKU-BUTTER-200G",
+     "batch_ids": [
+      "B-BUTTER-200G-OUT-06-01"
+     ]
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 6717.85,
+     "blanket_markdown_inr": 10342.8,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -2694.96
+    },
+    "rationale": "To clear the expiry risk of Butter 200G at Outlet 06, we propose a bundle play with Multigrain Bread 400G. This play targets high-affinity segments. It is preferred by policy over markdowns and has a positive expected margin.",
+    "mechanic_params": {
+     "bundle_price": 250,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "expected_outcome": {
+     "prior_n": 20,
+     "waste_avoided_inr": 3335.99,
+     "ci_high": 59.4,
+     "estimator_version": "est-v2",
+     "ci_low": 1.1,
+     "measured_n": 0,
+     "margin_inr": 423.9,
+     "units": 20.36,
+     "discount_cost_inr": 610.8
+    },
+    "gap_id": "gap_67f1a62927",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "alternatives": [
+     {
+      "mechanic": "outlet_markdown",
+      "mechanic_params": {
+       "markdown_pct": 8
+      },
+      "expected_margin_inr": 292.5,
+      "rejected_because": "Policy prefers bundles over markdowns",
+      "expected_units": 18.81
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 5
+      },
+      "rejected_because": "Policy prefers bundles over markdowns and this has lower expected margin than the bundle play",
+      "expected_units": 17.1,
+      "expected_margin_inr": 365.94,
+      "mechanic": "outlet_markdown"
+     }
+    ],
+    "objective": "clear_expiry",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_67f1a62927_v1"
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 8.33% (net price 250.00, cost 229.18) vs dairy floor 8.00%"
+     },
+     {
+      "passed": true,
+      "detail": "all 207 customers under 2 plays in 7 days",
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 245 -> 207",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true,
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-BUTTER-200G in audience"
+     },
+     {
+      "detail": "no stockout gap for SKU-BUTTER-200G at OUT-06",
+      "passed": true,
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_67f1a62927_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "guardrail cite_or_drop: uncited numbers in rationale: -2694.96, 4022.89, 7647.84"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_67f1a62927_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 40791,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_67f1a62927_v1_e0e8f9bf",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 40791,
+  "usage": {
+   "prompt_token_count": 63598,
+   "candidates_token_count": 4702,
+   "thoughts_token_count": 3898,
+   "total_token_count": 72198,
+   "cached_content_token_count": 42821
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 5704.64,
+  "blanket20_recovery_inr": -3624.95,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 41.5,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5033,
+    "candidates": 881,
+    "thoughts": 354,
+    "cached": 0
+   },
+   "usd": 0.020531,
+   "error": null,
+   "elapsed_s": 5.79,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6448,
+    "candidates": 302,
+    "thoughts": 285,
+    "cached": 3668
+   },
+   "usd": 0.011004,
+   "error": null,
+   "elapsed_s": 4.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7193,
+    "candidates": 901,
+    "thoughts": 816,
+    "cached": 5431
+   },
+   "usd": 0.020802,
+   "error": null,
+   "elapsed_s": 7.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9086,
+    "candidates": 324,
+    "thoughts": 31,
+    "cached": 5353
+   },
+   "usd": 0.010557,
+   "error": null,
+   "elapsed_s": 1.83,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9599,
+    "candidates": 1196,
+    "thoughts": 1911,
+    "cached": 8826
+   },
+   "usd": 0.033491,
+   "error": null,
+   "elapsed_s": 12.16,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 12471,
+    "candidates": 1082,
+    "thoughts": 476,
+    "cached": 8919
+   },
+   "usd": 0.022757,
+   "error": null,
+   "elapsed_s": 6.47,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13768,
+    "candidates": 16,
+    "thoughts": 25,
+    "cached": 10624
+   },
+   "usd": 0.007346,
+   "error": null,
+   "elapsed_s": 1.08,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.126488,
+ "tokens": {
+  "prompt": 63598,
+  "cached": 42821,
+  "candidates": 4702,
+  "thoughts": 3898
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

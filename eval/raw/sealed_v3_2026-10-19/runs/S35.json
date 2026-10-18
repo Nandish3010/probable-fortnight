@@ -1,0 +1,795 @@
+{
+ "scenario_id": "S35",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 1
+ },
+ "gap_id": "gap_7b3c76a15e",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:48:30Z",
+ "tag": "S35__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.48% (net price 99.00, cost 90.60) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CHEESE-SLICES-400G at DS-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "markdown cannot be measured against a holdout: SKU-CHEESE-SLICES-400G is at risk at no other comparable node, so there is no node to hold out; a price cut cannot hold out individual customers. This play cannot be measured against a holdout."
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "9 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 11053.2,
+   "blanket_markdown_inr": 5963.76,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -4938.96
+  },
+  "channel": "web_chat",
+  "window": {
+   "end": "2026-09-24T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "objective": "clear_online_sellby",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_7b3c76a15e"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_7b3c76a15e_v1",
+   "min_treated_n": 20,
+   "measurement": "none",
+   "measurement_reason": "SKU-CHEESE-SLICES-400G is at risk at no other comparable node, so there is no node to hold out; a price cut cannot hold out individual customers. This play cannot be measured against a holdout."
+  },
+  "play_id": "play_7b3c76a15e_v1",
+  "mechanic": "markdown",
+  "rationale": "This play implements a 10% plain markdown to clear the cheese slices before their online sell-by date. The expected net recovery is INR 6114.24 (do nothing INR 11053.20 plus play net INR -4938.96), which beats the blanket markdown recovery of INR 6114.24 (blanket markdown INR 5963.76 plus play net INR -4938.96). Other targeted plays like bundles and coupons were rejected because they recover more than INR 500.00 less than this optimal markdown. This play is designed to clear all 122 units at risk at DS-04.",
+  "expected_outcome": {
+   "units": 122.0,
+   "margin_inr": -4938.96,
+   "waste_avoided_inr": 11053.2,
+   "discount_cost_inr": 7305.76,
+   "ci_low": 108.43,
+   "ci_high": 122.0,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "gap_id": "gap_7b3c76a15e",
+  "target": {
+   "sku": "SKU-CHEESE-SLICES-400G",
+   "node_ids": [
+    "DS-04"
+   ],
+   "units": 122,
+   "deadline_date": "2026-09-24",
+   "deadline_type": "online_sellby",
+   "batch_ids": [
+    "B-CHEESE-SLICES-400G-DS-04-01"
+   ]
+  },
+  "alternatives": [
+   {
+    "expected_margin_inr": 638.92,
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 170
+    },
+    "expected_units": 45.41,
+    "mechanic": "bundle",
+    "rejected_because": "recovers INR 4753.07, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24"
+   },
+   {
+    "expected_units": 48.03,
+    "mechanic": "coupon",
+    "rejected_because": "recovers INR 4490.81, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "expected_margin_inr": 139.29
+   }
+  ],
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-24"
+  },
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_7b3c76a15e_v1_67ac66db",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.036
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 6114.24,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 170
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_1"
+     ],
+     "size_before_consent": 504,
+     "size_after_consent": 423
+    },
+    "gap_id": "gap_7b3c76a15e",
+    "mechanic": "bundle",
+    "holdout": {
+     "seed": "seed-play_7b3c76a15e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-04"
+     ],
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ],
+     "units": 122,
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-CHEESE-SLICES-400G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "holdout": {
+     "seed": "seed-play_7b3c76a15e_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "coupon",
+    "gap_id": "gap_7b3c76a15e",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "size_after_consent": 423,
+     "size_before_consent": 504,
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_1"
+     ],
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 122,
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ],
+     "sku": "SKU-CHEESE-SLICES-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_type": "online_sellby"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "markdown",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "gap_id": "gap_7b3c76a15e",
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_after_consent": 0,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "holdout": {
+     "seed": "seed-play_7b3c76a15e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-400G",
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_type": "online_sellby",
+     "units": 122
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic": "markdown",
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0
+    },
+    "target": {
+     "units": 122,
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CHEESE-SLICES-400G",
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-04"
+     ]
+    },
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_7b3c76a15e_v1"
+    },
+    "gap_id": "gap_7b3c76a15e"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "counterfactuals": {
+     "play_net_inr": -4938.96,
+     "blanket_markdown_inr": 5963.76,
+     "do_nothing_inr": 11053.2,
+     "blanket_markdown_pct": 10
+    },
+    "target": {
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ],
+     "sku": "SKU-CHEESE-SLICES-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 122,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24"
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 638.92,
+      "mechanic_params": {
+       "bundle_price": 170,
+       "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+      },
+      "rejected_because": "recovers INR 4753.07, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24",
+      "mechanic": "bundle",
+      "expected_units": 45.41
+     },
+     {
+      "rejected_because": "recovers INR 4490.81, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24",
+      "expected_margin_inr": 139.29,
+      "mechanic_params": {
+       "discount_pct": 15
+      },
+      "mechanic": "coupon",
+      "expected_units": 48.03
+     }
+    ],
+    "channel": "web_chat",
+    "rationale": "This play implements a 10% plain markdown to clear the cheese slices before their online sell-by date. The expected net recovery is INR 6114.24 (do nothing INR 11053.20 plus play net INR -4938.96), which beats the blanket markdown recovery of INR 6114.24 (blanket markdown INR 5963.76 plus play net INR -4938.96). Other targeted plays like bundles and coupons were rejected because they recover more than INR 500.00 less than this optimal markdown. This play is designed to clear all 122 units at risk at DS-04.",
+    "play_id": "play_7b3c76a15e_v1",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "seed": "seed-play_7b3c76a15e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic": "markdown",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_7b3c76a15e"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0
+    },
+    "objective": "clear_online_sellby",
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 7305.76,
+     "prior_n": 0,
+     "waste_avoided_inr": 11053.2,
+     "ci_low": 108.43,
+     "measured_n": 0,
+     "margin_inr": -4938.96,
+     "ci_high": 122,
+     "units": 122
+    },
+    "gap_id": "gap_7b3c76a15e",
+    "guardrails": [],
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 8.48% (net price 99.00, cost 90.60) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "rule": "subscription_protect",
+      "detail": "markdown: a public shelf price, no offer is made to any customer",
+      "passed": true
+     },
+     {
+      "detail": "no stockout gap for SKU-CHEESE-SLICES-400G at DS-04",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "detail": "markdown cannot be measured against a holdout: SKU-CHEESE-SLICES-400G is at risk at no other comparable node, so there is no node to hold out; a price cut cannot hold out individual customers. This play cannot be measured against a holdout.",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "detail": "9 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 5963.76,
+     "play_net_inr": -4938.96,
+     "do_nothing_inr": 11053.2
+    },
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_7b3c76a15e"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_7b3c76a15e_v1",
+     "min_treated_n": 20
+    },
+    "play_id": "play_7b3c76a15e_v1",
+    "mechanic": "markdown",
+    "rationale": "This play implements a 10% plain markdown to clear the cheese slices before their online sell-by date. The expected net recovery is INR 6114.24 (do nothing INR 11053.20 plus play net INR -4938.96), which beats the blanket markdown recovery of INR 6114.24 (blanket markdown INR 5963.76 plus play net INR -4938.96). Other targeted plays like bundles and coupons were rejected because they recover more than INR 500.00 less than this optimal markdown. This play is designed to clear all 122 units at risk at DS-04.",
+    "expected_outcome": {
+     "discount_cost_inr": 7305.76,
+     "ci_high": 122,
+     "margin_inr": -4938.96,
+     "prior_n": 0,
+     "ci_low": 108.43,
+     "units": 122,
+     "waste_avoided_inr": 11053.2,
+     "measured_n": 0,
+     "estimator_version": "est-v2"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_7b3c76a15e",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 122,
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CHEESE-SLICES-400G-DS-04-01"
+     ]
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 638.92,
+      "mechanic_params": {
+       "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+       "bundle_price": 170
+      },
+      "expected_units": 45.41,
+      "mechanic": "bundle",
+      "rejected_because": "recovers INR 4753.07, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24"
+     },
+     {
+      "expected_units": 48.03,
+      "mechanic": "coupon",
+      "rejected_because": "recovers INR 4490.81, which is more than 500.00 less than the best plain markdown recovery of INR 6114.24",
+      "mechanic_params": {
+       "discount_pct": 15
+      },
+      "expected_margin_inr": 139.29
+     }
+    ],
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "filters": {}
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_7b3c76a15e_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_7b3c76a15e_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 22565,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 6114.24; this play 6114.24; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_7b3c76a15e_v1_67ac66db",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 22565,
+  "usage": {
+   "prompt_token_count": 38250,
+   "candidates_token_count": 3437,
+   "thoughts_token_count": 1107,
+   "cached_content_token_count": 27261,
+   "total_token_count": 42794
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 6114.24,
+  "blanket20_recovery_inr": -874.32,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 22.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5057,
+    "candidates": 918,
+    "thoughts": 403,
+    "cached": 3820
+   },
+   "usd": 0.015749,
+   "error": null,
+   "elapsed_s": 6.22,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6684,
+    "candidates": 286,
+    "thoughts": 561,
+    "cached": 3670
+   },
+   "usd": 0.013964,
+   "error": null,
+   "elapsed_s": 4.21,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7717,
+    "candidates": 944,
+    "thoughts": 105,
+    "cached": 5484
+   },
+   "usd": 0.014974,
+   "error": null,
+   "elapsed_s": 4.93,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8879,
+    "candidates": 1273,
+    "thoughts": 13,
+    "cached": 7193
+   },
+   "usd": 0.0167,
+   "error": null,
+   "elapsed_s": 4.98,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9913,
+    "candidates": 16,
+    "thoughts": 25,
+    "cached": 7094
+   },
+   "usd": 0.006228,
+   "error": null,
+   "elapsed_s": 0.82,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.067615,
+ "tokens": {
+  "prompt": 38250,
+  "cached": 27261,
+  "candidates": 3437,
+  "thoughts": 1107
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

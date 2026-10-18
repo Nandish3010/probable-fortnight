@@ -1,0 +1,938 @@
+{
+ "scenario_id": "S02",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_a921a19857",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:14:44Z",
+ "tag": "S02__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_2",
+    "seg_3",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_before_consent": 389,
+   "size_after_consent": 332,
+   "purpose": "marketing",
+   "filters": {}
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "min_treated_n": 20,
+   "seed": "seed-play_a921a19857_v1"
+  },
+  "mechanic": "bundle",
+  "objective": "clear_expiry",
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "mechanic_params": {
+   "bundle_price": 52,
+   "bundle_sku": "SKU-WHEAT-BREAD-400G"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.37% (net price 52.00, cost 47.13) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 332 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 389 -> 332"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-400G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "4 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "play_id": "play_a921a19857_v1",
+  "gap_id": "gap_a921a19857",
+  "alternatives": [
+   {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-BUN-400G",
+     "bundle_price": 51
+    },
+    "expected_margin_inr": 134.85,
+    "expected_units": 29,
+    "rejected_because": "lower expected margin than the wheat bread bundle play"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 779.23,
+   "blanket_markdown_inr": 566.4,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 141.23
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-21T23:59:59Z"
+  },
+  "channel": "web_chat",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_a921a19857"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "expected_outcome": {
+   "units": 29.0,
+   "margin_inr": 141.23,
+   "waste_avoided_inr": 779.23,
+   "discount_cost_inr": 87.0,
+   "ci_low": 1.56,
+   "ci_high": 84.6,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "target": {
+   "sku": "SKU-CURD-400G",
+   "units": 29,
+   "node_ids": [
+    "OUT-04"
+   ],
+   "batch_ids": [
+    "B-CURD-400G-OUT-04-01"
+   ],
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-21"
+  },
+  "rationale": "To clear the expiry risk of Curd at Outlet, we propose a bundle play with Wheat Bread at a bundle price of 52. This play targets dairy and sweets occasionals, everyday staples shoppers, tea connoisseurs, household essentials buyers, and personal care regulars. The play is expected to achieve a net margin of 141.23 INR, compared to a do-nothing outcome of 779.23 INR and a blanket markdown outcome of 566.4 INR. This play complies with all policy guidelines, including the category margin floor.",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_a921a19857_v1_afb80770",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 11.64,
+   "pct_of_rupees_at_stake": 1.999
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 920.46,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_a921a19857",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_a921a19857_v1"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "target": {
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-21",
+     "sku": "SKU-CURD-400G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_type": "expiry",
+     "units": 29
+    },
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_expiry",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 333,
+     "size_before_consent": 389,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "channel": "web_chat",
+    "audience": {
+     "size_before_consent": 389,
+     "size_after_consent": 333,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing"
+    },
+    "mechanic": "coupon",
+    "gap_id": "gap_a921a19857",
+    "target": {
+     "sku": "SKU-CURD-400G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21",
+     "units": 29
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_a921a19857_v1"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "mechanic": "markdown",
+    "channel": "outlet",
+    "gap_id": "gap_a921a19857",
+    "target": {
+     "sku": "SKU-CURD-400G",
+     "units": 29,
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-21",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_a921a19857_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "audience": {
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "guardrails": [],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_a921a19857"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "channel": "outlet",
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_a921a19857",
+    "play_id": "play_a921a19857_v1",
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "audience": {
+     "filters": {},
+     "size_after_consent": 332,
+     "purpose": "marketing",
+     "size_before_consent": 389,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "expected_outcome": {
+     "units": 29,
+     "measured_n": 0,
+     "waste_avoided_inr": 779.23,
+     "ci_high": 84.6,
+     "ci_low": 1.56,
+     "discount_cost_inr": 87,
+     "estimator_version": "est-v2",
+     "margin_inr": 3.77,
+     "prior_n": 20
+    },
+    "holdout": {
+     "seed": "seed-play_a921a19857_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "deadline_type": "expiry",
+     "sku": "SKU-CURD-400G",
+     "deadline_date": "2026-09-21",
+     "units": 29
+    },
+    "mechanic": "outlet_markdown",
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "filters": {},
+     "size_after_consent": 333,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 389,
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "seed": "seed-play_a921a19857_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-400G",
+     "bundle_price": 52
+    },
+    "gap_id": "gap_a921a19857",
+    "target": {
+     "deadline_date": "2026-09-21",
+     "sku": "SKU-CURD-400G",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 29,
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ]
+    },
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "size_after_consent": 332,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 389,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "play_id": "play_a921a19857_v1",
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-400G",
+     "bundle_price": 52
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_a921a19857",
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "target": {
+     "deadline_date": "2026-09-21",
+     "deadline_type": "expiry",
+     "sku": "SKU-CURD-400G",
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 29
+    },
+    "mechanic": "bundle",
+    "expected_outcome": {
+     "measured_n": 0,
+     "ci_high": 84.6,
+     "waste_avoided_inr": 779.23,
+     "estimator_version": "est-v2",
+     "units": 29,
+     "discount_cost_inr": 87,
+     "margin_inr": 141.23,
+     "ci_low": 1.56,
+     "prior_n": 20
+    },
+    "holdout": {
+     "seed": "seed-play_a921a19857_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "citations": [
+     {
+      "ref": "gap_a921a19857",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "guardrails": []
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_a921a19857",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-BUN-400G",
+     "bundle_price": 51
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_a921a19857_v1"
+    },
+    "objective": "clear_expiry",
+    "audience": {
+     "size_before_consent": 389,
+     "size_after_consent": 333,
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "target": {
+     "deadline_date": "2026-09-21",
+     "sku": "SKU-CURD-400G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_type": "expiry",
+     "units": 29,
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ]
+    },
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_3",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 389,
+     "size_after_consent": 332,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_a921a19857_v1"
+    },
+    "mechanic": "bundle",
+    "objective": "clear_expiry",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 52,
+     "bundle_sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 9.37% (net price 52.00, cost 47.13) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "all 332 customers under 2 plays in 7 days"
+     },
+     {
+      "passed": true,
+      "detail": "audience filtered by consent: 389 -> 332",
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-400G in audience",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CURD-400G at OUT-04",
+      "passed": true
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "play_id": "play_a921a19857_v1",
+    "gap_id": "gap_a921a19857",
+    "alternatives": [
+     {
+      "mechanic": "bundle",
+      "mechanic_params": {
+       "bundle_sku": "SKU-CREAM-BUN-400G",
+       "bundle_price": 51
+      },
+      "expected_margin_inr": 134.85,
+      "expected_units": 29,
+      "rejected_because": "lower expected margin than the wheat bread bundle play"
+     }
+    ],
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 141.23,
+     "do_nothing_inr": 779.23,
+     "blanket_markdown_inr": 566.4
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_a921a19857"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "expected_outcome": {
+     "ci_low": 1.56,
+     "units": 29,
+     "margin_inr": 141.23,
+     "estimator_version": "est-v2",
+     "waste_avoided_inr": 779.23,
+     "ci_high": 84.6,
+     "prior_n": 20,
+     "discount_cost_inr": 87,
+     "measured_n": 0
+    },
+    "target": {
+     "sku": "SKU-CURD-400G",
+     "units": 29,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "batch_ids": [
+      "B-CURD-400G-OUT-04-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21"
+    },
+    "rationale": "To clear the expiry risk of Curd at Outlet, we propose a bundle play with Wheat Bread at a bundle price of 52. This play targets dairy and sweets occasionals, everyday staples shoppers, tea connoisseurs, household essentials buyers, and personal care regulars. The play is expected to achieve a net margin of 141.23 INR, compared to a do-nothing outcome of 779.23 INR and a blanket markdown outcome of 566.4 INR. This play complies with all policy guidelines, including the category margin floor."
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_a921a19857_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_a921a19857_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 44556,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_a921a19857_v1_afb80770",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 44556,
+  "usage": {
+   "prompt_token_count": 59530,
+   "candidates_token_count": 3752,
+   "thoughts_token_count": 3969,
+   "cached_content_token_count": 44846,
+   "total_token_count": 67251
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1053.57,
+  "blanket20_recovery_inr": 212.83,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 45.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5013,
+    "candidates": 881,
+    "thoughts": 831,
+    "cached": 3818
+   },
+   "usd": 0.019551,
+   "error": null,
+   "elapsed_s": 14.16,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6863,
+    "candidates": 532,
+    "thoughts": 132,
+    "cached": 3687
+   },
+   "usd": 0.012422,
+   "error": null,
+   "elapsed_s": 3.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7599,
+    "candidates": 337,
+    "thoughts": 469,
+    "cached": 5409
+   },
+   "usd": 0.012485,
+   "error": null,
+   "elapsed_s": 4.13,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8449,
+    "candidates": 554,
+    "thoughts": 11,
+    "cached": 7185
+   },
+   "usd": 0.008865,
+   "error": null,
+   "elapsed_s": 2.5,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9086,
+    "candidates": 337,
+    "thoughts": 244,
+    "cached": 7058
+   },
+   "usd": 0.010263,
+   "error": null,
+   "elapsed_s": 2.81,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9712,
+    "candidates": 1095,
+    "thoughts": 2257,
+    "cached": 8782
+   },
+   "usd": 0.036168,
+   "error": null,
+   "elapsed_s": 13.82,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 12808,
+    "candidates": 16,
+    "thoughts": 25,
+    "cached": 8907
+   },
+   "usd": 0.008312,
+   "error": null,
+   "elapsed_s": 1.05,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.108066,
+ "tokens": {
+  "prompt": 59530,
+  "cached": 44846,
+  "candidates": 3752,
+  "thoughts": 3969
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
