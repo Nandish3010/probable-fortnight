@@ -122,7 +122,7 @@ pregenerate-copy: ## demo plays' offer copy via BigQuery AI.GENERATE_TABLE -> fi
 eval:             ## planner evalset (stub or vertex per TAAL_MODEL_BACKEND)
 	uv run --with "google-adk[eval]==2.9.0" python -m harness.run_evals
 
-deck:             ## render deck/slides.html -> docs/deck.pdf (18 pages) and deck/png/slide_NN.png (needs `make setup`)
+deck:             ## render deck/slides.html -> docs/deck.pdf (19 pages) and deck/png/slide_NN.png (needs `make setup`)
 	@python3 deck/build.py
 
 deploy:           ## gcloud scripts under infra/ (require GOOGLE_CLOUD_PROJECT)
