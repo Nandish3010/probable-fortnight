@@ -1,0 +1,691 @@
+{
+ "scenario_id": "S25",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_da9a8999fb",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:29:18Z",
+ "tag": "S25__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_da9a8999fb",
+  "play_id": "play_da9a8999fb_v1",
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_da9a8999fb_v1",
+   "fraction": 0.1
+  },
+  "mechanic_params": {
+   "transfer_units": 70,
+   "transfer_to_node": "OUT-01"
+  },
+  "audience": {
+   "filters": {},
+   "size_before_consent": 521,
+   "size_after_consent": 455,
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_4",
+    "seg_5"
+   ]
+  },
+  "window": {
+   "end": "2026-09-16T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "alternatives": [
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": 147.35,
+    "rejected_because": "Policy prefers transfers over markdowns, and transfer_plus_nudge yields a higher expected margin of 1009.95 INR compared to 147.35 INR for outlet_markdown.",
+    "expected_units": 32.03
+   },
+   {
+    "expected_margin_inr": 147.35,
+    "expected_units": 32.03,
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "mechanic": "coupon",
+    "rejected_because": "Policy prefers transfers over markdowns/coupons, and transfer_plus_nudge yields a higher expected margin of 1009.95 INR compared to 147.35 INR for coupon."
+   }
+  ],
+  "objective": "clear_online_sellby",
+  "expected_outcome": {
+   "units": 32.03,
+   "margin_inr": 1009.95,
+   "waste_avoided_inr": 1149.95,
+   "discount_cost_inr": 0.0,
+   "ci_low": 1.73,
+   "ci_high": 70.0,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "citations": [
+   {
+    "ref": "gap_da9a8999fb",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v1"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 20.22% (net price 45.00, cost 35.90) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 455 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 521 -> 455"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "transfer_plus_nudge is not a discount play"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "transfer_plus_nudge does not push SKU-CREAM-BUN-400G; stockout rule not applicable"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "11 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "rationale": "To clear the online sell-by breach of Cream Bun 400G at DS-04, we propose transferring 70 units to OUT-01 and nudging high-affinity customers. This play recovers 1009.95 INR versus doing nothing (2513 INR do-nothing cost plus -1503.05 INR play net cost) and beats a blanket markdown by 335.92 INR (1838.97 INR blanket markdown cost plus -1503.05 INR play net cost). It targets 455 customers across six segments with a 10% holdout. This transfer-based approach is preferred by policy over markdowns and yields a positive net margin of 20.22%.",
+  "channel": "web_chat",
+  "mechanic": "transfer_plus_nudge",
+  "counterfactuals": {
+   "do_nothing_inr": 2513.0,
+   "blanket_markdown_inr": 1838.97,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1503.05
+  },
+  "target": {
+   "batch_ids": [
+    "B-CREAM-BUN-400G-DS-04-01"
+   ],
+   "node_ids": [
+    "DS-04"
+   ],
+   "deadline_date": "2026-09-16",
+   "deadline_type": "online_sellby",
+   "sku": "SKU-CREAM-BUN-400G",
+   "units": 70
+  },
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_da9a8999fb_v1_e7fac103",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 46.32,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1009.95,
+ "mechanic": "transfer_plus_nudge",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_da9a8999fb",
+    "channel": "web_chat",
+    "audience": {
+     "size_after_consent": 455,
+     "filters": {},
+     "size_before_consent": 521,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "holdout": {
+     "seed": "seed-play_da9a8999fb_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "transfer_to_node": "OUT-01",
+     "transfer_units": 70
+    },
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "sku": "SKU-CREAM-BUN-400G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "units": 70
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_da9a8999fb_v1",
+     "min_treated_n": 20
+    },
+    "mechanic": "outlet_markdown",
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-04-01"
+     ],
+     "sku": "SKU-CREAM-BUN-400G",
+     "units": 70,
+     "node_ids": [
+      "DS-04"
+     ]
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 521,
+     "size_after_consent": 455,
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_da9a8999fb",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "outlet",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_after_consent": 455,
+     "size_before_consent": 521,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_da9a8999fb",
+    "holdout": {
+     "seed": "seed-play_da9a8999fb_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "channel": "web_chat",
+    "target": {
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "units": 70,
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-04-01"
+     ],
+     "node_ids": [
+      "DS-04"
+     ],
+     "sku": "SKU-CREAM-BUN-400G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-04-01"
+     ],
+     "deadline_type": "online_sellby",
+     "units": 70,
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_date": "2026-09-16"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "channel": "web_chat",
+    "mechanic_params": {
+     "transfer_units": 70,
+     "transfer_to_node": "OUT-01"
+    },
+    "gap_id": "gap_da9a8999fb",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_da9a8999fb_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "size_after_consent": 455,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 521
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "gap_id": "gap_da9a8999fb",
+    "play_id": "play_da9a8999fb_v1",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_da9a8999fb_v1",
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "transfer_units": 70,
+     "transfer_to_node": "OUT-01"
+    },
+    "audience": {
+     "filters": {},
+     "size_before_consent": 521,
+     "size_after_consent": 455,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ]
+    },
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "alternatives": [
+     {
+      "mechanic": "outlet_markdown",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 147.35,
+      "rejected_because": "Policy prefers transfers over markdowns, and transfer_plus_nudge yields a higher expected margin of 1009.95 INR compared to 147.35 INR for outlet_markdown.",
+      "expected_units": 32.03
+     },
+     {
+      "expected_margin_inr": 147.35,
+      "expected_units": 32.03,
+      "mechanic_params": {
+       "discount_pct": 10
+      },
+      "mechanic": "coupon",
+      "rejected_because": "Policy prefers transfers over markdowns/coupons, and transfer_plus_nudge yields a higher expected margin of 1009.95 INR compared to 147.35 INR for coupon."
+     }
+    ],
+    "objective": "clear_online_sellby",
+    "expected_outcome": {
+     "ci_low": 1.73,
+     "ci_high": 70,
+     "margin_inr": 1009.95,
+     "estimator_version": "est-v1",
+     "measured_n": 0,
+     "waste_avoided_inr": 1149.95,
+     "discount_cost_inr": 0,
+     "units": 32.03,
+     "prior_n": 20
+    },
+    "citations": [
+     {
+      "ref": "gap_da9a8999fb",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v1"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "guardrails": [
+     {
+      "detail": "net margin 20.22% (net price 45.00, cost 35.90) vs bakery floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "rule": "frequency_cap",
+      "detail": "all 455 customers under 2 plays in 7 days",
+      "passed": true
+     },
+     {
+      "detail": "audience filtered by consent: 521 -> 455",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true
+     },
+     {
+      "detail": "transfer_plus_nudge is not a discount play",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "transfer_plus_nudge does not push SKU-CREAM-BUN-400G; stockout rule not applicable"
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "rule": "cite_or_drop",
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+     }
+    ],
+    "rationale": "To clear the online sell-by breach of Cream Bun 400G at DS-04, we propose transferring 70 units to OUT-01 and nudging high-affinity customers. This play recovers 1009.95 INR versus doing nothing (2513 INR do-nothing cost plus -1503.05 INR play net cost) and beats a blanket markdown by 335.92 INR (1838.97 INR blanket markdown cost plus -1503.05 INR play net cost). It targets 455 customers across six segments with a 10% holdout. This transfer-based approach is preferred by policy over markdowns and yields a positive net margin of 20.22%.",
+    "channel": "web_chat",
+    "mechanic": "transfer_plus_nudge",
+    "counterfactuals": {
+     "play_net_inr": -1503.05,
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 2513,
+     "blanket_markdown_inr": 1838.97
+    },
+    "target": {
+     "batch_ids": [
+      "B-CREAM-BUN-400G-DS-04-01"
+     ],
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-BUN-400G",
+     "units": 70
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_da9a8999fb_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_da9a8999fb_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 19824,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_da9a8999fb_v1_e7fac103",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 19824,
+  "usage": {
+   "prompt_token_count": 27500,
+   "candidates_token_count": 2582,
+   "thoughts_token_count": 1721,
+   "total_token_count": 31803,
+   "cached_content_token_count": 16242
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1530.81,
+  "blanket20_recovery_inr": 674.03,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 20.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4692,
+    "candidates": 959,
+    "thoughts": 813,
+    "cached": 0
+   },
+   "usd": 0.025285,
+   "error": null,
+   "elapsed_s": 8.02,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6615,
+    "candidates": 340,
+    "thoughts": 150,
+    "cached": 3664
+   },
+   "usd": 0.010325,
+   "error": null,
+   "elapsed_s": 2.52,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7229,
+    "candidates": 1269,
+    "thoughts": 735,
+    "cached": 5415
+   },
+   "usd": 0.023726,
+   "error": null,
+   "elapsed_s": 7.59,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8964,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 7163
+   },
+   "usd": 0.00452,
+   "error": null,
+   "elapsed_s": 0.81,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.063856,
+ "tokens": {
+  "prompt": 27500,
+  "cached": 16242,
+  "candidates": 2582,
+  "thoughts": 1721
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

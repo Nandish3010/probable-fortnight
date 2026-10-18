@@ -1,0 +1,661 @@
+{
+ "scenario_id": "S24",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_a5426eff4b",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:29:02Z",
+ "tag": "S24__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "alternatives": [
+   {
+    "mechanic_params": {
+     "transfer_units": 37,
+     "transfer_to_node": "OUT-06"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "expected_margin_inr": 5099.97,
+    "expected_units": 23,
+    "rejected_because": "OUT-05 is preferred or equivalent"
+   }
+  ],
+  "rationale": "This play transfers 37 units of Cheese Slices 500ML from DS-08 to OUT-05 to clear the online sell-by breach. By doing so, we expect to sell 23 units and avoid 5173.97 INR in waste. The recovered-versus-doing-nothing figure is 5099.97 INR (8323.52 INR plus -3223.55 INR). The beat over a blanket markdown is 9957.95 INR (13181.5 INR plus -3223.55 INR).",
+  "play_id": "play_a5426eff4b_v1",
+  "expected_outcome": {
+   "units": 23.0,
+   "margin_inr": 5099.97,
+   "waste_avoided_inr": 5173.97,
+   "discount_cost_inr": 0.0,
+   "ci_low": 1.24,
+   "ci_high": 37.0,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "mechanic_params": {
+   "transfer_to_node": "OUT-05",
+   "transfer_units": 37
+  },
+  "citations": [
+   {
+    "ref": "gap_a5426eff4b",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v1",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_a5426eff4b_v1",
+   "fraction": 0.1
+  },
+  "gap_id": "gap_a5426eff4b",
+  "counterfactuals": {
+   "do_nothing_inr": 8323.52,
+   "blanket_markdown_inr": 13181.5,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -3223.55
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-24T23:59:59Z"
+  },
+  "mechanic": "transfer_plus_nudge",
+  "audience": {
+   "segment_ids": [
+    "seg_3",
+    "seg_5",
+    "seg_1",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_before_consent": 385,
+   "filters": {},
+   "purpose": "marketing",
+   "size_after_consent": 342
+  },
+  "channel": "web_chat",
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "target": {
+   "batch_ids": [
+    "B-CHEESE-SLICES-500ML-DS-08-01"
+   ],
+   "node_ids": [
+    "DS-08"
+   ],
+   "deadline_date": "2026-09-24",
+   "deadline_type": "online_sellby",
+   "units": 37,
+   "sku": "SKU-CHEESE-SLICES-500ML"
+  },
+  "objective": "clear_online_sellby",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.02% (net price 250.00, cost 224.96) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 342 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 385 -> 342"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "transfer_plus_nudge is not a discount play"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "transfer_plus_nudge does not push SKU-CHEESE-SLICES-500ML; stockout rule not applicable"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "10 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_a5426eff4b_v1_48c3e410",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 44.46,
+   "pct_of_rupees_at_stake": 0.581
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 5099.97,
+ "mechanic": "transfer_plus_nudge",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "transfer_units": 37,
+     "transfer_to_node": "OUT-05"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 385,
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 342
+    },
+    "mechanic": "transfer_plus_nudge",
+    "holdout": {
+     "seed": "seed-play_a5426eff4b_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_a5426eff4b",
+    "objective": "clear_online_sellby",
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-CHEESE-SLICES-500ML-DS-08-01"
+     ],
+     "sku": "SKU-CHEESE-SLICES-500ML",
+     "units": 37,
+     "node_ids": [
+      "DS-08"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_a5426eff4b_v1",
+     "fraction": 0.1
+    },
+    "mechanic": "transfer_plus_nudge",
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 342,
+     "size_before_consent": 385,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 37,
+     "node_ids": [
+      "DS-08"
+     ],
+     "sku": "SKU-CHEESE-SLICES-500ML",
+     "batch_ids": [
+      "B-CHEESE-SLICES-500ML-DS-08-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby"
+    },
+    "gap_id": "gap_a5426eff4b",
+    "mechanic_params": {
+     "transfer_to_node": "OUT-06",
+     "transfer_units": 37
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "expected_outcome": {
+     "estimator_version": "est-v1",
+     "waste_avoided_inr": 5173.97,
+     "ci_low": 1.24,
+     "measured_n": 0,
+     "ci_high": 37,
+     "prior_n": 20,
+     "discount_cost_inr": 0,
+     "units": 23,
+     "margin_inr": 5099.97
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "channel": "web_chat",
+    "citations": [
+     {
+      "ref": "gap_a5426eff4b",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v1"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "mechanic_params": {
+     "transfer_to_node": "OUT-05",
+     "transfer_units": 37
+    },
+    "play_id": "play_a5426eff4b_v1",
+    "holdout": {
+     "seed": "seed-play_a5426eff4b_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-500ML",
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CHEESE-SLICES-500ML-DS-08-01"
+     ],
+     "units": 37
+    },
+    "guardrails": [],
+    "gap_id": "gap_a5426eff4b",
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 385,
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 342
+    },
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 8323.52,
+     "blanket_markdown_inr": 13181.5,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -3223.55
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "transfer_units": 37,
+       "transfer_to_node": "OUT-06"
+      },
+      "mechanic": "transfer_plus_nudge",
+      "expected_margin_inr": 5099.97,
+      "expected_units": 23,
+      "rejected_because": "OUT-05 is preferred or equivalent"
+     }
+    ],
+    "rationale": "This play transfers 37 units of Cheese Slices 500ML from DS-08 to OUT-05 to clear the online sell-by breach. By doing so, we expect to sell 23 units and avoid 5173.97 INR in waste. The recovered-versus-doing-nothing figure is 5099.97 INR (8323.52 INR plus -3223.55 INR). The beat over a blanket markdown is 9957.95 INR (13181.5 INR plus -3223.55 INR).",
+    "play_id": "play_a5426eff4b_v1",
+    "expected_outcome": {
+     "measured_n": 0,
+     "ci_low": 1.24,
+     "estimator_version": "est-v1",
+     "discount_cost_inr": 0,
+     "prior_n": 20,
+     "ci_high": 37,
+     "waste_avoided_inr": 5173.97,
+     "margin_inr": 5099.97,
+     "units": 23
+    },
+    "mechanic_params": {
+     "transfer_to_node": "OUT-05",
+     "transfer_units": 37
+    },
+    "citations": [
+     {
+      "ref": "gap_a5426eff4b",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v1",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_a5426eff4b_v1",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_a5426eff4b",
+    "counterfactuals": {
+     "play_net_inr": -3223.55,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 13181.5,
+     "do_nothing_inr": 8323.52
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 385,
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 342
+    },
+    "channel": "web_chat",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "target": {
+     "batch_ids": [
+      "B-CHEESE-SLICES-500ML-DS-08-01"
+     ],
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby",
+     "units": 37,
+     "sku": "SKU-CHEESE-SLICES-500ML"
+    },
+    "objective": "clear_online_sellby",
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 10.02% (net price 250.00, cost 224.96) vs dairy floor 8.00%"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "all 342 customers under 2 plays in 7 days"
+     },
+     {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 385 -> 342"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "transfer_plus_nudge is not a discount play",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "detail": "transfer_plus_nudge does not push SKU-CHEESE-SLICES-500ML; stockout rule not applicable",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ]
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_a5426eff4b_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_a5426eff4b_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 31922,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_a5426eff4b_v1_48c3e410",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 31922,
+  "usage": {
+   "prompt_token_count": 27895,
+   "candidates_token_count": 2302,
+   "thoughts_token_count": 2874,
+   "total_token_count": 33071,
+   "cached_content_token_count": 12469
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 5863.55,
+  "blanket20_recovery_inr": -4857.98,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 32.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4738,
+    "candidates": 549,
+    "thoughts": 939,
+    "cached": 0
+   },
+   "usd": 0.022549,
+   "error": null,
+   "elapsed_s": 6.67,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6342,
+    "candidates": 615,
+    "thoughts": 35,
+    "cached": 0
+   },
+   "usd": 0.016899,
+   "error": null,
+   "elapsed_s": 4.9,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7036,
+    "candidates": 1124,
+    "thoughts": 1877,
+    "cached": 5446
+   },
+   "usd": 0.033232,
+   "error": null,
+   "elapsed_s": 18.23,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9779,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 7023
+   },
+   "usd": 0.006072,
+   "error": null,
+   "elapsed_s": 1.33,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.078752,
+ "tokens": {
+  "prompt": 27895,
+  "cached": 12469,
+  "candidates": 2302,
+  "thoughts": 2874
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

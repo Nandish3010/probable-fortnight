@@ -1,0 +1,817 @@
+{
+ "scenario_id": "S28",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 1
+ },
+ "gap_id": "gap_bb81b71a90",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:29:34Z",
+ "tag": "S28__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "play_id": "play_bb81b71a90_v1",
+  "counterfactuals": {
+   "do_nothing_inr": 5575.05,
+   "blanket_markdown_inr": 9555.0,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -4144.07
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-24T23:59:59Z"
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_bb81b71a90_v1",
+   "fraction": 0.1
+  },
+  "mechanic": "transfer_plus_nudge",
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "gap_id": "gap_bb81b71a90",
+  "alternatives": [
+   {
+    "expected_margin_inr": 1430.98,
+    "mechanic_params": {
+     "transfer_units": 65,
+     "transfer_to_node": "OUT-04"
+    },
+    "expected_units": 18.2,
+    "mechanic": "transfer_plus_nudge",
+    "rejected_because": "identical transfer alternative to another node in the same cluster"
+   }
+  ],
+  "expected_outcome": {
+   "units": 18.2,
+   "margin_inr": 1430.98,
+   "waste_avoided_inr": 1560.98,
+   "discount_cost_inr": 0.0,
+   "ci_low": 0.98,
+   "ci_high": 53.09,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "target": {
+   "deadline_date": "2026-09-24",
+   "batch_ids": [
+    "B-TONED-MILK-500ML-DS-06-01"
+   ],
+   "sku": "SKU-TONED-MILK-500ML",
+   "deadline_type": "online_sellby",
+   "node_ids": [
+    "DS-06"
+   ],
+   "units": 65
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 14.23% (net price 100.00, cost 85.77) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 263 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 309 -> 263"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "transfer_plus_nudge is not a discount play"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "transfer_plus_nudge does not push SKU-TONED-MILK-500ML; stockout rule not applicable"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "3 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "rationale": "To clear the online sell-by gap of Toned Milk 500ML at DS-06, we propose transferring the stock to Outlet 03 and nudging high-affinity customers. This play is expected to recover 1430.98 INR compared to doing nothing. This beats a blanket markdown by 5410.93 INR. We target high-affinity segments with a holdout to measure performance.",
+  "mechanic_params": {
+   "transfer_units": 65,
+   "transfer_to_node": "OUT-03"
+  },
+  "channel": "web_chat",
+  "citations": [
+   {
+    "ref": "gap_bb81b71a90",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v1"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_3",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_before_consent": 309,
+   "filters": {},
+   "size_after_consent": 263,
+   "purpose": "marketing"
+  },
+  "objective": "clear_online_sellby",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_bb81b71a90_v1_91cc5c10",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 34.19,
+   "pct_of_rupees_at_stake": 0.684
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1430.98,
+ "mechanic": "transfer_plus_nudge",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "target": {
+     "sku": "SKU-TONED-MILK-500ML",
+     "units": 65,
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-06"
+     ],
+     "batch_ids": [
+      "B-TONED-MILK-500ML-DS-06-01"
+     ]
+    },
+    "mechanic": "transfer_plus_nudge",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 309,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 263
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_bb81b71a90_v1"
+    },
+    "channel": "web_chat",
+    "mechanic_params": {
+     "transfer_units": 65,
+     "transfer_to_node": "OUT-03"
+    },
+    "gap_id": "gap_bb81b71a90"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "transfer_plus_nudge",
+    "audience": {
+     "size_after_consent": 263,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 309,
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "mechanic_params": {
+     "transfer_units": 65,
+     "transfer_to_node": "OUT-04"
+    },
+    "target": {
+     "node_ids": [
+      "DS-06"
+     ],
+     "units": 65,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-TONED-MILK-500ML-DS-06-01"
+     ],
+     "sku": "SKU-TONED-MILK-500ML"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_bb81b71a90_v1"
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_bb81b71a90"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "size_before_consent": 309,
+     "purpose": "marketing",
+     "size_after_consent": 263
+    },
+    "gap_id": "gap_bb81b71a90",
+    "mechanic_params": {
+     "transfer_to_node": "OUT-03",
+     "transfer_units": 65
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "sku": "SKU-TONED-MILK-500ML",
+     "batch_ids": [
+      "B-TONED-MILK-500ML-DS-06-01"
+     ],
+     "node_ids": [
+      "DS-06"
+     ],
+     "units": 65,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24"
+    },
+    "mechanic": "transfer_plus_nudge",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 1560.98,
+     "measured_n": 0,
+     "estimator_version": "est-v1",
+     "ci_low": 0.98,
+     "discount_cost_inr": 0,
+     "ci_high": 53.09,
+     "units": 18.2,
+     "prior_n": 20,
+     "margin_inr": 1430.98
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_bb81b71a90_v1",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_bb81b71a90_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "gap_id": "gap_bb81b71a90",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "objective": "clear_online_sellby",
+    "expected_outcome": {
+     "measured_n": 0,
+     "prior_n": 20,
+     "waste_avoided_inr": 1560.98,
+     "ci_high": 53.09,
+     "ci_low": 0.98,
+     "margin_inr": 1430.98,
+     "units": 18.2,
+     "discount_cost_inr": 0,
+     "estimator_version": "est-v1"
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 9555,
+     "do_nothing_inr": 5575.05,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -4144.07
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_bb81b71a90"
+     },
+     {
+      "ref": "est-v1",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "target": {
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-TONED-MILK-500ML-DS-06-01"
+     ],
+     "units": 65,
+     "node_ids": [
+      "DS-06"
+     ],
+     "sku": "SKU-TONED-MILK-500ML",
+     "deadline_date": "2026-09-24"
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 14.23% (net price 100.00, cost 85.77) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "all 263 customers under 2 plays in 7 days"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 309 -> 263"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "transfer_plus_nudge is not a discount play"
+     },
+     {
+      "detail": "transfer_plus_nudge does not push SKU-TONED-MILK-500ML; stockout rule not applicable",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "detail": "cite_or_drop passed",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "mechanic_params": {
+     "transfer_units": 65,
+     "transfer_to_node": "OUT-03"
+    },
+    "play_id": "play_bb81b71a90_v1",
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 263,
+     "purpose": "marketing",
+     "size_before_consent": 309
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 1430.98,
+      "mechanic": "transfer_plus_nudge",
+      "rejected_because": "identical transfer alternative to another node in the same cluster",
+      "expected_units": 18.2,
+      "mechanic_params": {
+       "transfer_units": 65,
+       "transfer_to_node": "OUT-04"
+      }
+     }
+    ],
+    "mechanic": "transfer_plus_nujud"
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "play_id": "play_bb81b71a90_v1",
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 9555,
+     "play_net_inr": -4144.07,
+     "do_nothing_inr": 5575.05
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_bb81b71a90_v1",
+     "fraction": 0.1
+    },
+    "mechanic": "transfer_plus_nudge",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "gap_id": "gap_bb81b71a90",
+    "alternatives": [
+     {
+      "expected_margin_inr": 1430.98,
+      "mechanic_params": {
+       "transfer_units": 65,
+       "transfer_to_node": "OUT-04"
+      },
+      "expected_units": 18.2,
+      "mechanic": "transfer_plus_nudge",
+      "rejected_because": "identical transfer alternative to another node in the same cluster"
+     }
+    ],
+    "expected_outcome": {
+     "discount_cost_inr": 0,
+     "ci_high": 53.09,
+     "units": 18.2,
+     "estimator_version": "est-v1",
+     "measured_n": 0,
+     "prior_n": 20,
+     "ci_low": 0.98,
+     "margin_inr": 1430.98,
+     "waste_avoided_inr": 1560.98
+    },
+    "target": {
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-TONED-MILK-500ML-DS-06-01"
+     ],
+     "sku": "SKU-TONED-MILK-500ML",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-06"
+     ],
+     "units": 65
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 14.23% (net price 100.00, cost 85.77) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "passed": true,
+      "detail": "all 263 customers under 2 plays in 7 days",
+      "rule": "frequency_cap"
+     },
+     {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 309 -> 263"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "transfer_plus_nudge is not a discount play",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "detail": "transfer_plus_nudge does not push SKU-TONED-MILK-500ML; stockout rule not applicable",
+      "passed": true,
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "detail": "cite_or_drop passed",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "rationale": "To clear the online sell-by gap of Toned Milk 500ML at DS-06, we propose transferring the stock to Outlet 03 and nudging high-affinity customers. This play is expected to recover 1430.98 INR compared to doing nothing. This beats a blanket markdown by 5410.93 INR. We target high-affinity segments with a holdout to measure performance.",
+    "mechanic_params": {
+     "transfer_units": 65,
+     "transfer_to_node": "OUT-03"
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "ref": "gap_bb81b71a90",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v1"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 309,
+     "filters": {},
+     "size_after_consent": 263,
+     "purpose": "marketing"
+    },
+    "objective": "clear_online_sellby"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_bb81b71a90_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "$: 'rationale' is a required property",
+    "mechanic: 'transfer_plus_nujud' is not one of ['bundle', 'usual_order_addon', 'substitution', 'preorder', 'subscription_nudge', 'coupon', 'outlet_markdown', 'transfer_plus_nudge']"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_bb81b71a90_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 22471,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_bb81b71a90_v1_91cc5c10",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 22471,
+  "usage": {
+   "prompt_token_count": 34284,
+   "candidates_token_count": 3067,
+   "thoughts_token_count": 1953,
+   "total_token_count": 39304,
+   "cached_content_token_count": 16182
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3186.3,
+  "blanket20_recovery_inr": -3979.95,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 22.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4707,
+    "candidates": 557,
+    "thoughts": 1032,
+    "cached": 0
+   },
+   "usd": 0.023498,
+   "error": null,
+   "elapsed_s": 6.69,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6414,
+    "candidates": 450,
+    "thoughts": 56,
+    "cached": 3730
+   },
+   "usd": 0.010053,
+   "error": null,
+   "elapsed_s": 2.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 0.48,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 5927,
+    "candidates": 974,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.019422,
+   "error": null,
+   "elapsed_s": 3.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7789,
+    "candidates": 1071,
+    "thoughts": 841,
+    "cached": 5352
+   },
+   "usd": 0.023833,
+   "error": null,
+   "elapsed_s": 7.64,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9447,
+    "candidates": 15,
+    "thoughts": 24,
+    "cached": 7100
+   },
+   "usd": 0.00543,
+   "error": null,
+   "elapsed_s": 0.94,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.082236,
+ "tokens": {
+  "prompt": 34284,
+  "cached": 16182,
+  "candidates": 3067,
+  "thoughts": 1953
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite"
+}

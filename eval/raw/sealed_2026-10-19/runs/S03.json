@@ -1,0 +1,652 @@
+{
+ "scenario_id": "S03",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_f86833670e",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:26:35Z",
+ "tag": "S03__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic": "bundle",
+  "holdout": {
+   "fraction": 0.1,
+   "min_treated_n": 20,
+   "seed": "seed-play_f86833670e_v1"
+  },
+  "audience": {
+   "filters": {},
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_3",
+    "seg_4",
+    "seg_2",
+    "seg_5"
+   ],
+   "size_before_consent": 359,
+   "size_after_consent": 308
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 775.75,
+   "blanket_markdown_inr": 728.32,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 12.1
+  },
+  "target": {
+   "node_ids": [
+    "OUT-04"
+   ],
+   "sku": "SKU-RUSK-400G",
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-23",
+   "batch_ids": [
+    "B-RUSK-400G-OUT-04-01"
+   ],
+   "units": 25
+  },
+  "play_id": "play_f86833670e_v1",
+  "gap_id": "gap_f86833670e",
+  "rationale": "This bundle play targets 308 customers across six segments to clear 25 units of Rusk 400G at risk of expiry at Outlet 04. By bundling with Butter 1L for a price of 73 INR, we maintain a margin above the bakery floor. The play is expected to sell 20.9 units, avoiding 648.46 INR in waste. This play recovers 788 INR compared to doing nothing and beats a blanket markdown by 740 INR.",
+  "channel": "web_chat",
+  "alternatives": [
+   {
+    "expected_margin_inr": 62.07,
+    "expected_units": 20.9,
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "outlet_markdown",
+    "rejected_because": "lower expected margin and negative net play benefit compared to the bundle play"
+   }
+  ],
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_f86833670e"
+   },
+   {
+    "ref": "est-v1",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.14% (net price 73.00, cost 66.33) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 308 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 359 -> 308"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-RUSK-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-RUSK-400G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "objective": "clear_expiry",
+  "mechanic_params": {
+   "bundle_sku": "SKU-BUTTER-1L",
+   "bundle_price": 73
+  },
+  "expected_outcome": {
+   "units": 20.9,
+   "margin_inr": 139.39,
+   "waste_avoided_inr": 648.46,
+   "discount_cost_inr": 146.28,
+   "ci_low": 1.13,
+   "ci_high": 60.97,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "window": {
+   "end": "2026-09-23T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending",
+   "variants": []
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_f86833670e_v1_0d008c92",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 11.58,
+   "pct_of_rupees_at_stake": 2.001
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 787.85,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 73,
+     "bundle_sku": "SKU-BUTTER-1L"
+    },
+    "gap_id": "gap_f86833670e",
+    "objective": "clear_expiry",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 308,
+     "filters": {},
+     "size_before_consent": 359
+    },
+    "target": {
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-400G",
+     "units": 25,
+     "deadline_type": "expiry"
+    },
+    "holdout": {
+     "seed": "seed-play_f86833670e_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown",
+    "target": {
+     "sku": "SKU-RUSK-400G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "units": 25,
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ]
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_after_consent": 308,
+     "purpose": "marketing",
+     "size_before_consent": 359,
+     "filters": {}
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_f86833670e_v1"
+    },
+    "gap_id": "gap_f86833670e"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "web_chat",
+    "objective": "clear_expiry",
+    "target": {
+     "units": 25,
+     "deadline_date": "2026-09-23",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-400G",
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ]
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "bundle",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_f86833670e_v1",
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_f86833670e",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 359,
+     "filters": {},
+     "size_after_consent": 308,
+     "purpose": "marketing"
+    },
+    "play_id": "play_f86833670e_v1",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "guardrails": [],
+    "expected_outcome": {
+     "estimator_version": "est-v1",
+     "margin_inr": 139.39,
+     "prior_n": 20,
+     "units": 20.9,
+     "discount_cost_inr": 146.28,
+     "ci_low": 1.13,
+     "measured_n": 0,
+     "waste_avoided_inr": 648.46,
+     "ci_high": 60.97
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-1L",
+     "bundle_price": 73
+    },
+    "citations": [
+     {
+      "ref": "gap_f86833670e",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v1"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic": "bundle",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_f86833670e_v1"
+    },
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5"
+     ],
+     "size_before_consent": 359,
+     "size_after_consent": 308
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 775.75,
+     "blanket_markdown_inr": 728.32,
+     "play_net_inr": 12.1,
+     "blanket_markdown_pct": 20
+    },
+    "target": {
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-400G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-RUSK-400G-OUT-04-01"
+     ],
+     "units": 25
+    },
+    "play_id": "play_f86833670e_v1",
+    "gap_id": "gap_f86833670e",
+    "rationale": "This bundle play targets 308 customers across six segments to clear 25 units of Rusk 400G at risk of expiry at Outlet 04. By bundling with Butter 1L for a price of 73 INR, we maintain a margin above the bakery floor. The play is expected to sell 20.9 units, avoiding 648.46 INR in waste. This play recovers 788 INR compared to doing nothing and beats a blanket markdown by 740 INR.",
+    "channel": "web_chat",
+    "alternatives": [
+     {
+      "expected_margin_inr": 62.07,
+      "expected_units": 20.9,
+      "mechanic_params": {
+       "markdown_pct": 15
+      },
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower expected margin and negative net play benefit compared to the bundle play"
+     }
+    ],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_f86833670e"
+     },
+     {
+      "ref": "est-v1",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "detail": "net margin 9.14% (net price 73.00, cost 66.33) vs bakery floor 8.00%",
+      "passed": true
+     },
+     {
+      "detail": "all 308 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "audience filtered by consent: 359 -> 308",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-RUSK-400G in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-RUSK-400G at OUT-04",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required",
+      "passed": true
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-1L",
+     "bundle_price": 73
+    },
+    "expected_outcome": {
+     "prior_n": 20,
+     "waste_avoided_inr": 648.46,
+     "ci_high": 60.97,
+     "margin_inr": 139.39,
+     "measured_n": 0,
+     "estimator_version": "est-v1",
+     "units": 20.9,
+     "ci_low": 1.13,
+     "discount_cost_inr": 146.28
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_f86833670e_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_f86833670e_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 21385,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_f86833670e_v1_0d008c92",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 21385,
+  "usage": {
+   "prompt_token_count": 27775,
+   "candidates_token_count": 2162,
+   "thoughts_token_count": 2392,
+   "total_token_count": 32329,
+   "cached_content_token_count": 16475
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 894.22,
+  "blanket20_recovery_inr": 47.43,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 21.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4703,
+    "candidates": 514,
+    "thoughts": 1168,
+    "cached": 0
+   },
+   "usd": 0.024412,
+   "error": null,
+   "elapsed_s": 7.27,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6509,
+    "candidates": 556,
+    "thoughts": 319,
+    "cached": 3738
+   },
+   "usd": 0.013851,
+   "error": null,
+   "elapsed_s": 3.62,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7430,
+    "candidates": 1076,
+    "thoughts": 879,
+    "cached": 5488
+   },
+   "usd": 0.023464,
+   "error": null,
+   "elapsed_s": 8.39,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9133,
+    "candidates": 16,
+    "thoughts": 26,
+    "cached": 7249
+   },
+   "usd": 0.00472,
+   "error": null,
+   "elapsed_s": 0.88,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.066447,
+ "tokens": {
+  "prompt": 27775,
+  "cached": 16475,
+  "candidates": 2162,
+  "thoughts": 2392
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1293,3 +1293,31 @@ Goal: close the two cases still open after the 14 Oct fixes (V6, and C8's strict
 | Baseline: unmodified main | CC1, C8 | CC1 PASS 3/3; C8 as documented (the model attempts the cross-customer call 3/3; the tool refuses it, consent unchanged) | (main) |
 
 Reading it plainly. V6 is closed, with one caveat: the 0.5 threshold was chosen after seeing the frozen V6 read (0.4, no date, 3 of 3), so a V6 re-run passing is expected, not an independent test; every genuine read in the eval has product confidence 0.8 or above or a readable date. C8 stays as on main: the effect is blocked in code in every run, but the model still attempts the call. Removing the id from the model's tools made the chat worse in both attempts (a genuine stock question stopped calling the stock tool; in attempt 2 a request about another customer acted on the requester), so it was not shipped. Evidence: `eval/raw/adversarial_2026-10-16_v6_fix/` (shipped V6 rule), `eval/raw/adversarial_2026-10-16_hardening_try1/` (C8 attempt 1 and the broader V6 variant), `..._try2/`, `..._baseline/results.json`.
+
+
+## Sealed baseline eval (19 Oct 2026)
+
+Protocol, scenarios and baselines were committed and pushed before the first model call (pre-registration commit `27ad681d95ab2f737455ee9eca03499ef3594232`; `eval/sealed/PROTOCOL.md`). Raw runs, ledger and summary: `eval/raw/sealed_2026-10-19/`. Results are reported unchanged.
+
+Method in five lines:
+1. 36 gaps from a generator seed no other file uses (40617833), chosen by features, not by any answer: gap type x lot band x deadline band, 2 per cell; 21 are borrowed from neighbouring cells because the synthetic generator has no 22-40 day deadlines and almost no lots over 200 units (`eval/sealed/cell_report.json`).
+2. The real planner ran once per scenario (`gemini-3.5-flash`, prompt v7, shipped thinking settings, LoopAgent max 3, same tools, concurrency 4, spend cap USD 10).
+3. Baselines come from the product's own estimator: doing nothing (0) and the blanket 20% markdown counterfactual; recovery is "recovered versus doing nothing", as in the ₹9,191 hero.
+4. Every accepted play was re-checked with `guardrails.check`, the money invariant and the holdout audit.
+5. Two runs were INVALID (a call went to `gemini-3.5-flash-lite`); each was re-run once and both re-runs were valid. A fallback play or no play would count as not beating a baseline; there were none.
+
+| Metric | Result | Pre-registered line |
+|---|---|---|
+| PRIMARY: beats blanket 20% markdown | **29 of 36**; ₹68,846 beaten by in those 29 (net over all 36: ₹13,173) | at least 30 of 36: **MISSED by one** |
+| Beats doing nothing | 36 of 36 | reported |
+| HARD: guardrail violations reaching Approve | **0** | 0: **met** |
+| Outcomes: model-authored play / deterministic fallback / no play | 36 / 0 / 0 | reported |
+| First proposal accepted by the gate; mean iterations | 35 of 36; 1 | reported |
+| Latency p50 / p95 | 23.4 s / 38.5 s | reported |
+| Cost per scenario (valid runs) mean / max; total spend incl. the 2 INVALID attempts | USD 0.080 / 0.130; USD 3.06 of the USD 10 cap | reported |
+| Mechanic mix of accepted plays | bundle 23, transfer plus nudge 12, usual-order add-on 1 | reported |
+| SECONDARY, estimator upper bound (not a best play): accepted / upper bound, median / p10 / min | 0.747 / 0.543 / 0.335 | reported |
+
+Reading it plainly. The 7 scenarios that did not beat the blanket markdown (S07, S08, S09, S10, S26, S31, S32) are listed with their figures in `summary.md`. In 13 of the 36 scenarios the blanket-markdown baseline is negative (it gives away more than the write-off it prevents), so any positive play beats it; among the 23 scenarios with a positive baseline the planner beat it in 16. Beating doing nothing is likewise close to guaranteed by the estimator: it is 36 of 36 because each accepted play has positive projected recovery.
+
+Limits. The tenant is synthetic and the scenarios come from one seed with small lots and short deadlines. Recovery is a projection under Taal's own estimator, not a measured outcome. The estimator's response rate ignores discount depth and mechanic and credits a bundle's full price per responding unit, so a bundle out-recovers a coupon or a transfer whenever it clears the margin floor, and the oracle is only an estimator upper bound that favours a lowest-discount bundle; it is never "best possible" and ignores the tenant's soft policy text. One run per scenario, so there is no variance estimate. A smoke run of S01 (USD 0.068, valid, same model) preceded the full run and is not scored.
