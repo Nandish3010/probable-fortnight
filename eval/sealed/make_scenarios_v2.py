@@ -125,7 +125,7 @@ def reference_without_markdown(data_dir: Path, gap_id: str, ctx: Any) -> dict[st
     return {"ref_best_inr": best["recovery_inr"] if best else 0.0, "ref_best_class": best["class"] if best else None, "consented_audience": max((p.get("audience_after_consent", 0) for p in sol["per_class_best"].values()), default=0)}
 
 
-def build(seed: int, data_root: Path, out: Path) -> dict[str, Any]:
+def build(seed: int, data_root: Path, out: Path, version: int = 2) -> dict[str, Any]:
     from agents.planner.context import reset_context, set_context
     from eval.sealed import oracle
 
@@ -177,15 +177,22 @@ def build(seed: int, data_root: Path, out: Path) -> dict[str, Any]:
                 "markdown_is_best_baseline": bool(md_best >= MD_MIN_INR and md_best > ref_best),
                 "oracle_upper_bound_inr": max(md_best, ref_best),
             }
+            if version >= 3:
+                # v3 additions (the v2 files are unchanged): the best blanket depth the margin floor allows, and whether any legal play
+                # can beat the v1-style blanket 20% at all (a model-free ceiling for the primary metric)
+                legal = [v["blanket_recovery_inr"] for v in t["depths"].values() if v["clears_margin_floor"]]
+                baselines[sid]["blanket_legal_recovery_inr"] = max([0.0, *legal])
+                baselines[sid]["blanket20_is_floor_legal"] = bool(t["depths"]["20"]["clears_margin_floor"])
+                baselines[sid]["upper_bound_beats_blanket20"] = bool(baselines[sid]["oracle_upper_bound_inr"] > blankets["20"])
     finally:
         reset_context(token)
     out.mkdir(parents=True, exist_ok=True)
-    doc = {"schema_version": 3, "seeds": [seed], "strata": {"feature": "first scenarios: v1's cell rule (see make_scenarios_v2 docstring)", "markdown_best": "last scenarios: every pool gap with markdown_is_best_baseline (fixed rule)"},
+    doc = {"schema_version": 3 if version < 3 else 4, "seeds": [seed], "strata": {"feature": "first scenarios: v1's cell rule (see make_scenarios_v2 docstring)", "markdown_best": "last scenarios: every pool gap with markdown_is_best_baseline (fixed rule)"},
            "lot_bands_units": v1.LOT_BANDS, "deadline_bands_days": v1.DAY_BANDS, "model_calls": 0,
            "reproduce": [f"python -m data.generator --out .local/sealed/seed_{seed} --seed {seed}; python -m jobs.sense --data .local/sealed/seed_{seed}; python -m eval.sealed.make_scenarios_v2 --seed {seed}"], "scenarios": scenarios}
     sp, bp, cp = out / "scenarios.json", out / "baselines.json", out / "cell_report.json"
     sp.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    bp.write_text(json.dumps({"schema_version": 3, "note": "blanket* = do_nothing_inr - blanket_markdown_inr (v1's definition); markdown_plays = the `markdown` mechanic's own recovery per depth; oracle_upper_bound_inr is an estimator upper bound, not a best play", "baselines": baselines}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    bp.write_text(json.dumps({"schema_version": 3 if version < 3 else 4, "note": "blanket* = do_nothing_inr - blanket_markdown_inr (v1's definition); markdown_plays = the `markdown` mechanic's own recovery per depth; oracle_upper_bound_inr is an estimator upper bound, not a best play", "baselines": baselines}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     cp.write_text(json.dumps({"seed": seed, **info}, indent=1) + "\n", encoding="utf-8")
     return {"scenarios.json": v1.sha256_file(sp), "baselines.json": v1.sha256_file(bp), "cell_report.json": v1.sha256_file(cp),
             "markdown_is_best_baseline_n": sum(b["markdown_is_best_baseline"] for b in baselines.values()), "by_stratum": {s: sum(1 for b in baselines.values() if b["stratum"] == s and b["markdown_is_best_baseline"]) for s in ("feature", "markdown_best")}}
@@ -196,13 +203,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", required=True, type=int)
     ap.add_argument("--data-root", default=str(ROOT / ".local" / "sealed"))
     ap.add_argument("--out", default=str(ROOT / "eval" / "sealed" / "v2"))
+    ap.add_argument("--version", type=int, default=2, help="2 reproduces the v2 files byte for byte; 3 adds the legal-blanket fields")
     args = ap.parse_args(argv)
     os.environ.setdefault("TAAL_MODEL_BACKEND", "stub")
-    if args.seed in (20260912, 40617833):
-        print("seed is the demo tenant's or sealed v1's")
+    if args.seed in (20260912, 40617833) or (args.version >= 3 and args.seed == 71903482):
+        print("seed is the demo tenant's, sealed v1's, or (for v3) sealed v2's")
         return 1
     Path(args.data_root).mkdir(parents=True, exist_ok=True)
-    print(json.dumps(build(args.seed, Path(args.data_root), Path(args.out)), indent=1))
+    print(json.dumps(build(args.seed, Path(args.data_root), Path(args.out), args.version), indent=1))
     return 0
 
 

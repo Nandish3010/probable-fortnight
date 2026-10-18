@@ -1,0 +1,905 @@
+{
+ "scenario_id": "S05",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_5f07173690",
+ "seed": 40617833,
+ "attempt": 1,
+ "started_at": "2026-10-18T21:15:33Z",
+ "tag": "S05__run2",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "play_id": "play_5f07173690_v1",
+  "expected_outcome": {
+   "units": 23.0,
+   "margin_inr": 163.07,
+   "waste_avoided_inr": 936.1,
+   "discount_cost_inr": 207.0,
+   "ci_low": 1.24,
+   "ci_high": 67.1,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "mechanic": "bundle",
+  "counterfactuals": {
+   "do_nothing_inr": 936.1,
+   "blanket_markdown_inr": 414.96,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 163.07
+  },
+  "channel": "web_chat",
+  "objective": "clear_expiry",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending",
+   "variants": []
+  },
+  "target": {
+   "units": 23,
+   "sku": "SKU-KHARI-200G",
+   "deadline_type": "expiry",
+   "node_ids": [
+    "OUT-01"
+   ],
+   "deadline_date": "2026-09-18",
+   "batch_ids": [
+    "B-KHARI-200G-OUT-01-01"
+   ]
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-CREAM-500ML",
+   "bundle_price": 86
+  },
+  "alternatives": [
+   {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": 98.9,
+    "mechanic": "outlet_markdown",
+    "expected_units": 23,
+    "rejected_because": "lower expected margin than the bundle play"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.24% (net price 86.00, cost 78.91) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 301 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 347 -> 301"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-KHARI-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-KHARI-200G at OUT-01"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "14 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "gap_id": "gap_5f07173690",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-18T23:59:59Z"
+  },
+  "citations": [
+   {
+    "ref": "gap_5f07173690",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "audience": {
+   "size_after_consent": 301,
+   "size_before_consent": 347,
+   "segment_ids": [
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_4"
+   ],
+   "filters": {},
+   "purpose": "marketing"
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_5f07173690_v1"
+  },
+  "rationale": "This bundle play targets 301 customers with high affinity to clear 23 units of Khari 200G before expiry on 2026-09-18. By bundling with Cream 500ML at a price of 86, we achieve a net margin of 8.24%, which is above the 8.00% bakery floor. This play recovers 1099.17 INR compared to doing nothing (936.10 INR plus 163.07 INR) and beats a blanket markdown by 578.03 INR (414.96 INR plus 163.07 INR). A 10% holdout is maintained to measure performance.",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_5f07173690_v1_fd64c579",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 14.78,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1099.17,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_5f07173690",
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_5f07173690_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "target": {
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "units": 23
+    },
+    "audience": {
+     "size_after_consent": 301,
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 347
+    },
+    "channel": "web_chat",
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 347,
+     "filters": {},
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "size_after_consent": 301
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "units": 23,
+     "node_ids": [
+      "OUT-01"
+     ],
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-500ML",
+     "bundle_price": 85
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_5f07173690_v1"
+    },
+    "mechanic": "bundle",
+    "objective": "clear_expiry",
+    "gap_id": "gap_5f07173690"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "mechanic": "markdown",
+    "target": {
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "sku": "SKU-KHARI-200G",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "units": 23
+    },
+    "objective": "clear_expiry",
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_5f07173690_v1"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_5f07173690"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-KHARI-200G",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "deadline_type": "expiry",
+     "units": 23
+    },
+    "mechanic_params": {
+     "bundle_price": 85,
+     "bundle_sku": "SKU-CREAM-500ML"
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_expiry",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_5f07173690_v1",
+     "fraction": 0.1
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "ci_low": 1.24,
+     "measured_n": 0,
+     "units": 23,
+     "waste_avoided_inr": 936.1,
+     "prior_n": 20,
+     "ci_high": 67.1,
+     "discount_cost_inr": 230,
+     "margin_inr": 140.07
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 301,
+     "size_before_consent": 347,
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ]
+    },
+    "mechanic": "bundle",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_5f07173690"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-KHARI-200G",
+     "deadline_type": "expiry",
+     "units": 23,
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "node_ids": [
+      "OUT-01"
+     ]
+    },
+    "objective": "clear_expiry",
+    "expected_outcome": {
+     "units": 23,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 115,
+     "ci_low": 1.24,
+     "prior_n": 20,
+     "ci_high": 67.1,
+     "margin_inr": 98.9,
+     "measured_n": 0,
+     "waste_avoided_inr": 936.1
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_5f07173690_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_5f07173690",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 301,
+     "size_before_consent": 347
+    },
+    "channel": "outlet",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "gap_id": "gap_5f07173690",
+    "audience": {
+     "size_after_consent": 301,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "filters": {},
+     "size_before_consent": 347
+    },
+    "channel": "web_chat",
+    "mechanic_params": {
+     "bundle_price": 86,
+     "bundle_sku": "SKU-CREAM-500ML"
+    },
+    "mechanic": "bundle",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "holdout": {
+     "seed": "seed-play_5f07173690_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "node_ids": [
+      "OUT-01"
+     ],
+     "units": 23
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_5f07173690_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "audience": {
+     "size_before_consent": 347,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "filters": [],
+     "size_after_consent": 301
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "bundle_price": 86,
+     "bundle_sku": "SKU-CREAM-500ML"
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_5f07173690",
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "node_ids": [
+      "OUT-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ],
+     "units": 23,
+     "deadline_type": "expiry"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "expected_outcome": {
+     "measured_n": 0,
+     "discount_cost_inr": 207,
+     "ci_high": 67.1,
+     "margin_inr": 163.07,
+     "prior_n": 20,
+     "units": 23,
+     "waste_avoided_inr": 936.1,
+     "estimator_version": "est-v2",
+     "ci_low": 1.24
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "play_id": "play_5f07173690_v1",
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "units": 23,
+     "ci_low": 1.24,
+     "prior_n": 20,
+     "waste_avoided_inr": 936.1,
+     "ci_high": 67.1,
+     "margin_inr": 163.07,
+     "discount_cost_inr": 207
+    },
+    "mechanic": "bundle",
+    "counterfactuals": {
+     "blanket_markdown_inr": 414.96,
+     "play_net_inr": 163.07,
+     "do_nothing_inr": 936.1,
+     "blanket_markdown_pct": 20
+    },
+    "channel": "web_chat",
+    "objective": "clear_expiry",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "target": {
+     "units": 23,
+     "sku": "SKU-KHARI-200G",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-01-01"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-500ML",
+     "bundle_price": 86
+    },
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 98.9,
+      "mechanic": "outlet_markdown",
+      "expected_units": 23,
+      "rejected_because": "lower expected margin than the bundle play"
+     }
+    ],
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 8.24% (net price 86.00, cost 78.91) vs bakery floor 8.00%"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 301 customers under 2 plays in 7 days"
+     },
+     {
+      "detail": "audience filtered by consent: 347 -> 301",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-KHARI-200G in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-KHARI-200G at OUT-01",
+      "passed": true
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve"
+     }
+    ],
+    "gap_id": "gap_5f07173690",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "citations": [
+     {
+      "ref": "gap_5f07173690",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "audience": {
+     "size_after_consent": 301,
+     "size_before_consent": 347,
+     "segment_ids": [
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_4"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_5f07173690_v1"
+    },
+    "rationale": "This bundle play targets 301 customers with high affinity to clear 23 units of Khari 200G before expiry on 2026-09-18. By bundling with Cream 500ML at a price of 86, we achieve a net margin of 8.24%, which is above the 8.00% bakery floor. This play recovers 1099.17 INR compared to doing nothing (936.10 INR plus 163.07 INR) and beats a blanket markdown by 578.03 INR (414.96 INR plus 163.07 INR). A 10% holdout is maintained to measure performance."
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_5f07173690_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_5f07173690_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 27493,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_5f07173690_v1_fd64c579",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 27493,
+  "usage": {
+   "prompt_token_count": 53623,
+   "candidates_token_count": 3585,
+   "thoughts_token_count": 1547,
+   "cached_content_token_count": 40840,
+   "total_token_count": 58755
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1353.75,
+  "blanket20_recovery_inr": 521.14,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 27.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4974,
+    "candidates": 876,
+    "thoughts": 454,
+    "cached": 3816
+   },
+   "usd": 0.015707,
+   "error": null,
+   "elapsed_s": 6.19,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6456,
+    "candidates": 429,
+    "thoughts": 121,
+    "cached": 3668
+   },
+   "usd": 0.01065,
+   "error": null,
+   "elapsed_s": 2.56,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7124,
+    "candidates": 410,
+    "thoughts": 103,
+    "cached": 5400
+   },
+   "usd": 0.008814,
+   "error": null,
+   "elapsed_s": 2.35,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7755,
+    "candidates": 322,
+    "thoughts": 53,
+    "cached": 5317
+   },
+   "usd": 0.008613,
+   "error": null,
+   "elapsed_s": 2.02,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8180,
+    "candidates": 429,
+    "thoughts": 18,
+    "cached": 7029
+   },
+   "usd": 0.007484,
+   "error": null,
+   "elapsed_s": 4.28,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8745,
+    "candidates": 1103,
+    "thoughts": 787,
+    "cached": 6937
+   },
+   "usd": 0.022839,
+   "error": null,
+   "elapsed_s": 7.35,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10389,
+    "candidates": 16,
+    "thoughts": 11,
+    "cached": 8673
+   },
+   "usd": 0.00453,
+   "error": null,
+   "elapsed_s": 0.75,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.078637,
+ "tokens": {
+  "prompt": 53623,
+  "cached": 40840,
+  "candidates": 3585,
+  "thoughts": 1547
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ],
+ "first_attempt": {
+  "verdict": "INVALID",
+  "reason": "call requested gemini-3.5-flash-lite",
+  "tag": "S05__run1",
+  "usd": 0.104382
+ }
+}

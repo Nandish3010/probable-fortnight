@@ -245,7 +245,7 @@ def check_beats_markdown(draft: dict[str, Any], est: dict[str, Any], ctx: Guardr
     computed at the tenant's depths that clear the margin floor (clearance exception included); it is not
     compared when the lot is past its online sell-by (an online price cut is not allowed then)."""
     if sellby_passed:
-        return {"rule": "beats_markdown", "passed": True, "detail": "lot is past its online sell-by: an online markdown is not an option", "best_markdown": None}
+        return {"rule": "beats_markdown", "passed": True, "detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)", "best_markdown": None}
     floor = clearance_floor({**draft, "mechanic": MARKDOWN_MECHANIC}, ctx)
     best = best_markdown(est_ctx, markdown_depths(ctx.tenant), floor_pct=floor if (floor is not None and floor < ctx.product.margin_floor_pct) else None, end_date=(draft.get("target") or {}).get("deadline_date"))
     if best is None:

@@ -370,3 +370,49 @@ def test_markdown_play_is_proposed_and_approved_without_contacting_anyone(data_d
         assert out["copy"]["variants"] >= 1 and not out["copy"]["rejected"], out["copy"]
     finally:
         reset_context(token)
+
+
+# ------------------------------------------------------------------ v3 changes
+
+def test_play_below_the_blanket_20_figure_is_rejected_when_20_is_legal():
+    """On a product whose margin lets a 20% cut clear the floor, a play that recovers less than the blanket 20% figure
+    (do_nothing - blanket_markdown) is rejected by beats_markdown: the `markdown` mechanic at 20% always recovers at least
+    that figure (it also counts the margin on the extra units), so the best allowed markdown is never below it."""
+    c = ctx(product=WIDGET, audience=80)
+    play = _play()
+    est = estimate(play, c)
+    cf = est["counterfactuals"]
+    blanket20 = round(cf["do_nothing_inr"] - cf["blanket_markdown_inr"], 2)
+    assert cf["blanket_markdown_pct"] == 20.0 and recovery_of(est) < blanket20
+    out = gr.check_beats_markdown(play, est, _gctx(), c)
+    assert not out["passed"] and out["best_markdown"]["recovery_inr"] >= blanket20
+    # where 20% is NOT legal (a thin margin) no legal play can be held to it: the check compares with the legal depths only
+    thin = ctx(product=CHIPS, audience=80)
+    assert gr.check_beats_markdown(_play(), estimate(_play(), thin), _gctx(product=CHIPS), thin)["best_markdown"] is None
+
+
+def test_estimate_outcomes_states_the_markdown_reference_once(planner):
+    from agents.planner import drafting
+    from agents.planner import tools as pt
+
+    c = planner
+    for gap_id in ("gap_tea_ds04", "gap_cola_ds07", "gap_kaju_ds01"):
+        gap = pt.get_gap(gap_id)
+        audiences = pt.get_candidate_audiences(gap["sku"], [gap["node_id"]], "clear_expiry")
+        drafts = [drafting.build_draft(gap, audiences, cand, c.policy_version, "t", 0.1, 20, ["en"], c.as_of.isoformat()) for cand in drafting.candidate_mechanics(gap, c.policy_text)[:3]]
+        if len(drafts) < 2:
+            continue
+        out = pt.estimate_outcomes(drafts)
+        assert all("alternatives" not in r for r in out[1:])
+        assert all("best_markdown_recovery_inr" not in r for r in out[1:])
+        return
+    raise AssertionError("no gap with 2+ candidates")
+
+
+def test_retry_on_429_is_off_by_default_and_the_harness_pregenerates_tenants():
+    import harness.adversarial_eval as ae
+    import harness.sealed_eval as se
+
+    assert ae.RETRY_429 == 0  # the adversarial harness and the v1/v2 sealed runs keep their behaviour
+    src = open(se.__file__, encoding="utf-8").read()
+    assert "default=3" in src and "--retry-429" in src and "ensure_tenant(Path(args.data_root), seed)" in src

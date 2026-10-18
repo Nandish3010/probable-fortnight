@@ -219,6 +219,21 @@ def compute_metrics(scenarios: list[dict[str, Any]], answers: dict[str, Any], ru
             mix[x["mechanic"]] = mix.get(x["mechanic"], 0) + 1
     beating = [x for x in rows if x["beats_blanket"]]
     v2 = {}
+    if any("blanket_legal_recovery_inr" in a for a in answers.values()):
+        legal = {sc["scenario_id"]: answers[sc["scenario_id"]] for sc, _ in valid}
+        for x in rows:
+            a = legal[x["scenario_id"]]
+            x["beats_legal_blanket"] = x["outcome"] == "model_play" and x["recovery_inr"] > a["blanket_legal_recovery_inr"]
+            x["ceiling_beats_blanket20"] = bool(a["upper_bound_beats_blanket20"])
+        ceil = [x for x in rows if x["ceiling_beats_blanket20"]]
+        v2["v3"] = {
+            "beats_legal_blanket": {"n": sum(x["beats_legal_blanket"] for x in rows), "of": n},
+            "ceiling_scenarios_where_a_legal_play_can_beat_blanket20": len(ceil),
+            "ceiling_scenarios_beaten": sum(1 for x in ceil if x["beats_blanket"]),
+            "blanket20_floor_illegal_scenarios": sum(1 for sc, _ in valid if not answers[sc["scenario_id"]]["blanket20_is_floor_legal"]),
+            "valid_runs": n, "mean_model_calls": statistics.mean(len(r["model_calls"]) for _, r in valid) if valid else None,
+            "mean_prompt_tokens": statistics.mean(r["tokens"]["prompt"] for _, r in valid) if valid else None,
+        }
     if any("markdown_is_best_baseline" in a for a in answers.values()):
         flagged = [(sc, x) for sc, x in zip((sc for sc, _ in valid), rows, strict=True) if answers[sc["scenario_id"]].get("markdown_is_best_baseline")]
         md_all = [x for x in rows if x["outcome"] == "model_play" and x["mechanic"] == "markdown"]
@@ -279,6 +294,14 @@ def write_summary(path: Path, meta: dict[str, Any], m: dict[str, Any]) -> None:
               f"| Markdown chosen, all scenarios | {m['markdown_chosen_total']} |"]
         for st, v in m["by_stratum"].items():
             L.append(f"| Stratum {st}: n / beats blanket 20% / net vs blanket 20% | {v['n']} / {v['beats_blanket']} / INR {fmt(v['net_over_blanket20_inr'], 2)} |")
+    if "v3" in m:
+        v3 = m["v3"]
+        L += ["", "## Legal-baseline view (v3 metrics)", "", "| Metric | Result |", "|---|---|",
+              f"| Beats the best margin-floor-LEGAL blanket depth (0 if none is legal) | {v3['beats_legal_blanket']['n']} of {v3['beats_legal_blanket']['of']} |",
+              f"| Blanket 20% is floor-illegal in | {v3['blanket20_floor_illegal_scenarios']} of {m['valid']} scenarios |",
+              f"| Scenarios where the model-free upper bound exceeds blanket 20% (a legal play can beat it) | {v3['ceiling_scenarios_where_a_legal_play_can_beat_blanket20']} |",
+              f"| Of those, beaten by the planner | {v3['ceiling_scenarios_beaten']} |",
+              f"| Valid runs; mean model calls per run; mean prompt tokens per run | {v3['valid_runs']}; {fmt(v3['mean_model_calls'], 1)}; {fmt(v3['mean_prompt_tokens'], 0)} |"]
     L += ["", "## By gap type", "", "| Gap type | n | beats blanket |", "|---|---|---|"]
     for t, v in m["by_gap_type"].items():
         L.append(f"| {t} | {v['n']} | {v['beats_blanket']} |")
@@ -294,7 +317,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True)
     ap.add_argument("--cap-usd", type=float, default=10.0)
-    ap.add_argument("--concurrency", type=int, default=4)
+    ap.add_argument("--concurrency", type=int, default=3)
+    ap.add_argument("--retry-429", type=int, default=4, help="retry a 429 this many times with backoff before the SDK fails over to the fallback model (0 = off, the v1/v2 behaviour)")
     ap.add_argument("--backend", default=None)
     ap.add_argument("--scenarios", default=str(SCEN))
     ap.add_argument("--answers", default=str(ANSWERS))
@@ -319,9 +343,14 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     ledger = ae.Ledger(args.cap_usd, models["ids"]["flash"], models["pricing"], out_dir / "model_calls.jsonl") if live else None
     if ledger:
+        ae.RETRY_429 = max(0, args.retry_429)
         ae.install_tap(ledger)
     reserver = Reserver(ledger, args.cap_usd, RESERVE_USD)
     started = time.time()
+    from eval.sealed.make_scenarios import ensure_tenant
+
+    for seed in sorted({s["seed"] for s in scenarios}):  # build each tenant once, before the runs start (concurrent first builds raced in the v2 regression)
+        ensure_tenant(Path(args.data_root), seed)
     with tempfile.TemporaryDirectory(prefix="taal_sealed_") as work:
         ctx = {"tmp": Path(work), "backend": backend, "data_root": Path(args.data_root)}
         asyncio.run(execute(scenarios, answers, ctx, ledger, reserver, out_dir, args.concurrency))
@@ -329,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
     m = compute_metrics(scenarios, answers, runs)
     meta = {
         "date": datetime.now(UTC).date().isoformat(), "run_at": ae.now_utc(), "backend": backend, "model": models["ids"]["flash"] if live else "stub-planner", "prompt_version": prompt_version(), "protocol": args.protocol,
-        "label": "measured" if live else "stub plumbing check (scripted stand-in, NOT the model; numbers are not results)", "concurrency": args.concurrency, "cap_usd": args.cap_usd, "reserve_usd_per_run": RESERVE_USD,
+        "label": "measured" if live else "stub plumbing check (scripted stand-in, NOT the model; numbers are not results)", "concurrency": args.concurrency, "retry_429": args.retry_429 if live else 0, "cap_usd": args.cap_usd, "reserve_usd_per_run": RESERVE_USD,
         "planner_deadline_s": DEADLINE_S, "thinking": models.get("thinking"), "wall_s": round(time.time() - started, 1),
         "git_head": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
         "preregistration_commit": os.environ.get("SEALED_PREREG_COMMIT") or subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),

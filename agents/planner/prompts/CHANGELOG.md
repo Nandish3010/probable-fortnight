@@ -1,5 +1,10 @@
 # Planner prompt changelog
 
+- v9 (2026-10-19, branch planner/markdown-option, not deployed): two edits from the diagnosis of the v2 sealed run
+  (eval/evaluation.md): (1) the best-markdown reference is stated once, in the first `estimate_outcomes` result, not in every
+  result (input tokens per run were +39% over v1); (2) a citation `ref` is an id, never a rupee figure (2 of the 6
+  first-proposal rejections in v2 were `outcome:<number>` citations that do not resolve).
+
 - v8 (2026-10-19, branch planner/markdown-option, not deployed): adds the `markdown` mechanic (site-wide online price
   cut, `markdown_pct`; end date, audience and node-level measurement set by the tools) and one instruction: for large
   lots with little time left, a plain markdown is often best; propose it when it beats targeted plays. Step 2 tells the

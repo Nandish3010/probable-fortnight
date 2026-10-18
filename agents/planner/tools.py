@@ -451,7 +451,14 @@ def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
     Returns one result per draft, same order; a draft with a problem gets {"error", "required_shape"}
     in its slot rather than failing the whole batch."""
     ctx = current()
-    return [_estimate_one(ctx, d) for d in play_drafts]
+    out = [_estimate_one(ctx, d) for d in play_drafts]
+    # The best-markdown reference is the same for every draft of one gap: state it once, in the first result, so it is
+    # not repeated in every result the model carries through the rest of the loop (the v2 sealed eval showed +39% input
+    # tokens per run, and 7.9 drafts per run, with the reference attached to each).
+    for r in out[1:]:
+        r.pop("alternatives", None)
+        r.pop("best_markdown_recovery_inr", None)
+    return out
 
 
 def check_guardrails(play_draft: dict) -> dict:

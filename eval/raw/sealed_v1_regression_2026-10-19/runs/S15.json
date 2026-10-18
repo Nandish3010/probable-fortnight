@@ -1,0 +1,1154 @@
+{
+ "scenario_id": "S15",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 1
+ },
+ "gap_id": "gap_636f57ffde",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:01Z",
+ "tag": "S15__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_636f57ffde",
+  "play_id": "play_636f57ffde_v1",
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_636f57ffde_v1"
+  },
+  "alternatives": [
+   {
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "rejected_because": "failed margin floor guardrail",
+    "mechanic": "outlet_markdown",
+    "expected_units": 29.88,
+    "expected_margin_inr": 40.34
+   },
+   {
+    "mechanic": "bundle",
+    "expected_margin_inr": -1101.6,
+    "expected_units": 24,
+    "rejected_because": "negative expected margin",
+    "mechanic_params": {
+     "bundle_price": 180,
+     "bundle_sku": "SKU-PAV-400G"
+    }
+   }
+  ],
+  "expected_outcome": {
+   "units": 29.88,
+   "margin_inr": 458.66,
+   "waste_avoided_inr": 2655.6,
+   "discount_cost_inr": 418.32,
+   "ci_low": 1.61,
+   "ci_high": 87.17,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2655.6,
+   "blanket_markdown_inr": 1430.07,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": 458.66
+  },
+  "mechanic": "outlet_markdown",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-18T23:59:59Z"
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_636f57ffde"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "objective": "clear_expiry",
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "audience": {
+   "size_after_consent": 440,
+   "filters": {},
+   "size_before_consent": 505,
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_5",
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ]
+  },
+  "channel": "outlet",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 12.18% (net price 126.00, cost 110.65) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 440 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-TONED-MILK-1L in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-TONED-MILK-1L at OUT-02"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "6 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "target": {
+   "sku": "SKU-TONED-MILK-1L",
+   "units": 24,
+   "node_ids": [
+    "OUT-02"
+   ],
+   "deadline_date": "2026-09-18",
+   "batch_ids": [
+    "B-TONED-MILK-1L-OUT-02-01"
+   ],
+   "deadline_type": "expiry"
+  },
+  "rationale": "This play targets the selected segments with a 10% outlet markdown to clear 24 units of Toned Milk 1L at Outlet 02 before expiry on 2026-09-18. The play is expected to recover 458.66 INR compared to doing nothing (do_nothing_inr of 2655.6 INR) and beats a blanket markdown (blanket_markdown_inr of 1430.07 INR). A 10% holdout is maintained.",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_636f57ffde_v1_deb5cae4",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 49.17,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 3114.26,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "play_id": "play_636f57ffde_v1",
+    "objective": "clear_expiry",
+    "target": {
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "units": 24,
+     "deadline_type": "expiry",
+     "sku": "SKU-TONED-MILK-1L",
+     "node_ids": [
+      "OUT-02"
+     ]
+    },
+    "gap_id": "gap_636f57ffde",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_636f57ffde_v1",
+     "fraction": 0.1
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 505,
+     "filters": {},
+     "size_after_consent": 441
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "channel": "web_chat",
+    "objective": "clear_expiry",
+    "play_id": "play_636f57ffde_v1",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 441,
+     "size_before_consent": 505
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "mechanic_params": {
+     "bundle_price": 180,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "mechanic": "bundle",
+    "target": {
+     "units": 24,
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-TONED-MILK-1L",
+     "node_ids": [
+      "OUT-02"
+     ],
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "gap_id": "gap_636f57ffde",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_636f57ffde_v1"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "mechanic": "markdown",
+    "objective": "clear_expiry",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_636f57ffde_v1",
+     "min_treated_n": 20
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "filters": {}
+    },
+    "channel": "outlet",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "play_id": "play_636f57ffde_v1",
+    "target": {
+     "units": 24,
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "node_ids": [
+      "OUT-02"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-TONED-MILK-1L"
+    },
+    "gap_id": "gap_636f57ffde",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "play_id": "play_636f57ffde_v1",
+    "channel": "outlet",
+    "guardrails": [],
+    "counterfactuals": {
+     "play_net_inr": 40.34,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 1134,
+     "do_nothing_inr": 2655.6
+    },
+    "expected_outcome": {
+     "measured_n": 0,
+     "discount_cost_inr": 836.64,
+     "waste_avoided_inr": 2655.6,
+     "estimator_version": "est-v2",
+     "margin_inr": 40.34,
+     "ci_low": 1.61,
+     "ci_high": 87.17,
+     "units": 29.88,
+     "prior_n": 20
+    },
+    "holdout": {
+     "seed": "seed-play_636f57ffde_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_636f57ffde",
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "node_ids": [
+      "OUT-02"
+     ],
+     "deadline_date": "2026-09-18",
+     "units": 24,
+     "sku": "SKU-TONED-MILK-1L"
+    },
+    "citations": [
+     {
+      "ref": "gap_636f57ffde",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 505,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "size_after_consent": 440
+    },
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "mechanic": "outlet_markdown",
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "play_id": "play_636f57ffde_v1",
+    "objective": "clear_expiry",
+    "channel": "outlet",
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 505,
+     "size_after_consent": 441,
+     "filters": {}
+    },
+    "target": {
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-02"
+     ],
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "sku": "SKU-TONED-MILK-1L",
+     "deadline_date": "2026-09-18",
+     "units": 24
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "gap_id": "gap_636f57ffde",
+    "holdout": {
+     "seed": "seed-play_636f57ffde_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_636f57ffde",
+    "objective": "clear_expiry",
+    "target": {
+     "node_ids": [
+      "OUT-02"
+     ],
+     "sku": "SKU-TONED-MILK-1L",
+     "deadline_type": "expiry",
+     "units": 24,
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ]
+    },
+    "channel": "outlet",
+    "play_id": "play_636f57ffde_v1",
+    "mechanic_params": {
+     "markdown_pct": 12
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_636f57ffde_v1",
+     "min_treated_n": 20
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "size_before_consent": 505,
+     "filters": {},
+     "size_after_consent": 441,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "play_id": "play_636f57ffde_v1",
+    "target": {
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "node_ids": [
+      "OUT-02"
+     ],
+     "units": 24,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-TONED-MILK-1L"
+    },
+    "channel": "outlet",
+    "gap_id": "gap_636f57ffde",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 505,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 441
+    },
+    "mechanic_params": {
+     "markdown_pct": 13
+    },
+    "objective": "clear_expiry",
+    "holdout": {
+     "seed": "seed-play_636f57ffde_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "expected_outcome": {
+     "units": 29.88,
+     "prior_n": 20,
+     "discount_cost_inr": 543.82,
+     "measured_n": 0,
+     "waste_avoided_inr": 2655.6,
+     "ci_low": 1.61,
+     "ci_high": 87.17,
+     "estimator_version": "est-v2",
+     "margin_inr": 333.16
+    },
+    "play_id": "play_636f57ffde_v1",
+    "gap_id": "gap_636f57ffde",
+    "guardrails": [],
+    "mechanic": "outlet_markdown",
+    "objective": "clear_expiry",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 440,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 505
+    },
+    "counterfactuals": {
+     "play_net_inr": 333.16,
+     "blanket_markdown_pct": 13,
+     "do_nothing_inr": 2655.6,
+     "blanket_markdown_inr": 1062.41
+    },
+    "channel": "outlet",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_636f57ffde"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "mechanic_params": {
+     "markdown_pct": 13
+    },
+    "target": {
+     "sku": "SKU-TONED-MILK-1L",
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18",
+     "units": 24,
+     "node_ids": [
+      "OUT-02"
+     ]
+    },
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "holdout": {
+     "seed": "seed-play_636f57ffde_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "deadline_date": "2026-09-18",
+     "node_ids": [
+      "OUT-02"
+     ],
+     "sku": "SKU-TONED-MILK-1L",
+     "units": 24,
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ]
+    },
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown",
+    "play_id": "play_636f57ffde_v1",
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "play_net_inr": 458.66,
+     "do_nothing_inr": 2655.6,
+     "blanket_markdown_inr": 1430.07
+    },
+    "channel": "outlet",
+    "gap_id": "gap_636f57ffde",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_636f57ffde_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 2655.6,
+     "measured_n": 0,
+     "estimator_version": "est-v2",
+     "units": 29.88,
+     "prior_n": 20,
+     "ci_high": 87.17,
+     "ci_low": 1.61,
+     "discount_cost_inr": 418.32,
+     "margin_inr": 458.66
+    },
+    "guardrails": [],
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 505,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 440
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "citations": [
+     {
+      "ref": "gap_636f57ffde",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "gap_id": "gap_636f57ffde",
+    "play_id": "play_636f57ffde_v1",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_636f57ffde_v1"
+    },
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "markdown_pct": 20
+      },
+      "rejected_because": "failed margin floor guardrail",
+      "mechanic": "outlet_markdown",
+      "expected_units": 29.88,
+      "expected_margin_inr": 40.34
+     },
+     {
+      "mechanic": "bundle",
+      "expected_margin_inr": -1101.6,
+      "expected_units": 24,
+      "rejected_because": "negative expected margin",
+      "mechanic_params": {
+       "bundle_price": 180,
+       "bundle_sku": "SKU-PAV-400G"
+      }
+     }
+    ],
+    "expected_outcome": {
+     "ci_low": 1.61,
+     "measured_n": 0,
+     "prior_n": 20,
+     "margin_inr": 458.66,
+     "discount_cost_inr": 418.32,
+     "waste_avoided_inr": 2655.6,
+     "estimator_version": "est-v2",
+     "units": 29.88,
+     "ci_high": 87.17
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 1430.07,
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 2655.6,
+     "play_net_inr": 458.66
+    },
+    "mechanic": "outlet_markdown",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_636f57ffde"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "size_after_consent": 440,
+     "filters": {},
+     "size_before_consent": 505,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "channel": "outlet",
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 12.18% (net price 126.00, cost 110.65) vs dairy floor 8.00%"
+     },
+     {
+      "detail": "all 440 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "outlet channel: no personal message, consent not required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "detail": "no active subscribers of SKU-TONED-MILK-1L in audience",
+      "rule": "subscription_protect"
+     },
+     {
+      "detail": "no stockout gap for SKU-TONED-MILK-1L at OUT-02",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "target": {
+     "sku": "SKU-TONED-MILK-1L",
+     "units": 24,
+     "node_ids": [
+      "OUT-02"
+     ],
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-TONED-MILK-1L-OUT-02-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "rationale": "This play targets the selected segments with a 10% outlet markdown to clear 24 units of Toned Milk 1L at Outlet 02 before expiry on 2026-09-18. The play is expected to recover 458.66 INR compared to doing nothing (do_nothing_inr of 2655.6 INR) and beats a blanket markdown (blanket_markdown_inr of 1430.07 INR). A 10% holdout is maintained."
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_636f57ffde_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_636f57ffde_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 38298,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_636f57ffde_v1_deb5cae4",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 38298,
+  "usage": {
+   "prompt_token_count": 60672,
+   "candidates_token_count": 4974,
+   "thoughts_token_count": 3410,
+   "cached_content_token_count": 45492,
+   "total_token_count": 69056
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3851.84,
+  "blanket20_recovery_inr": 1521.6,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 38.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4984,
+    "candidates": 1019,
+    "thoughts": 467,
+    "cached": 3817
+   },
+   "usd": 0.017267,
+   "error": null,
+   "elapsed_s": 6.76,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6569,
+    "candidates": 589,
+    "thoughts": 137,
+    "cached": 3645
+   },
+   "usd": 0.012613,
+   "error": null,
+   "elapsed_s": 3.32,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7362,
+    "candidates": 1037,
+    "thoughts": 223,
+    "cached": 5350
+   },
+   "usd": 0.016677,
+   "error": null,
+   "elapsed_s": 4.91,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8734,
+    "candidates": 594,
+    "thoughts": 16,
+    "cached": 6956
+   },
+   "usd": 0.01012,
+   "error": null,
+   "elapsed_s": 2.88,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9411,
+    "candidates": 594,
+    "thoughts": 64,
+    "cached": 8572
+   },
+   "usd": 0.009313,
+   "error": null,
+   "elapsed_s": 3.51,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10137,
+    "candidates": 1127,
+    "thoughts": 2480,
+    "cached": 8475
+   },
+   "usd": 0.03985,
+   "error": null,
+   "elapsed_s": 13.75,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13475,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 8677
+   },
+   "usd": 0.009715,
+   "error": null,
+   "elapsed_s": 1.09,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.115555,
+ "tokens": {
+  "prompt": 60672,
+  "cached": 45492,
+  "candidates": 4974,
+  "thoughts": 3410
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

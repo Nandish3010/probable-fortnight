@@ -1,0 +1,928 @@
+{
+ "scenario_id": "S20",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_6864cfdd12",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:49Z",
+ "tag": "S20__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "copy": {
+   "variants": [],
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending"
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-PANEER-200G",
+   "bundle_price": 115
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "rationale": "This bundle play clears the online sell-by gap for Pav at Dark store DS-08 by pairing it with Paneer. The play achieves a recovered-versus-doing-nothing figure of 1286.12 INR and a beat over a blanket markdown of 758.92 INR. It targets 328 customers with a holdout fraction of 0.1. This strategy aligns with the policy preference for bundles over markdowns while maintaining a net margin of 10.33%, which is above the 8.00% bakery floor.",
+  "expected_outcome": {
+   "units": 22.3,
+   "margin_inr": 264.92,
+   "waste_avoided_inr": 1021.2,
+   "discount_cost_inr": 223.0,
+   "ci_low": 1.2,
+   "ci_high": 65.06,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "channel": "web_chat",
+  "audience": {
+   "filters": {},
+   "size_before_consent": 380,
+   "size_after_consent": 328,
+   "segment_ids": [
+    "seg_6",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_4",
+    "seg_5"
+   ],
+   "purpose": "marketing"
+  },
+  "target": {
+   "batch_ids": [
+    "B-PAV-400G-DS-08-01"
+   ],
+   "deadline_date": "2026-09-16",
+   "node_ids": [
+    "DS-08"
+   ],
+   "deadline_type": "online_sellby",
+   "units": 20,
+   "sku": "SKU-PAV-400G"
+  },
+  "objective": "clear_online_sellby",
+  "citations": [
+   {
+    "ref": "gap_6864cfdd12",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-PAV-400G-DS-08-01"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.33% (net price 115.00, cost 103.12) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 328 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 380 -> 328"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-PAV-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-PAV-400G at DS-08"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "6 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "gap_id": "gap_6864cfdd12",
+  "alternatives": [
+   {
+    "expected_units": 22.3,
+    "expected_margin_inr": 165.91,
+    "rejected_because": "lower expected margin than the bundle play",
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    }
+   },
+   {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "rejected_because": "negative expected margin and lower than the bundle play",
+    "expected_margin_inr": -286.7,
+    "mechanic": "markdown",
+    "expected_units": 20
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 1021.2,
+   "blanket_markdown_inr": 494.0,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 264.92
+  },
+  "mechanic": "bundle",
+  "play_id": "play_6864cfdd12_v1",
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_6864cfdd12_v1",
+   "min_treated_n": 20
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_6864cfdd12_v1_81dd3922",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 16.48,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1286.12,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "audience": {
+     "filters": {},
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 328
+    },
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "gap_id": "gap_6864cfdd12",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "holdout": {
+     "seed": "seed-play_6864cfdd12_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "sku": "SKU-PAV-400G",
+     "units": 20,
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ],
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "node_ids": [
+      "DS-08"
+     ],
+     "sku": "SKU-PAV-400G",
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "units": 20
+    },
+    "mechanic_params": {
+     "bundle_price": 110,
+     "bundle_sku": "SKU-PANEER-200G"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_6864cfdd12_v1"
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_after_consent": 328,
+     "filters": {},
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing"
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_6864cfdd12",
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_6864cfdd12",
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "mechanic": "markdown",
+    "target": {
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "node_ids": [
+      "DS-08"
+     ],
+     "units": 20,
+     "sku": "SKU-PAV-400G",
+     "deadline_date": "2026-09-16",
+     "deadline_type": "online_sellby"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_6864cfdd12_v1",
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "objective": "clear_online_sellby",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 328,
+     "filters": {},
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_6864cfdd12",
+    "mechanic": "bundle",
+    "target": {
+     "sku": "SKU-PAV-400G",
+     "units": 20,
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_date": "2026-09-16",
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_6864cfdd12_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-200G",
+     "bundle_price": 110
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_6864cfdd12_v1"
+    },
+    "gap_id": "gap_6864cfdd12",
+    "audience": {
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 328
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 20,
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-PAV-400G",
+     "deadline_date": "2026-09-16",
+     "node_ids": [
+      "DS-08"
+     ]
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "audience": {
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {},
+     "size_before_consent": 380,
+     "purpose": "marketing"
+    },
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "target": {
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "sku": "SKU-PAV-400G",
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "units": 20
+    },
+    "holdout": {
+     "seed": "seed-play_6864cfdd12_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "gap_id": "gap_6864cfdd12",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 20,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-16",
+     "sku": "SKU-PAV-400G",
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "node_ids": [
+      "DS-08"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-200G",
+     "bundle_price": 115
+    },
+    "gap_id": "gap_6864cfdd12",
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "bundle",
+    "holdout": {
+     "seed": "seed-play_6864cfdd12_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 380,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "size_after_consent": 328
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_date": "2026-09-16",
+     "sku": "SKU-PAV-400G",
+     "units": 20,
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ]
+    },
+    "gap_id": "gap_6864cfdd12",
+    "mechanic_params": {
+     "bundle_price": 115,
+     "bundle_sku": "SKU-PANEER-200G"
+    },
+    "window": {
+     "end": "2026-09-16T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_6864cfdd12_v1"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {},
+     "size_after_consent": 328,
+     "size_before_consent": 380
+    },
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-200G",
+     "bundle_price": 115
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-16T23:59:59Z"
+    },
+    "rationale": "This bundle play clears the online sell-by gap for Pav at Dark store DS-08 by pairing it with Paneer. The play achieves a recovered-versus-doing-nothing figure of 1286.12 INR and a beat over a blanket markdown of 758.92 INR. It targets 328 customers with a holdout fraction of 0.1. This strategy aligns with the policy preference for bundles over markdowns while maintaining a net margin of 10.33%, which is above the 8.00% bakery floor.",
+    "expected_outcome": {
+     "ci_high": 65.06,
+     "discount_cost_inr": 223,
+     "prior_n": 20,
+     "ci_low": 1.2,
+     "units": 22.3,
+     "margin_inr": 264.92,
+     "waste_avoided_inr": 1021.2,
+     "estimator_version": "est-v2",
+     "measured_n": 0
+    },
+    "channel": "web_chat",
+    "audience": {
+     "filters": {},
+     "size_before_consent": 380,
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_6",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing"
+    },
+    "target": {
+     "batch_ids": [
+      "B-PAV-400G-DS-08-01"
+     ],
+     "deadline_date": "2026-09-16",
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "units": 20,
+     "sku": "SKU-PAV-400G"
+    },
+    "objective": "clear_online_sellby",
+    "citations": [
+     {
+      "ref": "gap_6864cfdd12",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     },
+     {
+      "type": "stock",
+      "ref": "B-PAV-400G-DS-08-01"
+     }
+    ],
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "detail": "net margin 10.33% (net price 115.00, cost 103.12) vs bakery floor 8.00%",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "all 328 customers under 2 plays in 7 days",
+      "rule": "frequency_cap"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 380 -> 328"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-PAV-400G in audience",
+      "passed": true
+     },
+     {
+      "detail": "no stockout gap for SKU-PAV-400G at DS-08",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ],
+    "gap_id": "gap_6864cfdd12",
+    "alternatives": [
+     {
+      "expected_units": 22.3,
+      "expected_margin_inr": 165.91,
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic": "coupon",
+      "mechanic_params": {
+       "discount_pct": 10
+      }
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 15
+      },
+      "rejected_because": "negative expected margin and lower than the bundle play",
+      "expected_margin_inr": -286.7,
+      "mechanic": "markdown",
+      "expected_units": 20
+     }
+    ],
+    "counterfactuals": {
+     "blanket_markdown_inr": 494,
+     "do_nothing_inr": 1021.2,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 264.92
+    },
+    "mechanic": "bundle",
+    "play_id": "play_6864cfdd12_v1",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_6864cfdd12_v1",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_6864cfdd12_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_6864cfdd12_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 52856,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 642.20; this play 1286.12; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_6864cfdd12_v1_81dd3922",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 52856,
+  "usage": {
+   "prompt_token_count": 66481,
+   "candidates_token_count": 3645,
+   "thoughts_token_count": 5686,
+   "cached_content_token_count": 48837,
+   "total_token_count": 75812
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1413.23,
+  "blanket20_recovery_inr": 527.2,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 53.7,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4997,
+    "candidates": 882,
+    "thoughts": 1080,
+    "cached": 3817
+   },
+   "usd": 0.022001,
+   "error": null,
+   "elapsed_s": 7.83,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7441,
+    "candidates": 327,
+    "thoughts": 486,
+    "cached": 3688
+   },
+   "usd": 0.01485,
+   "error": null,
+   "elapsed_s": 5.55,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8428,
+    "candidates": 308,
+    "thoughts": 59,
+    "cached": 7308
+   },
+   "usd": 0.006687,
+   "error": null,
+   "elapsed_s": 8.22,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8971,
+    "candidates": 624,
+    "thoughts": 481,
+    "cached": 7216
+   },
+   "usd": 0.015026,
+   "error": null,
+   "elapsed_s": 4.9,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10393,
+    "candidates": 327,
+    "thoughts": 19,
+    "cached": 7137
+   },
+   "usd": 0.009975,
+   "error": null,
+   "elapsed_s": 2.21,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10914,
+    "candidates": 1163,
+    "thoughts": 3537,
+    "cached": 8836
+   },
+   "usd": 0.051417,
+   "error": null,
+   "elapsed_s": 18.65,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 15337,
+    "candidates": 14,
+    "thoughts": 24,
+    "cached": 10835
+   },
+   "usd": 0.009592,
+   "error": null,
+   "elapsed_s": 1.72,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.129548,
+ "tokens": {
+  "prompt": 66481,
+  "cached": 48837,
+  "candidates": 3645,
+  "thoughts": 5686
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

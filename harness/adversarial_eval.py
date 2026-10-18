@@ -24,6 +24,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -137,6 +138,9 @@ def _err(e: BaseException) -> dict[str, Any]:
     return {"type": type(e).__name__, "status": status_of(e), "msg": str(e)[:200]}
 
 
+RETRY_429 = 0  # set by a caller (harness/sealed_eval.py) to retry a 429 that many times with backoff before failover
+
+
 def install_tap(ledger: Ledger) -> None:
     from google.genai import models as gm
 
@@ -158,6 +162,18 @@ def install_tap(ledger: Ledger) -> None:
             ledger.leave(rec)
 
     async def async_wrapped(self, *args, **kwargs):
+        # Optional backoff-and-retry on 429 BEFORE the SDK's model failover, so a throttled run stays on the primary
+        # model instead of being answered by the fallback (an INVALID run in the sealed evals). Off unless RETRY_429 > 0.
+        for attempt in range(RETRY_429):
+            try:
+                return await _async_once(self, *args, **kwargs)
+            except BaseException as e:  # noqa: BLE001
+                if _err(e).get("status") != 429:
+                    raise
+                await asyncio.sleep(min(30.0, 2.0 * 2**attempt) * (0.5 + random.random() / 2))
+        return await _async_once(self, *args, **kwargs)
+
+    async def _async_once(self, *args, **kwargs):
         ledger.enter()
         rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "thinking_level": _thinking_level(kwargs), "t": round(time.time(), 2)}
         t0 = time.time()
