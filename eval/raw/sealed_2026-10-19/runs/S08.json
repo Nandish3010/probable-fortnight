@@ -1,0 +1,691 @@
+{
+ "scenario_id": "S08",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_7eb16d4ac6",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:27:12Z",
+ "tag": "S08__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "play_id": "play_7eb16d4ac6_v1",
+  "channel": "web_chat",
+  "mechanic_params": {
+   "bundle_sku": "SKU-MILK-BREAD-200G",
+   "bundle_price": 280
+  },
+  "objective": "clear_expiry",
+  "target": {
+   "units": 86,
+   "deadline_type": "expiry",
+   "node_ids": [
+    "OUT-02"
+   ],
+   "sku": "SKU-CURD-200G",
+   "batch_ids": [
+    "B-CURD-200G-OUT-02-01"
+   ],
+   "deadline_date": "2026-09-19"
+  },
+  "gap_id": "gap_7eb16d4ac6",
+  "mechanic": "bundle",
+  "alternatives": [
+   {
+    "rejected_because": "The policy prefers bundles over blanket markdowns, and the bundle play yields a higher expected margin of 1022.04 INR compared to 501.06 INR.",
+    "expected_margin_inr": 501.06,
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "outlet_markdown",
+    "expected_units": 30.65
+   },
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "expected_units": 30.65,
+    "expected_margin_inr": 501.06,
+    "rejected_because": "The policy prefers bundles over coupons, and the bundle play yields a higher expected margin of 1022.04 INR compared to 501.06 INR."
+   }
+  ],
+  "window": {
+   "end": "2026-09-19T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 16868.9,
+   "blanket_markdown_inr": 9579.5,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -9835.65
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.1,
+   "seed": "seed-play_7eb16d4ac6_v1"
+  },
+  "expected_outcome": {
+   "units": 30.65,
+   "margin_inr": 1022.04,
+   "waste_avoided_inr": 6011.21,
+   "discount_cost_inr": 919.38,
+   "ci_low": 1.65,
+   "ci_high": 89.41,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "purpose": "marketing",
+   "filters": {},
+   "size_after_consent": 440,
+   "size_before_consent": 504
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_7eb16d4ac6"
+   },
+   {
+    "ref": "est-v1",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 11.91% (net price 280.00, cost 246.65) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 440 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 504 -> 440"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-200G at OUT-02"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "12 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "rationale": "This bundle play targets 440 customers across six high-affinity segments to clear the curd expiry gap at OUT-02. By bundling Curd 200G with Milk Bread 200G for 280 rupees, we expect to sell 30.65 units and avoid 6011.21 rupees of waste. The play recovers 7033 rupees compared to doing nothing (16868.90 rupees write-off plus -9835.65 rupees play net). It represents a change of -256 rupees over a blanket markdown (9579.50 rupees blanket markdown cost plus -9835.65 rupees play net).",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_7eb16d4ac6_v1_80054a48",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 57.2,
+   "pct_of_rupees_at_stake": 0.362
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 7033.25,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "target": {
+     "batch_ids": [
+      "B-CURD-200G-OUT-02-01"
+     ],
+     "sku": "SKU-CURD-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-19",
+     "units": 86,
+     "node_ids": [
+      "OUT-02"
+     ]
+    },
+    "holdout": {
+     "seed": "seed-play_7eb16d4ac6_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic": "bundle",
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 504,
+     "size_after_consent": 440
+    },
+    "gap_id": "gap_7eb16d4ac6",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-200G",
+     "bundle_price": 280
+    },
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "size_after_consent": 440,
+     "purpose": "marketing",
+     "size_before_consent": 504,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {}
+    },
+    "holdout": {
+     "seed": "seed-play_7eb16d4ac6_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "target": {
+     "node_ids": [
+      "OUT-02"
+     ],
+     "deadline_date": "2026-09-19",
+     "deadline_type": "expiry",
+     "sku": "SKU-CURD-200G",
+     "batch_ids": [
+      "B-CURD-200G-OUT-02-01"
+     ],
+     "units": 86
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_7eb16d4ac6",
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "outlet_markdown",
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 504,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 440
+    },
+    "gap_id": "gap_7eb16d4ac6",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_7eb16d4ac6_v1",
+     "fraction": 0.1
+    },
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "mechanic": "coupon",
+    "target": {
+     "sku": "SKU-CURD-200G",
+     "node_ids": [
+      "OUT-02"
+     ],
+     "deadline_date": "2026-09-19",
+     "deadline_type": "expiry",
+     "units": 86,
+     "batch_ids": [
+      "B-CURD-200G-OUT-02-01"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_7eb16d4ac6_v1",
+     "fraction": 0.1
+    },
+    "target": {
+     "node_ids": [
+      "OUT-02"
+     ],
+     "batch_ids": [
+      "B-CURD-200G-OUT-02-01"
+     ],
+     "sku": "SKU-CURD-200G",
+     "deadline_date": "2026-09-19",
+     "units": 86,
+     "deadline_type": "expiry"
+    },
+    "audience": {
+     "size_after_consent": 440,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 504
+    },
+    "gap_id": "gap_7eb16d4ac6",
+    "mechanic_params": {
+     "bundle_price": 280,
+     "bundle_sku": "SKU-MILK-BREAD-200G"
+    },
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "mechanic": "bundle",
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "play_id": "play_7eb16d4ac6_v1",
+    "channel": "web_chat",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-200G",
+     "bundle_price": 280
+    },
+    "objective": "clear_expiry",
+    "target": {
+     "units": 86,
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-02"
+     ],
+     "sku": "SKU-CURD-200G",
+     "batch_ids": [
+      "B-CURD-200G-OUT-02-01"
+     ],
+     "deadline_date": "2026-09-19"
+    },
+    "gap_id": "gap_7eb16d4ac6",
+    "mechanic": "bundle",
+    "alternatives": [
+     {
+      "rejected_because": "The policy prefers bundles over blanket markdowns, and the bundle play yields a higher expected margin of 1022.04 INR compared to 501.06 INR.",
+      "expected_margin_inr": 501.06,
+      "mechanic_params": {
+       "markdown_pct": 15
+      },
+      "mechanic": "outlet_markdown",
+      "expected_units": 30.65
+     },
+     {
+      "mechanic": "coupon",
+      "mechanic_params": {
+       "discount_pct": 15
+      },
+      "expected_units": 30.65,
+      "expected_margin_inr": 501.06,
+      "rejected_because": "The policy prefers bundles over coupons, and the bundle play yields a higher expected margin of 1022.04 INR compared to 501.06 INR."
+     }
+    ],
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 9579.5,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -9835.65,
+     "do_nothing_inr": 16868.9
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_7eb16d4ac6_v1"
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 6011.21,
+     "estimator_version": "est-v1",
+     "measured_n": 0,
+     "ci_low": 1.65,
+     "units": 30.65,
+     "margin_inr": 1022.04,
+     "discount_cost_inr": 919.38,
+     "ci_high": 89.41,
+     "prior_n": 20
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_after_consent": 440,
+     "size_before_consent": 504
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_7eb16d4ac6"
+     },
+     {
+      "ref": "est-v1",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "guardrails": [
+     {
+      "detail": "net margin 11.91% (net price 280.00, cost 246.65) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 440 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 504 -> 440"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-200G in audience",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "detail": "no stockout gap for SKU-CURD-200G at OUT-02",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "rationale": "This bundle play targets 440 customers across six high-affinity segments to clear the curd expiry gap at OUT-02. By bundling Curd 200G with Milk Bread 200G for 280 rupees, we expect to sell 30.65 units and avoid 6011.21 rupees of waste. The play recovers 7033 rupees compared to doing nothing (16868.90 rupees write-off plus -9835.65 rupees play net). It represents a change of -256 rupees over a blanket markdown (9579.50 rupees blanket markdown cost plus -9835.65 rupees play net)."
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_7eb16d4ac6_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_7eb16d4ac6_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 17915,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_7eb16d4ac6_v1_80054a48",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 17915,
+  "usage": {
+   "prompt_token_count": 27230,
+   "candidates_token_count": 2516,
+   "thoughts_token_count": 1544,
+   "total_token_count": 31290,
+   "cached_content_token_count": 14429
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 10242.4,
+  "blanket20_recovery_inr": 7289.4,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 18.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4690,
+    "candidates": 928,
+    "thoughts": 877,
+    "cached": 0
+   },
+   "usd": 0.025608,
+   "error": null,
+   "elapsed_s": 7.31,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6667,
+    "candidates": 331,
+    "thoughts": 16,
+    "cached": 3667
+   },
+   "usd": 0.00899,
+   "error": null,
+   "elapsed_s": 1.71,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7136,
+    "candidates": 1243,
+    "thoughts": 627,
+    "cached": 5407
+   },
+   "usd": 0.022258,
+   "error": null,
+   "elapsed_s": 6.95,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8737,
+    "candidates": 14,
+    "thoughts": 24,
+    "cached": 5355
+   },
+   "usd": 0.00684,
+   "error": null,
+   "elapsed_s": 1.01,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.063696,
+ "tokens": {
+  "prompt": 27230,
+  "cached": 14429,
+  "candidates": 2516,
+  "thoughts": 1544
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
