@@ -236,7 +236,7 @@ def markdown_depths(tenant: TenantConfig) -> list[float]:
 
 
 def beats_markdown_tolerance(tenant: TenantConfig, best_inr: float) -> float:
-    return max(float(tenant.markdown_setting("beats_tolerance_inr", 500)), float(tenant.markdown_setting("beats_tolerance_pct", 5.0)) / 100.0 * abs(best_inr))
+    return max(float(tenant.markdown_setting("beats_tolerance_inr", 50)), float(tenant.markdown_setting("beats_tolerance_pct", 2.0)) / 100.0 * abs(best_inr))
 
 
 def check_beats_markdown(draft: dict[str, Any], est: dict[str, Any], ctx: GuardrailContext, est_ctx: EstimatorContext, sellby_passed: bool = False) -> dict[str, Any]:

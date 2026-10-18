@@ -1,0 +1,421 @@
+{
+ "scenario_id": "D05",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_3ce241fc48",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:11:56Z",
+ "tag": "D05__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "bundle_price": 115,
+   "bundle_sku": "SKU-BUTTER-400G"
+  },
+  "gap_id": "gap_3ce241fc48",
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_3",
+    "seg_2",
+    "seg_5",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 352,
+   "size_after_consent": 296
+  },
+  "mechanic": "bundle",
+  "target": {
+   "sku": "SKU-MULTIGRAIN-BREAD-200G",
+   "node_ids": [
+    "OUT-04"
+   ],
+   "batch_ids": [
+    "B-MULTIGRAIN-BREAD-200G-OUT-04-01"
+   ],
+   "units": 46,
+   "deadline_date": "2026-09-16",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_3ce241fc48_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-16T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_3ce241fc48_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_3ce241fc48_v1_2d81e40d",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.96% (net price 115.00, cost 104.70) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 296 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 352 -> 296"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-MULTIGRAIN-BREAD-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-MULTIGRAIN-BREAD-200G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "46 units of Multigrain Bread 200G at Outlet 04 (South Bengaluru) are projected unsold before the expiry deadline on 2026-09-16; doing nothing writes off ₹2697 and a blanket 20% markdown costs ₹1687. This play uses a bundle with SKU-BUTTER-400G at ₹115 for 296 consented customers (Dairy occasionals, Everyday staples shoppers, Sweets occasionals, Tea connoisseurs, Festival sweets loyalists): expected 27 units, margin ₹277, discount cost ₹269, waste avoided ₹1579 (CI 1 to 79 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play pairs Multigrain Bread with Butter 400G at a bundle price of 115 INR, which satisfies the 8% bakery margin floor and is preferred over markdowns by the policy. It is expected to clear 26.92 units and recover 277.28 INR in margin.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_3ce241fc48"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-MULTIGRAIN-BREAD-200G-OUT-04-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 8
+    },
+    "expected_units": 26.92,
+    "expected_margin_inr": 155.06,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 26.92,
+   "margin_inr": 277.28,
+   "waste_avoided_inr": 1578.59,
+   "discount_cost_inr": 269.2,
+   "ci_low": 1.45,
+   "ci_high": 78.54,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2697.44,
+   "blanket_markdown_inr": 1687.37,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -841.57
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 38.48,
+   "pct_of_rupees_at_stake": 1.573
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1855.87,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_3ce241fc48",
+    "mechanic_params": {
+     "bundle_price": 110,
+     "bundle_sku": "SKU-BUTTER-400G"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_3ce241fc48",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_price": 115,
+     "bundle_sku": "SKU-BUTTER-400G"
+    },
+    "gap_id": "gap_3ce241fc48",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 8
+    },
+    "gap_id": "gap_3ce241fc48",
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_3ce241fc48_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_3ce241fc48_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 12640,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_3ce241fc48_v1_2d81e40d",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 12640,
+  "usage": {
+   "prompt_token_count": 19896,
+   "candidates_token_count": 472,
+   "thoughts_token_count": 721,
+   "total_token_count": 21089,
+   "cached_content_token_count": 12601
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2236.95,
+  "blanket20_recovery_inr": 1010.07,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 13.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3831,
+    "candidates": 183,
+    "thoughts": 346,
+    "cached": 0
+   },
+   "usd": 0.011558,
+   "error": null,
+   "elapsed_s": 4.03,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4770,
+    "candidates": 182,
+    "thoughts": 272,
+    "cached": 3639
+   },
+   "usd": 0.006961,
+   "error": null,
+   "elapsed_s": 2.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5552,
+    "candidates": 93,
+    "thoughts": 80,
+    "cached": 3585
+   },
+   "usd": 0.00555,
+   "error": null,
+   "elapsed_s": 2.64,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5743,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 5377
+   },
+   "usd": 0.001857,
+   "error": null,
+   "elapsed_s": 1.36,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.025926,
+ "tokens": {
+  "prompt": 19896,
+  "cached": 12601,
+  "candidates": 472,
+  "thoughts": 721
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

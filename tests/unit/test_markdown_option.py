@@ -149,7 +149,7 @@ def test_beats_markdown_passes_the_markdown_itself_and_respects_tolerance_config
     assert gap > 500 and not gr.check_beats_markdown(weak, est, _gctx(), c)["passed"]
     loose = dataclasses.replace(load_tenant(), raw={**load_tenant().raw, "markdown": {**load_tenant().raw["markdown"], "beats_tolerance_inr": gap + 1, "beats_tolerance_pct": 0}})
     assert gr.check_beats_markdown(weak, est, _gctx(loose), c)["passed"]
-    assert gr.beats_markdown_tolerance(load_tenant(), 1000.0) == 500.0 and gr.beats_markdown_tolerance(load_tenant(), 100000.0) == 5000.0
+    assert gr.beats_markdown_tolerance(load_tenant(), 1000.0) == 50.0 and gr.beats_markdown_tolerance(load_tenant(), 100000.0) == 2000.0  # v4: max(INR 50, 2%)
 
 
 def test_beats_markdown_is_skipped_past_online_sellby():

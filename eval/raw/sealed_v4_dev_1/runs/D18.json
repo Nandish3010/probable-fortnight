@@ -1,0 +1,564 @@
+{
+ "scenario_id": "D18",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_1537876114",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:13:02Z",
+ "tag": "D18__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "markdown_pct": 15,
+   "end_date": "2026-09-21"
+  },
+  "mechanic": "markdown",
+  "gap_id": "gap_1537876114",
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "target": {
+   "sku": "SKU-PAV-400G",
+   "node_ids": [
+    "DS-10"
+   ],
+   "batch_ids": [
+    "B-PAV-400G-DS-10-01"
+   ],
+   "units": 98,
+   "deadline_date": "2026-09-21",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_1537876114_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-21T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.8,
+   "seed": "seed-play_1537876114_v1",
+   "min_treated_n": 20,
+   "measurement": "holdout_nodes",
+   "measurement_reason": "4 comparable at-risk node(s) keep the list price: DS-04, DS-02, DS-06, DS-01",
+   "node_ids": [
+    "DS-04",
+    "DS-02",
+    "DS-06",
+    "DS-01"
+   ]
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_1537876114_v1_4c200fc9",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.10% (net price 68.00, cost 61.13) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-PAV-400G at DS-10"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 4 held-out node(s) DS-01, DS-02, DS-04, DS-06, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "98 units of Pav 400G at Dark store 10 (East Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-21; doing nothing writes off ₹5991 and a blanket 15% markdown costs ₹2408. This play uses a 15% online price cut until 2026-09-21 for 0 consented customers (all): expected 98 units, margin ₹-1734, discount cost ₹3584, waste avoided ₹5991 (CI 60 to 98 units; prior n 0, measured n 0). Policy v1: \"1. Never sell below the category margin floor.\" A 15% markdown is proposed to clear the 98 units of Pav 400G at risk before the online sell-by date. This play is accepted by the gate and recovers INR 4256.32, which beats the baseline markdown recovery.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_1537876114"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-PAV-400G-DS-10-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10,
+     "end_date": "2026-09-21"
+    },
+    "expected_units": 80.26,
+    "expected_margin_inr": -732.69,
+    "rejected_because": "ranked below the chosen play by the policy's order of preference"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 98.0,
+   "margin_inr": -1734.42,
+   "waste_avoided_inr": 5990.74,
+   "discount_cost_inr": 3583.68,
+   "ci_low": 60.19,
+   "ci_high": 98.0,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 5990.74,
+   "blanket_markdown_inr": 2407.68,
+   "blanket_markdown_pct": 15.0,
+   "play_net_inr": -1734.42
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.066
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 4256.32,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1537876114",
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 140,
+     "bundle_sku": "SKU-BUTTER-500ML"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1537876114",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "markdown",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1537876114",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1537876114",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 145
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_1537876114",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 148
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "transfer_to_node": "OUT-05",
+     "transfer_units": 50
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic": "transfer_plus_nudge",
+    "gap_id": "gap_1537876114"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_1537876114",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_1537876114",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1537876114",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_1537876114_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_1537876114_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 26208,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 4173.60; this play 4256.32; tolerance 83.47)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_1537876114_v1_4c200fc9",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 26208,
+  "usage": {
+   "prompt_token_count": 46426,
+   "candidates_token_count": 855,
+   "thoughts_token_count": 1495,
+   "total_token_count": 48776,
+   "cached_content_token_count": 31917
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 4173.6,
+  "blanket20_recovery_inr": 2780.5,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 32.5,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3841,
+    "candidates": 246,
+    "thoughts": 518,
+    "cached": 0
+   },
+   "usd": 0.013901,
+   "error": null,
+   "elapsed_s": 4.87,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5333,
+    "candidates": 215,
+    "thoughts": 274,
+    "cached": 3625
+   },
+   "usd": 0.008257,
+   "error": null,
+   "elapsed_s": 2.73,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6316,
+    "candidates": 116,
+    "thoughts": 112,
+    "cached": 3576
+   },
+   "usd": 0.007368,
+   "error": null,
+   "elapsed_s": 2.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6842,
+    "candidates": 66,
+    "thoughts": 138,
+    "cached": 5326
+   },
+   "usd": 0.0054,
+   "error": null,
+   "elapsed_s": 1.81,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7350,
+    "candidates": 115,
+    "thoughts": 302,
+    "cached": 5304
+   },
+   "usd": 0.008379,
+   "error": null,
+   "elapsed_s": 2.57,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8260,
+    "candidates": 81,
+    "thoughts": 123,
+    "cached": 7040
+   },
+   "usd": 0.005194,
+   "error": null,
+   "elapsed_s": 1.46,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8484,
+    "candidates": 16,
+    "thoughts": 28,
+    "cached": 7046
+   },
+   "usd": 0.003971,
+   "error": null,
+   "elapsed_s": 2.04,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.05247,
+ "tokens": {
+  "prompt": 46426,
+  "cached": 31917,
+  "candidates": 855,
+  "thoughts": 1495
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

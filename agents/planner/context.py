@@ -29,6 +29,8 @@ class PlannerContext:
     play_id: str | None = None
     products: dict[str, dict[str, Any]] = field(default_factory=dict)
     nodes: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # the latest estimate_outcomes call: choice_index -> {draft, estimate, gate_results, verdict}; propose_play(choice_index=...) reads it
+    estimated: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
     def build(cls, data_dir: str | Path, run_id: str, policy_text: str | None = None, policy_version: str | None = None, tenant: TenantConfig | None = None, play_id: str | None = None) -> PlannerContext:

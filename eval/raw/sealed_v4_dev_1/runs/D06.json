@@ -1,0 +1,387 @@
+{
+ "scenario_id": "D06",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 1,
+  "day_band": 1
+ },
+ "gap_id": "gap_299021d050",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:11:59Z",
+ "tag": "D06__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_299021d050",
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_3",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 272,
+   "size_after_consent": 233
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+   "bundle_price": 162
+  },
+  "mechanic": "bundle",
+  "target": {
+   "sku": "SKU-CHEESE-SLICES-500ML",
+   "node_ids": [
+    "OUT-06"
+   ],
+   "batch_ids": [
+    "B-CHEESE-SLICES-500ML-OUT-06-01"
+   ],
+   "units": 84,
+   "deadline_date": "2026-09-19",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_299021d050_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_299021d050_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_299021d050_v1_390a622f",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.75% (net price 162.00, cost 146.21) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 233 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 272 -> 233"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CHEESE-SLICES-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CHEESE-SLICES-500ML at OUT-06"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "84 units of Cheese Slices 500ML at Outlet 06 (East Bengaluru) are projected unsold before the expiry deadline on 2026-09-19; doing nothing writes off ₹6794 and a blanket 20% markdown costs ₹2719. This play uses a bundle with SKU-MULTIGRAIN-BREAD-400G at ₹162 for 233 consented customers (Tea connoisseurs, Dairy occasionals, Everyday staples shoppers, Festival sweets loyalists): expected 20 units, margin ₹310, discount cost ₹255, waste avoided ₹1588 (CI 1 to 57 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" The bundle play with Multigrain Bread 400G at a bundle price of INR 162 is preferred by the policy over markdowns, satisfies the dairy category margin floor of 8.0%, and is estimated to avoid 19.63 units of waste.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_299021d050"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-CHEESE-SLICES-500ML-OUT-06-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "expected_units": 21.19,
+    "expected_margin_inr": 2.54,
+    "rejected_because": "margin_floor: net margin 0.15% (net price 81.00, cost 80.88) vs dairy floor 8.00%"
+   },
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "expected_units": 0.0,
+    "expected_margin_inr": -0.0,
+    "rejected_because": "margin_floor: net margin -5.73% (net price 76.50, cost 80.88) vs dairy floor 8.00%"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 19.63,
+   "margin_inr": 309.96,
+   "waste_avoided_inr": 1587.67,
+   "discount_cost_inr": 255.19,
+   "ci_low": 1.06,
+   "ci_high": 57.27,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 6793.92,
+   "blanket_markdown_inr": 2718.54,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -4896.29
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 30.29,
+   "pct_of_rupees_at_stake": 0.504
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1897.63,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_299021d050",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 162
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_299021d050"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "gap_id": "gap_299021d050",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_299021d050_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_299021d050_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 11105,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_299021d050_v1_390a622f",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 11105,
+  "usage": {
+   "prompt_token_count": 14990,
+   "candidates_token_count": 326,
+   "thoughts_token_count": 939,
+   "total_token_count": 16255,
+   "cached_content_token_count": 7301
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2475.48,
+  "blanket20_recovery_inr": 4075.38,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 12.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3860,
+    "candidates": 228,
+    "thoughts": 805,
+    "cached": 0
+   },
+   "usd": 0.016596,
+   "error": null,
+   "elapsed_s": 5.47,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5456,
+    "candidates": 82,
+    "thoughts": 116,
+    "cached": 3651
+   },
+   "usd": 0.005541,
+   "error": null,
+   "elapsed_s": 2.77,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5674,
+    "candidates": 16,
+    "thoughts": 18,
+    "cached": 3650
+   },
+   "usd": 0.004278,
+   "error": null,
+   "elapsed_s": 0.81,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.026415,
+ "tokens": {
+  "prompt": 14990,
+  "cached": 7301,
+  "candidates": 326,
+  "thoughts": 939
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
