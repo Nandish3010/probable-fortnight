@@ -32,7 +32,7 @@ from agents.gate.invariants import check_play_money
 from agents.gate.models import Play
 from agents.gate.untrusted import clean_text, clean_tree, strings_in
 
-from . import governor
+from . import drafting, governor
 from .context import PlannerContext, current
 
 PLAY_SCHEMA = json.loads((ROOT / "docs" / "schemas" / "play.schema.json").read_text(encoding="utf-8"))
@@ -428,7 +428,60 @@ def _markdown_blocked(ctx: PlannerContext, gap: dict[str, Any]) -> bool:
     return sellby_passed or ctx.nodes.get(gap["node_id"], {}).get("type") == "outlet"
 
 
-def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
+def _fill_from_gap(ctx: PlannerContext, play_draft: Any) -> Any:
+    """A copy of the draft with every field the model left out filled from the gap row (target, objective, window,
+    copy, holdout, ids). A field the model did send is never replaced, so a complete draft comes back unchanged.
+    The model may therefore send only gap_id, mechanic, mechanic_params and audience.segment_ids."""
+    if not isinstance(play_draft, dict) or not play_draft.get("gap_id") or not play_draft.get("mechanic"):
+        return play_draft
+    rows = ctx.store.find("gaps", gap_id=play_draft["gap_id"])
+    if not rows:
+        return play_draft
+    gap = rows[-1]
+    d = copy.deepcopy(play_draft)
+    t = d.get("target") if isinstance(d.get("target"), dict) else {}
+    d["target"] = {"sku": gap["sku"], "node_ids": [gap["node_id"]], "batch_ids": [gap["batch_id"]] if gap.get("batch_id") else [], "units": int(gap["units_at_risk"]),
+                   "deadline_date": gap["deadline_date"], "deadline_type": gap["deadline_type"], **{k: v for k, v in t.items() if v not in (None, "", [])}}
+    pv = ctx.policy_version
+    play_id = ctx.play_id or f"play_{str(gap['gap_id'])[4:]}_{pv}"
+    as_of = ctx.as_of.isoformat()
+    defaults: dict[str, Any] = {
+        "play_id": play_id, "tenant_id": gap.get("tenant_id") or ctx.tenant.tenant_id, "created_at": f"{as_of}T00:00:00Z", "objective": drafting.OBJECTIVE_BY_GAP.get(gap["type"], "clear_expiry"),
+        "window": {"start": f"{as_of}T00:00:00Z", "end": f"{d['target']['deadline_date']}T23:59:59Z"},
+        "copy": {"language_set": list(ctx.tenant.languages), "variants": [], "copy_status": "pending"},
+        "holdout": {"fraction": float(ctx.tenant.thresholds.get("default_holdout_fraction", 0.10)), "seed": f"seed-{play_id}", "min_treated_n": int(ctx.tenant.thresholds.get("min_treated_n", 20))},
+        "policy_version": pv, "trace_ref": f"events/{ctx.run_id}", "status": "proposed", "guardrails": [], "rationale": "", "citations": [], "alternatives": [],
+    }
+    for k, v in defaults.items():
+        if k not in d or (d[k] in (None, "") and not isinstance(v, list)):
+            d[k] = v
+    if isinstance(d.get("audience"), dict):
+        d["audience"].setdefault("filters", {})
+        d["audience"].setdefault("purpose", "marketing")
+        d["audience"].setdefault("size_before_consent", 0)
+        d["audience"].setdefault("size_after_consent", 0)
+    return d
+
+
+def _gate_of(ctx: PlannerContext, draft: dict[str, Any], est: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """What propose_play's gate would say about this (already derived) draft: the eight guardrails and beats_markdown.
+    Returns the compact verdict the model sees and the full guardrail results the assembled play carries."""
+    gctx = _guardrail_context(ctx, draft)
+    chk = gr.check(draft, gctx)
+    failed = [{"rule": r["rule"], "detail": r["detail"]} for r in chk["results"] if not r["passed"]]
+    bm: dict[str, Any] = {"passed": True, "detail": "not applicable: this objective is not compared with a price cut"}
+    if ctx.tenant.markdown_setting("beats_markdown", True) and not _beats_markdown_exempt(draft):
+        gap = _gap(ctx, draft["gap_id"])
+        ectx = _estimator_context(ctx, draft)
+        r = gr.check_beats_markdown(draft, est, gctx, ectx, sellby_passed=_markdown_blocked(ctx, gap) or bool(gap["evidence"].get("sellby_passed")))
+        bm = {"passed": bool(r["passed"]), "detail": r["detail"]}
+    return {"accepted_by_gate": bool(chk["all_passed"] and bm["passed"]), "guardrails_all_passed": bool(chk["all_passed"]), "failed_rules": failed, "beats_markdown": bm}, chk["results"]
+
+
+def _estimate_one(ctx: PlannerContext, play_draft: dict, index: int | None = None) -> dict:
+    """One draft's estimate. With an `index` (estimate_outcomes) it also carries choice_index and the gate verdict and
+    remembers the draft for propose_play(choice_index=...); without one (the oracle's grid) it is the plain estimate."""
+    play_draft = _fill_from_gap(ctx, play_draft)
     problems = _draft_problems(play_draft)
     if problems:
         return _draft_error(problems)
@@ -436,10 +489,21 @@ def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
         draft = copy.deepcopy(play_draft)
         apply_derived_audience(ctx, draft)  # the model's own audience figure is never trusted
         out = estimate(draft, _estimator_context(ctx, draft))
+        verdict, results = _gate_of(ctx, draft, out) if index is not None else ({}, [])
         # what the estimate was computed on, so the model sees the real audience, not its own guess
         out["audience"] = {"size_before_consent": draft["audience"]["size_before_consent"], "size_after_consent": draft["audience"]["size_after_consent"]}
         out["channel"] = draft["channel"]
+        if index is not None:
+            out["choice_index"] = index
+            out["gate"] = verdict
+            if draft.get("mechanic") != MARKDOWN_MECHANIC:
+                # reach: what the draft's segment list covers against every reachable consented customer. The v2/v3 losses were mostly
+                # drafts that left segments out (4 or 5 of 6) while a clearance deadline gives no reason to hold reach back.
+                _, everyone = eligible_audience(ctx, {**draft, "audience": {**draft["audience"], "segment_ids": None}})
+                out["reach"] = {"consented_customers_in_this_draft": draft["audience"]["size_after_consent"], "consented_customers_if_all_segments_included": len(everyone)}
         out.update(_markdown_reference(ctx, draft))
+        if index is not None:
+            ctx.estimated[index] = {"draft": draft, "estimate": copy.deepcopy(out), "gate_results": results, "verdict": verdict}
         return out
     except KeyError as e:
         return {"error": f"estimate_outcome: unknown reference {e}", "required_shape": DRAFT_SHAPE}
@@ -449,9 +513,12 @@ def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
     """Deterministic estimator, batched: one call estimates every candidate draft at once (each
     draft the same shape `estimate_outcome` used to take) instead of one round trip per candidate.
     Returns one result per draft, same order; a draft with a problem gets {"error", "required_shape"}
-    in its slot rather than failing the whole batch."""
+    in its slot rather than failing the whole batch. Each good result also carries `choice_index` (its
+    position, which `propose_play(choice_index=...)` takes) and `gate`: what propose_play's gate would say, the
+    eight guardrails and beats_markdown, so the model sees the verdict before it proposes."""
     ctx = current()
-    out = [_estimate_one(ctx, d) for d in play_drafts]
+    ctx.estimated = {}  # choice_index refers to the latest call
+    out = [_estimate_one(ctx, d, i) for i, d in enumerate(play_drafts)]
     # The best-markdown reference is the same for every draft of one gap: state it once, in the first result, so it is
     # not repeated in every result the model carries through the rest of the loop (the v2 sealed eval showed +39% input
     # tokens per run, and 7.9 drafts per run, with the reference attached to each).
@@ -463,7 +530,8 @@ def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
 
 def check_guardrails(play_draft: dict) -> dict:
     """Run the eight guardrails on a draft; returns every rule with pass/fail and detail, plus
-    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}."""
+    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}.
+    No longer part of the planner's procedure (estimate_outcomes carries the verdict); kept registered and unchanged."""
     ctx = current()
     problems = _draft_problems(play_draft)
     if problems:
@@ -485,6 +553,37 @@ def check_guardrails(play_draft: dict) -> dict:
         return {"error": f"check_guardrails: unknown reference {e}", "required_shape": DRAFT_SHAPE}
 
 
+def _assemble_play(ctx: PlannerContext, choice_index: Any, rationale: Any) -> tuple[dict[str, Any] | None, str | None]:
+    """The full play for `choice_index`, built by code from the draft estimate_outcomes already derived and estimated:
+    the estimator's own figures, the gate's guardrail results, citations, the other candidates as alternatives and a
+    rationale whose every number is cited. The model's `rationale` (why this candidate) is appended. Code never picks
+    the candidate; the model's index does."""
+    est = ctx.estimated
+    if isinstance(choice_index, bool) or not isinstance(choice_index, int) or choice_index not in est:
+        return None, f"choice_index {choice_index!r} is not one of the results of your latest estimate_outcomes call (usable: {sorted(est)}); send the full play or estimate again"
+    e = est[choice_index]
+    draft = copy.deepcopy(e["draft"])
+    gap = get_gap(draft["gap_id"])
+    audiences = get_candidate_audiences(draft["target"]["sku"], draft["target"]["node_ids"], draft["objective"], gap_id=draft["gap_id"])
+    chosen = e["estimate"]
+    alts = []
+    for i, other in sorted(est.items()):
+        if i == choice_index:
+            continue
+        eo = other["estimate"]["expected_outcome"]
+        v = other["verdict"]
+        if not v["accepted_by_gate"]:
+            why = "; ".join([f"{f['rule']}: {f['detail']}" for f in v["failed_rules"]] + ([] if v["beats_markdown"]["passed"] else ["beats_markdown: " + v["beats_markdown"]["detail"]]))[:380]
+        else:
+            why = "lower expected margin than the chosen play" if eo["margin_inr"] <= chosen["expected_outcome"]["margin_inr"] else "ranked below the chosen play by the policy's order of preference"
+        alts.append({"mechanic": other["draft"]["mechanic"], "mechanic_params": other["draft"].get("mechanic_params", {}), "expected_units": eo["units"], "expected_margin_inr": eo["margin_inr"], "rejected_because": why})
+    play = drafting.finish_draft(draft, gap, chosen, audiences, alts, ctx.policy_text)
+    play["guardrails"] = copy.deepcopy(e["gate_results"])
+    if isinstance(rationale, str) and rationale.strip():
+        play["rationale"] = (play["rationale"] + " " + rationale.strip())[:2000]
+    return play, None
+
+
 def play_row(ctx: PlannerContext, play: dict[str, Any]) -> dict[str, Any]:
     """The `plays` table row for a play: the denormalised scalar columns (docs/DATA_MODEL.md's
     `plays` table) plus the full object as `play_json`. Shared by `propose_play` (the first write,
@@ -504,9 +603,21 @@ def _beats_markdown_exempt(play: dict[str, Any]) -> bool:
     return play.get("objective") not in ("clear_online_sellby", "clear_expiry")
 
 
-def propose_play(play: dict, tool_context: ToolContext) -> dict:
-    """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
+def propose_play(play: dict | None = None, tool_context: ToolContext = None, choice_index: int | None = None, rationale: str | None = None) -> dict:  # type: ignore[assignment]
+    """Validate a play against the JSON Schema and the gate, write it, and end the planning loop.
+
+    Either send the full `play` object (the original path, unchanged), or send `choice_index`, the position of one
+    result of your latest estimate_outcomes call: the play is then assembled from that estimated draft (estimator
+    figures, guardrail results, citations, alternatives and a cited rationale are filled in), and the optional
+    `rationale` (one or two sentences on why this candidate, with no figures other than the estimate's) is appended."""
     ctx = current()
+    if play is None:
+        if choice_index is None:
+            return {"play_id": None, "valid": False, "errors": ["propose_play needs either choice_index (from your latest estimate_outcomes call) or the full play object"]}
+        play, problem = _assemble_play(ctx, choice_index, rationale)
+        if problem:
+            tool_context.state["guardrails_all_passed"] = False
+            return {"play_id": None, "valid": False, "errors": [problem]}
     if isinstance(play, dict):
         # A live model often names the identifier `id` (every recorded run did, on attempt 1) instead
         # of the schema's `play_id`: accept the alias and drop the duplicate rather than burn an attempt.

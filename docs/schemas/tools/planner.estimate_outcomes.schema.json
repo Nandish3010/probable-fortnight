@@ -39,6 +39,57 @@
           },
           "counterfactuals": {
             "type": "object"
+          },
+          "choice_index": {
+            "type": "integer",
+            "description": "Position of the draft; propose_play(choice_index=...) takes it."
+          },
+          "gate": {
+            "type": "object",
+            "description": "What propose_play's gate would say about this draft: the eight guardrails and beats_markdown.",
+            "required": [
+              "accepted_by_gate",
+              "guardrails_all_passed",
+              "failed_rules",
+              "beats_markdown"
+            ],
+            "properties": {
+              "accepted_by_gate": {
+                "type": "boolean"
+              },
+              "guardrails_all_passed": {
+                "type": "boolean"
+              },
+              "failed_rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "rule",
+                    "detail"
+                  ]
+                }
+              },
+              "beats_markdown": {
+                "type": "object",
+                "required": [
+                  "passed",
+                  "detail"
+                ]
+              }
+            }
+          },
+          "reach": {
+            "type": "object",
+            "description": "Consented customers in this draft versus all reachable (absent for a markdown).",
+            "properties": {
+              "consented_customers_in_this_draft": {
+                "type": "integer"
+              },
+              "consented_customers_if_all_segments_included": {
+                "type": "integer"
+              }
+            }
           }
         }
       }

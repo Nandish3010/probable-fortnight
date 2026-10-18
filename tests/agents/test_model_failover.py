@@ -36,6 +36,7 @@ BETTER = {"rows": [{**ROWS["rows"][0], "best_before_date": "2026-12-01", "date_c
 
 @pytest.fixture
 def vertex(monkeypatch):
+    monkeypatch.setattr(vm, "LIVE_429_BACKOFF_S", ())  # the backoff has its own tests (tests/unit/test_planner_v4.py)
     pin_models(monkeypatch)
     vertex_environment(monkeypatch)
     reset_sessions()
@@ -53,7 +54,7 @@ def test_chat_is_answered_by_the_fallback_when_the_primary_is_gone(vertex, data_
     fake = FakeGemini({PRIMARY: 404, FALLBACK: '{"text": "Hello from the fallback"}'}).install(monkeypatch)
     [env] = _chat(_store(data_dir, tmp_path))
     assert env["text"] == "Hello from the fallback"
-    assert fake.models_called == [PRIMARY, FALLBACK]
+    assert fake.models_called == [PRIMARY, PRIMARY, FALLBACK]  # v4: the primary on the global endpoint is tried before the fallback
 
 
 def test_chat_with_both_models_down_is_model_unavailable(vertex, data_dir, tmp_path, monkeypatch):
@@ -72,17 +73,17 @@ def test_chat_does_not_hide_a_wrong_request(vertex, data_dir, tmp_path, monkeypa
 
 def test_agents_get_a_fallback_model_and_the_mapped_thinking_config(vertex):
     agent = build_customer_agent({"chips": "SKU-1"}, backend="vertex")
-    assert [m.model for m in agent.model.models] == [PRIMARY, FALLBACK]
+    assert [m.model for m in agent.model.models] == [PRIMARY, PRIMARY, FALLBACK]
     assert agent.generate_content_config.thinking_config.thinking_level == types.ThinkingLevel.MINIMAL
     planner = planner_agent.build_planner(load_tenant(), "policy", "v1", "run-x", "2026-09-12", backend="vertex")
-    assert [m.model for m in planner.sub_agents[0].model.models] == [PRIMARY, FALLBACK]
+    assert [m.model for m in planner.sub_agents[0].model.models] == [PRIMARY, PRIMARY, FALLBACK]
 
 
 def test_vision_reads_on_the_fallback_and_reports_which_model_answered(vertex, base_store, monkeypatch):
     fake = FakeGenaiClient({PRIMARY: 404, FALLBACK: ROWS}).install(monkeypatch)
     res = intake(base_store, "DS-07", image_data_url="data:image/png;base64,AAAA", backend="vertex")
     assert res["model_id"] == FALLBACK
-    assert fake.models_called == [PRIMARY, FALLBACK, FALLBACK]  # the second pass stays on the model that answered
+    assert fake.models_called == [PRIMARY, PRIMARY, FALLBACK, FALLBACK]  # the second pass stays on the model that answered
 
 
 def test_vision_with_both_models_down_is_model_unavailable(vertex, base_store, monkeypatch):

@@ -218,7 +218,8 @@ def compute_metrics(scenarios: list[dict[str, Any]], answers: dict[str, Any], ru
         if x["outcome"] == "model_play":
             mix[x["mechanic"]] = mix.get(x["mechanic"], 0) + 1
     beating = [x for x in rows if x["beats_blanket"]]
-    v2 = {}
+    v2: dict[str, Any] = {}
+    extra: dict[str, Any] = {}
     if any("blanket_legal_recovery_inr" in a for a in answers.values()):
         legal = {sc["scenario_id"]: answers[sc["scenario_id"]] for sc, _ in valid}
         for x in rows:
@@ -226,28 +227,41 @@ def compute_metrics(scenarios: list[dict[str, Any]], answers: dict[str, Any], ru
             x["beats_legal_blanket"] = x["outcome"] == "model_play" and x["recovery_inr"] > a["blanket_legal_recovery_inr"]
             x["ceiling_beats_blanket20"] = bool(a["upper_bound_beats_blanket20"])
         ceil = [x for x in rows if x["ceiling_beats_blanket20"]]
-        v2["v3"] = {
+        extra["v3"] = {
             "beats_legal_blanket": {"n": sum(x["beats_legal_blanket"] for x in rows), "of": n},
             "ceiling_scenarios_where_a_legal_play_can_beat_blanket20": len(ceil),
             "ceiling_scenarios_beaten": sum(1 for x in ceil if x["beats_blanket"]),
             "blanket20_floor_illegal_scenarios": sum(1 for sc, _ in valid if not answers[sc["scenario_id"]]["blanket20_is_floor_legal"]),
-            "valid_runs": n, "mean_model_calls": statistics.mean(len(r["model_calls"]) for _, r in valid) if valid else None,
+            "valid_runs": n, "mean_model_calls": statistics.mean(len(r.get("model_calls") or []) for _, r in valid) if valid else None,
             "mean_prompt_tokens": statistics.mean(r["tokens"]["prompt"] for _, r in valid) if valid else None,
         }
     if any("markdown_is_best_baseline" in a for a in answers.values()):
         flagged = [(sc, x) for sc, x in zip((sc for sc, _ in valid), rows, strict=True) if answers[sc["scenario_id"]].get("markdown_is_best_baseline")]
         md_all = [x for x in rows if x["outcome"] == "model_play" and x["mechanic"] == "markdown"]
         best_bl = {sc["scenario_id"]: answers[sc["scenario_id"]].get("best_blanket_recovery_inr") for sc, _ in valid}
-        v2 = {
+        v2.update({
             "markdown_chosen_where_best_baseline_is_markdown": {"n": sum(1 for _, x in flagged if x["outcome"] == "model_play" and x["mechanic"] == "markdown"), "of": len(flagged)},
             "markdown_chosen_total": len(md_all),
             "net_over_best_blanket_inr_all_scenarios": round(sum(x["recovery_inr"] - (best_bl[x["scenario_id"]] or 0.0) for x in rows), 2),
             "by_stratum": {st: {"n": sum(1 for sc, _ in valid if answers[sc["scenario_id"]].get("stratum") == st), "beats_blanket": sum(1 for (sc, _), x in zip(valid, rows, strict=True) if answers[sc["scenario_id"]].get("stratum") == st and x["beats_blanket"]),
                                 "net_over_blanket20_inr": round(sum(x["beat_over_blanket_inr"] for (sc, _), x in zip(valid, rows, strict=True) if answers[sc["scenario_id"]].get("stratum") == st), 2)}
                            for st in sorted({a.get("stratum") for a in answers.values() if a.get("stratum")})},
-        }
+        })
+    # v4 metrics (turns, tokens, net vs max(0, blanket), beats-blanket against the ceiling); reported for every set of files
+    n_turns = [len(r.get("model_calls") or []) for _, r in valid]
+    extra["v4"] = {
+        "model_turns_per_run": {"mean": statistics.mean(n_turns) if n_turns else None, "median": statistics.median(n_turns) if n_turns else None, "max": max(n_turns) if n_turns else None},
+        "prompt_tokens_per_run_mean": statistics.mean((r.get("tokens") or {}).get("prompt", 0) for _, r in valid) if valid else None,
+        "output_tokens_per_run_mean": statistics.mean((r.get("tokens") or {}).get("candidates", 0) + (r.get("tokens") or {}).get("thoughts", 0) for _, r in valid) if valid else None,
+        "net_over_blanket20_raw_inr": round(sum(x["beat_over_blanket_inr"] for x in rows), 2),
+        "net_over_max0_blanket20_inr": round(sum(x["recovery_inr"] - max(0.0, x["blanket20_recovery_inr"]) for x in rows), 2),
+        "beats_blanket20_all": {"n": len(beating), "of": n},
+        "ceiling_beats_blanket20": {"scenarios": sum(1 for sc, _ in valid if answers[sc["scenario_id"]].get("upper_bound_beats_blanket20", answers[sc["scenario_id"]]["oracle_upper_bound_inr"] > answers[sc["scenario_id"]]["blanket20_recovery_inr"])),
+                                     "beaten": sum(1 for (sc, _), x in zip(valid, rows, strict=True) if x["beats_blanket"] and answers[sc["scenario_id"]].get("upper_bound_beats_blanket20", answers[sc["scenario_id"]]["oracle_upper_bound_inr"] > answers[sc["scenario_id"]]["blanket20_recovery_inr"]))},
+        "first_result_turn_count_distribution": {str(k): n_turns.count(k) for k in sorted(set(n_turns))},
+    }
     return {
-        **v2,
+        **v2, **extra,
         "scenarios": len(scenarios), "valid": n, "excluded": excluded,
         "beats_blanket20": {"n": len(beating), "of": n, "total_beat_inr_where_beaten": round(sum(x["beat_over_blanket_inr"] for x in beating), 2), "net_over_blanket_inr_all_scenarios": round(sum(x["beat_over_blanket_inr"] for x in rows), 2)},
         "beats_do_nothing": {"n": sum(x["beats_do_nothing"] for x in rows), "of": n},
@@ -302,6 +316,15 @@ def write_summary(path: Path, meta: dict[str, Any], m: dict[str, Any]) -> None:
               f"| Scenarios where the model-free upper bound exceeds blanket 20% (a legal play can beat it) | {v3['ceiling_scenarios_where_a_legal_play_can_beat_blanket20']} |",
               f"| Of those, beaten by the planner | {v3['ceiling_scenarios_beaten']} |",
               f"| Valid runs; mean model calls per run; mean prompt tokens per run | {v3['valid_runs']}; {fmt(v3['mean_model_calls'], 1)}; {fmt(v3['mean_prompt_tokens'], 0)} |"]
+    if "v4" in m:
+        v4 = m["v4"]
+        L += ["", "## v4 metrics", "", "| Metric | Result |", "|---|---|",
+              f"| Model turns per run: mean / median / max | {fmt(v4['model_turns_per_run']['mean'], 2)} / {fmt(v4['model_turns_per_run']['median'], 1)} / {v4['model_turns_per_run']['max']} |",
+              f"| Prompt tokens per run (mean); output + thinking tokens per run (mean) | {fmt(v4['prompt_tokens_per_run_mean'], 0)}; {fmt(v4['output_tokens_per_run_mean'], 0)} |",
+              f"| Beats blanket 20%, all valid | {v4['beats_blanket20_all']['n']} of {v4['beats_blanket20_all']['of']} |",
+              f"| Beats blanket 20% against the ceiling (scenarios where a legal play can) | {v4['ceiling_beats_blanket20']['beaten']} of {v4['ceiling_beats_blanket20']['scenarios']} |",
+              f"| Net vs blanket 20%, raw / with a loss-making blanket counted as 0 | INR {fmt(v4['net_over_blanket20_raw_inr'], 2)} / INR {fmt(v4['net_over_max0_blanket20_inr'], 2)} |",
+              f"| Turn-count distribution | {v4['first_result_turn_count_distribution']} |"]
     L += ["", "## By gap type", "", "| Gap type | n | beats blanket |", "|---|---|---|"]
     for t, v in m["by_gap_type"].items():
         L.append(f"| {t} | {v['n']} | {v['beats_blanket']} |")
@@ -325,6 +348,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--data-root", default=str(DATA_ROOT))
     ap.add_argument("--protocol", default="eval/sealed/PROTOCOL.md")
     ap.add_argument("--only", default=None, help="comma-separated scenario ids")
+    ap.add_argument("--thinking-route", default=None, help="override [thinking] planner_route for this run (dev experiments only)")
+    ap.add_argument("--thinking-final", default=None, help="override [thinking] planner_final for this run (dev experiments only)")
     args = ap.parse_args(argv)
 
     from agents.gate.config import load_models
@@ -341,6 +366,25 @@ def main(argv: list[str] | None = None) -> int:
     scenarios = [s for s in scen_doc["scenarios"] if not args.only or s["scenario_id"] in set(args.only.split(","))]
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.thinking_route or args.thinking_final:
+        from agents.gate import config as gate_config
+
+        real_load = gate_config.load_models
+
+        def patched_models():
+            m = real_load()
+            m["thinking"] = {**m.get("thinking", {}), **({"planner_route": args.thinking_route} if args.thinking_route else {}), **({"planner_final": args.thinking_final} if args.thinking_final else {})}
+            return m
+
+        for mod_name in ("agents.gate.config", "agents.planner.agent", "agents.planner.run", "harness.sealed_eval"):
+            mod = sys.modules.get(mod_name) or __import__(mod_name, fromlist=["x"])
+            if hasattr(mod, "load_models"):
+                mod.load_models = patched_models
+        models = patched_models()
+    if args.retry_429 > 0:
+        from agents import vertex_models
+
+        vertex_models.LIVE_429_BACKOFF_S = ()  # the harness backs off at the SDK; no second layer
     ledger = ae.Ledger(args.cap_usd, models["ids"]["flash"], models["pricing"], out_dir / "model_calls.jsonl") if live else None
     if ledger:
         ae.RETRY_429 = max(0, args.retry_429)
@@ -354,7 +398,7 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory(prefix="taal_sealed_") as work:
         ctx = {"tmp": Path(work), "backend": backend, "data_root": Path(args.data_root)}
         asyncio.run(execute(scenarios, answers, ctx, ledger, reserver, out_dir, args.concurrency))
-    runs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((out_dir / "runs").glob("S[0-9][0-9].json"))}
+    runs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((out_dir / "runs").glob("[SD][0-9][0-9].json"))}
     m = compute_metrics(scenarios, answers, runs)
     meta = {
         "date": datetime.now(UTC).date().isoformat(), "run_at": ae.now_utc(), "backend": backend, "model": models["ids"]["flash"] if live else "stub-planner", "prompt_version": prompt_version(), "protocol": args.protocol,

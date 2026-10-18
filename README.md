@@ -7,7 +7,7 @@ Taal turns a write-off forecast into a human-approved play (a transfer, an offer
 - **It says when nothing is proved yet.** An interval crossing zero reads INCONCLUSIVE; a power simulation says a 5 pp lift needs about 1,156 customers. The ₹9,191 stays PROJECTED.
 - **Replay on real data (anonymised; past data, not a pilot).** First row of the results table; [detail and limits](#replay-on-real-data).
 - **Each safety layer measured on its own.** The tool refuses another customer's id every run though the model tries it 3 of 3 times; Model Armor blocks 3 of 8 chat injection cases and fails open (`eval/evaluation.md`).
-- **Pre-registered evals.** Protocols are committed before any model call. Sealed v1, 36 scenarios: 29 beat a blanket 20% markdown, our line of 30 missed. With the markdown option, 36 new: 17 of 18 beatable won, markdown chosen in 14 of 15 where best, 0 rule violations; 2 of 7 lines missed (net vs a blanket below the margin floor; p50 31.3 s vs 30 s) (`eval/sealed/PROTOCOL_v3.md`).
+- **Pre-registered evals.** Protocols are committed before any model call. Sealed v1, 36 scenarios: 29 beat a blanket 20% markdown, our line of 30 missed. Current planner (v4, fresh seed, 36 scenarios): all 5 pre-registered lines met; beat the blanket in 19 of the 19 scenarios where any legal play can, net +₹28,382 with a loss-making blanket counted as ₹0, 0 rule violations, 36/36 valid, p50 13.9 s (`eval/sealed/PROTOCOL_v4.md`).
 - **Cite-or-drop that resists tricks.** Rationale numbers must match the play (Western or Indian digit grouping); copied untrusted phrases are caught after folding look-alike characters (`agents/gate/untrusted.py`).
 
 **Why us.** We are in a category team at an Indian pet-care e-commerce company: Nandish on pricing, Rinu on online sales and part of the P&L. Near-expiry and slow-moving stock is a standing cost (write-offs, or tied-up storage and capital); phase 1 is near-expiry, phase 2 slow-moving SKUs. The live demo runs on a synthetic tenant; the replay below used the company's past data, not a live pilot.
@@ -15,7 +15,7 @@ Taal turns a write-off forecast into a human-approved play (a transfer, an offer
 | Result | Figure | Label |
 |---|---|---|
 | Replay on real data (anonymised, 11 weeks) | would have flagged 99% of expiry pull-outs a median 30 days ahead; precision 45%; estimated recovery ₹8 to 15 L, about 2x a blanket markdown; a 60-days-of-stock rule fires about as early | MEASURED (flags), ESTIMATED (value); replay, not a pilot |
-| Sealed baseline eval | v1: 29/36 beat a blanket 20% markdown (line 30 missed); with the markdown option 17 of 18 beatable, 0 rule violations; a 20% cut is below the margin floor everywhere | MEASURED, 19 Oct; projected, synthetic |
+| Sealed evals | v1: 29/36 beat a blanket 20% markdown (line 30 missed); current planner (v4, fresh seed): 19/19 where beatable, net +₹28,382 (loss-making blanket as ₹0), 0 rule violations, p50 13.9 s; a 20% cut is below the margin floor everywhere | MEASURED, 19 Oct; projected, synthetic |
 | Hero play vs doing nothing | Transfer to the outlet that sells the tea plus a targeted nudge: **₹9,191** projected (₹9,397 waste avoided minus ₹206 transfer) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; +0.3 pp, 95% CI -8.7 to +1.6; a 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
@@ -103,7 +103,6 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
 - `/health` checks configuration; `make smoke-judging` checks liveness.
 - Real-photo vision unmeasured.
-- C8: chat tries a cross-customer call; the tool refuses it.
 
 [Runbook](docs/judging_runbook.md), [pilot design](docs/pilot.md).
 

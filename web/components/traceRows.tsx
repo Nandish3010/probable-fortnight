@@ -27,7 +27,7 @@ function summarizeCall(name: string, args: Record<string, unknown> | undefined):
   const play = (a.play ?? a.play_draft) as Record<string, unknown> | undefined;
   switch (name) {
     case "propose_play": {
-      if (!play) return "draft a play";
+      if (!play) return typeof a.choice_index === "number" ? `choose estimated draft ${a.choice_index + 1} and propose it` : "draft a play";
       const mechanic = play.mechanic as string | undefined;
       const target = play.target as Record<string, unknown> | undefined;
       const units = target?.units;
@@ -37,7 +37,7 @@ function summarizeCall(name: string, args: Record<string, unknown> | undefined):
     case "check_guardrails":
       return play ? `check the ${(play.mechanic as string) ?? "draft"} play against every guardrail` : "check guardrails";
     case "estimate_outcomes":
-      return "estimate rupees recovered, response rate and margin for this draft";
+      return Array.isArray(a.play_drafts) ? "estimate rupees recovered and check the gate for each draft" : "estimate rupees recovered, response rate and margin for this draft";
     case "get_gap":
       return `read gap ${a.gap_id ?? ""}`.trim();
     case "get_candidate_audiences":

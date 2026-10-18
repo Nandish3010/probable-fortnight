@@ -4,7 +4,11 @@ config/models.toml goes through here.
 
 Failover. `ids.flash` is the primary and `ids.fallback` a different model, verified separately.
 A call the primary answers with 404 (an ID Vertex no longer serves, or does not serve in this
-location), 429 (quota) or a 5xx is retried once on the fallback:
+location), 429 (quota) or a 5xx is retried, in this order: the primary in its own location, the primary
+on the `global` endpoint (`[failover] primary_on_global`, v4: a regional 429 or outage is usually not
+global, so the call stays on the same model), then the fallback. Before a regional 429 moves on, the
+call is retried after a short backoff capped at 3 s in total (`LIVE_429_BACKOFF_S`; the sealed harness
+sets it to () because it backs off at the SDK instead):
 
 - chat and planner: ADK's `FallbackModel` wraps the two (agents/customer/agent.py,
   agents/planner/agent.py). The retry happens inside one model call, so a session never holds a
@@ -23,8 +27,11 @@ configuration it accepts.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import random
+import time
 from typing import Any
 
 from google.adk.models import BaseLlm, FallbackModel, Gemini
@@ -34,6 +41,10 @@ from google.genai import types
 log = logging.getLogger(__name__)
 
 RETRY_AFTER_S = 30
+
+# Backoff before a 429 is allowed to fail over: sleeps in seconds (jittered down by up to 20%), at most 3 s in total, so a live
+# request never waits long. The sealed-eval harness has its own longer backoff at the SDK level and sets this to ().
+LIVE_429_BACKOFF_S: tuple[float, ...] = (1.0, 2.0)
 
 # Statuses that move a call from the primary to the fallback: ADK FallbackModel's own default set
 # (429 quota, 500/502/503/504 server) plus 404, which is what Vertex answers for a model ID it has
@@ -129,7 +140,8 @@ def _level_of(config: types.ThinkingConfig) -> str | None:
 
 class _AdaptedGemini(Gemini):
     """Gemini that re-maps the request's thinking configuration for its own model id before the
-    call, so the same request can be served by a model from a different generation."""
+    call, so the same request can be served by a model from a different generation, and backs off
+    briefly on a 429 before the FallbackModel moves on (nothing has been yielded yet at that point)."""
 
     async def generate_content_async(self, llm_request, stream: bool = False):  # type: ignore[override]
         config = llm_request.config
@@ -138,25 +150,48 @@ class _AdaptedGemini(Gemini):
             adapted = thinking_config(self.model, level) if level else None
             if adapted is not None:
                 config.thinking_config = adapted
-        async for response in super().generate_content_async(llm_request, stream):
-            yield response
+        delays = LIVE_429_BACKOFF_S
+        for attempt in range(len(delays) + 1):
+            yielded = False
+            try:
+                async for response in super().generate_content_async(llm_request, stream):
+                    yielded = True
+                    yield response
+                return
+            except Exception as e:  # noqa: BLE001 -- only a 429 before any output is retried
+                if yielded or status_of(e) != 429 or attempt >= len(delays):
+                    raise
+                wait = delays[attempt] * random.uniform(0.8, 1.0)
+                log.warning("model %s answered 429; retrying in %.1f s", self.model, wait)
+                await asyncio.sleep(wait)
 
 
 def _delegate(model_id: str, location: str | None) -> Gemini:
     return _AdaptedGemini(model=model_id, client_kwargs={"location": location} if location else None)
 
 
-def vertex_model(models: dict[str, Any]) -> str | BaseLlm:
-    """The `model=` for an ADK LlmAgent on the vertex backend: the primary alone when no distinct
-    fallback is configured, else a FallbackModel over the primary and the fallback."""
-    vertex_env(models)
+def failover_chain(models: dict[str, Any]) -> list[tuple[str, str | None]]:
+    """(model id, location) in the order a failing call moves through: the primary in its own location, the primary on
+    the global endpoint (when `[failover] primary_on_global` is on and `[vertex] fallback_location` names it), then the
+    fallback. A location of None means the process default."""
     primary, fallback = model_ids(models)
-    if fallback is None:
-        return primary
-    return FallbackModel(
-        models=[_delegate(primary, None), _delegate(fallback, _fallback_location(models))],
-        retriable_status_codes=FAILOVER_STATUS_CODES,
-    )
+    loc = _fallback_location(models)
+    chain: list[tuple[str, str | None]] = [(primary, None)]
+    if loc and models.get("failover", {}).get("primary_on_global", False):
+        chain.append((primary, loc))
+    if fallback:
+        chain.append((fallback, loc))
+    return chain
+
+
+def vertex_model(models: dict[str, Any]) -> str | BaseLlm:
+    """The `model=` for an ADK LlmAgent on the vertex backend: the primary alone when nothing else is configured, else a
+    FallbackModel over `failover_chain`."""
+    vertex_env(models)
+    chain = failover_chain(models)
+    if len(chain) == 1:
+        return chain[0][0]
+    return FallbackModel(models=[_delegate(m, loc) for m, loc in chain], retriable_status_codes=FAILOVER_STATUS_CODES)
 
 
 def generate_with_failover(models: dict[str, Any], contents: Any, config: types.GenerateContentConfig, start: str | None = None, thinking_level: str | None = None):
@@ -168,23 +203,27 @@ def generate_with_failover(models: dict[str, Any], contents: Any, config: types.
     from google import genai
 
     vertex_env(models)
-    primary, fallback = model_ids(models)
-    order = [primary] + ([fallback] if fallback else [])
-    if start in order:
-        order = [start] + [m for m in order if m != start]
+    primary, _ = model_ids(models)
+    order = failover_chain(models)
+    if start in {m for m, _ in order}:
+        i = next(i for i, (m, _) in enumerate(order) if m == start)
+        order = order[i:] + order[:i]
     last: BaseException | None = None
-    for model_id in order:
-        location = _fallback_location(models) if model_id == fallback else None
+    for n, (model_id, location) in enumerate(order):
         client = genai.Client(vertexai=True, location=location) if location else genai.Client(vertexai=True)
         call_config = config
         if thinking_level:
             call_config = config.model_copy(update={"thinking_config": thinking_config(model_id, thinking_level)})
-        try:
-            return client.models.generate_content(model=model_id, contents=contents, config=call_config), model_id
-        except Exception as e:  # noqa: BLE001 -- narrowed right below
-            if not failover_error(e):
-                raise
-            last = e
-            log.warning("model %s failed with status %s; %s", model_id, status_of(e), "trying the fallback" if model_id != order[-1] else "no fallback left")
+        for attempt in range(len(LIVE_429_BACKOFF_S) + 1):
+            try:
+                return client.models.generate_content(model=model_id, contents=contents, config=call_config), model_id
+            except Exception as e:  # noqa: BLE001 -- narrowed right below
+                if not failover_error(e):
+                    raise
+                last = e
+                if status_of(e) == 429 and attempt < len(LIVE_429_BACKOFF_S):
+                    time.sleep(LIVE_429_BACKOFF_S[attempt] * random.uniform(0.8, 1.0))
+                    continue
+                log.warning("model %s failed with status %s; %s", model_id, status_of(e), "trying the next candidate" if n < len(order) - 1 else "no fallback left")
+                break
     raise ModelUnavailable(primary, detail=str(last)[:200]) from last
-

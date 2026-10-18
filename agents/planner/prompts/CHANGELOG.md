@@ -1,5 +1,11 @@
 # Planner prompt changelog
 
+- v10 (2026-10-19, branch planner/markdown-v4, not deployed): fewer model turns. `estimate_outcomes` now returns, per draft, a
+  `choice_index` and the `gate` verdict (the eight guardrails and `beats_markdown`), so `check_guardrails` leaves the procedure;
+  `propose_play` takes `choice_index` (+ an optional one-or-two-sentence `rationale`) and code assembles the play from the
+  estimated draft; a draft needs only gap_id, mechanic, mechanic_params and audience.segment_ids. The long list of play-shape
+  corrections is gone (the model no longer writes the play). The `beats_markdown` tolerance is max(INR 50, 2%) (config). `estimate_outcomes` also returns `reach` (consented customers in the draft vs all segments) and the prompt says to list every segment for a clearance gap (the v2/v3 losses were mostly drafts that left segments out; dev rounds in eval/raw/sealed_v4_dev_*).
+
 - v9 (2026-10-19, branch planner/markdown-option, not deployed): two edits from the diagnosis of the v2 sealed run
   (eval/evaluation.md): (1) the best-markdown reference is stated once, in the first `estimate_outcomes` result, not in every
   result (input tokens per run were +39% over v1); (2) a citation `ref` is an id, never a rupee figure (2 of the 6

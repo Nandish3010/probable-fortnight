@@ -1,0 +1,411 @@
+{
+ "scenario_id": "D14",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_e048fa85e1",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:28:36Z",
+ "tag": "D14__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic": "bundle",
+  "gap_id": "gap_e048fa85e1",
+  "mechanic_params": {
+   "bundle_sku": "SKU-CREAM-BUN-200G",
+   "bundle_price": 170
+  },
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 513,
+   "size_after_consent": 441
+  },
+  "target": {
+   "sku": "SKU-FLAVOURED-MILK-200G",
+   "node_ids": [
+    "DS-03"
+   ],
+   "batch_ids": [
+    "B-FLAVOURED-MILK-200G-DS-03-01"
+   ],
+   "units": 76,
+   "deadline_date": "2026-09-19",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_e048fa85e1_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_e048fa85e1_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_e048fa85e1_v1_3191aa97",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.81% (net price 170.00, cost 155.02) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 441 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 513 -> 441"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-FLAVOURED-MILK-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FLAVOURED-MILK-200G at DS-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "76 units of Flavoured Milk 200G at Dark store 03 (North Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-19; doing nothing writes off ₹6701 and a blanket 20% markdown costs ₹3800. This play uses a bundle with SKU-CREAM-BUN-200G at ₹170 for 441 consented customers (Dairy occasionals, Sweets occasionals, Tea connoisseurs, Everyday staples shoppers, Household essentials buyers, Personal care regulars): expected 47 units, margin ₹706, discount cost ₹1178, waste avoided ₹4155 (CI 3 to 138 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" We propose a bundle of Flavoured Milk 200G with Cream Bun 200G at a bundle price of INR 170, which satisfies the category margin floor of 8% and recovers INR 4861.46, beating the plain markdown threshold.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_e048fa85e1"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-FLAVOURED-MILK-200G-DS-03-01"
+   }
+  ],
+  "alternatives": [],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 47.13,
+   "margin_inr": 706.01,
+   "waste_avoided_inr": 4155.45,
+   "discount_cost_inr": 1178.25,
+   "ci_low": 2.54,
+   "ci_high": 137.5,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 6700.92,
+   "blanket_markdown_inr": 3800.06,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1839.46
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 57.33,
+   "pct_of_rupees_at_stake": 0.914
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 4861.46,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-BUN-200G",
+     "bundle_price": 165
+    },
+    "gap_id": "gap_e048fa85e1"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "gap_id": "gap_e048fa85e1",
+    "mechanic_params": {
+     "discount_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_e048fa85e1",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "gap_id": "gap_e048fa85e1",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CREAM-BUN-200G",
+     "bundle_price": 170
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_e048fa85e1_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_e048fa85e1_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 25962,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 4939.88; this play 4861.46; tolerance 98.80)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_e048fa85e1_v1_3191aa97",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 25962,
+  "usage": {
+   "prompt_token_count": 20385,
+   "candidates_token_count": 462,
+   "total_token_count": 21159,
+   "thoughts_token_count": 312,
+   "cached_content_token_count": 12500
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 4939.88,
+  "blanket20_recovery_inr": 2900.86,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 35.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3938,
+    "candidates": 246,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.008933,
+   "error": null,
+   "elapsed_s": 4.25,
+   "thinking_level": "MINIMAL"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4964,
+    "candidates": 118,
+    "thoughts": 272,
+    "cached": 3588
+   },
+   "usd": 0.006723,
+   "error": null,
+   "elapsed_s": 3.56,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5678,
+    "candidates": 83,
+    "thoughts": 25,
+    "cached": 3568
+   },
+   "usd": 0.005139,
+   "error": null,
+   "elapsed_s": 1.98,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5805,
+    "candidates": 15,
+    "thoughts": 15,
+    "cached": 5344
+   },
+   "usd": 0.001939,
+   "error": null,
+   "elapsed_s": 0.95,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.022734,
+ "tokens": {
+  "prompt": 20385,
+  "cached": 12500,
+  "candidates": 462,
+  "thoughts": 312
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
