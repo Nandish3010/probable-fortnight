@@ -1,0 +1,957 @@
+{
+ "scenario_id": "S12",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 2
+ },
+ "gap_id": "gap_11362ba77d",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:44:02Z",
+ "tag": "S12__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "rationale": "This play addresses the expiry risk of Cream Bun 400G at Outlet 03 by offering a 10% outlet markdown to high-affinity segments. The play is expected to recover 1506.78 INR compared to doing nothing (do_nothing_inr of 2793.12 INR plus play_net_inr of -1286.34 INR). This beats a blanket markdown recovery of 1131.26 INR (blanket_markdown_inr of 2417.6 INR plus play_net_inr of -1286.34 INR). The net margin remains above the category floor. The best-before date of 2026-09-15 will be disclosed in the copy.",
+  "target": {
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-15",
+   "node_ids": [
+    "OUT-03"
+   ],
+   "batch_ids": [
+    "B-CREAM-BUN-400G-OUT-03-01"
+   ],
+   "units": 66,
+   "sku": "SKU-CREAM-BUN-400G"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2793.12,
+   "blanket_markdown_inr": 2417.6,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -1286.34
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-15T23:59:59Z"
+  },
+  "play_id": "play_11362ba77d_v1",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 14.51% (net price 49.50, cost 42.32) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 334 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-BUN-400G at OUT-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "mechanic": "outlet_markdown",
+  "gap_id": "gap_11362ba77d",
+  "citations": [
+   {
+    "ref": "gap_11362ba77d",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "audience": {
+   "size_after_consent": 334,
+   "size_before_consent": 398,
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_2",
+    "seg_3",
+    "seg_4",
+    "seg_1"
+   ],
+   "filters": {}
+  },
+  "alternatives": [
+   {
+    "expected_units": 39.14,
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "mechanic": "outlet_markdown",
+    "expected_margin_inr": 65.76,
+    "rejected_because": "failed margin floor guardrail"
+   }
+  ],
+  "objective": "clear_expiry",
+  "channel": "outlet",
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "expected_outcome": {
+   "units": 30.44,
+   "margin_inr": 218.56,
+   "waste_avoided_inr": 1288.22,
+   "discount_cost_inr": 167.42,
+   "ci_low": 1.64,
+   "ci_high": 88.8,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "holdout": {
+   "seed": "seed-play_11362ba77d_v1",
+   "min_treated_n": 20,
+   "fraction": 0.1
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_11362ba77d_v1_7c832fb3",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 43.42,
+   "pct_of_rupees_at_stake": 1.696
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1506.78,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "window": {
+     "end": "2026-09-15T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ],
+     "units": 66,
+     "node_ids": [
+      "OUT-03"
+     ],
+     "deadline_date": "2026-09-15",
+     "deadline_type": "expiry"
+    },
+    "gap_id": "gap_11362ba77d",
+    "channel": "outlet",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_expiry",
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_before_consent": 398,
+     "size_after_consent": 334
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_11362ba77d_v1",
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-15T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "deadline_date": "2026-09-15",
+     "sku": "SKU-CREAM-BUN-400G",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 66,
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ]
+    },
+    "channel": "outlet",
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_11362ba77d_v1",
+     "min_treated_n": 20
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_after_consent": 334,
+     "purpose": "marketing",
+     "size_before_consent": 398
+    },
+    "gap_id": "gap_11362ba77d",
+    "mechanic_params": {
+     "markdown_pct": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "size_before_consent": 398,
+     "size_after_consent": 334,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_11362ba77d",
+    "play_id": "play_11362ba77d_v1",
+    "citations": [
+     {
+      "ref": "gap_11362ba77d",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-15",
+     "deadline_type": "expiry",
+     "units": 66,
+     "sku": "SKU-CREAM-BUN-400G"
+    },
+    "expected_outcome": {
+     "ci_high": 114.19,
+     "measured_n": 0,
+     "units": 39.14,
+     "discount_cost_inr": 430.54,
+     "prior_n": 20,
+     "margin_inr": 65.76,
+     "estimator_version": "est-v2",
+     "waste_avoided_inr": 1656.4,
+     "ci_low": 2.11
+    },
+    "rationale": "This play addresses the expiry risk of Cream Bun 400G at Outlet 03 by offering a 20% outlet markdown to high-affinity segments. The play is expected to recover 1722.16 INR compared to doing nothing (do_nothing_inr of 2793.12 INR plus play_net_inr of -1070.96 INR). This beats a blanket markdown recovery of 971.11 INR (blanket_markdown_inr of 2042.07 INR plus play_net_inr of -1070.96 INR). The net margin remains above the category floor. The best-before date of 2026-09-15 will be disclosed in the copy.",
+    "guardrails": [],
+    "objective": "clear_expiry",
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 2793.12,
+     "play_net_inr": -1070.96,
+     "blanket_markdown_inr": 2042.07
+    },
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-15T23:59:59Z"
+    },
+    "alternatives": [
+     {
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower expected margin than the 20% markdown play",
+      "expected_margin_inr": 218.56,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_units": 30.44
+     }
+    ],
+    "holdout": {
+     "seed": "seed-play_11362ba77d_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "guardrails": [],
+    "mechanic": "outlet_markdown",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_11362ba77d_v1"
+    },
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ],
+     "deadline_type": "expiry",
+     "units": 66,
+     "deadline_date": "2026-09-15"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "play_id": "play_11362ba77d_v1",
+    "counterfactuals": {
+     "do_nothing_inr": 2793.12,
+     "blanket_markdown_inr": 2417.6,
+     "play_net_inr": -1286.34,
+     "blanket_markdown_pct": 10
+    },
+    "rationale": "This play addresses the expiry risk of Cream Bun 400G at Outlet 03 by offering a 10% outlet markdown to high-affinity segments. The play is expected to recover 1506.78 INR compared to doing nothing (do_nothing_inr of 2793.12 INR plus play_net_inr of -1286.34 INR). This beats a blanket markdown recovery of 1131.26 INR (blanket_markdown_inr of 2417.6 INR plus play_net_inr of -1286.34 INR). The net margin remains above the category floor. The best-before date of 2026-09-15 will be disclosed in the copy.",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 334,
+     "size_before_consent": 398
+    },
+    "expected_outcome": {
+     "ci_high": 88.8,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "ci_low": 1.64,
+     "waste_avoided_inr": 1288.22,
+     "margin_inr": 218.56,
+     "discount_cost_inr": 167.42,
+     "prior_n": 20,
+     "units": 30.44
+    },
+    "gap_id": "gap_11362ba77d",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_expiry",
+    "window": {
+     "end": "2026-09-15T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "citations": [
+     {
+      "ref": "gap_11362ba77d",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "alternatives": [
+     {
+      "expected_units": 39.14,
+      "rejected_because": "failed margin floor guardrail",
+      "mechanic_params": {
+       "markdown_pct": 20
+      },
+      "expected_margin_inr": 65.76,
+      "mechanic": "outlet_markdown"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "rationale": "This play addresses the expiry risk of Cream Bun 400G at Outlet 03 by offering a 10% outlet markdown to high-affinity segments. The play is expected to recover 1506.78 INR compared to doing nothing (do_nothing_inr of 2793.12 INR plus play_net_inr of -1286.34 INR). This beats a blanket markdown recovery of 1131.26 INR (blanket_markdown_inr of 2417.6 INR plus play_net_inr of -1286.34 INR). The net margin remains above the category floor. The best-before date of 2026-09-15 will be disclosed in the copy.",
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "markdown_pct": 20
+      },
+      "rejected_because": "failed margin floor guardrail",
+      "expected_units": 39.14,
+      "expected_margin_inr": 65.76,
+      "mechanic": "outlet_markdown"
+     }
+    ],
+    "holdout": {
+     "seed": "seed-play_11362ba77d_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-15T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 14.51% (net price 49.50, cost 42.32) vs bakery floor 8.00%"
+     },
+     {
+      "rule": "frequency_cap",
+      "detail": "all 334 customers under 2 plays in 7 days",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "outlet channel: no personal message, consent not required",
+      "rule": "consent_required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true
+     },
+     {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CREAM-BUN-400G at OUT-03",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 398,
+     "size_after_consent": 334,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "deadline_date": "2026-09-15",
+     "deadline_type": "expiry",
+     "units": 66,
+     "sku": "SKU-CREAM-BUN-400G",
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ]
+    },
+    "gap_id": "gap_11362ba77d",
+    "play_id": "play_11362ba77d_v1",
+    "expected_outcome": {
+     "discount_cost_inr": 167.42,
+     "ci_low": 1.64,
+     "waste_avoided_inr": 1288.22,
+     "ci_high": 88.8,
+     "prior_n": 20,
+     "margin_inr": 218.56,
+     "estimator_version": "est-v2",
+     "units": 30.44,
+     "measured_n": 0
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_11362ba77d"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "mechanic": "outlet_markdown",
+    "counterfactuals": {
+     "play_net_inr": -1286.34,
+     "blanket_markdown_inr": 2417.6,
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 2793.12
+    }
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "rationale": "This play addresses the expiry risk of Cream Bun 400G at Outlet 03 by offering a 10% outlet markdown to high-affinity segments. The play is expected to recover 1506.78 INR compared to doing nothing (do_nothing_inr of 2793.12 INR plus play_net_inr of -1286.34 INR). This beats a blanket markdown recovery of 1131.26 INR (blanket_markdown_inr of 2417.6 INR plus play_net_inr of -1286.34 INR). The net margin remains above the category floor. The best-before date of 2026-09-15 will be disclosed in the copy.",
+    "target": {
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-15",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "batch_ids": [
+      "B-CREAM-BUN-400G-OUT-03-01"
+     ],
+     "units": 66,
+     "sku": "SKU-CREAM-BUN-400G"
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 2793.12,
+     "blanket_markdown_inr": 2417.6,
+     "blanket_markdown_pct": 10,
+     "play_net_inr": -1286.34
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-15T23:59:59Z"
+    },
+    "play_id": "play_11362ba77d_v1",
+    "guardrails": [
+     {
+      "detail": "net margin 14.51% (net price 49.50, cost 42.32) vs bakery floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 334 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "rule": "consent_required",
+      "detail": "outlet channel: no personal message, consent not required",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CREAM-BUN-400G in audience"
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CREAM-BUN-400G at OUT-03"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_11362ba77d",
+    "citations": [
+     {
+      "ref": "gap_11362ba77d",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "size_after_consent": 334,
+     "size_before_consent": 398,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "filters": {}
+    },
+    "alternatives": [
+     {
+      "expected_units": 39.14,
+      "mechanic_params": {
+       "markdown_pct": 20
+      },
+      "mechanic": "outlet_markdown",
+      "expected_margin_inr": 65.76,
+      "rejected_because": "failed margin floor guardrail"
+     }
+    ],
+    "objective": "clear_expiry",
+    "channel": "outlet",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "expected_outcome": {
+     "ci_low": 1.64,
+     "waste_avoided_inr": 1288.22,
+     "prior_n": 20,
+     "units": 30.44,
+     "measured_n": 0,
+     "margin_inr": 218.56,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 167.42,
+     "ci_high": 88.8
+    },
+    "holdout": {
+     "seed": "seed-play_11362ba77d_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_11362ba77d_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "$: 'channel' is a required property",
+    "audience: 'filters' is a required property"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_11362ba77d_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 27563,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_11362ba77d_v1_7c832fb3",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 27563,
+  "usage": {
+   "prompt_token_count": 46161,
+   "candidates_token_count": 4549,
+   "thoughts_token_count": 796,
+   "total_token_count": 51506,
+   "cached_content_token_count": 31301
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1626.43,
+  "blanket20_recovery_inr": 751.05,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 27.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5040,
+    "candidates": 619,
+    "thoughts": 542,
+    "cached": 0
+   },
+   "usd": 0.01981,
+   "error": null,
+   "elapsed_s": 6.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6316,
+    "candidates": 840,
+    "thoughts": 15,
+    "cached": 3608
+   },
+   "usd": 0.013528,
+   "error": null,
+   "elapsed_s": 4.21,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7230,
+    "candidates": 832,
+    "thoughts": 166,
+    "cached": 5302
+   },
+   "usd": 0.013936,
+   "error": null,
+   "elapsed_s": 4.22,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8288,
+    "candidates": 1117,
+    "thoughts": 20,
+    "cached": 6977
+   },
+   "usd": 0.014571,
+   "error": null,
+   "elapsed_s": 4.86,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9186,
+    "candidates": 1126,
+    "thoughts": 38,
+    "cached": 6889
+   },
+   "usd": 0.01645,
+   "error": null,
+   "elapsed_s": 4.9,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10101,
+    "candidates": 15,
+    "thoughts": 15,
+    "cached": 8525
+   },
+   "usd": 0.004304,
+   "error": null,
+   "elapsed_s": 2.12,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.082599,
+ "tokens": {
+  "prompt": 46161,
+  "cached": 31301,
+  "candidates": 4549,
+  "thoughts": 796
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

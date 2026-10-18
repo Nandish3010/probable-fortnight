@@ -8,14 +8,14 @@ For a dark-store team clearing a lot before its online sell-by: on the live Desk
 - **No customer-targeted play without a holdout, enforced in code.** `rule_holdout_required` rejects a play without a holdout fraction of 5 to 90%, a minimum treated count and a seed (`agents/gate/guardrails.py:200-229`); code then sets the seed and assigns the groups (`agents/planner/tools.py:527`). Price cuts use a node holdout when one exists and say so when it does not. Statistical power is not checked.
 - **It says when nothing is proved yet.** A holdout interval that crosses zero reads INCONCLUSIVE, labelled SYNTHETIC, and the power simulation states the data a real answer needs: about 1,156 customers for a 5 pp lift (`eval/raw/holdout_power_2026-10-14.json`). The ₹9,191 stays labelled PROJECTED.
 - **Each safety layer measured on its own.** The tool refuses another customer's id in every run although the chat model tries it 3 of 3 times (`agents/customer/tools.py:43-59`); Model Armor blocks 3 of 8 chat injection cases (`eval/evaluation.md:1167-1172`) and fails open (`services/api/model_armor.py:7-10,98`).
-- **Pre-registered evals.** Protocols are committed before any model call; a fallback-model answer voids the run. On 36 sealed scenarios from an unseen tenant, approved plays beat a blanket 20% markdown in 29 (16 of 23 where the markdown is profitable): our line of 30 was missed. 0 rule violations reached Approve (`eval/sealed/PROTOCOL.md`).
+- **Pre-registered evals.** Protocols are committed before any model call; a fallback-model answer voids the run. Sealed v1, 36 scenarios: 29 beat a blanket 20% markdown, our line of 30 missed. With markdown, 36 new: 17 of 18 beatable, a markdown chosen in 14 of 15 where best, 0 rule violations (`eval/sealed/PROTOCOL_v3.md`).
 - **Cite-or-drop that resists tricks.** Rationale numbers must match the play in Western or Indian digit grouping (`agents/gate/guardrails.py:309-316`); copied untrusted phrases are caught after folding look-alike and invisible characters (`agents/gate/untrusted.py:18-38`).
 
 **Why us.** We are in a category team at Supertails, an Indian pet-care e-commerce company: Nandish on pricing, Rinu on online sales and part of the P&L. Near-expiry and slow-moving stock is a standing cost: written off, or tying up storage and capital. Phase 1 is near-expiry stock; phase 2, slow-moving SKUs. Taal has not been used at Supertails; all data is synthetic.
 
 | Result | Figure | Label |
 |---|---|---|
-| Sealed baseline eval | beats a blanket 20% markdown 29/36; 16/23 where the markdown is profitable (line 30: missed); 0 rule violations; deadlines 3 to 14 days, 21 of 36 from neighbouring cells | MEASURED, 19 Oct; projected, synthetic |
+| Sealed baseline eval | v1: 29/36 beat a blanket 20% markdown (line 30 missed); with the markdown option 17 of 18 beatable, 0 rule violations; a 20% cut is below the margin floor everywhere | MEASURED, 19 Oct; projected, synthetic |
 | Hero play vs doing nothing | Transfer to the outlet that can sell the tea plus a targeted nudge: **₹9,191** projected recovery (₹9,397 waste avoided minus ₹206 transfer cost) | PROJECTED, synthetic |
 | Beat a blanket 20% markdown | **₹6,186** | PROJECTED, derived |
 | Holdout | 355 treated, 39 held out; +0.3 pp, 95% CI -8.7 to +1.6; a 5 pp lift needs about 1,156 customers (SIMULATION) | inconclusive, synthetic |
@@ -37,7 +37,7 @@ No sign-in; each visitor gets a private sandbox. Synthetic data, demo clock 12 S
 2. Click **Approve**: it reads "Recovered vs doing nothing ₹9,191" (projected): 355 customers treated, 39 held out.
 3. Click **Chat as Ravi**. It asks "Any offers today?" for him and the Tea offer arrives. Click **Add to cart**: the order total is ₹450.
 
-Then type (tested 15 Oct):
+Then type:
 
 | You type | Expected reply |
 |---|---|
@@ -45,7 +45,7 @@ Then type (tested 15 Oct):
 | Do you have Cola Zero? | Yes: the sizes in stock (synthetic prices) |
 | STOP | Unsubscribed; pending offers dropped |
 
-Also try **Plan live** (a live Gemini re-plan, about 27 s).
+Also try **Plan live** (a live Gemini re-plan, about 30 s).
 
 | Live app | Video | Deck | Repo | Configuration check |
 |---|---|---|---|---|
@@ -105,7 +105,7 @@ More: [`docs/architecture.md`](docs/architecture.md).
 
 FSSAI's advisory of 3 Dec 2024 ([file RCD-13/1/2024-Regulatory-FSSAI(E-13150)](https://fssai.gov.in/upload/advisories/2024/12/674efa161d756Adobe%20Scan%203%20Dec%202024.pdf)) asks online food sellers to deliver with at least 30% shelf life or 45 days left: an advisory, not law. Taal plans to the online sell-by line, weeks before printed expiry.
 
-As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% of net order value (₹17,132 crore, 2,443 stores): about ₹0.5 crore per store per year (all inventory loss, a quarter annualised): context, not a Taal result.
+As reported by Inc42 (22 Jul 2026), Blinkit's inventory losses were about 1.8% of net order value: about ₹0.5 crore per store per year (all inventory loss, a quarter annualised): context, not a Taal result.
 
 3 of 7 surveyed practitioners write off stock weekly or daily.
 
@@ -123,7 +123,6 @@ Projected margin per node (tenant ÷ 16 nodes; year = × 365/28; `portfolio_prio
 
 **What breaks first**
 - State lives in process memory: sandboxes reset on redeploy or recycle, hence `max-instances` 1.
-- `/health` is a configuration check; `make smoke-judging` checks liveness.
 - Real-photo vision: unmeasured.
 - C8: chat tries a cross-customer call; the tool refuses it.
 

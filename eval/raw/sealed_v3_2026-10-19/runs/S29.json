@@ -1,0 +1,731 @@
+{
+ "scenario_id": "S29",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 2,
+  "day_band": 0
+ },
+ "gap_id": "gap_0b0fe14ddd",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:47:31Z",
+ "tag": "S29__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_0b0fe14ddd",
+  "window": {
+   "end": "2026-09-17T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 40896.92,
+   "blanket_markdown_inr": 33215.35,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -31606.52
+  },
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "holdout": {
+   "min_treated_n": 20,
+   "fraction": 0.5,
+   "seed": "seed-play_0b0fe14ddd_v1",
+   "measurement": "holdout_nodes",
+   "node_ids": [
+    "DS-05"
+   ],
+   "measurement_reason": "1 comparable at-risk node(s) keep the list price: DS-05"
+  },
+  "mechanic": "markdown",
+  "objective": "clear_online_sellby",
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-17"
+  },
+  "channel": "web_chat",
+  "citations": [
+   {
+    "ref": "gap_0b0fe14ddd",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "rejected_because": "recovers less than the best plain markdown by more than the 500.00 INR tolerance",
+    "expected_margin_inr": 805.9,
+    "expected_units": 29.21,
+    "mechanic_params": {
+     "discount_pct": 10
+    }
+   },
+   {
+    "mechanic_params": {
+     "bundle_price": 280,
+     "bundle_sku": "SKU-RUSK-200G"
+    },
+    "expected_margin_inr": 686.42,
+    "mechanic": "bundle",
+    "expected_units": 33.5,
+    "rejected_because": "recovers less than the best plain markdown by more than the 500.00 INR tolerance"
+   }
+  ],
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 12.51% (net price 220.50, cost 192.91) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-200G at DS-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 1 held-out node(s) DS-05, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "6 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "play_id": "play_0b0fe14ddd_v1",
+  "expected_outcome": {
+   "units": 58.34,
+   "margin_inr": -1963.97,
+   "waste_avoided_inr": 11254.37,
+   "discount_cost_inr": 5002.9,
+   "ci_low": 29.17,
+   "ci_high": 87.52,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "rationale": "This markdown play is proposed because alternative targeted plays like coupons, bundles, and transfers fail to recover within the required tolerance of the best plain markdown. The play is expected to recover 9290.40 INR versus doing nothing, representing a beat of 1608.83 INR over a blanket markdown. The 10% markdown on Cream 200G at DS-03 is projected to sell 58.34 units, avoiding 11254.37 INR in waste. This is the most effective lever to clear the online sell-by breach before the deadline.",
+  "target": {
+   "node_ids": [
+    "DS-03"
+   ],
+   "units": 212,
+   "deadline_type": "online_sellby",
+   "sku": "SKU-CREAM-200G",
+   "batch_ids": [
+    "B-CREAM-200G-DS-03-01"
+   ],
+   "deadline_date": "2026-09-17"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_0b0fe14ddd_v1_087e293c",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.01
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 9290.4,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-17T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-17",
+     "units": 212,
+     "node_ids": [
+      "DS-03"
+     ],
+     "sku": "SKU-CREAM-200G"
+    },
+    "audience": {
+     "size_before_consent": 384,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ],
+     "filters": {},
+     "size_after_consent": 328
+    },
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "holdout": {
+     "seed": "seed-play_0b0fe14ddd_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "gap_id": "gap_0b0fe14ddd",
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 384,
+     "filters": {},
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 280,
+     "bundle_sku": "SKU-RUSK-200G"
+    },
+    "mechanic": "bundle",
+    "window": {
+     "end": "2026-09-17T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_0b0fe14ddd",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_0b0fe14ddd_v1",
+     "min_treated_n": 20
+    },
+    "target": {
+     "units": 212,
+     "deadline_date": "2026-09-17",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-200G",
+     "node_ids": [
+      "DS-03"
+     ],
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ]
+    },
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "window": {
+     "end": "2026-09-17T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "target": {
+     "node_ids": [
+      "DS-03"
+     ],
+     "units": 212,
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ],
+     "sku": "SKU-CREAM-200G",
+     "deadline_date": "2026-09-17",
+     "deadline_type": "online_sellby"
+    },
+    "holdout": {
+     "seed": "seed-play_0b0fe14ddd_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_after_consent": 0,
+     "filters": {},
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing"
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_0b0fe14ddd"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_0b0fe14ddd_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "markdown",
+    "target": {
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ],
+     "units": 212,
+     "sku": "SKU-CREAM-200G",
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-17",
+     "node_ids": [
+      "DS-03"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "size_after_consent": 0
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-17T23:59:59Z"
+    },
+    "gap_id": "gap_0b0fe14ddd"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "transfer_plus_nudge",
+    "mechanic_params": {
+     "transfer_units": 100,
+     "transfer_to_node": "OUT-01"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-17T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_0b0fe14ddd_v1",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_0b0fe14ddd",
+    "target": {
+     "sku": "SKU-CREAM-200G",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ],
+     "units": 212,
+     "node_ids": [
+      "DS-03"
+     ],
+     "deadline_date": "2026-09-17"
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_before_consent": 384,
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "gap_id": "gap_0b0fe14ddd",
+    "window": {
+     "end": "2026-09-17T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "counterfactuals": {
+     "blanket_markdown_inr": 33215.35,
+     "play_net_inr": -31606.52,
+     "blanket_markdown_pct": 10,
+     "do_nothing_inr": 40896.92
+    },
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_0b0fe14ddd_v1"
+    },
+    "mechanic": "markdown",
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "ref": "gap_0b0fe14ddd",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "alternatives": [
+     {
+      "mechanic": "coupon",
+      "rejected_because": "recovers less than the best plain markdown by more than the 500.00 INR tolerance",
+      "expected_margin_inr": 805.9,
+      "expected_units": 29.21,
+      "mechanic_params": {
+       "discount_pct": 10
+      }
+     },
+     {
+      "mechanic_params": {
+       "bundle_price": 280,
+       "bundle_sku": "SKU-RUSK-200G"
+      },
+      "expected_margin_inr": 686.42,
+      "mechanic": "bundle",
+      "expected_units": 33.5,
+      "rejected_because": "recovers less than the best plain markdown by more than the 500.00 INR tolerance"
+     }
+    ],
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "filters": {}
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 12.51% (net price 220.50, cost 192.91) vs dairy floor 8.00%"
+     },
+     {
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "markdown: a public shelf price, no offer is made to any customer",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "detail": "no stockout gap for SKU-CREAM-200G at DS-03",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "detail": "node holdout: 1 held-out node(s) DS-05, 1 treated",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "play_id": "play_0b0fe14ddd_v1",
+    "expected_outcome": {
+     "margin_inr": -1963.97,
+     "ci_high": 87.52,
+     "estimator_version": "est-v2",
+     "ci_low": 29.17,
+     "discount_cost_inr": 5002.9,
+     "measured_n": 0,
+     "waste_avoided_inr": 11254.37,
+     "prior_n": 0,
+     "units": 58.34
+    },
+    "rationale": "This markdown play is proposed because alternative targeted plays like coupons, bundles, and transfers fail to recover within the required tolerance of the best plain markdown. The play is expected to recover 9290.40 INR versus doing nothing, representing a beat of 1608.83 INR over a blanket markdown. The 10% markdown on Cream 200G at DS-03 is projected to sell 58.34 units, avoiding 11254.37 INR in waste. This is the most effective lever to clear the online sell-by breach before the deadline.",
+    "target": {
+     "node_ids": [
+      "DS-03"
+     ],
+     "units": 212,
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-200G",
+     "batch_ids": [
+      "B-CREAM-200G-DS-03-01"
+     ],
+     "deadline_date": "2026-09-17"
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_0b0fe14ddd_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_0b0fe14ddd_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 26683,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 9290.40; this play 9290.40; tolerance 500.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_0b0fe14ddd_v1_087e293c",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 26683,
+  "usage": {
+   "prompt_token_count": 39479,
+   "candidates_token_count": 2610,
+   "thoughts_token_count": 2647,
+   "cached_content_token_count": 27516,
+   "total_token_count": 44736
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 9290.4,
+  "blanket20_recovery_inr": 15363.14,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 27.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5076,
+    "candidates": 854,
+    "thoughts": 734,
+    "cached": 3821
+   },
+   "usd": 0.018422,
+   "error": null,
+   "elapsed_s": 7.22,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6988,
+    "candidates": 271,
+    "thoughts": 534,
+    "cached": 3692
+   },
+   "usd": 0.014017,
+   "error": null,
+   "elapsed_s": 4.45,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7995,
+    "candidates": 317,
+    "thoughts": 183,
+    "cached": 5496
+   },
+   "usd": 0.00998,
+   "error": null,
+   "elapsed_s": 3.0,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8673,
+    "candidates": 1155,
+    "thoughts": 1174,
+    "cached": 7264
+   },
+   "usd": 0.026581,
+   "error": null,
+   "elapsed_s": 9.66,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10747,
+    "candidates": 13,
+    "thoughts": 22,
+    "cached": 7243
+   },
+   "usd": 0.007323,
+   "error": null,
+   "elapsed_s": 0.86,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.076323,
+ "tokens": {
+  "prompt": 39479,
+  "cached": 27516,
+  "candidates": 2610,
+  "thoughts": 2647
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1,0 +1,838 @@
+{
+ "scenario_id": "S33",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_31b500caca",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:48:02Z",
+ "tag": "S33__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "all"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 0,
+   "size_after_consent": 0
+  },
+  "target": {
+   "sku": "SKU-CREAM-200G",
+   "deadline_date": "2026-09-19",
+   "deadline_type": "online_sellby",
+   "units": 133,
+   "node_ids": [
+    "DS-04"
+   ],
+   "batch_ids": [
+    "B-CREAM-200G-DS-04-01"
+   ]
+  },
+  "mechanic_params": {
+   "markdown_pct": 10,
+   "end_date": "2026-09-19"
+  },
+  "alternatives": [
+   {
+    "expected_margin_inr": 805.9,
+    "expected_units": 29.21,
+    "rejected_because": "lower recovery than the best plain markdown",
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    }
+   },
+   {
+    "mechanic": "bundle",
+    "expected_margin_inr": 728.96,
+    "rejected_because": "lower recovery than the best plain markdown",
+    "expected_units": 33.5,
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 280
+    }
+   }
+  ],
+  "holdout": {
+   "fraction": 0.5,
+   "seed": "seed-play_31b500caca_v1",
+   "min_treated_n": 20,
+   "measurement": "holdout_nodes",
+   "node_ids": [
+    "DS-02"
+   ],
+   "measurement_reason": "1 comparable at-risk node(s) keep the list price: DS-02"
+  },
+  "play_id": "play_31b500caca_v1",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 12.51% (net price 220.50, cost 192.91) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "markdown: a shelf price, no customer is contacted; consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "markdown: a public shelf price, no offer is made to any customer"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CREAM-200G at DS-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "node holdout: 1 held-out node(s) DS-02, 1 treated"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "3 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "mechanic": "markdown",
+  "counterfactuals": {
+   "do_nothing_inr": 25657.03,
+   "blanket_markdown_inr": 14846.69,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": -12580.89
+  },
+  "objective": "clear_online_sellby",
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "window": {
+   "end": "2026-09-19T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "channel": "web_chat",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_31b500caca"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "rationale": "This play implements a markdown on Cream 200G at DS-04 to clear the online sell-by gap. The play recovers 13076.14 INR versus doing nothing. It achieves a beat of 2265.80 INR over a blanket markdown. Other targeted plays like coupons and bundles were rejected because they did not recover enough to beat the markdown threshold.",
+  "expected_outcome": {
+   "units": 82.11,
+   "margin_inr": -2763.7,
+   "waste_avoided_inr": 15839.84,
+   "discount_cost_inr": 7040.81,
+   "ci_low": 41.05,
+   "ci_high": 123.16,
+   "prior_n": 0.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "gap_id": "gap_31b500caca",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_31b500caca_v1_db46c667",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 0.0,
+   "pct_of_rupees_at_stake": 0.015
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 13076.14,
+ "mechanic": "markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_31b500caca",
+    "play_id": "play_31b500caca_v1",
+    "objective": "clear_online_sellby",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "channel": "app_push",
+    "audience": {
+     "size_after_consent": 328,
+     "purpose": "marketing",
+     "size_before_consent": 384,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "mechanic": "coupon",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_31b500caca_v1"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "target": {
+     "units": 133,
+     "deadline_date": "2026-09-19",
+     "node_ids": [
+      "DS-04"
+     ],
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ],
+     "sku": "SKU-CREAM-200G",
+     "deadline_type": "online_sellby"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_31b500caca",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_31b500caca_v1"
+    },
+    "channel": "app_push",
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 280
+    },
+    "target": {
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-04"
+     ],
+     "deadline_date": "2026-09-19",
+     "units": 133,
+     "sku": "SKU-CREAM-200G",
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ]
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "filters": {},
+     "size_before_consent": 384,
+     "purpose": "marketing",
+     "size_after_consent": 328,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_3",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle",
+    "play_id": "play_31b500caca_v1",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_31b500caca",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_31b500caca_v1",
+     "min_treated_n": 20
+    },
+    "channel": "web_chat",
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 0
+    },
+    "mechanic": "markdown",
+    "objective": "clear_online_sellby",
+    "target": {
+     "sku": "SKU-CREAM-200G",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-19",
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 133
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "play_id": "play_31b500caca_v1",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "gap_id": "gap_31b500caca",
+    "objective": "clear_online_sellby",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_31b500caca_v1"
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "target": {
+     "deadline_date": "2026-09-19",
+     "sku": "SKU-CREAM-200G",
+     "units": 133,
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ],
+     "node_ids": [
+      "DS-04"
+     ]
+    },
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "filters": {},
+     "size_after_consent": 0,
+     "purpose": "marketing"
+    },
+    "play_id": "play_31b500caca_v1",
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "mechanic": "markdown",
+    "target": {
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ],
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-200G",
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 133
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-19T23:59:59Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "channel": "web_chat",
+    "gap_id": "gap_31b500caca",
+    "play_id": "play_31b500caca_v1",
+    "holdout": {
+     "seed": "seed-play_31b500caca_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "target": {
+     "node_ids": [
+      "DS-04"
+     ],
+     "units": 133,
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-CREAM-200G",
+     "deadline_date": "2026-09-19"
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "gap_id": "gap_31b500caca",
+    "channel": "web_chat",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "seed": "seed-play_31b500caca_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "play_id": "play_31b500caca_v1"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {}
+    },
+    "target": {
+     "sku": "SKU-CREAM-200G",
+     "deadline_date": "2026-09-19",
+     "deadline_type": "online_sellby",
+     "units": 133,
+     "node_ids": [
+      "DS-04"
+     ],
+     "batch_ids": [
+      "B-CREAM-200G-DS-04-01"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 805.9,
+      "expected_units": 29.21,
+      "rejected_because": "lower recovery than the best plain markdown",
+      "mechanic": "coupon",
+      "mechanic_params": {
+       "discount_pct": 10
+      }
+     },
+     {
+      "mechanic": "bundle",
+      "expected_margin_inr": 728.96,
+      "rejected_because": "lower recovery than the best plain markdown",
+      "expected_units": 33.5,
+      "mechanic_params": {
+       "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+       "bundle_price": 280
+      }
+     }
+    ],
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_31b500caca_v1",
+     "min_treated_n": 20
+    },
+    "play_id": "play_31b500caca_v1",
+    "guardrails": [
+     {
+      "detail": "net margin 12.51% (net price 220.50, cost 192.91) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "markdown: a shelf price, no customer is contacted; frequency cap not applicable",
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "markdown: a shelf price, no customer is contacted; consent not required",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "detail": "markdown: a public shelf price, no offer is made to any customer",
+      "rule": "subscription_protect"
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CREAM-200G at DS-04"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "node holdout: 1 held-out node(s) DS-02, 1 treated",
+      "passed": true
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "mechanic": "markdown",
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "play_net_inr": -12580.89,
+     "do_nothing_inr": 25657.03,
+     "blanket_markdown_inr": 14846.69
+    },
+    "objective": "clear_online_sellby",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "window": {
+     "end": "2026-09-19T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_31b500caca"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "rationale": "This play implements a markdown on Cream 200G at DS-04 to clear the online sell-by gap. The play recovers 13076.14 INR versus doing nothing. It achieves a beat of 2265.80 INR over a blanket markdown. Other targeted plays like coupons and bundles were rejected because they did not recover enough to beat the markdown threshold.",
+    "expected_outcome": {
+     "ci_low": 41.05,
+     "ci_high": 123.16,
+     "discount_cost_inr": 7040.81,
+     "waste_avoided_inr": 15839.84,
+     "measured_n": 0,
+     "prior_n": 0,
+     "estimator_version": "est-v2",
+     "units": 82.11,
+     "margin_inr": -2763.7
+    },
+    "gap_id": "gap_31b500caca"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_31b500caca_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_31b500caca_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 27697,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 13076.14; this play 13076.14; tolerance 653.81)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_31b500caca_v1_db46c667",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 27697,
+  "usage": {
+   "prompt_token_count": 48480,
+   "candidates_token_count": 3091,
+   "thoughts_token_count": 2349,
+   "cached_content_token_count": 36064,
+   "total_token_count": 53920
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 13076.14,
+  "blanket20_recovery_inr": 15598.8,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 28.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5049,
+    "candidates": 1014,
+    "thoughts": 467,
+    "cached": 3820
+   },
+   "usd": 0.01732,
+   "error": null,
+   "elapsed_s": 6.8,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6792,
+    "candidates": 323,
+    "thoughts": 670,
+    "cached": 3653
+   },
+   "usd": 0.015613,
+   "error": null,
+   "elapsed_s": 4.71,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7968,
+    "candidates": 323,
+    "thoughts": 85,
+    "cached": 5445
+   },
+   "usd": 0.009101,
+   "error": null,
+   "elapsed_s": 2.12,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8560,
+    "candidates": 326,
+    "thoughts": 36,
+    "cached": 7169
+   },
+   "usd": 0.007062,
+   "error": null,
+   "elapsed_s": 1.97,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9098,
+    "candidates": 1091,
+    "thoughts": 1078,
+    "cached": 7103
+   },
+   "usd": 0.025937,
+   "error": null,
+   "elapsed_s": 9.53,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 11013,
+    "candidates": 14,
+    "thoughts": 13,
+    "cached": 8874
+   },
+   "usd": 0.005261,
+   "error": null,
+   "elapsed_s": 0.92,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.080294,
+ "tokens": {
+  "prompt": 48480,
+  "cached": 36064,
+  "candidates": 3091,
+  "thoughts": 2349
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

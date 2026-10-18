@@ -1,0 +1,1166 @@
+{
+ "scenario_id": "S14",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_1fda886620",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:44:30Z",
+ "tag": "S14__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_1fda886620",
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_1fda886620_v1",
+   "min_treated_n": 20
+  },
+  "channel": "web_chat",
+  "audience": {
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_6",
+    "seg_3",
+    "seg_4",
+    "seg_1"
+   ],
+   "size_before_consent": 318,
+   "size_after_consent": 270,
+   "filters": {}
+  },
+  "target": {
+   "node_ids": [
+    "DS-01"
+   ],
+   "units": 51,
+   "deadline_type": "online_sellby",
+   "deadline_date": "2026-09-23",
+   "batch_ids": [
+    "B-PANEER-400G-DS-01-01"
+   ],
+   "sku": "SKU-PANEER-400G"
+  },
+  "mechanic_params": {
+   "bundle_price": 275,
+   "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+  },
+  "expected_outcome": {
+   "units": 25.59,
+   "margin_inr": 594.71,
+   "waste_avoided_inr": 4770.74,
+   "discount_cost_inr": 895.65,
+   "ci_low": 1.38,
+   "ci_high": 74.66,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 9507.93,
+   "blanket_markdown_inr": 13394.7,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -4142.48
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.45% (net price 275.00, cost 251.76) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 270 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 318 -> 270"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-PANEER-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-PANEER-400G at DS-01"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "objective": "clear_online_sellby",
+  "mechanic": "bundle",
+  "rationale": "This play targets dairy occasionals, everyday staples shoppers, personal care regulars, and festival sweets loyalists to clear 51 units of Paneer 400G before its online sell-by date. We bundle the paneer with Multigrain Bread 400G for a total price of 275, which maintains a net margin of 8.45% and respects the dairy category floor. The play is expected to clear 25.59 units, recovering 5365.45 INR compared to doing nothing and 9252.22 INR compared to a blanket markdown.",
+  "play_id": "play_1fda886620_v1",
+  "alternatives": [
+   {
+    "rejected_because": "lower expected margin than the multigrain bread bundle play",
+    "expected_units": 23.98,
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 9
+    },
+    "expected_margin_inr": 439.31
+   },
+   {
+    "expected_units": 25.72,
+    "expected_margin_inr": 577.16,
+    "mechanic_params": {
+     "bundle_price": 270,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "mechanic": "bundle",
+    "rejected_because": "lower expected margin than the multigrain bread bundle play"
+   }
+  ],
+  "window": {
+   "end": "2026-09-23T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "copy": {
+   "variants": [],
+   "copy_status": "pending",
+   "language_set": [
+    "en"
+   ]
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_1fda886620"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_1fda886620_v1_3438f53d",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 35.1,
+   "pct_of_rupees_at_stake": 0.411
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 5365.45,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_1fda886620",
+    "mechanic": "bundle",
+    "audience": {
+     "size_before_consent": 318,
+     "size_after_consent": 271,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_1fda886620_v1"
+    },
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-23",
+     "units": 51,
+     "sku": "SKU-PANEER-400G"
+    },
+    "mechanic_params": {
+     "bundle_price": 260,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "objective": "clear_online_sellby",
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_1fda886620_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_1fda886620",
+    "audience": {
+     "size_after_consent": 271,
+     "filters": {},
+     "size_before_consent": 318,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "purpose": "marketing"
+    },
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "mechanic": "coupon",
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-PANEER-400G",
+     "units": 51,
+     "node_ids": [
+      "DS-01"
+     ]
+    },
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "audience": {
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "filters": {}
+    },
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-PANEER-400G",
+     "node_ids": [
+      "DS-01"
+     ]
+    },
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "gap_id": "gap_1fda886620",
+    "holdout": {
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "web_chat",
+    "target": {
+     "node_ids": [
+      "DS-01"
+     ],
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "sku": "SKU-PANEER-400G",
+     "deadline_date": "2026-09-23"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle",
+    "guardrails": [],
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-400G",
+     "bundle_price": 260
+    },
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "expected_outcome": {
+     "ci_high": 81.8,
+     "ci_low": 1.51,
+     "discount_cost_inr": 1261.8,
+     "waste_avoided_inr": 5227.5,
+     "prior_n": 20,
+     "units": 28.04,
+     "margin_inr": 348.82,
+     "estimator_version": "est-v2",
+     "measured_n": 0
+    },
+    "gap_id": "gap_1fda886620",
+    "play_id": "play_1fda886620_v1",
+    "audience": {
+     "filters": {},
+     "size_after_consent": 270,
+     "purpose": "marketing",
+     "size_before_consent": 318,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_1fda886620_v1",
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-PAV-400G",
+     "bundle_price": 270
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_1fda886620",
+    "target": {
+     "deadline_date": "2026-09-23",
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "node_ids": [
+      "DS-01"
+     ],
+     "sku": "SKU-PANEER-400G",
+     "units": 51
+    },
+    "audience": {
+     "size_after_consent": 270,
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 318,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_after_consent": 270,
+     "size_before_consent": 318
+    },
+    "gap_id": "gap_1fda886620",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_1fda886620_v1"
+    },
+    "mechanic_params": {
+     "discount_pct": 9
+    },
+    "mechanic": "coupon",
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "units": 51,
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-PANEER-400G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_price": 275,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 318,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_after_consent": 270
+    },
+    "mechanic": "bundle",
+    "target": {
+     "units": 51,
+     "sku": "SKU-PANEER-400G",
+     "deadline_date": "2026-09-23",
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-01"
+     ],
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ]
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_1fda886620",
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "channel": "web_chat",
+    "guardrails": [],
+    "expected_outcome": {
+     "margin_inr": 577.16,
+     "discount_cost_inr": 900.2,
+     "units": 25.72,
+     "prior_n": 20,
+     "ci_high": 75.03,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "ci_low": 1.39,
+     "waste_avoided_inr": 4794.98
+    },
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 318,
+     "size_after_consent": 270,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "play_id": "play_1fda886620_v1",
+    "mechanic_params": {
+     "bundle_price": 270,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "copy": {
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ],
+     "variants": []
+    },
+    "mechanic": "bundle",
+    "objective": "clear_online_sellby",
+    "target": {
+     "units": 51,
+     "node_ids": [
+      "DS-01"
+     ],
+     "deadline_date": "2026-09-23",
+     "deadline_type": "online_sellby",
+     "sku": "SKU-PANEER-400G",
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ]
+    },
+    "gap_id": "gap_1fda886620",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-23T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "target": {
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "node_ids": [
+      "DS-01"
+     ],
+     "sku": "SKU-PANEER-400G",
+     "deadline_date": "2026-09-23",
+     "deadline_type": "online_sellby",
+     "units": 51
+    },
+    "mechanic_params": {
+     "bundle_price": 275,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 318,
+     "size_after_consent": 270,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "guardrails": [],
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_1fda886620_v1"
+    },
+    "play_id": "play_1fda886620_v1",
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "gap_id": "gap_1fda886620",
+    "expected_outcome": {
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "units": 25.59,
+     "waste_avoided_inr": 4770.74,
+     "ci_high": 74.66,
+     "ci_low": 1.38,
+     "margin_inr": 594.71,
+     "discount_cost_inr": 895.65
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 275
+    },
+    "mechanic": "bundle",
+    "expected_outcome": {
+     "ci_low": 1.38,
+     "units": 25.59,
+     "waste_avoided_inr": 4770.74,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 895.65,
+     "margin_inr": 594.71,
+     "measured_n": 0,
+     "prior_n": 20,
+     "ci_high": 74.66
+    },
+    "play_id": "play_1fda886620_v1",
+    "holdout": {
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "rule": "margin_floor",
+      "detail": "net margin 8.45% (net price 275.00, cost 251.76) vs dairy floor 8.00%"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 270 customers under 2 plays in 7 days"
+     },
+     {
+      "detail": "audience filtered by consent: 318 -> 270",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "detail": "no active subscribers of SKU-PANEER-400G in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-PANEER-400G at DS-01"
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_before_consent": 318,
+     "purpose": "marketing",
+     "size_after_consent": 270
+    },
+    "rationale": "This play targets dairy occasionals, everyday staples shoppers, personal care regulars, and festival sweets loyalists to clear 51 units of Paneer 400G before its online sell-by date. We bundle the paneer with Multigrain Bread 400G for a total price of 275, which maintains a net margin of 8.45% and respects the dairy category floor. The play is expected to clear 25.59 units, recovering 5365.45 INR compared to doing nothing and 9252.22 INR compared to a blanket markdown.",
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than the multigrain bread bundle play",
+      "expected_margin_inr": 439.31,
+      "mechanic": "coupon",
+      "expected_units": 23.98,
+      "mechanic_params": {
+       "discount_pct": 9
+      }
+     },
+     {
+      "expected_margin_inr": 577.16,
+      "mechanic_params": {
+       "bundle_sku": "SKU-PAV-400G",
+       "bundle_price": 270
+      },
+      "rejected_because": "lower expected margin than the multigrain bread bundle play",
+      "mechanic": "bundle",
+      "expected_units": 25.72
+     }
+    ],
+    "gap_id": "gap_1fda886620",
+    "objective": "clear_online_sellby",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_1fda886620"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "counterfactuals": {
+     "blanket_markdown_inr": 13394.7,
+     "do_nothing_inr": 9507.93,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -4142.48
+    },
+    "target": {
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-PANEER-400G",
+     "node_ids": [
+      "DS-01"
+     ],
+     "units": 51
+    },
+    "channel": "web_chat"
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "gap_id": "gap_1fda886620",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_1fda886620_v1",
+     "min_treated_n": 20
+    },
+    "channel": "web_chat",
+    "audience": {
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_before_consent": 318,
+     "size_after_consent": 270,
+     "filters": {}
+    },
+    "target": {
+     "node_ids": [
+      "DS-01"
+     ],
+     "units": 51,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-PANEER-400G-DS-01-01"
+     ],
+     "sku": "SKU-PANEER-400G"
+    },
+    "mechanic_params": {
+     "bundle_price": 275,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 895.65,
+     "ci_low": 1.38,
+     "estimator_version": "est-v2",
+     "margin_inr": 594.71,
+     "ci_high": 74.66,
+     "waste_avoided_inr": 4770.74,
+     "prior_n": 20,
+     "measured_n": 0,
+     "units": 25.59
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "play_net_inr": -4142.48,
+     "do_nothing_inr": 9507.93,
+     "blanket_markdown_inr": 13394.7
+    },
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "passed": true,
+      "detail": "net margin 8.45% (net price 275.00, cost 251.76) vs dairy floor 8.00%"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 270 customers under 2 plays in 7 days"
+     },
+     {
+      "rule": "consent_required",
+      "passed": true,
+      "detail": "audience filtered by consent: 318 -> 270"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-PANEER-400G in audience",
+      "passed": true
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-PANEER-400G at DS-01",
+      "passed": true
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle",
+    "rationale": "This play targets dairy occasionals, everyday staples shoppers, personal care regulars, and festival sweets loyalists to clear 51 units of Paneer 400G before its online sell-by date. We bundle the paneer with Multigrain Bread 400G for a total price of 275, which maintains a net margin of 8.45% and respects the dairy category floor. The play is expected to clear 25.59 units, recovering 5365.45 INR compared to doing nothing and 9252.22 INR compared to a blanket markdown.",
+    "play_id": "play_1fda886620_v1",
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than the multigrain bread bundle play",
+      "expected_units": 23.98,
+      "mechanic": "coupon",
+      "mechanic_params": {
+       "discount_pct": 9
+      },
+      "expected_margin_inr": 439.31
+     },
+     {
+      "expected_units": 25.72,
+      "expected_margin_inr": 577.16,
+      "mechanic_params": {
+       "bundle_price": 270,
+       "bundle_sku": "SKU-PAV-400G"
+      },
+      "mechanic": "bundle",
+      "rejected_because": "lower expected margin than the multigrain bread bundle play"
+     }
+    ],
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_1fda886620"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ]
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_1fda886620_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "$: 'copy' is a required property"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_1fda886620_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 41908,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "no markdown depth clears the margin floor"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_1fda886620_v1_3438f53d",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 41908,
+  "usage": {
+   "prompt_token_count": 77011,
+   "candidates_token_count": 5253,
+   "thoughts_token_count": 3994,
+   "cached_content_token_count": 58839,
+   "total_token_count": 86258
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 8289.15,
+  "blanket20_recovery_inr": -3886.77,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 42.5,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5050,
+    "candidates": 731,
+    "thoughts": 847,
+    "cached": 3820
+   },
+   "usd": 0.018282,
+   "error": null,
+   "elapsed_s": 7.14,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6841,
+    "candidates": 465,
+    "thoughts": 277,
+    "cached": 3703
+   },
+   "usd": 0.013134,
+   "error": null,
+   "elapsed_s": 3.5,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7690,
+    "candidates": 776,
+    "thoughts": 509,
+    "cached": 5462
+   },
+   "usd": 0.017299,
+   "error": null,
+   "elapsed_s": 5.6,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9185,
+    "candidates": 466,
+    "thoughts": 30,
+    "cached": 7153
+   },
+   "usd": 0.009443,
+   "error": null,
+   "elapsed_s": 2.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9788,
+    "candidates": 471,
+    "thoughts": 66,
+    "cached": 8825
+   },
+   "usd": 0.008361,
+   "error": null,
+   "elapsed_s": 2.6,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10432,
+    "candidates": 1154,
+    "thoughts": 2221,
+    "cached": 8730
+   },
+   "usd": 0.037661,
+   "error": null,
+   "elapsed_s": 12.36,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 13548,
+    "candidates": 1176,
+    "thoughts": 20,
+    "cached": 8862
+   },
+   "usd": 0.021035,
+   "error": null,
+   "elapsed_s": 4.44,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 14477,
+    "candidates": 14,
+    "thoughts": 24,
+    "cached": 12284
+   },
+   "usd": 0.006022,
+   "error": null,
+   "elapsed_s": 0.85,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.131237,
+ "tokens": {
+  "prompt": 77011,
+  "cached": 58839,
+  "candidates": 5253,
+  "thoughts": 3994
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
