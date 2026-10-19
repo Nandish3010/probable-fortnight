@@ -305,6 +305,11 @@ V3_GOLDEN = {
     "gap_quinoa_out02": ("7e57da81d59f3a10bcfe9e1934f58753ff0d4b0d5ec1d931c86a68f4bb2305df", "4d7c3ad1b15c7197f1da3a191dc3de5b33db34c996f490d4017658170ab9a91d", ["estimate_outcomes", "propose_play"], 1),
     "gap_tea_ds04": ("318c5e455bc2b6e0a6027e8e390ce71150707bd3910a96f2c3de0b0487e27f81", "216c91e062d645086eb03d6c53a173b7fbeb2f5a407aac2303a9836bbb0379ba", ["estimate_outcomes", "propose_play"], 1),
 }
+# The generated tenant differs by a float between Python 3.11 (CI) and 3.13 (kaju's blanket markdown: 1192.32 vs 1193.04),
+# so kaju also has a 3.11 pair, taken from the same v3 code on 3.11-generated data.
+V3_GOLDEN_ALT = {
+    "gap_kaju_ds01": ("2f92c2ecef425c9bceb3ddc8918018afc0f65934976fbe92d95929b74aadbff3", "9afa78797d140cb824f7da229aebb8bb2aa45c56c1a977216e55a915b37917d2"),
+}
 
 
 def test_stub_runs_on_the_full_play_path_are_byte_identical_to_v3(sandbox, monkeypatch):
@@ -323,5 +328,5 @@ def test_stub_runs_on_the_full_play_path_are_byte_identical_to_v3(sandbox, monke
         out = _run(sandbox, gap_id)
         calls = [(e["function_call"]["name"], e["function_call"]["args"]) for e in out["events"] if e.get("function_call")]
         assert [c[0] for c in calls] == tools and out["iterations"] == iterations, gap_id
-        assert h([c[1] for c in calls if c[0] == "propose_play"]) == args_hash, gap_id
-        assert h(out["play"]) == play_hash, gap_id
+        got = (h(out["play"]), h([c[1] for c in calls if c[0] == "propose_play"]))
+        assert got in {(play_hash, args_hash), V3_GOLDEN_ALT.get(gap_id)}, gap_id
