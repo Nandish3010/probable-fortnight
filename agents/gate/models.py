@@ -19,8 +19,9 @@ Objective = Literal[
 DeadlineType = Literal["online_sellby", "expiry", "lead_time"]
 Mechanic = Literal[
     "bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge",
-    "coupon", "outlet_markdown", "transfer_plus_nudge",
+    "coupon", "outlet_markdown", "transfer_plus_nudge", "markdown",
 ]
+Measurement = Literal["holdout_customers", "holdout_nodes", "none"]
 Channel = Literal["web_chat", "app_push", "outlet"]
 CopyStatus = Literal["pending", "generated", "validated", "rejected"]
 GuardrailRule = Literal[
@@ -39,7 +40,7 @@ GapType = Literal[
 
 MECHANICS: tuple[str, ...] = (
     "bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge",
-    "coupon", "outlet_markdown", "transfer_plus_nudge",
+    "coupon", "outlet_markdown", "transfer_plus_nudge", "markdown",
 )
 GUARDRAIL_RULES: tuple[str, ...] = (
     "margin_floor", "frequency_cap", "consent_required", "sellby_disclosure",
@@ -68,6 +69,7 @@ class MechanicParams(_Strict):
     transfer_units: int | None = Field(default=None, ge=0)
     preorder_eta_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     markdown_pct: float | None = Field(default=None, ge=0, le=100)
+    end_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class AudienceFilters(_Strict):
@@ -128,6 +130,13 @@ class Holdout(_Strict):
     fraction: float = Field(ge=0.05, le=0.9)
     seed: str = Field(min_length=4)
     min_treated_n: int = Field(ge=1)
+    # How the play is measured. Omitted = "holdout_customers" (every customer-targeted play). A `markdown`
+    # cannot hold out individual customers: it is "holdout_nodes" (node_ids = the held-out nodes, target.node_ids
+    # the treated ones) when the sku is at risk at 2+ comparable nodes, else "none" with the reason, which the
+    # decision card must show.
+    measurement: Measurement | None = None
+    measurement_reason: str | None = None
+    node_ids: list[str] | None = None
 
 
 class GuardrailResult(_Strict):

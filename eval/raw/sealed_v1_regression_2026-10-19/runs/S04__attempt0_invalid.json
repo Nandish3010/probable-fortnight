@@ -1,0 +1,930 @@
+{
+ "scenario_id": "S04",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_6b6143e742",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:14:44Z",
+ "tag": "S04__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "objective": "clear_expiry",
+  "mechanic": "bundle",
+  "window": {
+   "end": "2026-09-23T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "gap_id": "gap_6b6143e742",
+  "rationale": "This play addresses the expiry risk of cheese slices at Outlet 04 by bundling them with milk bread. The bundle is priced to maintain a margin above the category floor. This targeted play is expected to recover more value than doing nothing or applying a blanket markdown. The copy will disclose the best-before date to customers. A holdout is included to measure the play's performance.",
+  "audience": {
+   "purpose": "marketing",
+   "filters": {},
+   "size_before_consent": 377,
+   "segment_ids": [
+    "seg_5",
+    "seg_2",
+    "seg_6",
+    "seg_3",
+    "seg_1",
+    "seg_4"
+   ],
+   "size_after_consent": 322
+  },
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_6b6143e742"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 10.67% (net price 250.00, cost 223.32) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 322 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 377 -> 322"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CHEESE-SLICES-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CHEESE-SLICES-200G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 4366.82,
+   "blanket_markdown_inr": 2934.84,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 773.72
+  },
+  "channel": "web_chat",
+  "alternatives": [
+   {
+    "expected_units": 29,
+    "expected_margin_inr": 461.68,
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "rejected_because": "lower expected margin than bundle play",
+    "mechanic": "outlet_markdown"
+   },
+   {
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": -1005.74,
+    "rejected_because": "negative expected margin",
+    "expected_units": 29
+   }
+  ],
+  "play_id": "play_6b6143e742_v1",
+  "target": {
+   "sku": "SKU-CHEESE-SLICES-200G",
+   "units": 29,
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-23",
+   "batch_ids": [
+    "B-CHEESE-SLICES-200G-OUT-04-01"
+   ],
+   "node_ids": [
+    "OUT-04"
+   ]
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_6b6143e742_v1",
+   "min_treated_n": 20
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-MILK-BREAD-400G",
+   "bundle_price": 250
+  },
+  "expected_outcome": {
+   "units": 29.0,
+   "margin_inr": 773.72,
+   "waste_avoided_inr": 4366.82,
+   "discount_cost_inr": 725.0,
+   "ci_low": 1.56,
+   "ci_high": 84.6,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_6b6143e742_v1_ecb21185",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 41.86,
+   "pct_of_rupees_at_stake": 1.049
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 5140.54,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_price": 250,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "audience": {
+     "size_before_consent": 377,
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ],
+     "size_after_consent": 322
+    },
+    "holdout": {
+     "seed": "seed-play_6b6143e742_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "expiry_writeoff",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ],
+     "units": 29,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23"
+    },
+    "gap_id": "gap_6b6143e742",
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_6b6143e742_v1"
+    },
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "size_after_consent": 322,
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ],
+     "size_before_consent": 377
+    },
+    "gap_id": "gap_6b6143e742",
+    "objective": "expiry_writeoff",
+    "target": {
+     "units": 29,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_6b6143e742_v1",
+     "fraction": 0.1
+    },
+    "objective": "expiry_writeoff",
+    "audience": {
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 0
+    },
+    "gap_id": "gap_6b6143e742",
+    "mechanic": "markdown",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ],
+     "units": 29,
+     "node_ids": [
+      "OUT-04"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "objective": "expiry_writeoff",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "alternatives": [
+     {
+      "expected_units": 29,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "rejected_because": "lower expected margin than bundle play",
+      "mechanic": "outlet_markdown",
+      "expected_margin_inr": 461.68
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -1005.74,
+      "mechanic": "markdown",
+      "rejected_because": "negative expected margin",
+      "expected_units": 29
+     }
+    ],
+    "counterfactuals": {
+     "play_net_inr": 773.72,
+     "do_nothing_inr": 4366.82,
+     "blanket_markdown_inr": 2934.84,
+     "blanket_markdown_pct": 20
+    },
+    "guardrails": [],
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "gap_id": "gap_6b6143e742",
+    "play_id": "play_6b6143e742_v1",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-23",
+     "units": 29,
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "margin_inr": 773.72,
+     "ci_high": 84.6,
+     "prior_n": 20,
+     "discount_cost_inr": 725,
+     "measured_n": 0,
+     "waste_avoided_inr": 4366.82,
+     "units": 29,
+     "ci_low": 1.56
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_6b6143e742_v1"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 250
+    },
+    "citations": [
+     {
+      "ref": "gap_6b6143e742",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "audience": {
+     "size_before_consent": 377,
+     "purpose": "marketing",
+     "size_after_consent": 322,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 4366.82,
+     "play_net_inr": 773.72,
+     "blanket_markdown_inr": 2934.84
+    },
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than bundle play",
+      "expected_units": 29,
+      "expected_margin_inr": 461.68,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "mechanic": "outlet_markdown"
+     },
+     {
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -1005.74,
+      "mechanic": "markdown",
+      "rejected_because": "negative expected margin",
+      "expected_units": 29
+     }
+    ],
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 322,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ],
+     "size_before_consent": 377
+    },
+    "channel": "web_chat",
+    "expected_outcome": {
+     "units": 29,
+     "waste_avoided_inr": 4366.82,
+     "ci_high": 84.6,
+     "ci_low": 1.56,
+     "estimator_version": "est-v2",
+     "margin_inr": 773.72,
+     "discount_cost_inr": 725,
+     "prior_n": 20,
+     "measured_n": 0
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 10.67% (net price 250.00, cost 223.32) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "rule": "frequency_cap",
+      "passed": true,
+      "detail": "all 322 customers under 2 plays in 7 days"
+     },
+     {
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 377 -> 322",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-CHEESE-SLICES-200G in audience"
+     },
+     {
+      "passed": true,
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-CHEESE-SLICES-200G at OUT-04"
+     },
+     {
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_6b6143e742_v1"
+    },
+    "rationale": "This play addresses the expiry risk of cheese slices at Outlet 04 by bundling them with milk bread. The bundle is priced to maintain a margin above the category floor. This targeted play is expected to recover more value than doing nothing or applying a blanket markdown. The copy will disclose the best-before date to customers. A holdout is included to measure the play's performance.",
+    "mechanic": "bundle",
+    "citations": [
+     {
+      "ref": "gap_6b6143e742",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "target": {
+     "units": 29,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ]
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_6b6143e742",
+    "objective": "expiry_writeoff",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 250
+    },
+    "play_id": "play_6b6143e742_v1"
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "objective": "clear_expiry",
+    "mechanic": "bundle",
+    "window": {
+     "end": "2026-09-23T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "gap_id": "gap_6b6143e742",
+    "rationale": "This play addresses the expiry risk of cheese slices at Outlet 04 by bundling them with milk bread. The bundle is priced to maintain a margin above the category floor. This targeted play is expected to recover more value than doing nothing or applying a blanket markdown. The copy will disclose the best-before date to customers. A holdout is included to measure the play's performance.",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 377,
+     "segment_ids": [
+      "seg_5",
+      "seg_2",
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ],
+     "size_after_consent": 322
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_6b6143e742"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 10.67% (net price 250.00, cost 223.32) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 322 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 377 -> 322",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-CHEESE-SLICES-200G in audience"
+     },
+     {
+      "detail": "no stockout gap for SKU-CHEESE-SLICES-200G at OUT-04",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+     }
+    ],
+    "counterfactuals": {
+     "do_nothing_inr": 4366.82,
+     "play_net_inr": 773.72,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 2934.84
+    },
+    "channel": "web_chat",
+    "alternatives": [
+     {
+      "expected_units": 29,
+      "expected_margin_inr": 461.68,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "rejected_because": "lower expected margin than bundle play",
+      "mechanic": "outlet_markdown"
+     },
+     {
+      "mechanic": "markdown",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -1005.74,
+      "rejected_because": "negative expected margin",
+      "expected_units": 29
+     }
+    ],
+    "play_id": "play_6b6143e742_v1",
+    "target": {
+     "sku": "SKU-CHEESE-SLICES-200G",
+     "units": 29,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-23",
+     "batch_ids": [
+      "B-CHEESE-SLICES-200G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_6b6143e742_v1",
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 250
+    },
+    "expected_outcome": {
+     "ci_low": 1.56,
+     "units": 29,
+     "waste_avoided_inr": 4366.82,
+     "discount_cost_inr": 725,
+     "prior_n": 20,
+     "ci_high": 84.6,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "margin_inr": 773.72
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_6b6143e742_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "objective: 'expiry_writeoff' is not one of ['clear_online_sellby', 'clear_expiry', 'prevent_stockout', 'rebalance', 'revive_slow_mover']"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_6b6143e742_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 26609,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_6b6143e742_v1_ecb21185",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 26609,
+  "usage": {
+   "prompt_token_count": 33752,
+   "candidates_token_count": 3707,
+   "total_token_count": 37459,
+   "cached_content_token_count": 21039
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 4139.55,
+  "blanket20_recovery_inr": 1431.98,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 35.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 7.83,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 5030,
+    "candidates": 745,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.015675,
+   "error": null,
+   "elapsed_s": 3.8,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5976,
+    "candidates": 733,
+    "thoughts": 0,
+    "cached": 3652
+   },
+   "usd": 0.011694,
+   "error": null,
+   "elapsed_s": 3.2,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6723,
+    "candidates": 1107,
+    "thoughts": 0,
+    "cached": 5326
+   },
+   "usd": 0.014143,
+   "error": null,
+   "elapsed_s": 4.92,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7592,
+    "candidates": 1106,
+    "thoughts": 0,
+    "cached": 5218
+   },
+   "usd": 0.015727,
+   "error": null,
+   "elapsed_s": 4.35,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8431,
+    "candidates": 16,
+    "thoughts": 0,
+    "cached": 6843
+   },
+   "usd": 0.003908,
+   "error": null,
+   "elapsed_s": 1.02,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.061147,
+ "tokens": {
+  "prompt": 33752,
+  "cached": 21039,
+  "candidates": 3707,
+  "thoughts": 0
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite"
+}

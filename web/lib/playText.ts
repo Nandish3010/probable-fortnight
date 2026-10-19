@@ -91,6 +91,10 @@ export function mechanicSentence(play: Play, now?: Date): string {
       return typeof p.markdown_pct === "number"
         ? `Mark ${sku} down ${p.markdown_pct}% at ${nodes}`
         : `Mark ${sku} down at ${nodes}`;
+    case "markdown":
+      return typeof p.markdown_pct === "number"
+        ? `Cut the online price of ${sku} by ${p.markdown_pct}% at ${nodes} until its sell-by line`
+        : `Cut the online price of ${sku} at ${nodes} until its sell-by line`;
     case "preorder": {
       const eta = relativeDate(p.preorder_eta_date, now);
       return `Take pre-orders for ${sku}${eta ? `; the next stock arrives ${eta.days > 60 ? `on ${eta.long}` : eta.long}` : ""}`;
@@ -116,11 +120,20 @@ export interface AudienceEstimate {
   treated: number;
   /** "about 355 of 394 consented customers get the offer; about 39 are held back to measure the result." */
   text: string;
+  /** False for a price cut: no customer is contacted or held back. */
+  customerHoldout: boolean;
 }
 
 /** The audience before Approve. The server draws the real split on Approve (it also drops active
  * subscribers from a discount), so this is an estimate and says "about". */
 export function audienceEstimate(play: Play, fraction: number = play.holdout.fraction): AudienceEstimate {
+  const m = play.holdout.measurement;
+  if (play.mechanic === "markdown" || (m && m !== "holdout_customers")) {
+    const text = m === "holdout_nodes"
+      ? "A price cut contacts no customers; comparable stores are held back to measure the result."
+      : "A price cut contacts no customers, so this play cannot be measured against a holdout.";
+    return { consented: 0, holdout: 0, treated: 0, text, customerHoldout: false };
+  }
   const consented = play.audience.size_after_consent;
   const holdout = consented > 0 ? Math.max(1, Math.round(consented * fraction)) : 0;
   const treated = Math.max(consented - holdout, 0);
@@ -129,6 +142,7 @@ export function audienceEstimate(play: Play, fraction: number = play.holdout.fra
     holdout,
     treated,
     text: `About ${treated.toLocaleString("en-IN")} of ${consented.toLocaleString("en-IN")} consented customers get the offer; about ${holdout.toLocaleString("en-IN")} are held back to measure the result.`,
+    customerHoldout: true,
   };
 }
 

@@ -1293,3 +1293,272 @@ Goal: close the two cases still open after the 14 Oct fixes (V6, and C8's strict
 | Baseline: unmodified main | CC1, C8 | CC1 PASS 3/3; C8 as documented (the model attempts the cross-customer call 3/3; the tool refuses it, consent unchanged) | (main) |
 
 Reading it plainly. V6 is closed, with one caveat: the 0.5 threshold was chosen after seeing the frozen V6 read (0.4, no date, 3 of 3), so a V6 re-run passing is expected, not an independent test; every genuine read in the eval has product confidence 0.8 or above or a readable date. C8 stays as on main: the effect is blocked in code in every run, but the model still attempts the call. Removing the id from the model's tools made the chat worse in both attempts (a genuine stock question stopped calling the stock tool; in attempt 2 a request about another customer acted on the requester), so it was not shipped. Evidence: `eval/raw/adversarial_2026-10-16_v6_fix/` (shipped V6 rule), `eval/raw/adversarial_2026-10-16_hardening_try1/` (C8 attempt 1 and the broader V6 variant), `..._try2/`, `..._baseline/results.json`.
+
+
+## Sealed baseline eval (19 Oct 2026)
+
+Protocol, scenarios and baselines were committed and pushed before the first model call (pre-registration commit `27ad681d95ab2f737455ee9eca03499ef3594232`; `eval/sealed/PROTOCOL.md`). Raw runs, ledger and summary: `eval/raw/sealed_2026-10-19/`. Results are reported unchanged.
+
+Method in five lines:
+1. 36 gaps from a generator seed no other file uses (40617833), chosen by features, not by any answer: gap type x lot band x deadline band, 2 per cell; 21 are borrowed from neighbouring cells because the synthetic generator has no 22-40 day deadlines and almost no lots over 200 units (`eval/sealed/cell_report.json`).
+2. The real planner ran once per scenario (`gemini-3.5-flash`, prompt v7, shipped thinking settings, LoopAgent max 3, same tools, concurrency 4, spend cap USD 10).
+3. Baselines come from the product's own estimator: doing nothing (0) and the blanket 20% markdown counterfactual; recovery is "recovered versus doing nothing", as in the ₹9,191 hero.
+4. Every accepted play was re-checked with `guardrails.check`, the money invariant and the holdout audit.
+5. Two runs were INVALID (a call went to `gemini-3.5-flash-lite`); each was re-run once and both re-runs were valid. A fallback play or no play would count as not beating a baseline; there were none.
+
+| Metric | Result | Pre-registered line |
+|---|---|---|
+| PRIMARY: beats blanket 20% markdown | **29 of 36**; ₹68,846 beaten by in those 29 (net over all 36: ₹13,173) | at least 30 of 36: **MISSED by one** |
+| Beats doing nothing | 36 of 36 | reported |
+| HARD: guardrail violations reaching Approve | **0** | 0: **met** |
+| Outcomes: model-authored play / deterministic fallback / no play | 36 / 0 / 0 | reported |
+| First proposal accepted by the gate; mean iterations | 35 of 36; 1 | reported |
+| Latency p50 / p95 | 23.4 s / 38.5 s | reported |
+| Cost per scenario (valid runs) mean / max; total spend incl. the 2 INVALID attempts | USD 0.080 / 0.130; USD 3.06 of the USD 10 cap | reported |
+| Mechanic mix of accepted plays | bundle 23, transfer plus nudge 12, usual-order add-on 1 | reported |
+| SECONDARY, estimator upper bound (not a best play): accepted / upper bound, median / p10 / min | 0.747 / 0.543 / 0.335 | reported |
+
+Reading it plainly. The 7 scenarios that did not beat the blanket markdown (S07, S08, S09, S10, S26, S31, S32) are listed with their figures in `summary.md`. In 13 of the 36 scenarios the blanket-markdown baseline is negative (it gives away more than the write-off it prevents), so any positive play beats it; among the 23 scenarios with a positive baseline the planner beat it in 16. Beating doing nothing is likewise close to guaranteed by the estimator: it is 36 of 36 because each accepted play has positive projected recovery.
+
+Limits. The tenant is synthetic and the scenarios come from one seed with small lots and short deadlines. Recovery is a projection under Taal's own estimator, not a measured outcome. The estimator's response rate ignores discount depth and mechanic and credits a bundle's full price per responding unit, so a bundle out-recovers a coupon or a transfer whenever it clears the margin floor, and the oracle is only an estimator upper bound that favours a lowest-discount bundle; it is never "best possible" and ignores the tenant's soft policy text. One run per scenario, so there is no variance estimate. A smoke run of S01 (USD 0.068, valid, same model) preceded the full run and is not scored.
+
+## Sealed eval v2 and markdown option (19 Oct 2026)
+
+Label: measured. Model `gemini-3.5-flash`, prompt v8, asia-south1. Recovery is the projected recovery under Taal's own estimator (versus doing nothing) on a synthetic tenant. A fallback play or no play counts as not beating any baseline. Protocol: `eval/sealed/PROTOCOL_v2.md`. Raw files: `eval/raw/sealed_v2_2026-10-19/`, `eval/raw/sealed_v1_regression_2026-10-19/` and `..._cont/`, and v1 in `eval/raw/sealed_2026-10-19/`.
+
+### What changed in code (commit 14bcb7c)
+
+* A `markdown` mechanic: a price cut at 10, 20 or 35% on the online node, with a holdout rule for price cuts, and the scenarios are scored on a price cut with a node holdout or none.
+* One demand model (`units_sold_at_discount`, per-category elasticity from the tenant `[elasticity]` table, 4.0 in the demo tenant, the value it already used for the blanket baseline) now prices both plays and the counterfactuals, including the blanket 20% baseline.
+* A `beats_markdown` gate check: a proposed play must beat the best allowed markdown within a tolerance of max(₹500, 5% of the best markdown's recovery).
+* Planner prompt v8 (`planner.md` sha256 `f9f67cfb...ce13895`), which names the markdown option.
+* Tenant config `[markdown]` (depths 10/20/35, clearance exception off) and the v2 scenario generator `eval/sealed/make_scenarios_v2.py`.
+
+### Method
+
+* New seed 71903482, in no tracked file before the scenario file was written; 36 scenarios: 29 feature stratum (v1's gap type x lot band x deadline band cells) plus 7 markdown stratum (every pool gap where a markdown is the best baseline; the pool of 328 gaps yields 7, so the cap of 18 was not reached).
+* Pre-registration commit `df272b8` (protocol, scenarios, baselines, pass lines) was pushed before any model call; every `results.json` carries it as `meta.preregistration_commit`.
+* One run per scenario, concurrency 6, per-run deadline 120 s, harness spend cap USD 6 (v2) and USD 4 (v1 regression). INVALID (a call to any model other than `gemini-3.5-flash`, or an infra error) may be re-run once, and a scenario INVALID twice is excluded from every count.
+* v1's 36 scenarios were re-run once on the new code and prompt (regression), against v1's own frozen baselines.
+* No code, prompt, scenario or threshold changed after the first call.
+
+### Results
+
+| | v1 (19 Oct, shipped code, prompt v7) | v2 (new code, new seed, prompt v8) | v1 scenarios re-run on new code (25 + 10, see below) |
+|---|---|---|---|
+| Beats blanket 20% markdown, n/N | 29 of 36 | 24 of 35 | 30 of 35 (21 of 25, then 9 of 10) |
+| Net rupees vs blanket 20% | +₹13,172.82 | +₹70,277.20 | +₹50,477.06 (₹32,902.23 + ₹17,574.83) |
+| Rule violations reaching Approve | 0 | 0 | 0 |
+| First proposal accepted | 35 of 36 | 29 of 35 | 34 of 35 (24 of 25, 10 of 10) |
+| Valid runs, n/36 | 36/36 | 35/36 | 35/36 |
+| INVALID count (scenarios excluded after one re-run) | 0 (2 first attempts INVALID, both re-run valid) | 1 (S21); 10 first attempts INVALID | 1 (S03); 8 first attempts INVALID (7 + 1); 10 scenarios NOT RUN in the first pass (spend cap) |
+| Latency p50 / p95 | 23.4 s / 38.5 s | 41.5 s / 64.4 s | 28.2 s / 39.3 s (first 25); 37.6 s / 55.6 s (last 10) |
+| Cost: per scenario mean / max; total | $0.0802 / $0.1304; $2.8863 | $0.0993 / $0.1573; $3.4752 | $0.0881 / $0.1338; $2.2030 (first 25); $0.0872 / $0.1250; $0.8724 (last 10) |
+| Mechanic mix of accepted plays | bundle 23, transfer_plus_nudge 12, usual_order_addon 1 | bundle 23, outlet_markdown 6, markdown 4, coupon 1, transfer_plus_nudge 1 | bundle 24, outlet_markdown 7, coupon 3, markdown 1 |
+| Markdown chosen where the best baseline is a markdown, n/N | not defined (no markdown mechanic) | 4 of 7 | not computed (v1 scenarios were not tagged); markdown chosen in 1 of 35 (S31) |
+| Estimator upper-bound ratio, median / p10 / min | 0.747 / 0.543 / 0.335 (n=36) | 0.943 / 0.817 / 0.723 (n=35) | 0.880 / 0.743 / 0.614 (first 25); 1.082 / 0.797 / 0.766 (last 10) |
+
+Rupees by which it beats blanket 20% where it does: v1 ₹68,846.22; v2 ₹96,105.07. v2 net against the best blanket depth (10, 20 or 35%): +₹18,897.45. v2 by stratum: feature 20 of 28 beat blanket (net +₹65,225.83); markdown stratum 4 of 7 (net +₹5,051.37). Markdown chosen in total in v2: 4 scenarios. The upper bound is not defined the same way in v1 (best guardrail-passing candidate in the oracle grid) and in v2 (larger of the best allowed markdown and the best legal non-markdown play, `beats_markdown` off), and it is an estimator upper bound, never a best play.
+
+### Pre-registered pass lines
+
+| Line (PROTOCOL_v2.md) | Result | Met |
+|---|---|---|
+| Beats blanket 20%: at least 30 of 36 | 24 of 35 | No |
+| Net rupees vs blanket 20% above 0 | +₹70,277.20 | Yes |
+| Markdown where the best baseline is a markdown: at least 5 of 7 | 4 of 7 | No |
+| HARD: 0 violations reaching Approve | 0 | Yes |
+| Regression: at least 29 of 36 beat blanket 20% | 30 of 35 valid (S03 INVALID twice, 21 of 25 in the first pass) | Yes on 35 valid, with the caveat below |
+| Regression: net vs blanket 20% at or above v1's +₹13,172.82 | +₹50,477.06 | Yes |
+| Regression: 0 violations | 0 | Yes |
+
+Two of the three v2 performance lines were not met. They are reported as missed and the thresholds were not changed.
+
+### Reading it plainly
+
+* Beats-blanket is not comparable across v1 and v2. The new demand model also changes the blanket 20% baseline itself (it now prices the counterfactual with the same elasticity as the plays), and the v2 seed adds a markdown stratum of 7 scenarios where a markdown is the best baseline by construction. The ratio of 24 of 35 against 29 of 36 therefore does not show a decline in the planner; it also shows a harder baseline in places. The regression run, which holds the scenarios fixed, gives 30 of 35 against v1's 29 of 36.
+* Net rupees vs blanket is the more comparable figure and it rose: +₹70,277.20 in v2, +₹50,477.06 on the v1 scenarios (against +₹13,172.82 in v1). It is still a projection under the same estimator on both sides.
+* Latency roughly doubled between v1 and v2 (p50 23.4 s to 41.5 s, p95 38.5 s to 64.4 s). The regression run on v1 scenarios sits in between (p50 28.2 s and 37.6 s in its two parts), and its two parts used different concurrency (6 and 3).
+* Invalid runs. Almost all were the same cause: 16 of the 18 first-attempt INVALIDs in v2 and the regression (10 + 7 + 1) were a call requested to `gemini-3.5-flash-lite`, and two were infra errors in the regression. v2 had 10 first-attempt INVALIDs, of which 9 re-ran valid and S21 was INVALID twice and excluded. The regression had 7 in its first part (S03 INVALID twice and excluded, 6 re-ran valid) and 1 in the continuation (S32, re-ran valid). The protocol says that more than 6 INVALID runs stops the run. If that is counted by first attempts, both v2 (10) and the regression (7 + 1) went past it and the harness did not stop; if it is counted by scenarios left INVALID after the one re-run, both stayed under it (1 each). The protocol text does not say which. We report both readings.
+* The `_cont` folder is not covered by the one-re-run rule. That rule only allows a re-run of an INVALID run. The first regression pass stopped at 25 valid because the harness reserve rule (spent USD 2.29 plus reserved USD 1.50 plus USD 0.30 would pass the USD 4 cap) left S27 to S36 NOT RUN. `_cont` then ran those 10 scenarios (same code, prompt, scenario and baseline files, same pre-registration commit, but a new cap of USD 2.5 and concurrency 3). The protocol sets the cap at USD 4 for the regression and says NOT RUN scenarios are reported; it does not provide for running them afterwards. Total spend of both parts, USD 3.6788, stays under USD 4, and nothing about the code or scoring changed, but this is a continuation that goes beyond the protocol as written, and the combined 35-scenario figures are ours to add together, not a single harness run.
+* Markdown is now chosen in 4 of 35 valid v2 scenarios (all 4 in the markdown stratum, none in the feature stratum) and in 1 of 35 on the v1 scenarios. One of the four, S33, still lost to the blanket 20% baseline (₹13,951.14 against ₹18,387.26).
+
+### Limits
+
+* Synthetic tenant and one seed per eval; one run per scenario, so no variance estimate.
+* Recovery is projected under Taal's own est-v2 estimator, and the baselines and the planner share it; this is not a real-world outcome.
+* Elasticity is assumed (default 1.0 per category in the code, 4.0 in the pre-registered tenant config), not measured; the beats-blanket result moves with it.
+* The `markdown` mechanic is scored on a price cut with a node holdout or none, which this eval cannot measure.
+* The combined regression figures add two runs with different concurrency and cap.
+
+Diagnosis and fixes follow in the v3 section (pre-registered separately).
+
+## Sealed eval v2: diagnosis (19 Oct 2026)
+
+Written from the raw runs of v1, v2 and the v1 regression (`runs/*.json`, `model_calls.jsonl`), before any code change. Method: count, per run, model calls, drafts, `propose_play` verdicts and tokens from the committed files. Nothing was re-run.
+
+**a. INVALID runs and the 429 failover.** All 10 first-attempt INVALIDs in v2, 5 of 7 in the v1 regression and the single one in its continuation have the same cause: a call answered with HTTP 429 (RESOURCE_EXHAUSTED) on `gemini-3.5-flash`, after which the SDK's fallback model sent the retry to `gemini-3.5-flash-lite`, which the protocol marks INVALID (v2: 14 failed calls and 14 flash-lite calls of 301; regression: 6 of 184). The other 2 regression INVALIDs are not model related: `CalledProcessError` from two scenarios generating the same v1 tenant at the same moment (a harness race). Cause of the 429s: concurrency. v1 ran at 4 with nothing else running (2 failovers in 196 calls); v2 and the regression ran at 6 each, with the evalset recording (4) at the same time, so up to 16 calls were in flight against one quota. Every INVALID re-ran valid except S21 in v2 and S03 in the regression (INVALID twice, excluded). The "11 of 36" in the regression are S03 plus the 10 scenarios the harness did not start (NOT RUN: its cap check reserves USD 0.30 per run in flight, 6 runs, USD 1.80, against USD 2.29 spent of a USD 4 cap); those 10 were run afterwards as a continuation (`..._cont/`, cap USD 2.5, concurrency 3, S32 INVALID once then valid), which stays inside the one-re-run rule but was not in the pre-registered plan.
+
+**b. Latency (v2 p50 41.5 s against 23.4 s in v1).**
+
+| Per valid run, mean | v1 | v2 | v1 regression |
+|---|---|---|---|
+| p50 wall time (s) | 23.4 | 41.5 | 31.8 |
+| Model calls | 5.1 | 6.1 | 5.6 |
+| Prompt tokens (all calls) | 37,911 | 52,794 | 46,157 |
+| Thinking tokens | 2,587 | 3,292 | 2,690 |
+| Drafts sent to the estimator | 5.4 | 7.9 | 7.1 |
+| `propose_play` attempts | 1.03 | 1.17 | 1.03 |
+| Time inside model calls (s) | 25.3 | 36.3 | 29.4 |
+
+`beats_markdown` caused no latency: it rejected no proposal in any v2 run. The 6 first-proposal rejections in v2 were schema or citation errors (S05 and S17 missing a required field, S08 missing four estimate fields, S11 and S26 an `outcome:<rupee figure>` citation that does not resolve, S33 one uncited figure). What grew is the input: the best-markdown reference was attached to every `estimate_outcomes` result (and so carried through every later call), the prompt asks for a markdown draft too (7.9 drafts against 5.4), and thinking tokens rose 27%. Latency is turns, not iterations: every v2 run had one planner iteration but 4 to 9 sequential model turns (median 6, about 6 s each, the propose turn that writes the play JSON the slowest). The same code and prompt in the regression, with less load, ran at p50 31.8 s: roughly 9 s of the v2 figure is, by inference, contention and 429 back-off, the rest is the larger input and the extra turn.
+
+**c. The scenarios that lost to the blanket 20% markdown (v2: 11 of 35).** The blanket 20% figure is not a play the tenant could run: a 20% cut is below the category margin floor in 36 of 36 scenarios of v2 (and of v1). Every one of the 11 falls in one of three groups. In 10 of the 11 the blanket 20% figure is above the model-free upper bound itself (S07, S08, S13, S14, S24, S27, S28, S29, S31, S33), so no legal play could beat it. The gate was lenient in three runs, which an independent review of the raw runs found and this section first got wrong: the tolerance of max(INR 500, 5%) let S31 (744 against 814 for the best allowed markdown), S34 (837 against 903) and S36 (4,861 against 4,940) through below the best allowed markdown. Only S34 matters for the headline: the 10% markdown (903) would have beaten its blanket figure (845).
+
+| Scenario | Accepted play | Recovery | Blanket 20% | Best allowed markdown | Why not rejected / why it loses |
+|---|---|---|---|---|---|
+| S07, S08, S14 | outlet_markdown | 2,219 / 736 / 664 | 2,478 / 921 / 877 | none (outlet lot: `markdown` is an online mechanic) | check not applicable; only a floor-legal 10% outlet cut exists, below the illegal 20% figure |
+| S13 | bundle | 2,071 | 2,455 | none (outlet lot) | same |
+| S24, S27, S28 | bundle | 4,579 / 3,435 / 2,840 | 6,519 / 11,825 / 12,008 | none (no depth clears the floor) | no legal markdown exists to compare with; the baseline is a floor-illegal action |
+| S29 | coupon | 1,107 | 1,291 | 10%: 749 | play is above the best allowed markdown |
+| S31 | bundle | 744 | 1,404 | 10%: 814 | gap 70, inside the INR 500 tolerance |
+| S33 | markdown | 13,951 | 18,387 | 10%: 13,951 | the planner chose the best allowed markdown; the 20% figure is illegal |
+| S34 | bundle | 837 | 845 | 10%: 903 | gap 66, inside the tolerance |
+
+The blanket counterfactual is also valued differently from a play (estimator, `counterfactuals()`): it counts the units it clears at unit cost and subtracts the discount on the baseline units, where a play counts its units at net price; it is priced as an online cut even for the lots past their online sell-by (S01 to S18 of v2) and at 20%, which clears the margin floor in none of the 36. It is kept as v1 defined it and disclosed, not redefined afterwards. Net rupees against it, both readings: INR 70,277 raw, INR 34,349 with a loss-making blanket counted as 0. So: the "markdown scored differently from the blanket" suspicion is partly right (the blanket counterfactual does not count the margin on the extra units and ignores the floor) but it works in the planner's favour, never against it; the 3-iteration loop was not exhausted (mean iterations 1). The ceiling is structural: in v2 26 of 36 scenarios have a legal play above the blanket 20% figure at all, and the planner beat it in 24 of the 25 of those that ran valid; against the best floor-legal blanket depth it won 35 of 35. Making the gate compare with the blanket 20% figure would reject every accepted play in these 11 scenarios and leave nothing to propose, because the clearance exception (the only way a deeper cut becomes legal) is off in the tenant config and is a safety rule this branch does not touch.
+
+**Fixes, only what the diagnosis supports.** (1) Harness: concurrency default 3; a 429 is retried with back-off (up to 4 tries) before the SDK fails over; each tenant is built once before the runs. (2) `estimate_outcomes` states the markdown reference once, in the first result. (3) Prompt v9: reference-once note; a citation ref is an id, never a rupee figure. (4) The gate message for an outlet lot no longer says "past its online sell-by". Not changed, with the reason: the comparison with the blanket figure (it would reject every accepted play in the 10 unreachable losses), the guardrails, the estimator. The tolerance (S31, S34, S36 above) was left at max(INR 500, 5%) for v3, a pre-registered setting; a tighter one is the follow-up, not part of this branch. Test added: a play below the blanket 20% figure is rejected whenever 20% is legal (`tests/unit/test_markdown_option.py`).
+
+## Sealed eval v3 and side by side (19 Oct 2026)
+
+Label: measured. Model `gemini-3.5-flash`, prompt v9, asia-south1, concurrency 3, retry on 429 up to 4 times, one run per scenario, USD 8 cap. Protocol `eval/sealed/PROTOCOL_v3.md`, pre-registration commit `76de6e2493e60d0569b72ce064a4ca0d821f7f49` (pushed before the first v3 call; also `meta.preregistration_commit`). Raw files: `eval/raw/sealed_v3_2026-10-19/` (`metrics_recomputed.json` holds the legal-baseline block, see "Reporting bug" below). New seed 53718294 (36 scenarios: 15 where a markdown is the best baseline, 21 by v1's cell rule, 11 borrowed). Recovery is a projection under Taal's own estimator on a synthetic tenant, not a measured outcome. The v3 code is the pre-registered commit; nothing in it changed after the first call.
+
+### Pre-registered lines, as stated and as reached
+
+| Line (PROTOCOL_v3.md section 3) | Result | Verdict |
+|---|---|---|
+| PRIMARY: beats blanket 20% among the 18 ceiling scenarios, at least 15 | **17 of 18** (the one miss, S11, bundle 1,719 against 2,323; upper bound 2,373) | **met** |
+| Beats the best margin-floor-legal blanket depth, at least 34 of 36 | **35 of 36** | **met** |
+| Net rupees vs blanket 20%, above 0 | **INR -10,320** (INR -24,364 with a loss-making blanket counted as 0) | **MISSED** |
+| Markdown where the best baseline is a markdown, at least 10 of 15 | **14 of 15** | **met** |
+| HARD: violations reaching Approve, 0 | **0** | **met** |
+| Valid runs, at least 34 of 36 | **36 of 36** (no failed call, no 429, no INVALID attempt) | **met** |
+| Planner latency p50, at most 30 s | **31.3 s** (p95 42.3 s) | **MISSED by 1.3 s** |
+
+Beats blanket 20% on all 36: **17 of 36**; the ceiling (scenarios where any legal play can beat it) is 18 of 36, and the 20% cut is below the margin floor in all 36. First proposal accepted 32 of 36; one planner iteration each; mean 6.1 model calls and 51,097 prompt tokens per run. Accepted mechanics: markdown 14, bundle 16, outlet markdown 4, transfer plus nudge 2; 36 model-authored, none fallback. Cost USD 0.094 per scenario, USD 3.37 in total. Upper-bound capture median 0.998, p10 0.653, min 0.507.
+
+Why the net line was missed: the 15 markdown-stratum scenarios carry blanket 20% figures of INR 2,600 to 15,900 (eight above INR 10,000) that no legal play reaches (the 20% cut is illegal everywhere); the planner chose the allowed markdown in 14 of them and lost INR 28,169 to the illegal baseline there, while the other 21 scenarios net INR +17,850. Reading the net against the best legal blanket depth instead, the planner was ahead in 35 of 36. The net line was set against a baseline that cannot be run, which the protocol states; it is reported as missed, not redefined.
+
+### v1, v2, v3 and the regression side by side
+
+| | v1 (shipped code, prompt v7, seed 40617833) | v2 (markdown option, prompt v8, seed 71903482) | v3 (v2 plus the diagnosis fixes, prompt v9, seed 53718294) | v1 scenarios on the v2 code (25 + 10) |
+|---|---|---|---|---|
+| Beats blanket 20%, all scenarios | 29 of 36 | 24 of 35 | 17 of 36 | 30 of 35 |
+| Ceiling (a legal play can beat it) | not computed | 26 of 36 (25 valid) | 18 of 36 | not computed |
+| Beaten among the ceiling scenarios | not computed | 24 of 25 | 17 of 18 | not computed |
+| Beats the best margin-floor-legal blanket | not computed | 35 of 35 | 35 of 36 | not computed |
+| Net rupees vs blanket 20%, raw | +13,173 | +70,277 | -10,320 | +50,477 |
+| Net rupees, loss-making blanket counted as 0 | -12,049 | +34,349 | -24,364 | +25,255 |
+| Markdown chosen where the best baseline is a markdown | 0 (no markdown mechanic) | 4 of 7 | 14 of 15 | n/a |
+| Mechanic mix | bundle 23, transfer 12, add-on 1 | bundle 23, outlet markdown 6, markdown 4, coupon 1, transfer 1 | bundle 16, markdown 14, outlet markdown 4, transfer 2 | bundle 24, outlet markdown 7, coupon 3, markdown 1 |
+| Violations reaching Approve | 0 | 0 | 0 | 0 |
+| First proposal accepted | 35 of 36 | 29 of 35 | 32 of 36 | 34 of 35 |
+| Latency p50 / p95 (s) | 23.4 / 38.5 | 41.5 / 64.4 | 31.3 / 42.3 | 28.2 / 39.3 (25), 37.6 / 55.6 (10) |
+| Valid runs | 36 of 36 (2 INVALID, re-run valid) | 35 of 36 (10 INVALID attempts, S21 twice) | 36 of 36 (0 INVALID) | 35 of 36 (S03 twice), plus 10 NOT RUN completed in a continuation |
+| Spend (USD) | 3.06 | 4.43 | 3.37 | 2.72 + 0.96 |
+
+Not comparable across columns: each column is a different seed or scenario set, and v1 had no markdown option, so the markdown rows and the net rows move with what the seed contains. The regression column is the like-for-like check on v1's own scenarios: 30 of 35 against 29 of 36 and net +50,477 against +13,173, with 0 violations. The v1 regression's continuation (`..._cont/`, S27 to S36, cap USD 2.5, concurrency 3) stayed within the one-re-run rule: one INVALID attempt (S32, a 429 failover), re-run once, valid; the other nine ran once. It was not in the pre-registered plan (the USD 4 reserve rule had left them NOT RUN) and is labelled as such.
+
+### Disclosures
+
+* **Reporting bug.** `harness/sealed_eval.py` overwrote its own v3 block (legal-blanket, ceiling) in `results.json` and `summary.md`; no run, call or other metric was affected. The block was recomputed from the committed `runs/*.json` into `metrics_recomputed.json`; the one-line fix is not on this branch (code freeze).
+* **Elasticity is an assumption.** The est-v2 demand model uses 4.0 for every category (the demo tenant's existing value, now in `[elasticity]`). Plays and baselines share it; a sensitivity re-score at 1.0 and 2.0 was not run on this branch.
+* **The `markdown` play cannot be measured here.** Its node holdout, or its absence, is the stated measurement (`holdout.measurement`); the decision-card web change to show "this play cannot be measured against a holdout" is not made (web/ is outside this branch), see the PR notes.
+* **Blanket 20% is the v1 definition,** floor-illegal in all 36 scenarios of every set here and valued differently from a play (see the diagnosis); kept for comparability, not endorsed.
+* **What is not claimed.** A markdown can now be chosen and is chosen where it is the best allowed play; that is not a claim that the planner is optimal, and the results are projected under the planner's own estimator.
+
+### Demo checks on the v3 code (local API, vertex backend, key via environment variable only)
+
+Local `services.api.main` with `TAAL_MODEL_BACKEND=vertex`, `TAAL_PLANNER_DEADLINE_S=90` (the deployed value), the committed demo tenant, `POST /rerun` as the Plan live button does, three runs per gap, `eval/raw/plan_live_latency_2026-10-19.json`:
+
+| Gap | Run 1 | Run 2 | Run 3 | Source | Mechanic chosen |
+|---|---|---|---|---|---|
+| Tea (`gap_tea_ds04`) | 30.1 s | 30.2 s | 28.2 s | model, 3 of 3 | transfer plus nudge, 3 of 3 (margin INR 9,191.29, 9,191.29, 9,716.02: a live re-plan varies the transfer units, as in every earlier take) |
+| Quinoa (`gap_quinoa_out02`) | 18.1 s | 16.1 s | 20.2 s | model, 3 of 3 | outlet markdown 2, coupon 1 |
+
+All six ran on the model (none fell back) in 16 to 30 s, against the smoke's 120 s limit. (An earlier attempt with the default 8 s deadline fell back to the deterministic draft in 10 s, which is that deadline working, not the model.) `POST /approve` on the recorded Tea play gave 355 treated, 39 held out, copy source existing, 0.45 s; the play reads transfer plus nudge, margin INR 9,191.29, recovered versus doing nothing INR 9,191.29, blanket 20% markdown INR 32,015.18, beat over the blanket INR 6,186.47: unchanged from the committed recording (a transfer has no discount, so the est-v2 demand model leaves it alone; `tests/unit/test_markdown_option.py::test_tea_hero_play_is_unchanged`).
+
+### Evalsets re-recorded
+
+`make planner-traces` re-recorded the 46 evalset gaps on prompt v8 (`eval/raw/planner_traces_2026-10-19/`, 4 of 50 selected gaps errored, as 4 had not been recorded on 14 Oct either; projected cost USD 4.16), and `harness.build_fixtures --evalsets-from-traces` rebuilt `agents/planner/evalsets/`. Before (14 Oct, v7) and after (19 Oct, v8, on 46 recorded gaps): first proposal accepted 37 and 38 of 46; model-authored 46 and 46; mean iterations 1.0 and 1.0; p50 latency 21.8 s and 31.2 s, p95 33.9 s and 47.4 s; mechanic mix transfer plus nudge 21 and 3, bundle 16 and 30, preorder 5 and 5, outlet markdown 3 and 4, coupon 1 and 4, markdown 0 and 0. The planner now prefers bundles because est-v2 scales a targeted offer's units with its discount depth, which the old estimator did not. `make eval` on the stub backend replays the new recordings: every case passes. The live scoring of a fresh run against the new recordings was not run (budget), and the 14 Oct figures keep their own snapshot (`eval/raw/live_eval_2026-10-14/recordings_2026-10-14_tools.json`) so `tests/unit/test_first_attempt_acceptance.py` still reproduces them. The Tea and Quinoa recordings: Tea unchanged (transfer plus nudge, INR 9,191.29); Quinoa now a transfer (INR 3,125.40 recovered) where the 14 Oct run was a bundle.
+
+## Sealed eval v4 (19 Oct 2026): fewer model turns, a visible gate, a tighter tolerance
+
+Label: measured. Model `gemini-3.5-flash`, asia-south1, prompt v10 (`planner.md` sha256 `285598fd...d1700a4`). Recovery is the projected recovery under Taal's own estimator (versus doing nothing) on a synthetic tenant, not a real-world outcome. Protocol: `eval/sealed/PROTOCOL_v4.md`, pre-registered and pushed at commit `2203349` BEFORE the first test call (it is `meta.preregistration_commit` in the results). Raw files: `eval/raw/sealed_v4_2026-10-19/` (test), `eval/raw/sealed_v4_dev_1..3/` (dev), `eval/raw/sealed_v4_live_2026-10-19.json` (live checks).
+
+### What changed (v3 to v4)
+
+* `estimate_outcomes` returns per draft a `choice_index`, a `gate` verdict (the eight guardrails and `beats_markdown`) and a `reach` figure (consented customers in the draft against all of them); `propose_play` takes `choice_index` and code assembles the play JSON from the estimated draft, so the model no longer writes about 1,200 output tokens of play. The full-play path is unchanged and a test compares five stub runs with the v3 code byte for byte. `check_guardrails` leaves the prompt (it was not in `REQUIRED_ORDER` in v3 either).
+* `beats_markdown` tolerance max(INR 50, 2%) (v3: max(500, 5%)).
+* Failover: flash asia-south1, flash global, flash-lite; harness backoff kept; live backoff 1 s + 2 s, 3 s cap; tested with a fake 429.
+* The code never picks a candidate and nothing is counted as a model play unless the model's `propose_play` was accepted.
+
+### Dev set (tuned on; NOT an independent test)
+
+20 cases from the v2 and v3 scenarios: 14 losses found by `eval/sealed/v4/loss_analysis.md` (27 of 71 recorded plays lost to the best legal alternative or captured under 0.9 of the upper bound; 24 were legal non-markdown plays below the oracle's best (bundle 13, outlet markdown 7, transfer 3, coupon 1; in the cases inspected the draft covered only 207 of 317 or 296 of 334 consented customers, i.e. it left segments out); 3 were plays below the best markdown that the old tolerance let through; 20 of the blanket losses were scenarios where no legal play can beat the floor-illegal blanket) plus 6 control wins. Before = the recorded v2/v3 run of the same scenario.
+
+| Round | Change | Fixed of 14 | Controls kept of 6 | Mean calls | Mean prompt tokens | p50 / p95 | Spend |
+|---|---|---|---|---|---|---|---|
+| recorded v3 | (v2/v3 code) | 0 | 6 | 6.06 | 51,097 | 31.3 / 42.3 s | |
+| dev 1 | turns, gate in estimate, choice_index, tolerance, failover | 2 | 4 (D15, D16 worse) | 4.05 | 22,953 | 14.5 / 26.4 s | $0.69 |
+| dev 2 | + `reach` in the estimate and the prompt line to list every segment | 10 | 6 | 3.95 | 22,579 | 16.7 / 22.3 s | $0.67 |
+| dev 3 | dev 2 + thinking `minimal` on routing turns | 8 | 6 | 4.05 | 21,040 | 20.6 / 26.3 s | $0.50 |
+
+Dev 3 was worse on decisions and not faster, so it was reverted (thinking stays low / low). Dev 2 is the frozen code. The four losses still open in dev 2 (D01, D02, D04, D05) are bundles whose partner or price differs from the oracle's, where the estimator ignores discount depth; they were not tuned further. Dev spend $1.86 of a $5 cap.
+
+### Test (independent: seed 86213547, 36 scenarios, run once, pre-registered)
+
+| | v1 (shipped code, own seed) | v2 (own seed) | v3 (own seed) | **v4 (fresh seed)** |
+|---|---|---|---|---|
+| Beats blanket 20%, n / valid | 29 / 36 | 24 / 35 | 17 / 36 | **19 / 36** |
+| Against the ceiling (scenarios where a legal play can beat blanket 20%) | n/a | 24 / 25 valid | 17 / 18 | **19 / 19** |
+| Net vs blanket 20%, raw | +13,172.82 | +70,277.20 | -10,319.64 | **+41,995.32** |
+| Net vs blanket 20%, loss-making blanket counted as 0 | n/a | n/a | -24,363.71 | **+28,381.60** |
+| Violations reaching Approve | 0 | 0 | 0 | **0** |
+| Valid runs | 36 / 36 | 35 / 36 | 36 / 36 | **36 / 36** |
+| Latency p50 / p95 | 23.4 / 38.5 s | 41.5 / 64.4 s | 31.3 / 42.3 s | **13.9 / 21.2 s** |
+| Model calls per run (mean) | n/a | 6 (median) | 6.06 | **4.0 (3 to 7)** |
+| Prompt tokens per run (mean) | n/a | n/a | 51,097 | **23,332** |
+| Cost per scenario (mean) / total | $0.080 / $2.89 | $0.099 / $3.48 | $0.094 / $3.37 | **$0.034 / $1.23** |
+| First proposal accepted | 35 / 36 | 29 / 35 | 32 / 36 | **35 / 36** |
+| Markdown where the best baseline is a markdown | n/a | 4 / 7 | 14 / 15 | **8 / 9** |
+| Beats the best margin-floor-legal blanket | n/a | n/a | 35 / 36 | **36 / 36** |
+| Upper-bound capture median / min | 0.747 / 0.335 | 0.943 / 0.723 | 0.998 / 0.507 | **0.980 / 0.818** |
+| Mechanic mix | bundle 23, transfer 12, add-on 1 | bundle 23, outlet 6, markdown 4, coupon 1, transfer 1 | bundle 16, markdown 14, outlet 4, transfer 2 | bundle 28, markdown 8 |
+
+The four generations used four different seeds, so the columns are not paired and the net-rupee rows depend on the scenarios (v4's seed has a markdown stratum of 9, v3's of 15). The paired comparison is the dev set, which was tuned on and proves nothing independent.
+
+### Pre-registered pass lines (PROTOCOL_v4.md)
+
+| Line | Result | Met |
+|---|---|---|
+| Latency p50 at most 25 s | 13.9 s | Yes |
+| Valid runs at least 34 of 36 | 36 of 36 (no INVALID attempt, 0 failed calls, all 144 calls to `gemini-3.5-flash`) | Yes |
+| HARD: 0 violations at Approve | 0 | Yes |
+| Beats blanket within 1 of the ceiling (at least 18 of 19) | 19 of 19 | Yes |
+| Net vs max(0, blanket 20%) above 0 | +INR 28,381.60 | Yes |
+
+### Live checks on the v4 code (local API, real model, `eval/raw/sealed_v4_live_2026-10-19.json`)
+
+* Plan live, Tea gap, 3 runs: status done, `planner_source=model` (`live_gemini`) each time, 12.2 / 10.7 / 9.1 s, 2 tool calls (estimate, propose), mechanic transfer_plus_nudge, margin INR 9,716.02 under est-v2.
+* Plan live, Quinoa gap, 3 runs: done, `planner_source=model`, 13.7 / 19.7 / 15.2 s (3, 5 and 3 tool calls), bundle, margin INR 1,110.87 / 1,165.59 / 758.40.
+* Approve on the recorded Tea play (unchanged by v4): 355 treated / 39 held out; expected margin INR 9,191.29; blanket 20% INR 32,015.18 (do nothing INR 35,020.00); beat over the blanket INR 6,186.47 (the hero figure, `test_tea_hero_play_is_unchanged` passes).
+* A live Tea re-plan lands on INR 9,716.02, not the recorded INR 9,191.29: the recording was made under est-v1 and the live run is projected under est-v2. Both are shown as what they are.
+
+### Notes for the web and the API
+
+No payload field changes (`docs/schemas/tools/planner.*` gained fields; the play schema is unchanged). The trace panel (`web/components/traceRows.tsx`) summarises a `propose_play` call from `args.play`; a v4 call carries `choice_index` instead, so its row reads "draft a play" and the trace record has no `rationale` for the attempt (the play card still shows the assembled rationale). The plan-progress steps (`web/lib/planSteps.ts`) work from the `propose_play` response and `estimate_outcomes`, so they still advance. A one-line web change (show `choice_index` in the row) is optional and is the UI session's file.
+
+### Limits
+
+Synthetic tenant; four seeds, one per generation, one run per scenario; projections under est-v2 with an assumed elasticity of 4.0; baselines and planner share the estimator, which is flat in discount depth, so the oracle's best bundle is a shallow-discount one and the capture ratio can exceed 1; the blanket 20% counterfactual is priced generously and is floor-illegal everywhere (reported raw and with max(0, blanket)); the dev set was tuned on (the `reach` figure and the audience line in the prompt came from its loss analysis), so only the fresh-seed test counts; the test seed has 9 markdown-best scenarios, where the model beats the (generous) blanket in only 1 of 9; the live checks are on a local API running the v4 code, not the deployed service.

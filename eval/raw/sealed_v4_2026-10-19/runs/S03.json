@@ -1,0 +1,469 @@
+{
+ "scenario_id": "S03",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_d393093241",
+ "seed": 86213547,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:50:41Z",
+ "tag": "S03__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic_params": {
+   "bundle_price": 285,
+   "bundle_sku": "SKU-WHEAT-BREAD-400G"
+  },
+  "gap_id": "gap_d393093241",
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_3",
+    "seg_4",
+    "seg_2",
+    "seg_5",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 400,
+   "size_after_consent": 353
+  },
+  "mechanic": "bundle",
+  "target": {
+   "sku": "SKU-FULL-CREAM-MILK-500ML",
+   "node_ids": [
+    "OUT-05"
+   ],
+   "batch_ids": [
+    "B-FULL-CREAM-MILK-500ML-OUT-05-01"
+   ],
+   "units": 10,
+   "deadline_date": "2026-09-24",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_d393093241_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-24T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_d393093241_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_d393093241_v1_13f5367b",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.41% (net price 285.00, cost 261.02) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 353 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 400 -> 353"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-FULL-CREAM-MILK-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FULL-CREAM-MILK-500ML at OUT-05"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "15 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "10 units of Full Cream Milk 500ML at Outlet 05 (East Bengaluru) are projected unsold before the expiry deadline on 2026-09-24; doing nothing writes off ₹1955 and a blanket 20% markdown costs ₹2131. This play uses a bundle with SKU-WHEAT-BREAD-400G at ₹285 for 353 consented customers (Personal care regulars, Sweets occasionals, Everyday staples shoppers, Tea connoisseurs, Household essentials buyers, Premium Tea regulars): expected 25 units, margin ₹604, discount cost ₹755, waste avoided ₹1955 (CI 1 to 73 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play pairs the expiring Full Cream Milk with Wheat Bread at a bundle price of 285 INR, which satisfies the 8% dairy margin floor while avoiding waste and recovering 603.58 INR in margin.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_d393093241"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-FULL-CREAM-MILK-500ML-OUT-05-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 7
+    },
+    "expected_units": 25.17,
+    "expected_margin_inr": 462.88,
+    "rejected_because": "lower expected margin than the chosen play"
+   },
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 7
+    },
+    "expected_units": 0.0,
+    "expected_margin_inr": 0.0,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 25.17,
+   "margin_inr": 603.58,
+   "waste_avoided_inr": 1955.1,
+   "discount_cost_inr": 755.1,
+   "ci_low": 1.36,
+   "ci_high": 73.43,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 1955.1,
+   "blanket_markdown_inr": 2130.72,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 603.58
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 35.16,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2558.68,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-400G",
+     "bundle_price": 280
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_d393093241"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_d393093241"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "gap_id": "gap_d393093241",
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_price": 285,
+     "bundle_sku": "SKU-WHEAT-BREAD-400G"
+    },
+    "gap_id": "gap_d393093241",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "coupon",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_4",
+      "seg_2",
+      "seg_5",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_d393093241",
+    "mechanic_params": {
+     "discount_pct": 7
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_d393093241",
+    "mechanic_params": {
+     "markdown_pct": 7
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_d393093241_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_d393093241_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 16548,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_d393093241_v1_13f5367b",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 16548,
+  "usage": {
+   "prompt_token_count": 23541,
+   "candidates_token_count": 585,
+   "thoughts_token_count": 1466,
+   "total_token_count": 25592,
+   "cached_content_token_count": 14406
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 2959.63,
+  "blanket20_recovery_inr": -175.62,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 16.9,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3893,
+    "candidates": 249,
+    "thoughts": 757,
+    "cached": 0
+   },
+   "usd": 0.016383,
+   "error": null,
+   "elapsed_s": 6.06,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5567,
+    "candidates": 249,
+    "thoughts": 572,
+    "cached": 3641
+   },
+   "usd": 0.011907,
+   "error": null,
+   "elapsed_s": 5.12,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6936,
+    "candidates": 71,
+    "thoughts": 118,
+    "cached": 5382
+   },
+   "usd": 0.005323,
+   "error": null,
+   "elapsed_s": 1.57,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7145,
+    "candidates": 16,
+    "thoughts": 19,
+    "cached": 5383
+   },
+   "usd": 0.004142,
+   "error": null,
+   "elapsed_s": 0.87,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.037755,
+ "tokens": {
+  "prompt": 23541,
+  "cached": 14406,
+  "candidates": 585,
+  "thoughts": 1466
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -33,8 +33,15 @@ def test_gate_overwrites_model_stated_audience_channel_and_estimate(data_dir, sa
         pt.rederive_play(ctx, lie)
         assert lie["channel"] == "web_chat"
         assert lie["audience"] == good["audience"]
-        assert lie["expected_outcome"] == good["expected_outcome"]
-        assert lie["counterfactuals"] == good["counterfactuals"]
+        # `good` is the recorded est-v1 play; the gate re-derives under est-v2 (one demand model: units also scale
+        # with discount depth). Old vs new for this chips bundle: units 24.22 -> 33.02, margin 126.42 -> 172.36.
+        assert good["expected_outcome"]["estimator_version"] == "est-v1" and good["expected_outcome"]["units"] == 24.22
+        assert lie["expected_outcome"]["estimator_version"] == "est-v2" and lie["expected_outcome"]["units"] == 33.02
+        assert lie["expected_outcome"]["margin_inr"] == 172.36
+        fresh = copy.deepcopy(good)
+        pt.rederive_play(ctx, fresh)
+        assert lie["expected_outcome"] == fresh["expected_outcome"] and lie["counterfactuals"] == fresh["counterfactuals"]
+        assert lie["counterfactuals"]["blanket_markdown_inr"] == good["counterfactuals"]["blanket_markdown_inr"]  # the baseline is the same function, unchanged
     finally:
         reset_context(tok)
 

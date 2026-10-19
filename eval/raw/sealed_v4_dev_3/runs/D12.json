@@ -1,0 +1,521 @@
+{
+ "scenario_id": "D12",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 1,
+  "day_band": 0
+ },
+ "gap_id": "gap_98da578a61",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:28:17Z",
+ "tag": "D12__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "gap_id": "gap_98da578a61",
+  "mechanic_params": {
+   "bundle_sku": "SKU-FULL-CREAM-MILK-200G",
+   "bundle_price": 48
+  },
+  "mechanic": "bundle",
+  "audience": {
+   "segment_ids": [
+    "seg_6",
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_5",
+    "seg_4"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 359,
+   "size_after_consent": 296
+  },
+  "target": {
+   "sku": "SKU-WHEAT-BREAD-400G",
+   "node_ids": [
+    "DS-07"
+   ],
+   "batch_ids": [
+    "B-WHEAT-BREAD-400G-DS-07-01"
+   ],
+   "units": 108,
+   "deadline_date": "2026-09-18",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_98da578a61_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-18T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_98da578a61_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_98da578a61_v1_8d3bae76",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.10% (net price 48.00, cost 44.11) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 296 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 359 -> 296"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-WHEAT-BREAD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-WHEAT-BREAD-400G at DS-07"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "16 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "108 units of Wheat Bread 400G at Dark store 07 (South Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-18; doing nothing writes off ₹2188 and a blanket 20% markdown costs ₹784. This play uses a bundle with SKU-FULL-CREAM-MILK-200G at ₹48 for 296 consented customers (Household essentials buyers, Tea connoisseurs, Sweets occasionals, Everyday staples shoppers, Dairy occasionals, Personal care regulars): expected 32 units, margin ₹124, discount cost ₹223, waste avoided ₹645 (CI 2 to 93 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play with Full Cream Milk 200G at 48 INR satisfies the 8% margin floor for bakery and is within the 50 INR tolerance of the best plain markdown recovery, while adhering to the policy preference for bundles over markdowns.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_98da578a61"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-WHEAT-BREAD-400G-DS-07-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-CURD-400G",
+     "bundle_price": 52
+    },
+    "expected_units": 25.69,
+    "expected_margin_inr": 125.11,
+    "rejected_because": "beats_markdown: a markdown at 10% recovers INR 168.71 more (814.30 vs 645.59, tolerance 50.00); propose it or a play that beats it"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 31.83,
+   "margin_inr": 123.82,
+   "waste_avoided_inr": 644.88,
+   "discount_cost_inr": 222.81,
+   "ci_low": 1.72,
+   "ci_high": 92.86,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2188.08,
+   "blanket_markdown_inr": 784.05,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1419.38
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 38.48,
+   "pct_of_rupees_at_stake": 1.939
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 768.7,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 42
+    },
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    },
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic": "markdown",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-PANEER-400G",
+     "bundle_price": 44
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    },
+    "gap_id": "gap_98da578a61"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "mechanic": "coupon",
+    "gap_id": "gap_98da578a61"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "gap_id": "gap_98da578a61",
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_98da578a61",
+    "mechanic_params": {
+     "bundle_sku": "SKU-FULL-CREAM-MILK-200G",
+     "bundle_price": 48
+    },
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_5",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CURD-400G",
+     "bundle_price": 52
+    },
+    "gap_id": "gap_98da578a61"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_98da578a61_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_98da578a61_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 33185,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 814.30; this play 768.70; tolerance 50.00)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_98da578a61_v1_8d3bae76",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 33185,
+  "usage": {
+   "prompt_token_count": 30947,
+   "candidates_token_count": 794,
+   "total_token_count": 32718,
+   "thoughts_token_count": 977,
+   "cached_content_token_count": 19433
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 814.3,
+  "blanket20_recovery_inr": 1404.03,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 41.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3929,
+    "candidates": 243,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.008889,
+   "error": null,
+   "elapsed_s": 4.19,
+   "thinking_level": "MINIMAL"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5012,
+    "candidates": 243,
+    "thoughts": 586,
+    "cached": 3582
+   },
+   "usd": 0.011158,
+   "error": null,
+   "elapsed_s": 4.03,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6574,
+    "candidates": 216,
+    "thoughts": 325,
+    "cached": 3544
+   },
+   "usd": 0.01094,
+   "error": null,
+   "elapsed_s": 2.81,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7644,
+    "candidates": 77,
+    "thoughts": 48,
+    "cached": 5276
+   },
+   "usd": 0.006015,
+   "error": null,
+   "elapsed_s": 6.72,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7788,
+    "candidates": 15,
+    "thoughts": 18,
+    "cached": 7031
+   },
+   "usd": 0.002736,
+   "error": null,
+   "elapsed_s": 1.57,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.039738,
+ "tokens": {
+  "prompt": 30947,
+  "cached": 19433,
+  "candidates": 794,
+  "thoughts": 977
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

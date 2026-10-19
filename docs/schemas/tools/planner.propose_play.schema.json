@@ -13,12 +13,30 @@
     "input": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "play"
+      "description": "Either the full `play` (the original path) or `choice_index`: the position of one result of the latest estimate_outcomes call; the play is then assembled from that estimated draft.",
+      "anyOf": [
+        {
+          "required": [
+            "play"
+          ]
+        },
+        {
+          "required": [
+            "choice_index"
+          ]
+        }
       ],
       "properties": {
         "play": {
           "type": "object"
+        },
+        "choice_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Optional, with choice_index: one or two sentences appended to the assembled rationale; any number in it must be cited."
         }
       }
     },

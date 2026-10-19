@@ -1,0 +1,720 @@
+{
+ "scenario_id": "S01",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_16b2db6ffe",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:42:23Z",
+ "tag": "S01__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic": "outlet_markdown",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "channel": "outlet",
+  "holdout": {
+   "min_treated_n": 20,
+   "seed": "seed-play_16b2db6ffe_v1",
+   "fraction": 0.1
+  },
+  "alternatives": [
+   {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "rejected_because": "lower expected margin than the 5% markdown play",
+    "expected_margin_inr": 30.72,
+    "mechanic": "outlet_markdown",
+    "expected_units": 16
+   },
+   {
+    "rejected_because": "negative expected margin",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": -123.83,
+    "expected_units": 13.27,
+    "mechanic": "markdown"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 617.28,
+   "blanket_markdown_inr": 435.92,
+   "blanket_markdown_pct": 5.0,
+   "play_net_inr": 66.72
+  },
+  "window": {
+   "end": "2026-09-21T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "expected_outcome": {
+   "units": 16.0,
+   "margin_inr": 66.72,
+   "waste_avoided_inr": 617.28,
+   "discount_cost_inr": 36.0,
+   "ci_low": 0.86,
+   "ci_high": 46.68,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "mechanic_params": {
+   "markdown_pct": 5
+  },
+  "objective": "clear_expiry",
+  "gap_id": "gap_16b2db6ffe",
+  "rationale": "This play addresses the expiry gap gap_16b2db6ffe for batch B-CURD-500ML-OUT-03-01 by offering a targeted outlet markdown to high-affinity dairy segments. The play is expected to clear all units at risk, recovering 66.72 INR compared to doing nothing (617.28 INR) or a blanket markdown (435.92 INR). The net margin remains above the dairy category floor.",
+  "play_id": "play_16b2db6ffe_v1",
+  "audience": {
+   "size_after_consent": 227,
+   "size_before_consent": 268,
+   "segment_ids": [
+    "seg_6",
+    "seg_5",
+    "seg_3",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing"
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.75% (net price 42.75, cost 38.58) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 227 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-500ML at OUT-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "3 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_16b2db6ffe"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   },
+   {
+    "ref": "B-CURD-500ML-OUT-03-01",
+    "type": "stock"
+   }
+  ],
+  "target": {
+   "node_ids": [
+    "OUT-03"
+   ],
+   "batch_ids": [
+    "B-CURD-500ML-OUT-03-01"
+   ],
+   "deadline_type": "expiry",
+   "deadline_date": "2026-09-21",
+   "units": 16,
+   "sku": "SKU-CURD-500ML"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_16b2db6ffe_v1_fa2c4884",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 8.41,
+   "pct_of_rupees_at_stake": 2.001
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 684.0,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "objective": "clear_expiry",
+    "audience": {
+     "size_after_consent": 227,
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_1"
+     ],
+     "size_before_consent": 268,
+     "filters": [],
+     "purpose": "marketing"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "channel": "outlet",
+    "gap_id": "gap_16b2db6ffe",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_16b2db6ffe_v1",
+     "min_treated_n": 20
+    },
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 16,
+     "deadline_date": "2026-09-21",
+     "batch_ids": [
+      "B-CURD-500ML-OUT-03-01"
+     ],
+     "deadline_type": "expiry",
+     "sku": "SKU-CURD-500ML"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_16b2db6ffe_v1",
+     "fraction": 0.1
+    },
+    "gap_id": "gap_16b2db6ffe",
+    "audience": {
+     "size_before_consent": 268,
+     "size_after_consent": 227,
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_1"
+     ],
+     "purpose": "marketing",
+     "filters": []
+    },
+    "channel": "outlet",
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "target": {
+     "deadline_date": "2026-09-21",
+     "node_ids": [
+      "OUT-03"
+     ],
+     "units": 16,
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-OUT-03-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "audience": {
+     "filters": [],
+     "purpose": "marketing",
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0
+    },
+    "objective": "clear_expiry",
+    "channel": "outlet",
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "target": {
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-OUT-03-01"
+     ],
+     "deadline_type": "expiry",
+     "units": 16,
+     "deadline_date": "2026-09-21",
+     "node_ids": [
+      "OUT-03"
+     ]
+    },
+    "gap_id": "gap_16b2db6ffe",
+    "holdout": {
+     "seed": "seed-play_16b2db6ffe_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "play_id": "play_16b2db6ffe_v1",
+    "guardrails": [],
+    "expected_outcome": {
+     "measured_n": 0,
+     "margin_inr": 66.72,
+     "units": 16,
+     "waste_avoided_inr": 617.28,
+     "prior_n": 20,
+     "ci_high": 46.68,
+     "ci_low": 0.86,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 36
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_16b2db6ffe_v1"
+    },
+    "gap_id": "gap_16b2db6ffe",
+    "target": {
+     "batch_ids": [
+      "B-CURD-500ML-OUT-03-01"
+     ],
+     "deadline_date": "2026-09-21",
+     "deadline_type": "expiry",
+     "sku": "SKU-CURD-500ML",
+     "units": 16,
+     "node_ids": [
+      "OUT-03"
+     ]
+    },
+    "objective": "clear_expiry",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_1"
+     ],
+     "size_after_consent": 227,
+     "purpose": "marketing",
+     "size_before_consent": 268,
+     "filters": {}
+    },
+    "channel": "outlet",
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "citations": [
+     {
+      "ref": "gap_16b2db6ffe",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ]
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "channel": "outlet",
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_16b2db6ffe_v1",
+     "fraction": 0.1
+    },
+    "alternatives": [
+     {
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "rejected_because": "lower expected margin than the 5% markdown play",
+      "expected_margin_inr": 30.72,
+      "mechanic": "outlet_markdown",
+      "expected_units": 16
+     },
+     {
+      "rejected_because": "negative expected margin",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -123.83,
+      "expected_units": 13.27,
+      "mechanic": "markdown"
+     }
+    ],
+    "counterfactuals": {
+     "do_nothing_inr": 617.28,
+     "play_net_inr": 66.72,
+     "blanket_markdown_inr": 435.92,
+     "blanket_markdown_pct": 5
+    },
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 36,
+     "measured_n": 0,
+     "waste_avoided_inr": 617.28,
+     "estimator_version": "est-v2",
+     "ci_high": 46.68,
+     "ci_low": 0.86,
+     "prior_n": 20,
+     "margin_inr": 66.72,
+     "units": 16
+    },
+    "mechanic_params": {
+     "markdown_pct": 5
+    },
+    "objective": "clear_expiry",
+    "gap_id": "gap_16b2db6ffe",
+    "rationale": "This play addresses the expiry gap gap_16b2db6ffe for batch B-CURD-500ML-OUT-03-01 by offering a targeted outlet markdown to high-affinity dairy segments. The play is expected to clear all units at risk, recovering 66.72 INR compared to doing nothing (617.28 INR) or a blanket markdown (435.92 INR). The net margin remains above the dairy category floor.",
+    "play_id": "play_16b2db6ffe_v1",
+    "audience": {
+     "size_after_consent": 227,
+     "size_before_consent": 268,
+     "segment_ids": [
+      "seg_6",
+      "seg_5",
+      "seg_3",
+      "seg_1"
+     ],
+     "filters": {},
+     "purpose": "marketing"
+    },
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "detail": "net margin 9.75% (net price 42.75, cost 38.58) vs dairy floor 8.00%",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "frequency_cap",
+      "detail": "all 227 customers under 2 plays in 7 days"
+     },
+     {
+      "passed": true,
+      "detail": "outlet channel: no personal message, consent not required",
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-500ML in audience",
+      "rule": "subscription_protect",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-CURD-500ML at OUT-03",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true,
+      "rule": "cite_or_drop"
+     }
+    ],
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_16b2db6ffe"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     },
+     {
+      "ref": "B-CURD-500ML-OUT-03-01",
+      "type": "stock"
+     }
+    ],
+    "target": {
+     "node_ids": [
+      "OUT-03"
+     ],
+     "batch_ids": [
+      "B-CURD-500ML-OUT-03-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21",
+     "units": 16,
+     "sku": "SKU-CURD-500ML"
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_16b2db6ffe_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_16b2db6ffe_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 28708,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_16b2db6ffe_v1_fa2c4884",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 28708,
+  "usage": {
+   "prompt_token_count": 29873,
+   "candidates_token_count": 2451,
+   "thoughts_token_count": 3207,
+   "total_token_count": 35531,
+   "cached_content_token_count": 18223
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 911.21,
+  "blanket20_recovery_inr": 318.66,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 29.6,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5023,
+    "candidates": 836,
+    "thoughts": 776,
+    "cached": 0
+   },
+   "usd": 0.024247,
+   "error": null,
+   "elapsed_s": 10.5,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6794,
+    "candidates": 509,
+    "thoughts": 39,
+    "cached": 5534
+   },
+   "usd": 0.008417,
+   "error": null,
+   "elapsed_s": 2.51,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7425,
+    "candidates": 1093,
+    "thoughts": 2381,
+    "cached": 5406
+   },
+   "usd": 0.038616,
+   "error": null,
+   "elapsed_s": 13.63,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10631,
+    "candidates": 13,
+    "thoughts": 11,
+    "cached": 7283
+   },
+   "usd": 0.006963,
+   "error": null,
+   "elapsed_s": 0.8,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.078243,
+ "tokens": {
+  "prompt": 29873,
+  "cached": 18223,
+  "candidates": 2451,
+  "thoughts": 3207
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

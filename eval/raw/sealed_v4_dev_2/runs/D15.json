@@ -1,0 +1,479 @@
+{
+ "scenario_id": "D15",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 1
+ },
+ "gap_id": "gap_58ec62b9ec",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:25:46Z",
+ "tag": "D15__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "mechanic": "bundle",
+  "gap_id": "gap_58ec62b9ec",
+  "mechanic_params": {
+   "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+   "bundle_price": 300
+  },
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_2",
+    "seg_3",
+    "seg_1",
+    "seg_4"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 371,
+   "size_after_consent": 315
+  },
+  "target": {
+   "sku": "SKU-CURD-400G",
+   "node_ids": [
+    "OUT-05"
+   ],
+   "batch_ids": [
+    "B-CURD-400G-OUT-05-01"
+   ],
+   "units": 30,
+   "deadline_date": "2026-09-23",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_58ec62b9ec_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-23T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_58ec62b9ec_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_58ec62b9ec_v1_f81d1ba6",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.61% (net price 300.00, cost 274.17) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 315 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 371 -> 315"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-400G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-400G at OUT-05"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "16 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "30 units of Curd 400G at Outlet 05 (East Bengaluru) are projected unsold before the expiry deadline on 2026-09-23; doing nothing writes off ₹6265 and a blanket 20% markdown costs ₹5418. This play uses a bundle with SKU-MULTIGRAIN-BREAD-400G at ₹300 for 315 consented customers (Tea connoisseurs, Dairy occasionals, Sweets occasionals, Everyday staples shoppers, Festival sweets loyalists, Personal care regulars): expected 30 units, margin ₹775, discount cost ₹1050, waste avoided ₹6265 (CI 2 to 88 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" The bundle play with Multigrain Bread 400G at a bundle price of 300 INR satisfies the dairy category margin floor of 8.00% and is preferred over markdowns by the policy.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_58ec62b9ec"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-CURD-400G-OUT-05-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 9
+    },
+    "expected_units": 30.0,
+    "expected_margin_inr": 559.8,
+    "rejected_because": "lower expected margin than the chosen play"
+   },
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 9
+    },
+    "expected_units": 30.0,
+    "expected_margin_inr": 559.8,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 30.0,
+   "margin_inr": 774.9,
+   "waste_avoided_inr": 6265.2,
+   "discount_cost_inr": 1050.0,
+   "ci_low": 1.62,
+   "ci_high": 87.52,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 6265.2,
+   "blanket_markdown_inr": 5418.0,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 774.9
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 40.95,
+   "pct_of_rupees_at_stake": 0.716
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 7040.1,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "gap_id": "gap_58ec62b9ec",
+    "mechanic_params": {
+     "bundle_price": 290,
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "gap_id": "gap_58ec62b9ec",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_58ec62b9ec"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "gap_id": "gap_58ec62b9ec",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 300
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 9
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic": "coupon",
+    "gap_id": "gap_58ec62b9ec"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 9
+    },
+    "gap_id": "gap_58ec62b9ec",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_58ec62b9ec_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_58ec62b9ec_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 17025,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_58ec62b9ec_v1_f81d1ba6",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 17025,
+  "usage": {
+   "prompt_token_count": 22959,
+   "candidates_token_count": 637,
+   "thoughts_token_count": 1143,
+   "total_token_count": 24739,
+   "cached_content_token_count": 14291
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 7100.1,
+  "blanket20_recovery_inr": 847.2,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 17.4,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3880,
+    "candidates": 278,
+    "thoughts": 711,
+    "cached": 0
+   },
+   "usd": 0.016193,
+   "error": null,
+   "elapsed_s": 5.59,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5535,
+    "candidates": 276,
+    "thoughts": 352,
+    "cached": 3627
+   },
+   "usd": 0.009964,
+   "error": null,
+   "elapsed_s": 4.49,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6700,
+    "candidates": 69,
+    "thoughts": 57,
+    "cached": 5334
+   },
+   "usd": 0.004381,
+   "error": null,
+   "elapsed_s": 2.31,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6844,
+    "candidates": 14,
+    "thoughts": 23,
+    "cached": 5330
+   },
+   "usd": 0.003744,
+   "error": null,
+   "elapsed_s": 0.84,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.034282,
+ "tokens": {
+  "prompt": 22959,
+  "cached": 14291,
+  "candidates": 637,
+  "thoughts": 1143
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -111,9 +111,18 @@ def acceptance_rerecorded(day: str, model: str = "gemini-3.5-flash", raw: Path =
     """The run of `day` scored against the evalsets as they are now (re-recorded 14 Oct 2026,
     gemini-3.5-flash, prompt v7). Both sides are the same model, so first-attempt acceptance of the
     recordings and of the verification run measures consistency, not accuracy."""
-    ids = sorted(f"planner_{p.name.split('.')[0]}" for p in EVALSETS.glob("gap_*.evalset.json"))
-    expected = [recorded_tools(i) for i in ids]
-    actual = _live_cases(raw, day, ids, recorded_tools)
+    snap = raw / f"live_eval_{day}" / f"recordings_{day}_tools.json"
+    if snap.exists():  # the evalsets of `day`, snapshotted before a later re-record replaced agents/planner/evalsets
+        cases = json.loads(snap.read_text(encoding="utf-8"))["cases"]
+        ids = sorted(cases)
+
+        def rec(i: str) -> tuple[list[str], str]:
+            return cases[i]["tools"], cases[i]["final"]
+    else:
+        ids = sorted(f"planner_{p.name.split('.')[0]}" for p in EVALSETS.glob("gap_*.evalset.json"))
+        rec = recorded_tools
+    expected = [rec(i) for i in ids]
+    actual = _live_cases(raw, day, ids, rec)
     return {
         "evalsets": len(ids),
         f"recordings_{day}": {"model": model, **_counts(expected)},

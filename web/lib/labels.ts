@@ -70,6 +70,7 @@ export const MECHANIC_LABEL: Record<string, string> = {
   subscription_nudge: "Nudge towards a subscription",
   coupon: "Coupon",
   outlet_markdown: "Mark down at the outlet",
+  markdown: "Mark down online",
   transfer_plus_nudge: "Transfer stock, then nudge customers",
 };
 

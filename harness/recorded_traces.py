@@ -202,7 +202,9 @@ def validate_recording(data_dir: str | Path, rec: Recording) -> tuple[bool, list
         )
         reasons.extend(f"money invariant: {m}" for m in money_mismatches)
 
-        est = estimate(play, pt._estimator_context(ctx, play))
+        ectx = pt._estimator_context(ctx, play)
+        ectx.estimator_version = str((play.get("expected_outcome") or {}).get("estimator_version") or ectx.estimator_version)  # a recording is checked under the version it was made with
+        est = estimate(play, ectx)
         reasons.extend(f"expected_outcome.{m}" for m in _numeric_mismatches(play.get("expected_outcome") or {}, est["expected_outcome"]))
         reasons.extend(f"counterfactuals.{m}" for m in _numeric_mismatches(play.get("counterfactuals") or {}, est["counterfactuals"]))
 

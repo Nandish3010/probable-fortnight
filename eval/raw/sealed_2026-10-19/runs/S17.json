@@ -1,0 +1,649 @@
+{
+ "scenario_id": "S17",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 2,
+  "day_band": 2
+ },
+ "gap_id": "gap_70951a5fda",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T20:28:19Z",
+ "tag": "S17__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "purpose": "marketing",
+   "size_after_consent": 440,
+   "filters": {},
+   "size_before_consent": 505,
+   "segment_ids": [
+    "seg_5",
+    "seg_3",
+    "seg_1",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ]
+  },
+  "gap_id": "gap_70951a5fda",
+  "target": {
+   "units": 17,
+   "deadline_date": "2026-09-22",
+   "sku": "SKU-FLAVOURED-MILK-500ML",
+   "node_ids": [
+    "OUT-01"
+   ],
+   "batch_ids": [
+    "B-FLAVOURED-MILK-500ML-OUT-01-01"
+   ],
+   "deadline_type": "expiry"
+  },
+  "holdout": {
+   "seed": "seed-play_70951a5fda_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "alternatives": [
+   {
+    "expected_units": 29.85,
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": 46.57,
+    "rejected_because": "lower expected margin than the bundle play",
+    "mechanic": "outlet_markdown"
+   }
+  ],
+  "objective": "clear_expiry",
+  "rationale": "To clear the expiry risk of Flavoured Milk 500ML at OUT-01, we propose a bundle play with Wheat Bread 200G at a bundle price of 150 INR. This play recovers 1686 INR compared to doing nothing and beats a blanket markdown by 1695 INR. The bundle margin of 12.63% is well above the dairy category floor of 8.00%. We target all six available customer segments to maximize reach before the expiry deadline. A 10% holdout is included for measurement.",
+  "mechanic": "bundle",
+  "channel": "web_chat",
+  "mechanic_params": {
+   "bundle_sku": "SKU-WHEAT-BREAD-200G",
+   "bundle_price": 150
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 12.63% (net price 150.00, cost 131.06) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 440 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 505 -> 440"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-FLAVOURED-MILK-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FLAVOURED-MILK-500ML at OUT-01"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "expected_outcome": {
+   "units": 29.85,
+   "margin_inr": 565.43,
+   "waste_avoided_inr": 1120.98,
+   "discount_cost_inr": 298.54,
+   "ci_low": 1.61,
+   "ci_high": 87.1,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v1"
+  },
+  "citations": [
+   {
+    "ref": "gap_70951a5fda",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v1"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-22T23:59:59Z"
+  },
+  "play_id": "play_70951a5fda_v1",
+  "counterfactuals": {
+   "do_nothing_inr": 1120.98,
+   "blanket_markdown_inr": 1129.65,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 565.43
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_70951a5fda_v1_d245e760",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 18.48,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 1686.41,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-200G",
+     "bundle_price": 150
+    },
+    "channel": "web_chat",
+    "audience": {
+     "size_after_consent": 440,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 555
+    },
+    "objective": "clear_expiry",
+    "gap_id": "gap_70951a5fda",
+    "mechanic": "bundle",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_70951a5fda_v1"
+    },
+    "target": {
+     "units": 17,
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-OUT-01-01"
+     ],
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-22"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "channel": "web_chat",
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 555,
+     "size_after_consent": 440,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_70951a5fda_v1"
+    },
+    "target": {
+     "deadline_date": "2026-09-22",
+     "deadline_type": "expiry",
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "units": 17,
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-OUT-01-01"
+     ],
+     "node_ids": [
+      "OUT-01"
+     ]
+    },
+    "gap_id": "gap_70951a5fda",
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 150,
+     "bundle_sku": "SKU-WHEAT-BREAD-200G"
+    },
+    "gap_id": "gap_70951a5fda",
+    "guardrails": [],
+    "audience": {
+     "filters": {},
+     "size_after_consent": 440,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 505
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "objective": "clear_expiry",
+    "play_id": "play_70951a5fda_v1",
+    "citations": [
+     {
+      "ref": "gap_70951a5fda",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v1",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "expected_outcome": {
+     "estimator_version": "est-v1",
+     "ci_high": 87.1,
+     "waste_avoided_inr": 1120.98,
+     "discount_cost_inr": 298.54,
+     "ci_low": 1.61,
+     "measured_n": 0,
+     "units": 29.85,
+     "prior_n": 20,
+     "margin_inr": 565.43
+    },
+    "target": {
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-OUT-01-01"
+     ],
+     "node_ids": [
+      "OUT-01"
+     ],
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-22",
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "units": 17
+    },
+    "holdout": {
+     "seed": "seed-play_70951a5fda_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "audience": {
+     "purpose": "marketing",
+     "size_after_consent": 440,
+     "filters": {},
+     "size_before_consent": 505,
+     "segment_ids": [
+      "seg_5",
+      "seg_3",
+      "seg_1",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "gap_id": "gap_70951a5fda",
+    "target": {
+     "units": 17,
+     "deadline_date": "2026-09-22",
+     "sku": "SKU-FLAVOURED-MILK-500ML",
+     "node_ids": [
+      "OUT-01"
+     ],
+     "batch_ids": [
+      "B-FLAVOURED-MILK-500ML-OUT-01-01"
+     ],
+     "deadline_type": "expiry"
+    },
+    "holdout": {
+     "seed": "seed-play_70951a5fda_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "alternatives": [
+     {
+      "expected_units": 29.85,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 46.57,
+      "rejected_because": "lower expected margin than the bundle play",
+      "mechanic": "outlet_markdown"
+     }
+    ],
+    "objective": "clear_expiry",
+    "rationale": "To clear the expiry risk of Flavoured Milk 500ML at OUT-01, we propose a bundle play with Wheat Bread 200G at a bundle price of 150 INR. This play recovers 1686 INR compared to doing nothing and beats a blanket markdown by 1695 INR. The bundle margin of 12.63% is well above the dairy category floor of 8.00%. We target all six available customer segments to maximize reach before the expiry deadline. A 10% holdout is included for measurement.",
+    "mechanic": "bundle",
+    "channel": "web_chat",
+    "mechanic_params": {
+     "bundle_sku": "SKU-WHEAT-BREAD-200G",
+     "bundle_price": 150
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 12.63% (net price 150.00, cost 131.06) vs dairy floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "detail": "all 440 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 505 -> 440",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "passed": true
+     },
+     {
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-FLAVOURED-MILK-500ML in audience",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-FLAVOURED-MILK-500ML at OUT-01",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "passed": true,
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ],
+    "expected_outcome": {
+     "prior_n": 20,
+     "margin_inr": 565.43,
+     "ci_low": 1.61,
+     "units": 29.85,
+     "ci_high": 87.1,
+     "estimator_version": "est-v1",
+     "measured_n": 0,
+     "waste_avoided_inr": 1120.98,
+     "discount_cost_inr": 298.54
+    },
+    "citations": [
+     {
+      "ref": "gap_70951a5fda",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v1"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-22T23:59:59Z"
+    },
+    "play_id": "play_70951a5fda_v1",
+    "counterfactuals": {
+     "blanket_markdown_inr": 1129.65,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 565.43,
+     "do_nothing_inr": 1120.98
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_70951a5fda_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_70951a5fda_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 20653,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": []
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_70951a5fda_v1_d245e760",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 20653,
+  "usage": {
+   "prompt_token_count": 26925,
+   "candidates_token_count": 2176,
+   "thoughts_token_count": 2075,
+   "total_token_count": 31176,
+   "cached_content_token_count": 14606
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1746.12,
+  "blanket20_recovery_inr": -8.67,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 20.8,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4694,
+    "candidates": 548,
+    "thoughts": 911,
+    "cached": 0
+   },
+   "usd": 0.022189,
+   "error": null,
+   "elapsed_s": 7.0,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6276,
+    "candidates": 505,
+    "thoughts": 255,
+    "cached": 3722
+   },
+   "usd": 0.012352,
+   "error": null,
+   "elapsed_s": 3.8,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7108,
+    "candidates": 1109,
+    "thoughts": 884,
+    "cached": 5465
+   },
+   "usd": 0.023343,
+   "error": null,
+   "elapsed_s": 8.26,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8847,
+    "candidates": 14,
+    "thoughts": 25,
+    "cached": 5419
+   },
+   "usd": 0.006936,
+   "error": null,
+   "elapsed_s": 0.83,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.06482,
+ "tokens": {
+  "prompt": 26925,
+  "cached": 14606,
+  "candidates": 2176,
+  "thoughts": 2075
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

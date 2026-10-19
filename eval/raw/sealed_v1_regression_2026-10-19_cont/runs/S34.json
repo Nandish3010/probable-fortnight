@@ -1,0 +1,1054 @@
+{
+ "scenario_id": "S34",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 2,
+  "day_band": 1
+ },
+ "gap_id": "gap_be609c691f",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:22:08Z",
+ "tag": "S34__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "expected_outcome": {
+   "units": 24.0,
+   "margin_inr": 456.72,
+   "waste_avoided_inr": 2477.52,
+   "discount_cost_inr": 360.0,
+   "ci_low": 1.29,
+   "ci_high": 70.02,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "play_id": "play_be609c691f_v1",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.76% (net price 195.00, cost 175.97) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 298 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 333 -> 298"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-FULL-CREAM-MILK-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FULL-CREAM-MILK-200G at DS-08"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "4 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "counterfactuals": {
+   "do_nothing_inr": 2477.52,
+   "blanket_markdown_inr": 2910.72,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 456.72
+  },
+  "mechanic_params": {
+   "bundle_sku": "SKU-MILK-BREAD-400G",
+   "bundle_price": 195
+  },
+  "channel": "web_chat",
+  "citations": [
+   {
+    "ref": "gap_be609c691f",
+    "type": "gap"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   },
+   {
+    "type": "stock",
+    "ref": "B-FULL-CREAM-MILK-200G-DS-08-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 5
+    },
+    "expected_margin_inr": 258.48,
+    "rejected_because": "lower expected margin than the bundle play",
+    "expected_units": 24
+   }
+  ],
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_be609c691f_v1",
+   "min_treated_n": 20
+  },
+  "copy": {
+   "variants": [],
+   "language_set": [
+    "en"
+   ],
+   "copy_status": "pending"
+  },
+  "rationale": "This bundle play pairs Full Cream Milk with Milk Bread at a bundle price of 195.00 INR to clear the online sell-by gap. It achieves a recovered-versus-doing-nothing figure of 2934.24 INR and a beat over a blanket markdown of 3367.44 INR. The play targets five high-affinity segments with a 10% holdout to measure performance. This is preferred over a coupon play as it yields a higher margin while adhering to the category floor.",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-24T23:59:59Z"
+  },
+  "audience": {
+   "size_after_consent": 298,
+   "purpose": "marketing",
+   "filters": {},
+   "segment_ids": [
+    "seg_3",
+    "seg_5",
+    "seg_1",
+    "seg_6",
+    "seg_4"
+   ],
+   "size_before_consent": 333
+  },
+  "target": {
+   "node_ids": [
+    "DS-08"
+   ],
+   "sku": "SKU-FULL-CREAM-MILK-200G",
+   "deadline_date": "2026-09-24",
+   "deadline_type": "online_sellby",
+   "units": 24,
+   "batch_ids": [
+    "B-FULL-CREAM-MILK-200G-DS-08-01"
+   ]
+  },
+  "mechanic": "bundle",
+  "objective": "clear_online_sellby",
+  "gap_id": "gap_be609c691f",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_be609c691f_v1_75ae7e53",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 38.74,
+   "pct_of_rupees_at_stake": 1.723
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2934.24,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_be609c691f",
+    "audience": {
+     "size_before_consent": 333,
+     "filters": {},
+     "size_after_consent": 298,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "target": {
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "node_ids": [
+      "DS-08"
+     ],
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "units": 24
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "channel": "app_push",
+    "holdout": {
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-08"
+     ],
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "units": 24,
+     "sku": "SKU-FULL-CREAM-MILK-200G"
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 180
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "app_push",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20
+    },
+    "gap_id": "gap_be609c691f",
+    "objective": "clear_online_sellby",
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 298,
+     "size_before_consent": 333
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "channel": "web_chat",
+    "holdout": {
+     "seed": "seed-play_be609c691f_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic": "markdown",
+    "target": {
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "units": 24,
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-200G"
+    },
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_be609c691f",
+    "audience": {
+     "filters": {},
+     "size_after_consent": 0,
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "copy": {
+     "variants": [],
+     "copy_status": "pending",
+     "language_set": [
+      "en"
+     ]
+    },
+    "play_id": "play_be609c691f_v1",
+    "citations": [
+     {
+      "ref": "gap_be609c691f",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 2477.52,
+     "blanket_markdown_inr": 2910.72,
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 114.48
+    },
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "expected_outcome": {
+     "discount_cost_inr": 288,
+     "ci_high": 70.02,
+     "waste_avoided_inr": 2477.52,
+     "measured_n": 0,
+     "units": 24,
+     "prior_n": 20,
+     "ci_low": 1.29,
+     "margin_inr": 114.48,
+     "estimator_version": "est-v2"
+    },
+    "audience": {
+     "purpose": "marketing",
+     "size_before_consent": 333,
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "size_after_consent": 298
+    },
+    "objective": "clear_online_sellby",
+    "channel": "web_chat",
+    "mechanic": "coupon",
+    "guardrails": [],
+    "holdout": {
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "target": {
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "units": 24,
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "gap_id": "gap_be609c691f"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "audience": {
+     "size_after_consent": 298,
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 333,
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "gap_id": "gap_be609c691f",
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "mechanic": "coupon",
+    "target": {
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "node_ids": [
+      "DS-08"
+     ],
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "units": 24
+    },
+    "mechanic_params": {
+     "discount_pct": 5
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 333,
+     "size_after_consent": 298,
+     "filters": {}
+    },
+    "target": {
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "deadline_date": "2026-09-24",
+     "units": 24,
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ],
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ]
+    },
+    "guardrails": [],
+    "play_id": "play_be609c691f_v1",
+    "channel": "web_chat",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_be609c691f"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "gap_id": "gap_be609c691f",
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 2910.72,
+     "play_net_inr": 258.48,
+     "do_nothing_inr": 2477.52
+    },
+    "mechanic_params": {
+     "discount_pct": 5
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "objective": "clear_online_sellby",
+    "holdout": {
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending",
+     "variants": []
+    },
+    "expected_outcome": {
+     "margin_inr": 258.48,
+     "discount_cost_inr": 144,
+     "measured_n": 0,
+     "prior_n": 20,
+     "ci_high": 70.02,
+     "waste_avoided_inr": 2477.52,
+     "estimator_version": "est-v2",
+     "units": 24,
+     "ci_low": 1.29
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "target": {
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "units": 24,
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-08"
+     ]
+    },
+    "gap_id": "gap_be609c691f",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 195
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_be609c691f_v1",
+     "fraction": 0.1
+    },
+    "objective": "clear_online_sellby",
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "purpose": "marketing",
+     "size_before_consent": 333,
+     "size_after_consent": 298
+    },
+    "channel": "web_chat",
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "bundle"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "play_id": "play_be609c691f_v1",
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_be609c691f_v1"
+    },
+    "target": {
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ],
+     "deadline_type": "online_sellby",
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-08"
+     ],
+     "units": 24
+    },
+    "citations": [
+     {
+      "ref": "gap_be609c691f",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "objective": "clear_online_sellby",
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 195
+    },
+    "expected_outcome": {
+     "measured_n": 0,
+     "margin_inr": 456.72,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "ci_low": 1.29,
+     "discount_cost_inr": 360,
+     "units": 24,
+     "ci_high": 70.02,
+     "waste_avoided_inr": 2477.52
+    },
+    "guardrails": [],
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic": "bundle",
+    "audience": {
+     "size_after_consent": 298,
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 333
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "play_net_inr": 456.72,
+     "do_nothing_inr": 2477.52,
+     "blanket_markdown_inr": 2910.72
+    },
+    "gap_id": "gap_be609c691f",
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "expected_outcome": {
+     "ci_low": 1.29,
+     "ci_high": 70.02,
+     "discount_cost_inr": 360,
+     "prior_n": 20,
+     "measured_n": 0,
+     "margin_inr": 456.72,
+     "estimator_version": "est-v2",
+     "units": 24,
+     "waste_avoided_inr": 2477.52
+    },
+    "play_id": "play_be609c691f_v1",
+    "guardrails": [
+     {
+      "detail": "net margin 9.76% (net price 195.00, cost 175.97) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 298 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "passed": true,
+      "rule": "consent_required",
+      "detail": "audience filtered by consent: 333 -> 298"
+     },
+     {
+      "passed": true,
+      "rule": "sellby_disclosure",
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "passed": true,
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-FULL-CREAM-MILK-200G in audience"
+     },
+     {
+      "detail": "no stockout gap for SKU-FULL-CREAM-MILK-200G at DS-08",
+      "passed": true,
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "counterfactuals": {
+     "do_nothing_inr": 2477.52,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 2910.72,
+     "play_net_inr": 456.72
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-MILK-BREAD-400G",
+     "bundle_price": 195
+    },
+    "channel": "web_chat",
+    "citations": [
+     {
+      "ref": "gap_be609c691f",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     },
+     {
+      "type": "stock",
+      "ref": "B-FULL-CREAM-MILK-200G-DS-08-01"
+     }
+    ],
+    "alternatives": [
+     {
+      "mechanic": "coupon",
+      "mechanic_params": {
+       "discount_pct": 5
+      },
+      "expected_margin_inr": 258.48,
+      "rejected_because": "lower expected margin than the bundle play",
+      "expected_units": 24
+     }
+    ],
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_be609c691f_v1",
+     "min_treated_n": 20
+    },
+    "copy": {
+     "variants": [],
+     "language_set": [
+      "en"
+     ],
+     "copy_status": "pending"
+    },
+    "rationale": "This bundle play pairs Full Cream Milk with Milk Bread at a bundle price of 195.00 INR to clear the online sell-by gap. It achieves a recovered-versus-doing-nothing figure of 2934.24 INR and a beat over a blanket markdown of 3367.44 INR. The play targets five high-affinity segments with a 10% holdout to measure performance. This is preferred over a coupon play as it yields a higher margin while adhering to the category floor.",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "audience": {
+     "size_after_consent": 298,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_3",
+      "seg_5",
+      "seg_1",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 333
+    },
+    "target": {
+     "node_ids": [
+      "DS-08"
+     ],
+     "sku": "SKU-FULL-CREAM-MILK-200G",
+     "deadline_date": "2026-09-24",
+     "deadline_type": "online_sellby",
+     "units": 24,
+     "batch_ids": [
+      "B-FULL-CREAM-MILK-200G-DS-08-01"
+     ]
+    },
+    "mechanic": "bundle",
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_be609c691f"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_be609c691f_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_be609c691f_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 59389,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "no markdown depth clears the margin floor"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_be609c691f_v1_75ae7e53",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 59389,
+  "usage": {
+   "prompt_token_count": 69088,
+   "candidates_token_count": 4567,
+   "thoughts_token_count": 2531,
+   "cached_content_token_count": 53261,
+   "total_token_count": 76186
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3135.83,
+  "blanket20_recovery_inr": -433.2,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 61.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5011,
+    "candidates": 932,
+    "thoughts": 688,
+    "cached": 3818
+   },
+   "usd": 0.018636,
+   "error": null,
+   "elapsed_s": 7.95,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6796,
+    "candidates": 602,
+    "thoughts": 152,
+    "cached": 3684
+   },
+   "usd": 0.013207,
+   "error": null,
+   "elapsed_s": 8.55,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7623,
+    "candidates": 324,
+    "thoughts": 363,
+    "cached": 5409
+   },
+   "usd": 0.011347,
+   "error": null,
+   "elapsed_s": 3.15,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8367,
+    "candidates": 601,
+    "thoughts": 14,
+    "cached": 7178
+   },
+   "usd": 0.009235,
+   "error": null,
+   "elapsed_s": 7.12,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9055,
+    "candidates": 346,
+    "thoughts": 162,
+    "cached": 7055
+   },
+   "usd": 0.009493,
+   "error": null,
+   "elapsed_s": 4.89,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9616,
+    "candidates": 623,
+    "thoughts": 11,
+    "cached": 8772
+   },
+   "usd": 0.009117,
+   "error": null,
+   "elapsed_s": 3.02,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10319,
+    "candidates": 1124,
+    "thoughts": 1116,
+    "cached": 8655
+   },
+   "usd": 0.02635,
+   "error": null,
+   "elapsed_s": 9.1,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 12301,
+    "candidates": 15,
+    "thoughts": 25,
+    "cached": 8690
+   },
+   "usd": 0.007788,
+   "error": null,
+   "elapsed_s": 1.5,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.105173,
+ "tokens": {
+  "prompt": 69088,
+  "cached": 53261,
+  "candidates": 4567,
+  "thoughts": 2531
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

@@ -1,0 +1,566 @@
+{
+ "scenario_id": "D19",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_5dab840598",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:13:11Z",
+ "tag": "D19__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_2",
+    "seg_3",
+    "seg_1",
+    "seg_4"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 370,
+   "size_after_consent": 314
+  },
+  "mechanic": "bundle",
+  "gap_id": "gap_5dab840598",
+  "mechanic_params": {
+   "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+   "bundle_price": 235
+  },
+  "target": {
+   "sku": "SKU-FLAVOURED-MILK-200G",
+   "node_ids": [
+    "DS-08"
+   ],
+   "batch_ids": [
+    "B-FLAVOURED-MILK-200G-DS-08-01"
+   ],
+   "units": 50,
+   "deadline_date": "2026-09-19",
+   "deadline_type": "online_sellby"
+  },
+  "play_id": "play_5dab840598_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_online_sellby",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-19T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_5dab840598_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_5dab840598_v1_ec027df7",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.79% (net price 235.00, cost 214.34) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 314 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 370 -> 314"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-FLAVOURED-MILK-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-FLAVOURED-MILK-200G at DS-08"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "17 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "50 units of Flavoured Milk 200G at Dark store 08 (East Bengaluru) are projected unsold before the online sell-by deadline on 2026-09-19; doing nothing writes off ₹7450 and a blanket 20% markdown costs ₹4846. This play uses a bundle with SKU-MULTIGRAIN-BREAD-400G at ₹235 for 314 consented customers (Tea connoisseurs, Dairy occasionals, Sweets occasionals, Everyday staples shoppers, Festival sweets loyalists, Personal care regulars): expected 36 units, margin ₹736, discount cost ₹1426, waste avoided ₹5311 (CI 2 to 104 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" This bundle play pairs the flavoured milk with Multigrain Bread 400G at a bundle price of INR 235.0, which complies with the 8.0% dairy margin floor and recovers INR 6047.04, beating the markdown threshold within tolerance.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_5dab840598"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-FLAVOURED-MILK-200G-DS-08-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 230,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "expected_units": 35.88,
+    "expected_margin_inr": 712.58,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 35.64,
+   "margin_inr": 736.32,
+   "waste_avoided_inr": 5310.72,
+   "discount_cost_inr": 1425.6,
+   "ci_low": 1.92,
+   "ci_high": 103.98,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 7450.5,
+   "blanket_markdown_inr": 4845.76,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": -1403.46
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 40.82,
+   "pct_of_rupees_at_stake": 0.601
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 6047.04,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-RUSK-200G",
+     "bundle_price": 230
+    },
+    "gap_id": "gap_5dab840598"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "markdown",
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "markdown_pct": 15
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "bundle_price": 240,
+     "bundle_sku": "SKU-RUSK-200G"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_5"
+     ]
+    },
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "discount_pct": 14
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_5dab840598",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 240,
+     "bundle_sku": "SKU-RUSK-200G"
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_5dab840598",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic_params": {
+     "discount_pct": 14
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_5dab840598",
+    "mechanic_params": {
+     "bundle_sku": "SKU-MULTIGRAIN-BREAD-400G",
+     "bundle_price": 235
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_1",
+      "seg_4"
+     ]
+    },
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_price": 230,
+     "bundle_sku": "SKU-PAV-400G"
+    },
+    "gap_id": "gap_5dab840598"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_5dab840598_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_5dab840598_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 29836,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "within tolerance of the best markdown (10% recovers 6127.12; this play 6047.04; tolerance 122.54)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_5dab840598_v1_ec027df7",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 29836,
+  "usage": {
+   "prompt_token_count": 41587,
+   "candidates_token_count": 942,
+   "thoughts_token_count": 1960,
+   "total_token_count": 44489,
+   "cached_content_token_count": 26630
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 6127.12,
+  "blanket20_recovery_inr": 2604.74,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 32.2,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3845,
+    "candidates": 218,
+    "thoughts": 489,
+    "cached": 0
+   },
+   "usd": 0.013344,
+   "error": null,
+   "elapsed_s": 4.41,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5387,
+    "candidates": 218,
+    "thoughts": 402,
+    "cached": 3626
+   },
+   "usd": 0.009642,
+   "error": null,
+   "elapsed_s": 3.91,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6702,
+    "candidates": 193,
+    "thoughts": 303,
+    "cached": 3573
+   },
+   "usd": 0.010663,
+   "error": null,
+   "elapsed_s": 5.33,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7689,
+    "candidates": 215,
+    "thoughts": 363,
+    "cached": 5313
+   },
+   "usd": 0.010519,
+   "error": null,
+   "elapsed_s": 5.2,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8739,
+    "candidates": 84,
+    "thoughts": 384,
+    "cached": 7042
+   },
+   "usd": 0.008595,
+   "error": null,
+   "elapsed_s": 2.59,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 9225,
+    "candidates": 14,
+    "thoughts": 19,
+    "cached": 7076
+   },
+   "usd": 0.00504,
+   "error": null,
+   "elapsed_s": 0.75,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.057803,
+ "tokens": {
+  "prompt": 41587,
+  "cached": 26630,
+  "candidates": 942,
+  "thoughts": 1960
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

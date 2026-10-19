@@ -207,8 +207,14 @@ export function PlayCard({
       <section className={styles.figure} aria-label="What the play recovers" data-tour="proof">
         <RecoveredFigure impact={impact} testId="recovered-figure" atStakeAbove />
         <p className={styles.honesty} data-testid="honesty-line">
-          A projection, not a measurement. About {audience.holdout.toLocaleString("en-IN")} customers are held back so the
-          result can be measured.
+          {audience.customerHoldout ? (
+            <>
+              A projection, not a measurement. About {audience.holdout.toLocaleString("en-IN")} customers are held back so the
+              result can be measured.
+            </>
+          ) : (
+            <>A projection, not a measurement. {audience.text}</>
+          )}
         </p>
       </section>
 

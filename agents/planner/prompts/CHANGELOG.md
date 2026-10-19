@@ -1,5 +1,24 @@
 # Planner prompt changelog
 
+- v10 (2026-10-19, branch planner/markdown-v4, not deployed): fewer model turns. `estimate_outcomes` now returns, per draft, a
+  `choice_index` and the `gate` verdict (the eight guardrails and `beats_markdown`), so `check_guardrails` leaves the procedure;
+  `propose_play` takes `choice_index` (+ an optional one-or-two-sentence `rationale`) and code assembles the play from the
+  estimated draft; a draft needs only gap_id, mechanic, mechanic_params and audience.segment_ids. The long list of play-shape
+  corrections is gone (the model no longer writes the play). The `beats_markdown` tolerance is max(INR 50, 2%) (config). `estimate_outcomes` also returns `reach` (consented customers in the draft vs all segments) and the prompt says to list every segment for a clearance gap (the v2/v3 losses were mostly drafts that left segments out; dev rounds in eval/raw/sealed_v4_dev_*).
+
+- v9 (2026-10-19, branch planner/markdown-option, not deployed): two edits from the diagnosis of the v2 sealed run
+  (eval/evaluation.md): (1) the best-markdown reference is stated once, in the first `estimate_outcomes` result, not in every
+  result (input tokens per run were +39% over v1); (2) a citation `ref` is an id, never a rupee figure (2 of the 6
+  first-proposal rejections in v2 were `outcome:<number>` citations that do not resolve).
+
+- v8 (2026-10-19, branch planner/markdown-option, not deployed): adds the `markdown` mechanic (site-wide online price
+  cut, `markdown_pct`; end date, audience and node-level measurement set by the tools) and one instruction: for large
+  lots with little time left, a plain markdown is often best; propose it when it beats targeted plays. Step 2 tells the
+  model that `estimate_outcomes` returns the best plain markdown in `alternatives`, and that `propose_play` rejects a
+  play recovering more than the tolerance less than it (`beats_markdown`, which outranks a soft policy preference).
+  Citation example `est-v1` -> `est-v2`. Reason: the sealed eval of 19 Oct (eval/raw/sealed_2026-10-19/) found the planner
+  never chose a markdown and lost 7 of 36 scenarios to the blanket 20% markdown by about INR 55,700 in total.
+
 - v7 (2026-10-12): step 3 now tells the model to state, in the rationale, the recovered-versus-doing-nothing
   figure (`do_nothing_inr` + `play_net_inr`) and the beat over a blanket markdown (`blanket_markdown_inr` +
   `play_net_inr`), each quoted from the estimator result. Reason: eight live Tea runs recorded on 12 Oct

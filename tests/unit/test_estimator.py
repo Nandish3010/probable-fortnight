@@ -30,13 +30,19 @@ def test_beta_cdf_matches_known_values():
 
 
 def test_coupon_arithmetic_matches_spreadsheet():
+    """est-v2: the response-rate units are scaled by the one demand model, units * (1 + elasticity * depth).
+    Old (est-v1, recorded plays): 15.75 units; new (this ctx has elasticity 1.0): 15.75 * 1.15 = 18.11."""
     c = ctx()
     out = estimate({"mechanic": "coupon", "mechanic_params": {"discount_pct": 15}, "audience": {"segment_ids": ["seg_1"]}}, c)
     eo = out["expected_outcome"]
     rate = 1 / 20
-    units = 315 * rate * 1.0
-    assert eo["units"] == round(units, 2)
-    assert eo["discount_cost_inr"] == round(units * 30 * 0.15, 2)
+    old_units = 315 * rate * 1.0
+    assert old_units == 15.75
+    old = estimate({"mechanic": "coupon", "mechanic_params": {"discount_pct": 15}, "audience": {"segment_ids": ["seg_1"]}}, ctx(estimator_version="est-v1"))["expected_outcome"]
+    assert old["units"] == 15.75
+    units = round(old_units * (1 + 1.0 * 0.15), 2)
+    assert eo["units"] == units == 18.11
+    assert eo["discount_cost_inr"] == round(units * 4.5, 2)
     assert eo["margin_inr"] == round(units * (30 - 4.5 - 25), 2)
     assert eo["waste_avoided_inr"] == round(min(units, 368) * 25, 2)
     assert eo["ci_low"] <= eo["units"] <= eo["ci_high"]

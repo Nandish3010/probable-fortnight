@@ -24,6 +24,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -137,6 +138,9 @@ def _err(e: BaseException) -> dict[str, Any]:
     return {"type": type(e).__name__, "status": status_of(e), "msg": str(e)[:200]}
 
 
+RETRY_429 = 0  # set by a caller (harness/sealed_eval.py) to retry a 429 that many times with backoff before failover
+
+
 def install_tap(ledger: Ledger) -> None:
     from google.genai import models as gm
 
@@ -158,6 +162,18 @@ def install_tap(ledger: Ledger) -> None:
             ledger.leave(rec)
 
     async def async_wrapped(self, *args, **kwargs):
+        # Optional backoff-and-retry on 429 BEFORE the SDK's model failover, so a throttled run stays on the primary
+        # model instead of being answered by the fallback (an INVALID run in the sealed evals). Off unless RETRY_429 > 0.
+        for attempt in range(RETRY_429):
+            try:
+                return await _async_once(self, *args, **kwargs)
+            except BaseException as e:  # noqa: BLE001
+                if _err(e).get("status") != 429:
+                    raise
+                await asyncio.sleep(min(30.0, 2.0 * 2**attempt) * (0.5 + random.random() / 2))
+        return await _async_once(self, *args, **kwargs)
+
+    async def _async_once(self, *args, **kwargs):
         ledger.enter()
         rec = {"run": RUN_TAG.get(), "requested_model": kwargs.get("model"), "model_version": None, "usage": {}, "error": None, "thinking_level": _thinking_level(kwargs), "t": round(time.time(), 2)}
         t0 = time.time()
@@ -346,6 +362,7 @@ def audit_final_play(store: Any, play: dict[str, Any]) -> dict[str, Any]:
         play, product.unit_cost, product.list_price, int(gap["units_at_risk"]),
         bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
         transfer_cost_per_unit=float(ctx.tenant.thresholds.get("transfer_cost_per_unit_inr", 2.0)),
+        baseline_units=pt.baseline_units_of(pt._estimator_context(ctx, play)) if play.get("mechanic") == "markdown" else 0.0,  # a markdown also discounts the baseline volume
     )
     h = play.get("holdout") or {}
     frac = h.get("fraction")
@@ -354,6 +371,11 @@ def audit_final_play(store: Any, play: dict[str, Any]) -> dict[str, Any]:
     diffs = [k for k in ("expected_outcome", "counterfactuals") if not _num_equal(est[k], play.get(k))]
     out["estimator_match"] = not diffs
     out["estimator_diffs"] = diffs
+    # the gate's beats_markdown check, re-run on the stored play (a clearing play must be within tolerance of the best markdown)
+    if play.get("objective") in ("clear_online_sellby", "clear_expiry"):
+        ectx = pt._estimator_context(ctx, play)
+        bm = gr.check_beats_markdown(play, est, pt._guardrail_context(ctx, play), ectx, sellby_passed=pt._markdown_blocked(ctx, gap) or bool(gap["evidence"].get("sellby_passed")))
+        out["beats_markdown_ok"], out["beats_markdown_detail"] = bool(bm["passed"]), bm["detail"]
     return out
 
 

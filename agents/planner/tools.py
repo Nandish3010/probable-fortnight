@@ -10,26 +10,36 @@ import copy
 import json
 import os
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import jsonschema
 from google.adk.tools.tool_context import ToolContext
 
 from agents.gate import guardrails as gr
+from agents.gate.assignment import bucket
 from agents.gate.config import ROOT
-from agents.gate.estimator import EstimatorContext, GapFacts, Product, estimate
+from agents.gate.estimator import (
+    MARKDOWN_MECHANIC,
+    EstimatorContext,
+    GapFacts,
+    Product,
+    baseline_units_of,
+    best_markdown,
+    estimate,
+)
 from agents.gate.invariants import check_play_money
 from agents.gate.models import Play
 from agents.gate.untrusted import clean_text, clean_tree, strings_in
 
-from . import governor
+from . import drafting, governor
 from .context import PlannerContext, current
 
 PLAY_SCHEMA = json.loads((ROOT / "docs" / "schemas" / "play.schema.json").read_text(encoding="utf-8"))
 _VALIDATOR = jsonschema.Draft202012Validator(PLAY_SCHEMA, format_checker=jsonschema.FormatChecker())
 DISCOUNT_MECHANICS = {"coupon", "outlet_markdown", "bundle"}
-ONLINE_ONLY_BLOCKED = {"bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge", "coupon"}
+ONLINE_ONLY_BLOCKED = {"bundle", "usual_order_addon", "substitution", "preorder", "subscription_nudge", "coupon", "markdown"}
+CLEARING_GAP_TYPES = ("online_sellby_breach", "expiry_writeoff")
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -55,13 +65,15 @@ def _recent_play_counts(ctx: PlannerContext) -> dict[str, int]:
 def derive_channel(draft: dict[str, Any]) -> str:
     """Channel is server-owned: a shelf markdown at the outlet is the only non-personal play;
     every other mechanic is a personal offer and goes out on web_chat."""
-    return "outlet" if draft.get("mechanic") == "outlet_markdown" else "web_chat"
+    return "outlet" if draft.get("mechanic") == "outlet_markdown" else "web_chat"  # `markdown` is a shelf price: web_chat is only the schema's value, nobody is messaged
 
 
 def eligible_audience(ctx: PlannerContext, draft: dict[str, Any]) -> tuple[list[str], list[str]]:
     """(candidates, eligible): the customers the segments reach, then those left after the
     web_chat marketing-consent, frequency-cap and subscription filters. The one definition of
     "audience after consent": the gate sizes the play from it and Approve assigns from it."""
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        return [], []  # a price cut contacts no customer: no audience, no consent filter
     gap = _gap(ctx, draft["gap_id"])
     sku, node_ids = draft["target"]["sku"], draft["target"]["node_ids"]
     requesting = (gap.get("evidence") or {}).get("requesting_customer_ids")
@@ -75,12 +87,51 @@ def eligible_audience(ctx: PlannerContext, draft: dict[str, Any]) -> tuple[list[
     return ids, list(eligible)
 
 
+def comparable_at_risk_nodes(ctx: PlannerContext, gap: dict[str, Any]) -> list[str]:
+    """Nodes of the same type as the gap's node where the same sku has an open clearing gap now (the gap's own
+    node excluded): the candidates for a node-level holdout of a `markdown`."""
+    ntype = ctx.nodes.get(gap["node_id"], {}).get("type")
+    out = {g["node_id"] for g in ctx.store.read("gaps") if g["sku"] == gap["sku"] and g["type"] in CLEARING_GAP_TYPES and g["node_id"] != gap["node_id"] and ctx.nodes.get(g["node_id"], {}).get("type") == ntype}
+    return sorted(out)
+
+
+def apply_derived_markdown(ctx: PlannerContext, draft: dict[str, Any]) -> None:
+    """Server-owned parts of a `markdown`: the target node is the gap's node, the end date is the sell-by line,
+    no audience, and the measurement. A price cut cannot hold out customers. When the sku is at risk at 2+
+    comparable nodes, the other at-risk node(s) keep the list price as a node holdout, chosen by the same
+    deterministic hash as customer assignment (assignment.bucket, lowest bucket first; at least one node, at most
+    all but the treated one, about the play's holdout fraction); otherwise measurement is "none" with the reason."""
+    gap = _gap(ctx, draft["gap_id"])
+    target = draft.setdefault("target", {})
+    target["node_ids"] = [gap["node_id"]]
+    params = draft.setdefault("mechanic_params", {})
+    params["end_date"] = target.get("deadline_date") or gap["deadline_date"]
+    draft["audience"] = {"segment_ids": ["all"], "filters": {}, "purpose": "marketing", "size_before_consent": 0, "size_after_consent": 0}
+    h = draft.setdefault("holdout", {"fraction": float(ctx.tenant.thresholds.get("default_holdout_fraction", 0.10)), "seed": "markdown-seed", "min_treated_n": int(ctx.tenant.thresholds.get("min_treated_n", 20))})
+    controls = comparable_at_risk_nodes(ctx, gap)
+    h.pop("node_ids", None)
+    if controls:
+        seed = str(h.get("seed") or "markdown-seed")
+        order = sorted(controls, key=lambda n: (bucket(n, seed), n))
+        k = max(1, min(len(order), round(float(h.get("fraction") or 0.1) * (len(order) + 1))))
+        held = order[:k]
+        h.update({"measurement": "holdout_nodes", "node_ids": held, "measurement_reason": f"{len(held)} comparable at-risk node(s) keep the list price: {', '.join(held)}"})
+        h["fraction"] = min(0.9, max(0.05, round(len(held) / (len(held) + 1), 2)))
+    else:
+        h.update({"measurement": "none", "measurement_reason": f"{gap['sku']} is at risk at no other comparable node, so there is no node to hold out; a price cut cannot hold out individual customers. This play cannot be measured against a holdout."})
+
+
 def apply_derived_audience(ctx: PlannerContext, draft: dict[str, Any]) -> None:
     """Overwrite channel and audience sizes with the tools' own values, whatever the model wrote."""
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        apply_derived_markdown(ctx, draft)
     ids, eligible = eligible_audience(ctx, draft)
     draft["channel"] = derive_channel(draft)
     draft["audience"]["size_before_consent"] = len(ids)
     draft["audience"]["size_after_consent"] = len(eligible)
+    if draft.get("mechanic") != MARKDOWN_MECHANIC and isinstance(draft.get("holdout"), dict):
+        for key in ("measurement", "measurement_reason", "node_ids"):  # only a markdown has a non-customer measurement
+            draft["holdout"].pop(key, None)
 
 
 def rederive_play(ctx: PlannerContext, play: dict[str, Any]) -> None:
@@ -151,11 +202,13 @@ def _estimator_context(ctx: PlannerContext, draft: dict[str, Any]) -> EstimatorC
     return EstimatorContext(
         product=product,
         gap=GapFacts(units_at_risk=int(gap["units_at_risk"]), rupees_at_stake=float(gap["rupees_at_stake"]), evidence=gap["evidence"]),
-        audience_size_after_consent=int(draft["audience"]["size_after_consent"]),
+        audience_size_after_consent=int((draft.get("audience") or {}).get("size_after_consent") or 0),
         avg_qty_per_responder=round(avg_qty, 3), priors=lookup,
         transfer_cost_per_unit=float(ctx.tenant.thresholds.get("transfer_cost_per_unit_inr", 2.0)),
         baseline_forecast_units=float(gap["evidence"].get("projected_sellthrough") or 0.0),
-        markdown_elasticity=float(ctx.tenant.thresholds.get("markdown_elasticity", 1.0)),
+        markdown_elasticity=ctx.tenant.elasticity_for(product.category),
+        days_left=float((date.fromisoformat(str(gap["deadline_date"])) - ctx.as_of).days),
+        markdown_ramp_days=float(ctx.tenant.markdown_setting("ramp_days", 0) or 0),
         bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
     )
 
@@ -209,6 +262,7 @@ def _guardrail_context(ctx: PlannerContext, draft: dict[str, Any]) -> gr.Guardra
         product=product, tenant=ctx.tenant, audience_customer_ids=filtered, recent_plays_count=recent, consented_customer_ids=consented,
         subscribers_for_sku=subscribers, stockout_gap_skus_at_node=stockout, resolve_citation=resolve,
         bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
+        as_of=ctx.as_of,
     )
 
 
@@ -311,7 +365,7 @@ DRAFT_SHAPE = {
     "gap_id": "gap id from get_gap",
     "objective": "clear_online_sellby | clear_expiry | prevent_stockout | rebalance | revive_slow_mover",
     "target": {"sku": "SKU", "node_ids": ["DS-07"], "batch_ids": ["B-..."], "units": 0, "deadline_date": "YYYY-MM-DD", "deadline_type": "online_sellby | expiry | lead_time"},
-    "mechanic": "bundle | usual_order_addon | substitution | preorder | subscription_nudge | coupon | outlet_markdown | transfer_plus_nudge",
+    "mechanic": "bundle | usual_order_addon | substitution | preorder | subscription_nudge | coupon | outlet_markdown | transfer_plus_nudge | markdown",
     "mechanic_params": {"discount_pct?": 0, "bundle_sku?": "SKU", "bundle_price?": 0, "transfer_to_node?": "OUT-01", "markdown_pct?": 0},
     "audience": {"segment_ids": ["seg_1"], "purpose": "marketing", "size_before_consent": 0, "size_after_consent": 0},
     "holdout": {"fraction": 0.1, "seed": "string", "min_treated_n": 20},
@@ -335,7 +389,11 @@ def _draft_problems(draft: Any) -> list[str]:
             if not target.get(key):
                 problems.append(f"target.{key} is required")
     audience = draft.get("audience")
-    if not isinstance(audience, dict):
+    if draft.get("mechanic") == MARKDOWN_MECHANIC:
+        pct = (draft.get("mechanic_params") or {}).get("markdown_pct")
+        if not isinstance(pct, int | float) or isinstance(pct, bool) or not 0 < pct <= 100:
+            problems.append("mechanic_params.markdown_pct is required for a markdown (0 to 100)")
+    elif not isinstance(audience, dict):
         problems.append("audience is required (object with segment_ids, size_before_consent, size_after_consent)")
     elif not audience.get("segment_ids"):
         problems.append("audience.segment_ids is required")
@@ -346,7 +404,84 @@ def _draft_error(problems: list[str]) -> dict:
     return {"error": "play_draft is incomplete: " + "; ".join(problems), "required_shape": DRAFT_SHAPE}
 
 
-def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
+def _markdown_reference(ctx: PlannerContext, draft: dict[str, Any]) -> dict[str, Any]:
+    """The best site-wide markdown at the tenant's depths, from the same demand model, in the shape of
+    `alternatives`: the model sees what a plain price cut recovers before it proposes anything, and the
+    beats_markdown check will hold the proposal to it. {} when the lot is past its online sell-by, the node is
+    an outlet (outlet_markdown is the lever there) or no depth clears the margin floor."""
+    gap = _gap(ctx, draft["gap_id"])
+    if _markdown_blocked(ctx, gap):
+        return {}
+    gctx = _guardrail_context(ctx, draft)
+    est_ctx = _estimator_context(ctx, draft)
+    floor = gr.clearance_floor({"mechanic": MARKDOWN_MECHANIC, "target": {"deadline_date": gap["deadline_date"]}}, gctx)
+    best = best_markdown(est_ctx, gr.markdown_depths(ctx.tenant), floor_pct=floor if (floor is not None and floor < gctx.product.margin_floor_pct) else None, end_date=gap["deadline_date"])
+    if best is None:
+        return {}
+    alt = {"mechanic": MARKDOWN_MECHANIC, "mechanic_params": {"markdown_pct": best["markdown_pct"], "end_date": gap["deadline_date"]}, "expected_units": best["units"], "expected_margin_inr": best["margin_inr"],
+           "rejected_because": f"reference only: the best plain markdown ({best['markdown_pct']:g}% off, same demand model) recovers INR {best['recovery_inr']:.2f} versus doing nothing; a proposal that recovers more than {gr.beats_markdown_tolerance(ctx.tenant, best['recovery_inr']):.2f} less is rejected"}
+    return {"alternatives": [alt], "best_markdown_recovery_inr": best["recovery_inr"]}
+
+
+def _markdown_blocked(ctx: PlannerContext, gap: dict[str, Any]) -> bool:
+    sellby_passed = bool(gap["evidence"].get("sellby_passed")) or (gap["deadline_type"] == "online_sellby" and gap["deadline_date"] < ctx.as_of.isoformat())
+    return sellby_passed or ctx.nodes.get(gap["node_id"], {}).get("type") == "outlet"
+
+
+def _fill_from_gap(ctx: PlannerContext, play_draft: Any) -> Any:
+    """A copy of the draft with every field the model left out filled from the gap row (target, objective, window,
+    copy, holdout, ids). A field the model did send is never replaced, so a complete draft comes back unchanged.
+    The model may therefore send only gap_id, mechanic, mechanic_params and audience.segment_ids."""
+    if not isinstance(play_draft, dict) or not play_draft.get("gap_id") or not play_draft.get("mechanic"):
+        return play_draft
+    rows = ctx.store.find("gaps", gap_id=play_draft["gap_id"])
+    if not rows:
+        return play_draft
+    gap = rows[-1]
+    d = copy.deepcopy(play_draft)
+    t = d.get("target") if isinstance(d.get("target"), dict) else {}
+    d["target"] = {"sku": gap["sku"], "node_ids": [gap["node_id"]], "batch_ids": [gap["batch_id"]] if gap.get("batch_id") else [], "units": int(gap["units_at_risk"]),
+                   "deadline_date": gap["deadline_date"], "deadline_type": gap["deadline_type"], **{k: v for k, v in t.items() if v not in (None, "", [])}}
+    pv = ctx.policy_version
+    play_id = ctx.play_id or f"play_{str(gap['gap_id'])[4:]}_{pv}"
+    as_of = ctx.as_of.isoformat()
+    defaults: dict[str, Any] = {
+        "play_id": play_id, "tenant_id": gap.get("tenant_id") or ctx.tenant.tenant_id, "created_at": f"{as_of}T00:00:00Z", "objective": drafting.OBJECTIVE_BY_GAP.get(gap["type"], "clear_expiry"),
+        "window": {"start": f"{as_of}T00:00:00Z", "end": f"{d['target']['deadline_date']}T23:59:59Z"},
+        "copy": {"language_set": list(ctx.tenant.languages), "variants": [], "copy_status": "pending"},
+        "holdout": {"fraction": float(ctx.tenant.thresholds.get("default_holdout_fraction", 0.10)), "seed": f"seed-{play_id}", "min_treated_n": int(ctx.tenant.thresholds.get("min_treated_n", 20))},
+        "policy_version": pv, "trace_ref": f"events/{ctx.run_id}", "status": "proposed", "guardrails": [], "rationale": "", "citations": [], "alternatives": [],
+    }
+    for k, v in defaults.items():
+        if k not in d or (d[k] in (None, "") and not isinstance(v, list)):
+            d[k] = v
+    if isinstance(d.get("audience"), dict):
+        d["audience"].setdefault("filters", {})
+        d["audience"].setdefault("purpose", "marketing")
+        d["audience"].setdefault("size_before_consent", 0)
+        d["audience"].setdefault("size_after_consent", 0)
+    return d
+
+
+def _gate_of(ctx: PlannerContext, draft: dict[str, Any], est: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """What propose_play's gate would say about this (already derived) draft: the eight guardrails and beats_markdown.
+    Returns the compact verdict the model sees and the full guardrail results the assembled play carries."""
+    gctx = _guardrail_context(ctx, draft)
+    chk = gr.check(draft, gctx)
+    failed = [{"rule": r["rule"], "detail": r["detail"]} for r in chk["results"] if not r["passed"]]
+    bm: dict[str, Any] = {"passed": True, "detail": "not applicable: this objective is not compared with a price cut"}
+    if ctx.tenant.markdown_setting("beats_markdown", True) and not _beats_markdown_exempt(draft):
+        gap = _gap(ctx, draft["gap_id"])
+        ectx = _estimator_context(ctx, draft)
+        r = gr.check_beats_markdown(draft, est, gctx, ectx, sellby_passed=_markdown_blocked(ctx, gap) or bool(gap["evidence"].get("sellby_passed")))
+        bm = {"passed": bool(r["passed"]), "detail": r["detail"]}
+    return {"accepted_by_gate": bool(chk["all_passed"] and bm["passed"]), "guardrails_all_passed": bool(chk["all_passed"]), "failed_rules": failed, "beats_markdown": bm}, chk["results"]
+
+
+def _estimate_one(ctx: PlannerContext, play_draft: dict, index: int | None = None) -> dict:
+    """One draft's estimate. With an `index` (estimate_outcomes) it also carries choice_index and the gate verdict and
+    remembers the draft for propose_play(choice_index=...); without one (the oracle's grid) it is the plain estimate."""
+    play_draft = _fill_from_gap(ctx, play_draft)
     problems = _draft_problems(play_draft)
     if problems:
         return _draft_error(problems)
@@ -354,9 +489,21 @@ def _estimate_one(ctx: PlannerContext, play_draft: dict) -> dict:
         draft = copy.deepcopy(play_draft)
         apply_derived_audience(ctx, draft)  # the model's own audience figure is never trusted
         out = estimate(draft, _estimator_context(ctx, draft))
+        verdict, results = _gate_of(ctx, draft, out) if index is not None else ({}, [])
         # what the estimate was computed on, so the model sees the real audience, not its own guess
         out["audience"] = {"size_before_consent": draft["audience"]["size_before_consent"], "size_after_consent": draft["audience"]["size_after_consent"]}
         out["channel"] = draft["channel"]
+        if index is not None:
+            out["choice_index"] = index
+            out["gate"] = verdict
+            if draft.get("mechanic") != MARKDOWN_MECHANIC:
+                # reach: what the draft's segment list covers against every reachable consented customer. The v2/v3 losses were mostly
+                # drafts that left segments out (4 or 5 of 6) while a clearance deadline gives no reason to hold reach back.
+                _, everyone = eligible_audience(ctx, {**draft, "audience": {**draft["audience"], "segment_ids": None}})
+                out["reach"] = {"consented_customers_in_this_draft": draft["audience"]["size_after_consent"], "consented_customers_if_all_segments_included": len(everyone)}
+        out.update(_markdown_reference(ctx, draft))
+        if index is not None:
+            ctx.estimated[index] = {"draft": draft, "estimate": copy.deepcopy(out), "gate_results": results, "verdict": verdict}
         return out
     except KeyError as e:
         return {"error": f"estimate_outcome: unknown reference {e}", "required_shape": DRAFT_SHAPE}
@@ -366,14 +513,25 @@ def estimate_outcomes(play_drafts: list[dict]) -> list[dict]:
     """Deterministic estimator, batched: one call estimates every candidate draft at once (each
     draft the same shape `estimate_outcome` used to take) instead of one round trip per candidate.
     Returns one result per draft, same order; a draft with a problem gets {"error", "required_shape"}
-    in its slot rather than failing the whole batch."""
+    in its slot rather than failing the whole batch. Each good result also carries `choice_index` (its
+    position, which `propose_play(choice_index=...)` takes) and `gate`: what propose_play's gate would say, the
+    eight guardrails and beats_markdown, so the model sees the verdict before it proposes."""
     ctx = current()
-    return [_estimate_one(ctx, d) for d in play_drafts]
+    ctx.estimated = {}  # choice_index refers to the latest call
+    out = [_estimate_one(ctx, d, i) for i, d in enumerate(play_drafts)]
+    # The best-markdown reference is the same for every draft of one gap: state it once, in the first result, so it is
+    # not repeated in every result the model carries through the rest of the loop (the v2 sealed eval showed +39% input
+    # tokens per run, and 7.9 drafts per run, with the reference attached to each).
+    for r in out[1:]:
+        r.pop("alternatives", None)
+        r.pop("best_markdown_recovery_inr", None)
+    return out
 
 
 def check_guardrails(play_draft: dict) -> dict:
     """Run the eight guardrails on a draft; returns every rule with pass/fail and detail, plus
-    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}."""
+    all_passed. Same draft shape as estimate_outcome; an incomplete draft returns {"error"}.
+    No longer part of the planner's procedure (estimate_outcomes carries the verdict); kept registered and unchanged."""
     ctx = current()
     problems = _draft_problems(play_draft)
     if problems:
@@ -381,9 +539,49 @@ def check_guardrails(play_draft: dict) -> dict:
     try:
         draft = copy.deepcopy(play_draft)
         apply_derived_audience(ctx, draft)
-        return gr.check(draft, _guardrail_context(ctx, draft))
+        gctx = _guardrail_context(ctx, draft)
+        out = gr.check(draft, gctx)
+        if ctx.tenant.markdown_setting("beats_markdown", True) and not _beats_markdown_exempt(draft):
+            gap = _gap(ctx, draft["gap_id"])
+            ectx = _estimator_context(ctx, draft)
+            bm = gr.check_beats_markdown(draft, estimate(draft, ectx), gctx, ectx, sellby_passed=_markdown_blocked(ctx, gap) or bool(gap["evidence"].get("sellby_passed")))
+            # a gate check beside the eight rules: propose_play rejects on it, so the model should see it here
+            out["beats_markdown"] = {"passed": bm["passed"], "detail": bm["detail"]}
+            out["gate_passed"] = bool(out["all_passed"] and bm["passed"])
+        return out
     except KeyError as e:
         return {"error": f"check_guardrails: unknown reference {e}", "required_shape": DRAFT_SHAPE}
+
+
+def _assemble_play(ctx: PlannerContext, choice_index: Any, rationale: Any) -> tuple[dict[str, Any] | None, str | None]:
+    """The full play for `choice_index`, built by code from the draft estimate_outcomes already derived and estimated:
+    the estimator's own figures, the gate's guardrail results, citations, the other candidates as alternatives and a
+    rationale whose every number is cited. The model's `rationale` (why this candidate) is appended. Code never picks
+    the candidate; the model's index does."""
+    est = ctx.estimated
+    if isinstance(choice_index, bool) or not isinstance(choice_index, int) or choice_index not in est:
+        return None, f"choice_index {choice_index!r} is not one of the results of your latest estimate_outcomes call (usable: {sorted(est)}); send the full play or estimate again"
+    e = est[choice_index]
+    draft = copy.deepcopy(e["draft"])
+    gap = get_gap(draft["gap_id"])
+    audiences = get_candidate_audiences(draft["target"]["sku"], draft["target"]["node_ids"], draft["objective"], gap_id=draft["gap_id"])
+    chosen = e["estimate"]
+    alts = []
+    for i, other in sorted(est.items()):
+        if i == choice_index:
+            continue
+        eo = other["estimate"]["expected_outcome"]
+        v = other["verdict"]
+        if not v["accepted_by_gate"]:
+            why = "; ".join([f"{f['rule']}: {f['detail']}" for f in v["failed_rules"]] + ([] if v["beats_markdown"]["passed"] else ["beats_markdown: " + v["beats_markdown"]["detail"]]))[:380]
+        else:
+            why = "lower expected margin than the chosen play" if eo["margin_inr"] <= chosen["expected_outcome"]["margin_inr"] else "ranked below the chosen play by the policy's order of preference"
+        alts.append({"mechanic": other["draft"]["mechanic"], "mechanic_params": other["draft"].get("mechanic_params", {}), "expected_units": eo["units"], "expected_margin_inr": eo["margin_inr"], "rejected_because": why})
+    play = drafting.finish_draft(draft, gap, chosen, audiences, alts, ctx.policy_text)
+    play["guardrails"] = copy.deepcopy(e["gate_results"])
+    if isinstance(rationale, str) and rationale.strip():
+        play["rationale"] = (play["rationale"] + " " + rationale.strip())[:2000]
+    return play, None
 
 
 def play_row(ctx: PlannerContext, play: dict[str, Any]) -> dict[str, Any]:
@@ -399,9 +597,27 @@ def play_row(ctx: PlannerContext, play: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def propose_play(play: dict, tool_context: ToolContext) -> dict:
-    """Validate the play against the JSON Schema and the gate, write it, and end the planning loop."""
+def _beats_markdown_exempt(play: dict[str, Any]) -> bool:
+    """Plays that are not a way to clear an at-risk lot (stockout prevention and the like) are not compared with a
+    price cut; neither is a play whose objective the markdown does not serve."""
+    return play.get("objective") not in ("clear_online_sellby", "clear_expiry")
+
+
+def propose_play(play: dict | None = None, tool_context: ToolContext = None, choice_index: int | None = None, rationale: str | None = None) -> dict:  # type: ignore[assignment]
+    """Validate a play against the JSON Schema and the gate, write it, and end the planning loop.
+
+    Either send the full `play` object (the original path, unchanged), or send `choice_index`, the position of one
+    result of your latest estimate_outcomes call: the play is then assembled from that estimated draft (estimator
+    figures, guardrail results, citations, alternatives and a cited rationale are filled in), and the optional
+    `rationale` (one or two sentences on why this candidate, with no figures other than the estimate's) is appended."""
     ctx = current()
+    if play is None:
+        if choice_index is None:
+            return {"play_id": None, "valid": False, "errors": ["propose_play needs either choice_index (from your latest estimate_outcomes call) or the full play object"]}
+        play, problem = _assemble_play(ctx, choice_index, rationale)
+        if problem:
+            tool_context.state["guardrails_all_passed"] = False
+            return {"play_id": None, "valid": False, "errors": [problem]}
     if isinstance(play, dict):
         # A live model often names the identifier `id` (every recorded run did, on attempt 1) instead
         # of the schema's `play_id`: accept the alias and drop the duplicate rather than burn an attempt.
@@ -439,7 +655,14 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
         sellby_passed = bool(gap["evidence"].get("sellby_passed")) or (gap["deadline_type"] == "online_sellby" and gap["deadline_date"] < ctx.as_of.isoformat())
         if sellby_passed and play["mechanic"] in ONLINE_ONLY_BLOCKED:
             errors.append("target lot is past its online sell-by: only outlet_markdown or transfer_plus_nudge are allowed")
-        check = gr.check(play, _guardrail_context(ctx, play))
+        if play["mechanic"] == MARKDOWN_MECHANIC and ctx.nodes.get(gap["node_id"], {}).get("type") == "outlet":
+            errors.append("markdown is an online price cut; at an outlet use outlet_markdown")
+        gctx = _guardrail_context(ctx, play)
+        check = gr.check(play, gctx)
+        if ctx.tenant.markdown_setting("beats_markdown", True) and not _beats_markdown_exempt(play):
+            bm = gr.check_beats_markdown(play, {"counterfactuals": play["counterfactuals"], "expected_outcome": play["expected_outcome"]}, gctx, _estimator_context(ctx, play), sellby_passed=sellby_passed or _markdown_blocked(ctx, gap))
+            if not bm["passed"]:
+                errors.append(f"beats_markdown: {bm['detail']}")
         if not check["all_passed"]:
             errors.extend(f"guardrail {r['rule']}: {r['detail']}" for r in check["results"] if not r["passed"])
         else:
@@ -450,6 +673,7 @@ def propose_play(play: dict, tool_context: ToolContext) -> dict:
                 play, product.unit_cost, product.list_price, int(gap["units_at_risk"]),
                 bundle_partner_unit_cost=float(partner.get("unit_cost") or 0.0), bundle_partner_list_price=float(partner.get("list_price") or 0.0),
                 transfer_cost_per_unit=float(ctx.tenant.thresholds.get("transfer_cost_per_unit_inr", 2.0)),
+                baseline_units=baseline_units_of(_estimator_context(ctx, play)) if play["mechanic"] == MARKDOWN_MECHANIC else 0.0,
             )
             if mismatches:
                 errors.extend(f"runtime invariant: {m}" for m in mismatches)

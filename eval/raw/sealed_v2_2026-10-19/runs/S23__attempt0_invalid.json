@@ -1,0 +1,867 @@
+{
+ "scenario_id": "S23",
+ "cell": {
+  "gap_type": "online_sellby_breach",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_54870771b0",
+ "seed": 71903482,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:16:54Z",
+ "tag": "S23__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "target": {
+   "sku": "SKU-CURD-500ML",
+   "batch_ids": [
+    "B-CURD-500ML-DS-03-01"
+   ],
+   "units": 33,
+   "deadline_type": "online_sellby",
+   "node_ids": [
+    "DS-03"
+   ],
+   "deadline_date": "2026-09-24"
+  },
+  "mechanic": "coupon",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_54870771b0"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "ref": "sense_20260912_baseline_2aaad73c",
+    "type": "forecast"
+   }
+  ],
+  "gap_id": "gap_54870771b0",
+  "holdout": {
+   "seed": "seed-play_54870771b0_v1",
+   "fraction": 0.1,
+   "min_treated_n": 20
+  },
+  "mechanic_params": {
+   "discount_pct": 3
+  },
+  "alternatives": [
+   {
+    "expected_units": 33,
+    "mechanic": "bundle",
+    "rejected_because": "lower expected margin than coupon play",
+    "mechanic_params": {
+     "bundle_price": 150,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "expected_margin_inr": 386.43
+   }
+  ],
+  "audience": {
+   "size_after_consent": 441,
+   "size_before_consent": 515,
+   "purpose": "marketing",
+   "filters": {},
+   "segment_ids": [
+    "seg_5",
+    "seg_1",
+    "seg_3",
+    "seg_2",
+    "seg_6",
+    "seg_4"
+   ]
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 2634.06,
+   "blanket_markdown_inr": 4455.72,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 246.84
+  },
+  "copy": {
+   "copy_status": "pending",
+   "variants": [],
+   "language_set": [
+    "en"
+   ]
+  },
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-24T23:59:59Z"
+  },
+  "expected_outcome": {
+   "units": 33.0,
+   "margin_inr": 246.84,
+   "waste_avoided_inr": 2634.06,
+   "discount_cost_inr": 89.1,
+   "ci_low": 1.78,
+   "ci_high": 96.27,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "objective": "clear_online_sellby",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.57% (net price 87.30, cost 79.82) vs dairy floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 441 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 515 -> 441"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-CURD-500ML in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-CURD-500ML at DS-03"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "5 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "play_id": "play_54870771b0_v1",
+  "rationale": "To clear the online sell-by breach for Curd 500ML at DS-03, a coupon play with a 3% discount is deployed. This play recovers 2634.06 INR do_nothing_inr plus 246.84 INR play_net_inr. The beat over a blanket markdown is 4455.72 INR blanket_markdown_inr plus 246.84 INR play_net_inr. All guardrails pass under policy v1 and estimator est-v2 with forecast run sense_20260912_baseline_2aaad73c for batch B-CURD-500ML-DS-03-01.",
+  "channel": "web_chat",
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_54870771b0_v1_fd71bee2",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 48.74,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 2880.9,
+ "mechanic": "coupon",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_54870771b0_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic": "coupon",
+    "audience": {
+     "size_before_consent": 515,
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 442
+    },
+    "target": {
+     "units": 33,
+     "node_ids": [
+      "DS-03"
+     ],
+     "deadline_date": "2026-09-24",
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "gap_id": "gap_54870771b0",
+    "mechanic_params": {
+     "discount_pct": 3
+    },
+    "channel": "web_chat",
+    "objective": "clear_online_sellby"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_54870771b0_v1"
+    },
+    "target": {
+     "deadline_date": "2026-09-24",
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "units": 33,
+     "sku": "SKU-CURD-500ML",
+     "node_ids": [
+      "DS-03"
+     ],
+     "deadline_type": "online_sellby"
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "bundle_price": 150,
+     "bundle_sku": "SKU-MILK-BREAD-400G"
+    },
+    "gap_id": "gap_54870771b0",
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 515,
+     "filters": {},
+     "size_after_consent": 442,
+     "purpose": "marketing"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_before_consent": 0,
+     "segment_ids": [
+      "all"
+     ],
+     "size_after_consent": 0
+    },
+    "mechanic_params": {
+     "markdown_pct": 3
+    },
+    "mechanic": "markdown",
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "gap_id": "gap_54870771b0",
+    "target": {
+     "node_ids": [
+      "DS-03"
+     ],
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "sku": "SKU-CURD-500ML",
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24",
+     "units": 33
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_54870771b0_v1",
+     "fraction": 0.1
+    },
+    "window": {
+     "end": "2026-09-24T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "expected_outcome": {
+     "prior_n": 20,
+     "ci_low": 1.78,
+     "measured_n": 0,
+     "estimator_version": "est-v2",
+     "discount_cost_inr": 89.1,
+     "waste_avoided_inr": 2634.06,
+     "units": 33,
+     "ci_high": 96.27,
+     "margin_inr": 246.84
+    },
+    "audience": {
+     "size_before_consent": 515,
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_after_consent": 441,
+     "purpose": "marketing"
+    },
+    "holdout": {
+     "seed": "seed-play_54870771b0_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "discount_pct": 3
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "gap_id": "gap_54870771b0",
+    "mechanic": "coupon",
+    "channel": "web_chat",
+    "objective": "clear_online_sellby",
+    "target": {
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "node_ids": [
+      "DS-03"
+     ],
+     "sku": "SKU-CURD-500ML",
+     "units": 33,
+     "deadline_type": "online_sellby",
+     "deadline_date": "2026-09-24"
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "mechanic": "coupon",
+    "objective": "clear_online_sellby",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "alternatives": [
+     {
+      "expected_margin_inr": 386.43,
+      "rejected_because": "lower expected margin than coupon play",
+      "mechanic": "bundle",
+      "mechanic_params": {
+       "bundle_price": 150,
+       "bundle_sku": "SKU-MILK-BREAD-400G"
+      },
+      "expected_units": 33
+     }
+    ],
+    "holdout": {
+     "fraction": 0.1,
+     "min_treated_n": 20,
+     "seed": "seed-play_54870771b0_v1"
+    },
+    "rationale": "To clear the online sell-by breach for Curd 500ML at DS-03, a coupon play with a 3% discount is deployed. This play recovers 2880.90 INR total (2634.06 INR do_nothing_inr plus 246.84 INR play_net_inr). It beats a blanket markdown by 2574.82 INR (4455.72 INR blanket_markdown_inr plus 246.84 INR play_net_inr). All guardrails pass under policy v1 and estimator est-v2 with forecast run sense_20260912_baseline_2aaad73c for batch B-CURD-500ML-DS-03-01.",
+    "play_id": "play_54870771b0_v1",
+    "target": {
+     "units": 33,
+     "deadline_type": "online_sellby",
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "deadline_date": "2026-09-24",
+     "node_ids": [
+      "DS-03"
+     ],
+     "sku": "SKU-CURD-500ML"
+    },
+    "guardrails": [
+     {
+      "passed": true,
+      "detail": "net margin 8.57% (net price 87.30, cost 79.82) vs dairy floor 8.00%",
+      "rule": "margin_floor"
+     },
+     {
+      "rule": "frequency_cap",
+      "detail": "all 441 customers under 2 plays in 7 days",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "rule": "consent_current",
+      "detail": "audience filtered by consent: 515 -> 441"
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "rule": "subscription_protect",
+      "passed": true,
+      "detail": "no active subscribers of SKU-CURD-500ML in audience"
+     },
+     {
+      "passed": true,
+      "detail": "no stockout gap for SKU-CURD-500ML at DS-03",
+      "rule": "no_cannibalise_stockout"
+     },
+     {
+      "detail": "holdout 10%, min_treated_n 20",
+      "passed": true,
+      "rule": "holdout_required"
+     },
+     {
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "passed": true
+     }
+    ],
+    "mechanic_params": {
+     "discount_pct": 3
+    },
+    "audience": {
+     "size_after_consent": 441,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ],
+     "size_before_consent": 515
+    },
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_54870771b0"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "channel": "web_chat",
+    "gap_id": "gap_54870771b0",
+    "expected_outcome": {
+     "measured_n": 0,
+     "ci_high": 96.27,
+     "discount_cost_inr": 89.1,
+     "waste_avoided_inr": 2634.06,
+     "margin_inr": 246.84,
+     "ci_low": 1.78,
+     "estimator_version": "est-v2",
+     "units": 33,
+     "prior_n": 20
+    }
+   },
+   "rejected": true,
+   "claimed_all_passed": true
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "target": {
+     "sku": "SKU-CURD-500ML",
+     "batch_ids": [
+      "B-CURD-500ML-DS-03-01"
+     ],
+     "units": 33,
+     "deadline_type": "online_sellby",
+     "node_ids": [
+      "DS-03"
+     ],
+     "deadline_date": "2026-09-24"
+    },
+    "mechanic": "coupon",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_54870771b0"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "gap_id": "gap_54870771b0",
+    "holdout": {
+     "seed": "seed-play_54870771b0_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "mechanic_params": {
+     "discount_pct": 3
+    },
+    "alternatives": [
+     {
+      "expected_units": 33,
+      "mechanic": "bundle",
+      "rejected_because": "lower expected margin than coupon play",
+      "mechanic_params": {
+       "bundle_price": 150,
+       "bundle_sku": "SKU-MILK-BREAD-400G"
+      },
+      "expected_margin_inr": 386.43
+     }
+    ],
+    "audience": {
+     "size_after_consent": 441,
+     "size_before_consent": 515,
+     "purpose": "marketing",
+     "filters": {},
+     "segment_ids": [
+      "seg_5",
+      "seg_1",
+      "seg_3",
+      "seg_2",
+      "seg_6",
+      "seg_4"
+     ]
+    },
+    "counterfactuals": {
+     "blanket_markdown_pct": 20,
+     "do_nothing_inr": 2634.06,
+     "blanket_markdown_inr": 4455.72,
+     "play_net_inr": 246.84
+    },
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-24T23:59:59Z"
+    },
+    "expected_outcome": {
+     "ci_high": 96.27,
+     "prior_n": 20,
+     "estimator_version": "est-v2",
+     "waste_avoided_inr": 2634.06,
+     "units": 33,
+     "measured_n": 0,
+     "margin_inr": 246.84,
+     "ci_low": 1.78,
+     "discount_cost_inr": 89.1
+    },
+    "objective": "clear_online_sellby",
+    "guardrails": [
+     {
+      "detail": "net margin 8.57% (net price 87.30, cost 79.82) vs dairy floor 8.00%",
+      "rule": "margin_floor",
+      "passed": true
+     },
+     {
+      "detail": "all 441 customers under 2 plays in 7 days",
+      "passed": true,
+      "rule": "frequency_cap"
+     },
+     {
+      "detail": "audience filtered by consent: 515 -> 441",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "detail": "no active subscribers of SKU-CURD-500ML in audience",
+      "passed": true,
+      "rule": "subscription_protect"
+     },
+     {
+      "detail": "no stockout gap for SKU-CURD-500ML at DS-03",
+      "rule": "no_cannibalise_stockout",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "detail": "0 number(s) in rationale all cited; 0 citation(s) resolve",
+      "rule": "cite_or_drop",
+      "passed": true
+     }
+    ],
+    "play_id": "play_54870771b0_v1",
+    "rationale": "To clear the online sell-by breach for Curd 500ML at DS-03, a coupon play with a 3% discount is deployed. This play recovers 2634.06 INR do_nothing_inr plus 246.84 INR play_net_inr. The beat over a blanket markdown is 4455.72 INR blanket_markdown_inr plus 246.84 INR play_net_inr. All guardrails pass under policy v1 and estimator est-v2 with forecast run sense_20260912_baseline_2aaad73c for batch B-CURD-500ML-DS-03-01.",
+    "channel": "web_chat"
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_54870771b0_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": false,
+   "play_id": null,
+   "errors": [
+    "$: 'counterfactuals' is a required property",
+    "guardrails/2/rule: 'consent_current' is not one of ['margin_floor', 'frequency_cap', 'consent_required', 'sellby_disclosure', 'subscription_protect', 'no_cannibalise_stockout', 'holdout_required', 'cite_or_drop']"
+   ]
+  },
+  {
+   "valid": true,
+   "play_id": "play_54870771b0_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": false,
+ "propose_play_attempts": 2,
+ "iterations": 1,
+ "elapsed_ms": 36355,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "no markdown depth clears the margin floor"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_54870771b0_v1_fd71bee2",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 36355,
+  "usage": {
+   "prompt_token_count": 39320,
+   "candidates_token_count": 3586,
+   "thoughts_token_count": 3084,
+   "cached_content_token_count": 25532,
+   "total_token_count": 45990
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 3271.95,
+  "blanket20_recovery_inr": -1821.66,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 37.1,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5001,
+    "candidates": 918,
+    "thoughts": 1201,
+    "cached": 3818
+   },
+   "usd": 0.02356,
+   "error": null,
+   "elapsed_s": 9.66,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7281,
+    "candidates": 433,
+    "thoughts": 226,
+    "cached": 5560
+   },
+   "usd": 0.010281,
+   "error": null,
+   "elapsed_s": 9.4,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 0.31,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 6620,
+    "candidates": 1089,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.021704,
+   "error": null,
+   "elapsed_s": 3.54,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8954,
+    "candidates": 1130,
+    "thoughts": 1632,
+    "cached": 7161
+   },
+   "usd": 0.031484,
+   "error": null,
+   "elapsed_s": 11.07,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 11464,
+    "candidates": 16,
+    "thoughts": 25,
+    "cached": 8993
+   },
+   "usd": 0.005967,
+   "error": null,
+   "elapsed_s": 0.91,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.092996,
+ "tokens": {
+  "prompt": 39320,
+  "cached": 25532,
+  "candidates": 3586,
+  "thoughts": 3084
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite"
+}

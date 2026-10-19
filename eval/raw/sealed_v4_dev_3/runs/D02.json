@@ -1,0 +1,474 @@
+{
+ "scenario_id": "D02",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_62c37c0339",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T22:27:07Z",
+ "tag": "D02__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_2",
+    "seg_3",
+    "seg_4",
+    "seg_1"
+   ],
+   "filters": {},
+   "purpose": "marketing",
+   "size_before_consent": 399,
+   "size_after_consent": 335
+  },
+  "gap_id": "gap_62c37c0339",
+  "mechanic": "bundle",
+  "mechanic_params": {
+   "bundle_sku": "SKU-BUTTER-500ML",
+   "bundle_price": 150
+  },
+  "target": {
+   "sku": "SKU-RUSK-200G",
+   "node_ids": [
+    "OUT-04"
+   ],
+   "batch_ids": [
+    "B-RUSK-200G-OUT-04-01"
+   ],
+   "units": 10,
+   "deadline_date": "2026-09-21",
+   "deadline_type": "expiry"
+  },
+  "play_id": "play_62c37c0339_v1",
+  "tenant_id": "kutumb-mart",
+  "created_at": "2026-09-12T03:30:00Z",
+  "objective": "clear_expiry",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-21T23:59:59Z"
+  },
+  "copy": {
+   "language_set": [
+    "en",
+    "kn"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_62c37c0339_v1",
+   "min_treated_n": 20
+  },
+  "policy_version": "v1",
+  "trace_ref": "events/run_62c37c0339_v1_7d25861e",
+  "status": "proposed",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.99% (net price 150.00, cost 136.52) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 335 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 399 -> 335"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-RUSK-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-RUSK-200G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "16 number(s) in rationale all cited; 5 citation(s) resolve"
+   }
+  ],
+  "rationale": "10 units of Rusk 200G at Outlet 04 (South Bengaluru) are projected unsold before the expiry deadline on 2026-09-21; doing nothing writes off ₹666 and a blanket 20% markdown costs ₹796. This play uses a bundle with SKU-BUTTER-500ML at ₹150 for 335 consented customers (Tea connoisseurs, Dairy occasionals, Sweets occasionals, Everyday staples shoppers, Personal care regulars, Festival sweets loyalists): expected 23 units, margin ₹312, discount cost ₹464, waste avoided ₹666 (CI 1 to 68 units; prior n 20, measured n 0). Policy v1: \"2. Prefer bundles and transfers over blanket markdowns; markdowns are the last lever.\" We propose a bundle play with Butter 500ML at a bundle price of 150 INR, which is preferred by policy over markdowns and maintains a net margin above the category floor. This play is expected to recover 312.47 INR of margin while avoiding waste.",
+  "citations": [
+   {
+    "type": "gap",
+    "ref": "gap_62c37c0339"
+   },
+   {
+    "type": "estimator",
+    "ref": "est-v2"
+   },
+   {
+    "type": "policy",
+    "ref": "v1"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   },
+   {
+    "type": "stock",
+    "ref": "B-RUSK-200G-OUT-04-01"
+   }
+  ],
+  "alternatives": [
+   {
+    "mechanic": "coupon",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "expected_units": 23.18,
+    "expected_margin_inr": 229.48,
+    "rejected_because": "lower expected margin than the chosen play"
+   },
+   {
+    "mechanic": "outlet_markdown",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_units": 23.18,
+    "expected_margin_inr": 229.48,
+    "rejected_because": "lower expected margin than the chosen play"
+   }
+  ],
+  "channel": "web_chat",
+  "expected_outcome": {
+   "units": 23.18,
+   "margin_inr": 312.47,
+   "waste_avoided_inr": 666.0,
+   "discount_cost_inr": 463.6,
+   "ci_low": 1.25,
+   "ci_high": 67.62,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 666.0,
+   "blanket_markdown_inr": 796.11,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 312.47
+  },
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 9.38,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 978.47,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "bundle",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_62c37c0339",
+    "mechanic_params": {
+     "bundle_price": 130,
+     "bundle_sku": "SKU-BUTTER-500ML"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "discount_pct": 15
+    },
+    "mechanic": "coupon",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_62c37c0339"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 15
+    },
+    "mechanic": "markdown",
+    "gap_id": "gap_62c37c0339"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "gap_id": "gap_62c37c0339",
+    "mechanic_params": {
+     "discount_pct": 10
+    },
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic": "coupon"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_62c37c0339",
+    "mechanic": "outlet_markdown",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_62c37c0339",
+    "mechanic": "bundle",
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 150
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  }
+ ],
+ "model_texts": [
+  "DONE play_62c37c0339_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_62c37c0339_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 24526,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_62c37c0339_v1_7d25861e",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 24526,
+  "usage": {
+   "prompt_token_count": 20988,
+   "candidates_token_count": 626,
+   "total_token_count": 22175,
+   "thoughts_token_count": 561,
+   "cached_content_token_count": 12373
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1256.63,
+  "blanket20_recovery_inr": -130.11,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 28.0,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 3879,
+    "candidates": 246,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.008836,
+   "error": null,
+   "elapsed_s": 2.19,
+   "thinking_level": "MINIMAL"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 4768,
+    "candidates": 280,
+    "thoughts": 488,
+    "cached": 3574
+   },
+   "usd": 0.010163,
+   "error": null,
+   "elapsed_s": 9.9,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6082,
+    "candidates": 84,
+    "thoughts": 73,
+    "cached": 3519
+   },
+   "usd": 0.006364,
+   "error": null,
+   "elapsed_s": 2.24,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6259,
+    "candidates": 16,
+    "thoughts": 0,
+    "cached": 5280
+   },
+   "usd": 0.002645,
+   "error": null,
+   "elapsed_s": 0.72,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.028008,
+ "tokens": {
+  "prompt": 20988,
+  "cached": 12373,
+  "candidates": 626,
+  "thoughts": 561
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}

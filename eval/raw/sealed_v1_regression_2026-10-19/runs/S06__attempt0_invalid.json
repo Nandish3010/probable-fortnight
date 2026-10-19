@@ -1,0 +1,768 @@
+{
+ "scenario_id": "S06",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 2
+ },
+ "gap_id": "gap_89921cb800",
+ "seed": 40617833,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:14:44Z",
+ "tag": "S06__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "mechanic_params": {
+   "markdown_pct": 10
+  },
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 9.56% (net price 45.00, cost 40.70) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 310 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "outlet channel: no personal message, consent not required"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-KHARI-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-KHARI-200G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "window": {
+   "end": "2026-09-18T23:59:59Z",
+   "start": "2026-09-12T00:00:00Z"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_89921cb800_v1",
+   "min_treated_n": 20
+  },
+  "target": {
+   "units": 13,
+   "node_ids": [
+    "OUT-04"
+   ],
+   "deadline_type": "expiry",
+   "sku": "SKU-KHARI-200G",
+   "deadline_date": "2026-09-18",
+   "batch_ids": [
+    "B-KHARI-200G-OUT-04-01"
+   ]
+  },
+  "rationale": "This play targets 310 customers with a 10% outlet markdown to clear 13 units of Khari 200G before expiry on 2026-09-18. The expected margin is 90.77 INR, which recovers 619.87 INR compared to doing nothing (529.10 INR) and beats blanket markdown recovery of 325.91 INR. This play is preferred over bundles and plain markdowns due to higher expected margin. The copy will state the best-before date of 2026-09-18.",
+  "expected_outcome": {
+   "units": 21.11,
+   "margin_inr": 90.77,
+   "waste_avoided_inr": 529.1,
+   "discount_cost_inr": 105.55,
+   "ci_low": 1.14,
+   "ci_high": 61.59,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "citations": [
+   {
+    "ref": "gap_89921cb800",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "alternatives": [
+   {
+    "rejected_because": "lower expected margin than the outlet markdown play",
+    "expected_margin_inr": 80.85,
+    "mechanic": "bundle",
+    "expected_units": 21.11,
+    "mechanic_params": {
+     "bundle_price": 85,
+     "bundle_sku": "SKU-CHEESE-SLICES-1L"
+    }
+   },
+   {
+    "rejected_because": "lower expected margin than the outlet markdown play",
+    "expected_margin_inr": -85.49,
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "markdown",
+    "expected_units": 10.42
+   }
+  ],
+  "play_id": "play_89921cb800_v1",
+  "objective": "clear_expiry",
+  "gap_id": "gap_89921cb800",
+  "mechanic": "outlet_markdown",
+  "channel": "outlet",
+  "counterfactuals": {
+   "do_nothing_inr": 529.1,
+   "blanket_markdown_inr": 235.14,
+   "blanket_markdown_pct": 10.0,
+   "play_net_inr": 90.77
+  },
+  "audience": {
+   "size_before_consent": 361,
+   "size_after_consent": 310,
+   "segment_ids": [
+    "seg_6",
+    "seg_3",
+    "seg_2",
+    "seg_1",
+    "seg_4",
+    "seg_5"
+   ],
+   "purpose": "marketing",
+   "filters": {}
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_89921cb800_v1_7d1e61a4",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 6.64,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 619.87,
+ "mechanic": "outlet_markdown",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "holdout": {
+     "seed": "seed-play_89921cb800_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-CHEESE-SLICES-1L",
+     "bundle_price": 85
+    },
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "gap_id": "gap_89921cb800",
+    "mechanic": "bundle",
+    "channel": "app_push",
+    "audience": {
+     "size_after_consent": 310,
+     "size_before_consent": 361,
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_1",
+      "seg_4",
+      "seg_5"
+     ],
+     "filters": {}
+    },
+    "target": {
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-04-01"
+     ],
+     "sku": "SKU-KHARI-200G",
+     "units": 13,
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "objective": "clear_expiry"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_89921cb800",
+    "channel": "outlet",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_89921cb800_v1",
+     "fraction": 0.1
+    },
+    "target": {
+     "batch_ids": [
+      "B-KHARI-200G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 13,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-18",
+     "sku": "SKU-KHARI-200G"
+    },
+    "audience": {
+     "filters": {},
+     "size_before_consent": 361,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_1",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "size_after_consent": 310
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "target": {
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "deadline_type": "expiry",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "units": 13
+    },
+    "mechanic": "markdown",
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_89921cb800_v1",
+     "min_treated_n": 20
+    },
+    "channel": "outlet",
+    "objective": "clear_expiry",
+    "audience": {
+     "filters": {},
+     "segment_ids": [
+      "all"
+     ],
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "purpose": "marketing"
+    },
+    "gap_id": "gap_89921cb800",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-18T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "alternatives": [
+     {
+      "expected_margin_inr": 80.85,
+      "mechanic_params": {
+       "bundle_sku": "SKU-CHEESE-SLICES-1L",
+       "bundle_price": 85
+      },
+      "rejected_because": "lower expected margin than the outlet markdown play",
+      "mechanic": "bundle",
+      "expected_units": 21.11
+     },
+     {
+      "expected_units": 10.42,
+      "mechanic": "markdown",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": -85.49,
+      "rejected_because": "lower expected margin than the outlet markdown play"
+     }
+    ],
+    "target": {
+     "deadline_type": "expiry",
+     "units": 13,
+     "sku": "SKU-KHARI-200G",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-18",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 529.1,
+     "blanket_markdown_inr": 235.14,
+     "play_net_inr": 90.77,
+     "blanket_markdown_pct": 10
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 529.1,
+     "ci_high": 61.59,
+     "prior_n": 20,
+     "units": 21.11,
+     "estimator_version": "est-v2",
+     "margin_inr": 90.77,
+     "ci_low": 1.14,
+     "discount_cost_inr": 105.55,
+     "measured_n": 0
+    },
+    "holdout": {
+     "seed": "seed-play_89921cb800_v1",
+     "fraction": 0.1,
+     "min_treated_n": 20
+    },
+    "objective": "clear_expiry",
+    "gap_id": "gap_89921cb800",
+    "audience": {
+     "size_before_consent": 361,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_1",
+      "seg_4",
+      "seg_5"
+     ],
+     "size_after_consent": 310,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "play_id": "play_89921cb800_v1",
+    "citations": [
+     {
+      "type": "gap",
+      "ref": "gap_89921cb800"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "rationale": "This play targets 310 customers with a 10% outlet markdown to clear 13 units of Khari 200G before expiry on 2026-09-18. The expected margin is 90.77 INR, which recovers 619.87 INR compared to doing nothing (529.10 INR) and beats blanket markdown recovery of 325.91 INR. This play is preferred over bundles and plain markdowns due to higher expected margin. The copy will state the best-before date of 2026-09-18.",
+    "channel": "outlet",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "mechanic": "outlet_markdown",
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "guardrails": [
+     {
+      "detail": "net margin 9.56% (net price 45.00, cost 40.70) vs bakery floor 8.00%",
+      "passed": true,
+      "rule": "margin_floor"
+     },
+     {
+      "rule": "frequency_cap",
+      "detail": "all 310 customers under 2 plays in 7 days",
+      "passed": true
+     },
+     {
+      "detail": "outlet channel: no personal message, consent not required",
+      "passed": true,
+      "rule": "consent_required"
+     },
+     {
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation",
+      "rule": "sellby_disclosure"
+     },
+     {
+      "passed": true,
+      "detail": "no active subscribers of SKU-KHARI-200G in audience",
+      "rule": "subscription_protect"
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "detail": "no stockout gap for SKU-KHARI-200G at OUT-04",
+      "passed": true
+     },
+     {
+      "passed": true,
+      "detail": "holdout 10%, min_treated_n 20",
+      "rule": "holdout_required"
+     },
+     {
+      "passed": true,
+      "detail": "8 number(s) in rationale all cited; 4 citation(s) resolve",
+      "rule": "cite_or_drop"
+     }
+    ],
+    "window": {
+     "end": "2026-09-18T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_89921cb800_v1",
+     "min_treated_n": 20
+    },
+    "target": {
+     "units": 13,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_type": "expiry",
+     "sku": "SKU-KHARI-200G",
+     "deadline_date": "2026-09-18",
+     "batch_ids": [
+      "B-KHARI-200G-OUT-04-01"
+     ]
+    },
+    "rationale": "This play targets 310 customers with a 10% outlet markdown to clear 13 units of Khari 200G before expiry on 2026-09-18. The expected margin is 90.77 INR, which recovers 619.87 INR compared to doing nothing (529.10 INR) and beats blanket markdown recovery of 325.91 INR. This play is preferred over bundles and plain markdowns due to higher expected margin. The copy will state the best-before date of 2026-09-18.",
+    "expected_outcome": {
+     "units": 21.11,
+     "waste_avoided_inr": 529.1,
+     "prior_n": 20,
+     "ci_low": 1.14,
+     "measured_n": 0,
+     "margin_inr": 90.77,
+     "discount_cost_inr": 105.55,
+     "ci_high": 61.59,
+     "estimator_version": "est-v2"
+    },
+    "citations": [
+     {
+      "ref": "gap_89921cb800",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "alternatives": [
+     {
+      "rejected_because": "lower expected margin than the outlet markdown play",
+      "expected_margin_inr": 80.85,
+      "mechanic": "bundle",
+      "expected_units": 21.11,
+      "mechanic_params": {
+       "bundle_price": 85,
+       "bundle_sku": "SKU-CHEESE-SLICES-1L"
+      }
+     },
+     {
+      "rejected_because": "lower expected margin than the outlet markdown play",
+      "expected_margin_inr": -85.49,
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "mechanic": "markdown",
+      "expected_units": 10.42
+     }
+    ],
+    "play_id": "play_89921cb800_v1",
+    "objective": "clear_expiry",
+    "gap_id": "gap_89921cb800",
+    "mechanic": "outlet_markdown",
+    "channel": "outlet",
+    "counterfactuals": {
+     "blanket_markdown_pct": 10,
+     "play_net_inr": 90.77,
+     "do_nothing_inr": 529.1,
+     "blanket_markdown_inr": 235.14
+    },
+    "audience": {
+     "size_before_consent": 361,
+     "size_after_consent": 310,
+     "segment_ids": [
+      "seg_6",
+      "seg_3",
+      "seg_2",
+      "seg_1",
+      "seg_4",
+      "seg_5"
+     ],
+     "purpose": "marketing",
+     "filters": {}
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_89921cb800_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_89921cb800_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 27348,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "lot is past its online sell-by: an online markdown is not an option"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_89921cb800_v1_7d1e61a4",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 27348,
+  "usage": {
+   "prompt_token_count": 25769,
+   "candidates_token_count": 2912,
+   "total_token_count": 28681,
+   "cached_content_token_count": 14160
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 812.41,
+  "blanket20_recovery_inr": 268.5,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "INVALID",
+ "wall_s": 36.3,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": null,
+   "usage": {},
+   "usd": 0.0,
+   "error": {
+    "type": "ClientError",
+    "status": 429,
+    "msg": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more de"
+   },
+   "elapsed_s": 7.04,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash-lite",
+   "model_version": "gemini-3.5-flash-lite",
+   "usage": {
+    "prompt": 4999,
+    "candidates": 891,
+    "thoughts": 0,
+    "cached": 0
+   },
+   "usd": 0.017069,
+   "error": null,
+   "elapsed_s": 8.46,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6040,
+    "candidates": 862,
+    "thoughts": 0,
+    "cached": 3636
+   },
+   "usd": 0.0131,
+   "error": null,
+   "elapsed_s": 4.38,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6927,
+    "candidates": 1144,
+    "thoughts": 0,
+    "cached": 5313
+   },
+   "usd": 0.014865,
+   "error": null,
+   "elapsed_s": 4.88,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7803,
+    "candidates": 15,
+    "thoughts": 0,
+    "cached": 5211
+   },
+   "usd": 0.005285,
+   "error": null,
+   "elapsed_s": 0.92,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.050319,
+ "tokens": {
+  "prompt": 25769,
+  "cached": 14160,
+  "candidates": 2912,
+  "thoughts": 0
+ },
+ "models_requested": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
+ ],
+ "verdict_before_invalidation": "VALID",
+ "reason": "call requested gemini-3.5-flash-lite"
+}

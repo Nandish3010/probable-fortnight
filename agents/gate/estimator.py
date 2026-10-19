@@ -16,22 +16,43 @@ Formulas (money in INR, `units` = expected target units sold to the audience):
                        discount_cost = units * max(0, list_price + partner_list_price - bundle_price)
   transfer_plus_nudge: margin = waste_avoided_inr - transfer_cost_per_unit * transfer_units
                        (transfer_units defaults to units_at_risk; units capped at transfer_units)
+  markdown           : see "One demand model" below
   other mechanics    : margin = units * (list_price - unit_cost), discount_cost = 0
   ci_low / ci_high   = units at the 5% / 95% Beta quantiles of the rate
   do_nothing_inr     = units_at_risk * unit_cost
   blanket_markdown_inr = baseline_forecast_units * markdown_pct/100 * list_price
-                         + max(0, units_at_risk - baseline_forecast_units * markdown_pct/100
-                                  * markdown_elasticity) * unit_cost
+                         + max(0, units_at_risk - units_sold_at_discount(baseline_forecast_units,
+                                  markdown_pct/100)) * unit_cost
 When several segments are targeted the prior parameters are averaged (mean alpha, mean beta).
+
+One demand model for every price change (est-v2). `units_sold_at_discount(baseline_units, discount_frac, ctx)`:
+  uplift = baseline_units * discount_frac * elasticity(category) * ramp, capped at units_at_risk
+  ramp   = min(1, days_left / markdown_ramp_days) when markdown_ramp_days > 0, else 1 (off by default)
+It is the ONLY place a discount turns into units. Used by
+  * `counterfactuals()`: blanket markdown units uplift = f(baseline_forecast_units, markdown_pct/100);
+  * `markdown` (site-wide price cut at the at-risk node): units = f(baseline_forecast_units, markdown_pct/100),
+    margin = units * (net_price - unit_cost) - baseline_forecast_units * discount_per_unit (the cut also
+    applies to the units that would have sold anyway), discount_cost = (baseline + units) * discount_per_unit,
+    ci = the same uplift at 0.5x and 1.5x elasticity (an assumed band; elasticity is not measured);
+  * targeted discount plays (coupon, outlet_markdown, bundle): the response-rate units above are multiplied
+    by the same uplift, units_targeted = rate_units + min(f(rate_units, discount_frac), max(0, units_at_risk
+    - rate_units)); discount_frac is discount_pct/100, markdown_pct/100, or
+    (list + partner_list - bundle_price) / (list + partner_list). transfer_plus_nudge and the no-discount
+    mechanics have discount_frac 0 and are unchanged.
+A play recorded under est-v1 (no depth scaling for targeted plays) is re-validated under est-v1: pass
+`estimator_version="est-v1"` in the context (harness/recorded_traces.py does, from the recorded play).
+`elasticity(category)` comes from the tenant `[elasticity]` table, falling back to its `default`, then to
+`thresholds.markdown_elasticity`, then 1.0.
 """
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-ESTIMATOR_VERSION = "est-v1"
+ESTIMATOR_VERSION = "est-v2"
+LEGACY_VERSIONS = frozenset({"est-v1"})  # recorded plays carry their version; est-v1 had no depth scaling for targeted plays
 DEFAULT_ALPHA = 1.0
 DEFAULT_BETA = 19.0
 DEFAULT_TRANSFER_COST_PER_UNIT = 2.0
@@ -44,6 +65,8 @@ Prior = tuple[float, float, int]
 PriorLookup = Callable[[PriorKey], Prior | None] | Mapping[PriorKey, Prior]
 
 DISCOUNT_MECHANICS = frozenset({"coupon", "outlet_markdown", "bundle"})
+MARKDOWN_MECHANIC = "markdown"  # site-wide online price cut; no customer is contacted, so it is not in DISCOUNT_MECHANICS
+CI_ELASTICITY_BAND = (0.5, 1.5)
 
 
 @dataclass(frozen=True)
@@ -76,8 +99,17 @@ class EstimatorContext:
     blanket_markdown_pct: float = DEFAULT_BLANKET_MARKDOWN_PCT
     baseline_forecast_units: float | None = None
     markdown_elasticity: float = 1.0
+    elasticity_by_category: Mapping[str, float] | None = None
+    days_left: float | None = None
+    markdown_ramp_days: float = 0.0
     bundle_partner_unit_cost: float = 0.0
     bundle_partner_list_price: float = 0.0
+
+    def elasticity(self) -> float:
+        table = self.elasticity_by_category
+        if table and self.product.category in table:
+            return float(table[self.product.category])
+        return float(self.markdown_elasticity)
 
     def lookup_prior(self, key: PriorKey) -> Prior:
         found: Prior | None = None
@@ -180,6 +212,42 @@ def _prior_for_draft(play_draft: dict[str, Any], ctx: EstimatorContext) -> tuple
 
 
 # ---------------------------------------------------------------------------------------------
+# One demand model for every price change
+# ---------------------------------------------------------------------------------------------
+
+def _ramp(ctx: EstimatorContext) -> float:
+    if ctx.markdown_ramp_days and ctx.markdown_ramp_days > 0 and ctx.days_left is not None:
+        return max(0.0, min(1.0, float(ctx.days_left) / float(ctx.markdown_ramp_days)))
+    return 1.0
+
+
+def units_sold_at_discount(baseline_units: float, discount_frac: float, ctx: EstimatorContext, elasticity_scale: float = 1.0) -> float:
+    """Extra units a price cut of `discount_frac` sells on top of `baseline_units`:
+    baseline * frac * elasticity(category) * ramp, capped at the units at risk. The single place a
+    discount becomes units; used by the play estimates and by `counterfactuals()` alike."""
+    uplift = max(0.0, float(baseline_units)) * max(0.0, float(discount_frac)) * ctx.elasticity() * float(elasticity_scale) * _ramp(ctx)
+    return min(uplift, float(max(0, ctx.gap.units_at_risk)))
+
+
+def discount_frac_for(mechanic: str, params: Mapping[str, Any], ctx: EstimatorContext) -> float:
+    """Depth of a price change as a fraction of the price the customer would otherwise pay."""
+    if mechanic == "bundle":
+        full = ctx.product.list_price + ctx.bundle_partner_list_price
+        return min(1.0, _discount_per_unit(mechanic, params, ctx) / full) if full > 0 else 0.0
+    if mechanic in ("coupon", "outlet_markdown", MARKDOWN_MECHANIC):
+        price = ctx.product.list_price
+        return min(1.0, _discount_per_unit(mechanic, params, ctx) / price) if price > 0 else 0.0
+    return 0.0
+
+
+def baseline_units_of(ctx: EstimatorContext) -> float:
+    base = ctx.baseline_forecast_units
+    if base is None:
+        base = float(ctx.gap.evidence.get("projected_sellthrough") or 0.0)
+    return float(base)
+
+
+# ---------------------------------------------------------------------------------------------
 # Estimate
 # ---------------------------------------------------------------------------------------------
 
@@ -191,7 +259,7 @@ def _discount_per_unit(mechanic: str, params: Mapping[str, Any], ctx: EstimatorC
     price = ctx.product.list_price
     if mechanic == "coupon":
         return price * float(params.get("discount_pct") or 0.0) / 100.0
-    if mechanic == "outlet_markdown":
+    if mechanic in ("outlet_markdown", MARKDOWN_MECHANIC):
         return price * float(params.get("markdown_pct") or 0.0) / 100.0
     if mechanic == "bundle":
         bundle_price = float(params.get("bundle_price") or 0.0)
@@ -228,7 +296,18 @@ def estimate(play_draft: dict[str, Any], ctx: EstimatorContext) -> dict[str, Any
     unit_cost = ctx.product.unit_cost
     discount = _discount_per_unit(mechanic, params, ctx)
 
-    if mechanic == "transfer_plus_nudge":
+    if mechanic == MARKDOWN_MECHANIC:
+        baseline = baseline_units_of(ctx)
+        frac = discount_frac_for(mechanic, params, ctx)
+        units = _r2(units_sold_at_discount(baseline, frac, ctx))
+        ci_low = units_sold_at_discount(baseline, frac, ctx, CI_ELASTICITY_BAND[0])
+        ci_high = units_sold_at_discount(baseline, frac, ctx, CI_ELASTICITY_BAND[1])
+        waste_avoided = min(units, units_at_risk) * unit_cost
+        econ = unit_economics(mechanic, params, ctx)
+        margin = units * econ["margin"] - baseline * discount
+        discount_cost = (baseline + units) * discount
+        alpha, beta, n_measured = 0.0, 0.0, 0
+    elif mechanic == "transfer_plus_nudge":
         transfer_units = int(params.get("transfer_units") or units_at_risk)
         units = min(units, float(transfer_units))
         ci_low = min(ci_low, float(transfer_units))
@@ -237,6 +316,12 @@ def estimate(play_draft: dict[str, Any], ctx: EstimatorContext) -> dict[str, Any
         margin = waste_avoided - ctx.transfer_cost_per_unit * transfer_units
         discount_cost = 0.0
     else:
+        if mechanic in DISCOUNT_MECHANICS and ctx.estimator_version not in LEGACY_VERSIONS:
+            raw = units
+            extra = min(units_sold_at_discount(raw, discount_frac_for(mechanic, params, ctx), ctx), max(0.0, units_at_risk - raw))
+            units = _r2(raw + extra)  # money below is computed from the published, rounded units (the runtime invariant recomputes from them)
+            if raw > 0:
+                ci_low, ci_high = ci_low * units / raw, ci_high * units / raw
         waste_avoided = min(units, units_at_risk) * unit_cost
         econ = unit_economics(mechanic, params, ctx)
         margin = units * econ["margin"]
@@ -271,15 +356,40 @@ def counterfactuals(play_draft: dict[str, Any], ctx: EstimatorContext) -> dict[s
     units_at_risk = float(ctx.gap.units_at_risk)
     params: Mapping[str, Any] = play_draft.get("mechanic_params") or {}
     markdown_pct = float(params.get("markdown_pct") or ctx.blanket_markdown_pct)
-    baseline = ctx.baseline_forecast_units
-    if baseline is None:
-        baseline = float(ctx.gap.evidence.get("projected_sellthrough") or 0.0)
+    baseline = baseline_units_of(ctx)
     frac = markdown_pct / 100.0
     discount_given = baseline * frac * p.list_price
-    uplift_units = baseline * frac * ctx.markdown_elasticity
+    uplift_units = units_sold_at_discount(baseline, frac, ctx)
     remaining_writeoff = max(0.0, units_at_risk - uplift_units) * p.unit_cost
     return {
         "do_nothing_inr": _r2(units_at_risk * p.unit_cost),
         "blanket_markdown_inr": _r2(discount_given + remaining_writeoff),
         "blanket_markdown_pct": _r2(markdown_pct),
     }
+
+
+DEFAULT_MARKDOWN_DEPTHS_PCT = (10.0, 20.0, 35.0)
+
+
+def recovery_of(est: Mapping[str, Any]) -> float:
+    """Recovered versus doing nothing, the headline figure: do_nothing_inr + play_net_inr."""
+    cf = est["counterfactuals"]
+    return round(float(cf["do_nothing_inr"]) + float(cf["play_net_inr"]), 2)
+
+
+def best_markdown(ctx: EstimatorContext, depths_pct: Iterable[float] = DEFAULT_MARKDOWN_DEPTHS_PCT, floor_pct: float | None = None, end_date: str | None = None) -> dict[str, Any] | None:
+    """The best site-wide markdown at the tenant's allowed depths, by recovery, with the same demand
+    model as every other play. A depth is allowed when its net margin clears `floor_pct` (default: the
+    product's margin floor). None when no depth is allowed. Ties go to the shallower cut."""
+    floor = ctx.product.margin_floor_pct if floor_pct is None else float(floor_pct)
+    best: dict[str, Any] | None = None
+    for pct in sorted(float(d) for d in depths_pct):
+        params = {"markdown_pct": pct}
+        if unit_economics(MARKDOWN_MECHANIC, params, ctx)["margin_pct"] < floor:
+            continue
+        est = estimate({"mechanic": MARKDOWN_MECHANIC, "mechanic_params": params}, ctx)
+        rec = recovery_of(est)
+        if best is None or rec > best["recovery_inr"] + 0.005:
+            eo = est["expected_outcome"]
+            best = {"markdown_pct": pct, "recovery_inr": rec, "units": eo["units"], "margin_inr": eo["margin_inr"], "play_net_inr": est["counterfactuals"]["play_net_inr"], "end_date": end_date}
+    return best

@@ -1,0 +1,844 @@
+{
+ "scenario_id": "S02",
+ "cell": {
+  "gap_type": "expiry_writeoff",
+  "lot_band": 0,
+  "day_band": 0
+ },
+ "gap_id": "gap_62c37c0339",
+ "seed": 53718294,
+ "attempt": 0,
+ "started_at": "2026-10-18T21:42:23Z",
+ "tag": "S02__run1",
+ "status": "proposed",
+ "outcome": "model_play",
+ "planner_status": "proposed",
+ "planner_source": "model",
+ "source": "live_gemini",
+ "fallback_reason": null,
+ "accepted_play": {
+  "audience": {
+   "filters": {},
+   "purpose": "marketing",
+   "segment_ids": [
+    "seg_5",
+    "seg_6",
+    "seg_2",
+    "seg_3",
+    "seg_4",
+    "seg_1"
+   ],
+   "size_after_consent": 335,
+   "size_before_consent": 399
+  },
+  "channel": "web_chat",
+  "mechanic": "bundle",
+  "guardrails": [
+   {
+    "rule": "margin_floor",
+    "passed": true,
+    "detail": "net margin 8.99% (net price 150.00, cost 136.52) vs bakery floor 8.00%"
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true,
+    "detail": "all 335 customers under 2 plays in 7 days"
+   },
+   {
+    "rule": "consent_required",
+    "passed": true,
+    "detail": "audience filtered by consent: 399 -> 335"
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true,
+    "detail": "copy pending; best-before disclosure enforced at copy validation"
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true,
+    "detail": "no active subscribers of SKU-RUSK-200G in audience"
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true,
+    "detail": "no stockout gap for SKU-RUSK-200G at OUT-04"
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true,
+    "detail": "holdout 10%, min_treated_n 20"
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true,
+    "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+   }
+  ],
+  "play_id": "play_62c37c0339_v1",
+  "window": {
+   "start": "2026-09-12T00:00:00Z",
+   "end": "2026-09-21T23:59:59Z"
+  },
+  "objective": "clear_expiry",
+  "mechanic_params": {
+   "bundle_price": 150,
+   "bundle_sku": "SKU-BUTTER-500ML"
+  },
+  "holdout": {
+   "fraction": 0.1,
+   "seed": "seed-play_62c37c0339_v1",
+   "min_treated_n": 20
+  },
+  "counterfactuals": {
+   "do_nothing_inr": 666.0,
+   "blanket_markdown_inr": 796.11,
+   "blanket_markdown_pct": 20.0,
+   "play_net_inr": 312.47
+  },
+  "alternatives": [
+   {
+    "expected_units": 23.18,
+    "mechanic": "outlet_markdown",
+    "rejected_because": "lower margin than bundle play",
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "expected_margin_inr": 229.48
+   }
+  ],
+  "gap_id": "gap_62c37c0339",
+  "citations": [
+   {
+    "ref": "gap_62c37c0339",
+    "type": "gap"
+   },
+   {
+    "ref": "est-v2",
+    "type": "estimator"
+   },
+   {
+    "ref": "v1",
+    "type": "policy"
+   },
+   {
+    "type": "forecast",
+    "ref": "sense_20260912_baseline_2aaad73c"
+   }
+  ],
+  "target": {
+   "sku": "SKU-RUSK-200G",
+   "deadline_type": "expiry",
+   "batch_ids": [
+    "B-RUSK-200G-OUT-04-01"
+   ],
+   "deadline_date": "2026-09-21",
+   "units": 10,
+   "node_ids": [
+    "OUT-04"
+   ]
+  },
+  "rationale": "This play targets high-affinity segments to clear the expiry risk of the product at the outlet. We propose a bundle of the product with a partner SKU, which is preferred by policy over markdowns. This play is expected to recover more margin than doing nothing and beats a blanket markdown. A holdout is maintained to measure the play's performance.",
+  "copy": {
+   "language_set": [
+    "en"
+   ],
+   "variants": [],
+   "copy_status": "pending"
+  },
+  "expected_outcome": {
+   "units": 23.18,
+   "margin_inr": 312.47,
+   "waste_avoided_inr": 666.0,
+   "discount_cost_inr": 463.6,
+   "ci_low": 1.25,
+   "ci_high": 67.62,
+   "prior_n": 20.0,
+   "measured_n": 0,
+   "estimator_version": "est-v2"
+  },
+  "created_at": "2026-09-12T03:30:00Z",
+  "status": "proposed",
+  "policy_version": "v1",
+  "trace_ref": "events/run_62c37c0339_v1_7d25861e",
+  "cost": {
+   "plan_cost_inr": 3.94,
+   "conversation_budget_inr": 9.38,
+   "pct_of_rupees_at_stake": 2.0
+  },
+  "source": "live_gemini"
+ },
+ "deterministic_fallback_play": null,
+ "recovery_inr": 978.47,
+ "mechanic": "bundle",
+ "drafts": [
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic": "outlet_markdown",
+    "gap_id": "gap_62c37c0339",
+    "target": {
+     "sku": "SKU-RUSK-200G",
+     "units": 10,
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "deadline_date": "2026-09-21",
+     "deadline_type": "expiry"
+    },
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "size_after_consent": 335,
+     "size_before_consent": 399,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "holdout": {
+     "min_treated_n": 20,
+     "seed": "seed-play_62c37c0339_v1",
+     "fraction": 0.1
+    },
+    "objective": "clear_expiry",
+    "channel": "web_chat",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "objective": "clear_expiry",
+    "audience": {
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_after_consent": 335,
+     "size_before_consent": 399,
+     "purpose": "marketing",
+     "filters": {}
+    },
+    "channel": "web_chat",
+    "target": {
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ],
+     "units": 10,
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-200G",
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21"
+    },
+    "holdout": {
+     "seed": "seed-play_62c37c0339_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "bundle",
+    "gap_id": "gap_62c37c0339",
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "mechanic_params": {
+     "bundle_sku": "SKU-BUTTER-500ML",
+     "bundle_price": 150
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "estimate_outcomes",
+   "play": {
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "gap_id": "gap_62c37c0339",
+    "target": {
+     "units": 10,
+     "deadline_date": "2026-09-21",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ],
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-200G"
+    },
+    "holdout": {
+     "seed": "seed-play_62c37c0339_v1",
+     "min_treated_n": 20,
+     "fraction": 0.1
+    },
+    "mechanic": "markdown",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 0,
+     "size_after_consent": 0,
+     "segment_ids": [
+      "all"
+     ]
+    },
+    "channel": "web_chat"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_62c37c0339_v1"
+    },
+    "mechanic_params": {
+     "markdown_pct": 10
+    },
+    "window": {
+     "end": "2026-09-21T23:59:59Z",
+     "start": "2026-09-12T00:00:00Z"
+    },
+    "expected_outcome": {
+     "waste_avoided_inr": 666,
+     "units": 23.18,
+     "margin_inr": 229.48,
+     "discount_cost_inr": 197.03,
+     "ci_low": 1.25,
+     "estimator_version": "est-v2",
+     "measured_n": 0,
+     "prior_n": 20,
+     "ci_high": 67.62
+    },
+    "target": {
+     "sku": "SKU-RUSK-200G",
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ],
+     "units": 10,
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21",
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "play_id": "play_62c37c0339_v1",
+    "citations": [
+     {
+      "ref": "gap_62c37c0339",
+      "type": "gap"
+     },
+     {
+      "type": "estimator",
+      "ref": "est-v2"
+     },
+     {
+      "type": "policy",
+      "ref": "v1"
+     },
+     {
+      "ref": "sense_20260912_baseline_2aaad73c",
+      "type": "forecast"
+     }
+    ],
+    "guardrails": [],
+    "channel": "outlet",
+    "alternatives": [
+     {
+      "rejected_because": "lower margin than outlet_markdown",
+      "expected_margin_inr": 312.47,
+      "mechanic": "bundle",
+      "expected_units": 23.18,
+      "mechanic_params": {
+       "bundle_sku": "SKU-BUTTER-500ML",
+       "bundle_price": 150
+      }
+     }
+    ],
+    "audience": {
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 399,
+     "size_after_consent": 335,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ]
+    },
+    "gap_id": "gap_62c37c0339",
+    "objective": "clear_expiry",
+    "counterfactuals": {
+     "play_net_inr": 229.48,
+     "do_nothing_inr": 666,
+     "blanket_markdown_pct": 10,
+     "blanket_markdown_inr": 398.06
+    },
+    "mechanic": "outlet_markdown"
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "check_guardrails",
+   "play": {
+    "expected_outcome": {
+     "measured_n": 0,
+     "ci_low": 1.25,
+     "discount_cost_inr": 463.6,
+     "prior_n": 20,
+     "waste_avoided_inr": 666,
+     "units": 23.18,
+     "ci_high": 67.62,
+     "margin_inr": 312.47,
+     "estimator_version": "est-v2"
+    },
+    "mechanic": "bundle",
+    "holdout": {
+     "min_treated_n": 20,
+     "fraction": 0.1,
+     "seed": "seed-play_62c37c0339_v1"
+    },
+    "target": {
+     "deadline_type": "expiry",
+     "deadline_date": "2026-09-21",
+     "node_ids": [
+      "OUT-04"
+     ],
+     "sku": "SKU-RUSK-200G",
+     "units": 10,
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ]
+    },
+    "citations": [
+     {
+      "ref": "gap_62c37c0339",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "alternatives": [
+     {
+      "expected_units": 23.18,
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower margin than bundle play",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 229.48
+     }
+    ],
+    "gap_id": "gap_62c37c0339",
+    "play_id": "play_62c37c0339_v1",
+    "audience": {
+     "size_after_consent": 335,
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "purpose": "marketing",
+     "filters": {},
+     "size_before_consent": 399
+    },
+    "objective": "clear_expiry",
+    "counterfactuals": {
+     "play_net_inr": 312.47,
+     "blanket_markdown_inr": 796.11,
+     "do_nothing_inr": 666,
+     "blanket_markdown_pct": 20
+    },
+    "channel": "web_chat",
+    "guardrails": [],
+    "copy": {
+     "copy_status": "pending",
+     "variants": [],
+     "language_set": [
+      "en"
+     ]
+    },
+    "mechanic_params": {
+     "bundle_price": 150,
+     "bundle_sku": "SKU-BUTTER-500ML"
+    }
+   },
+   "rejected": null,
+   "claimed_all_passed": false
+  },
+  {
+   "tool": "propose_play",
+   "play": {
+    "audience": {
+     "filters": {},
+     "purpose": "marketing",
+     "segment_ids": [
+      "seg_5",
+      "seg_6",
+      "seg_2",
+      "seg_3",
+      "seg_4",
+      "seg_1"
+     ],
+     "size_after_consent": 335,
+     "size_before_consent": 399
+    },
+    "channel": "web_chat",
+    "mechanic": "bundle",
+    "guardrails": [
+     {
+      "rule": "margin_floor",
+      "detail": "net margin 8.99% (net price 150.00, cost 136.52) vs bakery floor 8.00%",
+      "passed": true
+     },
+     {
+      "detail": "all 335 customers under 2 plays in 7 days",
+      "rule": "frequency_cap",
+      "passed": true
+     },
+     {
+      "detail": "audience filtered by consent: 399 -> 335",
+      "rule": "consent_required",
+      "passed": true
+     },
+     {
+      "rule": "sellby_disclosure",
+      "passed": true,
+      "detail": "copy pending; best-before disclosure enforced at copy validation"
+     },
+     {
+      "rule": "subscription_protect",
+      "detail": "no active subscribers of SKU-RUSK-200G in audience",
+      "passed": true
+     },
+     {
+      "rule": "no_cannibalise_stockout",
+      "passed": true,
+      "detail": "no stockout gap for SKU-RUSK-200G at OUT-04"
+     },
+     {
+      "passed": true,
+      "rule": "holdout_required",
+      "detail": "holdout 10%, min_treated_n 20"
+     },
+     {
+      "passed": true,
+      "rule": "cite_or_drop",
+      "detail": "0 number(s) in rationale all cited; 4 citation(s) resolve"
+     }
+    ],
+    "play_id": "play_62c37c0339_v1",
+    "window": {
+     "start": "2026-09-12T00:00:00Z",
+     "end": "2026-09-21T23:59:59Z"
+    },
+    "objective": "clear_expiry",
+    "mechanic_params": {
+     "bundle_price": 150,
+     "bundle_sku": "SKU-BUTTER-500ML"
+    },
+    "holdout": {
+     "fraction": 0.1,
+     "seed": "seed-play_62c37c0339_v1",
+     "min_treated_n": 20
+    },
+    "counterfactuals": {
+     "do_nothing_inr": 666,
+     "blanket_markdown_pct": 20,
+     "blanket_markdown_inr": 796.11,
+     "play_net_inr": 312.47
+    },
+    "alternatives": [
+     {
+      "expected_units": 23.18,
+      "mechanic": "outlet_markdown",
+      "rejected_because": "lower margin than bundle play",
+      "mechanic_params": {
+       "markdown_pct": 10
+      },
+      "expected_margin_inr": 229.48
+     }
+    ],
+    "gap_id": "gap_62c37c0339",
+    "citations": [
+     {
+      "ref": "gap_62c37c0339",
+      "type": "gap"
+     },
+     {
+      "ref": "est-v2",
+      "type": "estimator"
+     },
+     {
+      "ref": "v1",
+      "type": "policy"
+     },
+     {
+      "type": "forecast",
+      "ref": "sense_20260912_baseline_2aaad73c"
+     }
+    ],
+    "target": {
+     "sku": "SKU-RUSK-200G",
+     "deadline_type": "expiry",
+     "batch_ids": [
+      "B-RUSK-200G-OUT-04-01"
+     ],
+     "deadline_date": "2026-09-21",
+     "units": 10,
+     "node_ids": [
+      "OUT-04"
+     ]
+    },
+    "rationale": "This play targets high-affinity segments to clear the expiry risk of the product at the outlet. We propose a bundle of the product with a partner SKU, which is preferred by policy over markdowns. This play is expected to recover more margin than doing nothing and beats a blanket markdown. A holdout is maintained to measure the play's performance.",
+    "copy": {
+     "language_set": [
+      "en"
+     ],
+     "variants": [],
+     "copy_status": "pending"
+    },
+    "expected_outcome": {
+     "estimator_version": "est-v2",
+     "prior_n": 20,
+     "ci_low": 1.25,
+     "units": 23.18,
+     "waste_avoided_inr": 666,
+     "measured_n": 0,
+     "ci_high": 67.62,
+     "discount_cost_inr": 463.6,
+     "margin_inr": 312.47
+    }
+   },
+   "rejected": false,
+   "claimed_all_passed": true
+  }
+ ],
+ "model_texts": [
+  "DONE play_62c37c0339_v1"
+ ],
+ "propose_play_verdicts": [
+  {
+   "valid": true,
+   "play_id": "play_62c37c0339_v1",
+   "errors": []
+  }
+ ],
+ "first_proposal_accepted": true,
+ "propose_play_attempts": 1,
+ "iterations": 1,
+ "elapsed_ms": 25970,
+ "audit": {
+  "ran": true,
+  "guardrails_all_passed": true,
+  "guardrail_results": [
+   {
+    "rule": "margin_floor",
+    "passed": true
+   },
+   {
+    "rule": "frequency_cap",
+    "passed": true
+   },
+   {
+    "rule": "consent_required",
+    "passed": true
+   },
+   {
+    "rule": "sellby_disclosure",
+    "passed": true
+   },
+   {
+    "rule": "subscription_protect",
+    "passed": true
+   },
+   {
+    "rule": "no_cannibalise_stockout",
+    "passed": true
+   },
+   {
+    "rule": "holdout_required",
+    "passed": true
+   },
+   {
+    "rule": "cite_or_drop",
+    "passed": true
+   }
+  ],
+  "failed_rules": [],
+  "money_mismatches": [],
+  "holdout_ok": true,
+  "estimator_match": true,
+  "estimator_diffs": [],
+  "beats_markdown_ok": true,
+  "beats_markdown_detail": "an online markdown is not an option for this lot (outlet node or past its online sell-by)"
+ },
+ "guardrail_violation_at_approve": false,
+ "run_summary": {
+  "run_id": "run_62c37c0339_v1_7d25861e",
+  "status": "proposed",
+  "iterations": 1,
+  "elapsed_ms": 25970,
+  "usage": {
+   "prompt_token_count": 37699,
+   "candidates_token_count": 3290,
+   "thoughts_token_count": 2367,
+   "total_token_count": 43356,
+   "cached_content_token_count": 23131
+  },
+  "model": "gemini-3.5-flash",
+  "backend": "vertex",
+  "source": "live_gemini"
+ },
+ "baselines": {
+  "oracle_upper_bound_inr": 1256.63,
+  "blanket20_recovery_inr": -130.11,
+  "do_nothing_recovery_inr": 0.0
+ },
+ "verdict": "VALID",
+ "wall_s": 26.7,
+ "model_calls": [
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 5033,
+    "candidates": 901,
+    "thoughts": 444,
+    "cached": 0
+   },
+   "usd": 0.02162,
+   "error": null,
+   "elapsed_s": 6.2,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 6520,
+    "candidates": 671,
+    "thoughts": 84,
+    "cached": 3666
+   },
+   "usd": 0.012788,
+   "error": null,
+   "elapsed_s": 3.36,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 7323,
+    "candidates": 671,
+    "thoughts": 137,
+    "cached": 5363
+   },
+   "usd": 0.012118,
+   "error": null,
+   "elapsed_s": 3.51,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 8184,
+    "candidates": 1031,
+    "thoughts": 1676,
+    "cached": 7020
+   },
+   "usd": 0.029878,
+   "error": null,
+   "elapsed_s": 10.46,
+   "thinking_level": "LOW"
+  },
+  {
+   "requested_model": "gemini-3.5-flash",
+   "model_version": "gemini-3.5-flash",
+   "usage": {
+    "prompt": 10639,
+    "candidates": 16,
+    "thoughts": 26,
+    "cached": 7082
+   },
+   "usd": 0.007453,
+   "error": null,
+   "elapsed_s": 0.89,
+   "thinking_level": "LOW"
+  }
+ ],
+ "usd": 0.083857,
+ "tokens": {
+  "prompt": 37699,
+  "cached": 23131,
+  "candidates": 3290,
+  "thoughts": 2367
+ },
+ "models_requested": [
+  "gemini-3.5-flash"
+ ],
+ "model_versions_reported": [
+  "gemini-3.5-flash"
+ ]
+}
